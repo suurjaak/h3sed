@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  12.04.2020
+@modified  09.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -323,9 +323,5 @@ class ArtifactsPlugin(object):
             result[pos:pos + len(b)] = b
             for slot in SLOTS.get(name, [])[1:]:
                 result[MYPOS["reserved"][slot]] += 1
-
-        #if result[MYPOS["helm"]:MYPOS["helm"] + 19*8] != self._hero.bytes[MYPOS["helm"]:MYPOS["helm"] + 19*8] \
-        #or result[pos_reserved:pos_reserved + len_reserved] != self._hero.bytes[pos_reserved:pos_reserved + len_reserved]: # @todo remove
-        #    logger.info("artifacts: changed. %s vs %s.", map(int, self._hero.bytes), map(int, result))
 
         return result

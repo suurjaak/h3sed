@@ -160,7 +160,4 @@ class SkillsPlugin(object):
         result[MYPOS["skills_slot"] :MYPOS["skills_slot"]  + len(IDS)] = slots
         result[MYPOS["skills_count"]] = count
 
-        #if result[MYPOS["skills_level"]:MYPOS["skills_level"] + len(IDS)] != self._hero.bytes[MYPOS["skills_level"]:MYPOS["skills_level"] + len(IDS)]: # @todo remove
-        #    logger.info("skills: changed. %s vs %s.", map(int, self._hero.bytes), map(int, result))
-
         return result

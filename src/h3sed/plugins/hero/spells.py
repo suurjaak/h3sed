@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  12.04.2020
+@modified  09.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import OrderedDict
@@ -136,8 +136,5 @@ class SpellsPlugin(object):
             available = in_book or name in artispells
             result[MYPOS["spells_book"] + pos]      = in_book
             result[MYPOS["spells_available"] + pos] = available
-
-        #if result[MYPOS["spells_available"]:MYPOS["spells_book"] + len(IDS)] != self._hero.bytes[MYPOS["spells_available"]:MYPOS["spells_book"] + len(IDS)]: # @todo remove
-        #    logger.info("spells: changed. %s vs %s.", map(int, self._hero.bytes), map(int, result))
 
         return result

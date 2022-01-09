@@ -234,8 +234,4 @@ class StatsPlugin(object):
                 else: b = data.Blank * 4
             result[pos:pos + len(b)] = b
 
-        #if result[:MYPOS["spells_available"]] != self._hero.bytes[:MYPOS["spells_available"]] \
-        #or result[MYPOS["ballista"]:MYPOS["side5"]] != self._hero.bytes[MYPOS["ballista"]:MYPOS["side5"]]: # @todo remove
-        #    logger.info("stats: changed. %s vs %s.", map(int, self._hero.bytes), map(int, result))
-
         return result

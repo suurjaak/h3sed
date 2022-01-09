@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  12.04.2020
+@modified  09.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import OrderedDict
@@ -159,8 +159,5 @@ class InventoryPlugin(object):
                 else:
                     b = data.Blank * 4 + data.Null * 4
                 result[pos + i * len(b):pos + (i + 1) * len(b)] = b
-
-        #if result[pos:pos + 8*64] != bytes0[pos:pos + 8*64]: # @todo remove
-        #    logger.info("inventory: changed. %s vs %s.", map(int, bytes0), map(int, result))
 
         return result
