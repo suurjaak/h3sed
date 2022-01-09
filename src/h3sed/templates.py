@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.03.2020
+@modified    09.01.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -42,7 +42,7 @@ Since Heroes3 savefile format is not publicly known,
 loaded data and saved results may be invalid and cause problems in game.
 <br /><br />
 Always choose the correct game version. 
-A wrong choice may result in file data being misinterpreted, 
+A wrong choice will result in file data being misinterpreted, 
 and saving later version items or creatures to an earlier version savefile 
 may cause the game to crash.
 

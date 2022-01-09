@@ -55,7 +55,7 @@ class AboutDialog(wx.Dialog):
         self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChange)
 
         self.Layout()
-        self.Size = (self.Size[0], html.VirtualSize[1] + 60)
+        self.Size = (self.Size[0], html.VirtualSize[1] + 65)
         self.CenterOnParent()
 
 
