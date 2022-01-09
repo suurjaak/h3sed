@@ -4,11 +4,21 @@ h3sed
 h3sed is a Heroes3 Savegame Editor, written in Python.
 
 It can open savegame files from Heroes of Might and Magic III
-(supported game versions: Shadow of Death and Horn of the Abyss),
-and edit any and all hero attributes: primary skills, secondary skills,
-spells, war machines, artifacts, armies etc.
+and edit any and all hero attributes:
 
-Downloads at http://suurjaak.github.io/h3sed.
+- primary skills, like Attack
+- other primary attributes, like level, experience points, spell points etc
+- war machines, like Ballista
+- secondary skills, like Logistics (more than 8 skills can be added)
+- artifacts, like Boots of Speed, both worn and inventory items
+- spells, like Slow
+- army creatures, like Golden Dragons
+
+Supports savegames from Shadow of Death and Horn of the Abyss.
+
+Automatically creates a timestamped backup copy of the savegame file.
+
+Binary downloads at http://suurjaak.github.io/h3sed.
 
 
 Installation
@@ -27,15 +37,14 @@ installation. The installed program can be copied to a USB stick and used
 elsewhere, same goes for the source code.
 
 If running from pip installation, run `h3sed` from the command-line. 
-If running straight from source code, launch `h3sed.sh` where shell 
-scripts are supported, or `h3sed.bat` under Windows, or open 
-a terminal and run `python -m h3sed.main` in h3sed directory.
+If running straight from source code, open a terminal to `h3sed/src`
+and run `python -m h3sed.main`.
 
 
 Source Dependencies
 -------------------
 
-If running from source code, h3sed needs Python 2.7 or Python 3,
+If running from source code, h3sed needs Python 2.7 or higher,
 and the following 3rd-party Python packages:
 * wxPython 4.0+ (https://wxpython.org)
 
