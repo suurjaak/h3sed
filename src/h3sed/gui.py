@@ -208,6 +208,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         page.Bind(wx.EVT_CHAR_HOOK, self.on_refresh_dir_ctrl)
         dir_ctrl.Bind(wx.EVT_DIRCTRL_SELECTIONCHANGED, self.on_change_dir_ctrl)
         dir_ctrl.Bind(wx.EVT_DIRCTRL_FILEACTIVATED,    self.on_open_from_dir_ctrl)
+        choice.Bind(wx.EVT_CHOICE,                     self.on_choose_filter)
         button_browse.Bind(wx.EVT_BUTTON,              self.on_browse)
         button_open.Bind(wx.EVT_BUTTON,                self.on_open_current_savefile)
 
@@ -610,6 +611,15 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.dir_ctrl.SetPath(self.dialog_browse.GetPath())
 
 
+    def on_choose_filter(self, event):
+        """Handler for choosing extension filter in file control."""
+        if event: event.Skip() # Pass event along to next handler
+        path = self.dir_ctrl.Path
+        # Workaround for DirCtrl raising error if any selection during populate
+        self.dir_ctrl.UnselectAll()
+        wx.CallAfter(lambda: self and self.dir_ctrl.ExpandPath(path))
+
+
     def on_save_savefile(self, event=None):
         """Handler for clicking to save changes to the active file."""
         page = self.notebook.GetCurrentPage()
@@ -696,8 +706,14 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         event and event.Skip()
         if isinstance(event, wx.KeyEvent) and wx.WXK_F5 != event.KeyCode: return
         path = self.dir_ctrl.Path
-        self.dir_ctrl.ReCreateTree()
-        self.dir_ctrl.ExpandPath(path)
+        self.page_main.Freeze()
+        try:
+            # Workaround for DirCtrl raising error if any selection during populate
+            self.dir_ctrl.UnselectAll()
+            self.dir_ctrl.ReCreateTree()
+            self.dir_ctrl.ExpandPath(path)
+        finally:
+            self.page_main.Thaw()
 
 
     def on_exit(self, event=None):
