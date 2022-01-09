@@ -188,11 +188,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         dir_ctrl = self.dir_ctrl = wx.GenericDirCtrl(page,
             style=wx.DIRCTRL_SHOW_FILTERS, filter=data.wildcard(), defaultFilter=0)
-        text_name = self.text_file = wx.TextCtrl(page)
+        text_file = self.text_file = wx.TextCtrl(page)
         button_open = self.button_open = wx.Button(page, label="&Open")
 
         dir_ctrl.ShowHidden(True)
-        text_name.Disable()
+        text_file.SetEditable(False)
         choice, tree = dir_ctrl.GetFilterListCtrl(), dir_ctrl.GetTreeCtrl()
         ColourManager.Manage(dir_ctrl, "ForegroundColour", wx.SYS_COLOUR_WINDOWTEXT)
         ColourManager.Manage(dir_ctrl, "BackgroundColour", wx.SYS_COLOUR_WINDOW)
@@ -205,7 +205,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         dir_ctrl.Bind(wx.EVT_DIRCTRL_FILEACTIVATED,    self.on_open_from_dir_ctrl)
         button_open.Bind(wx.EVT_BUTTON,                self.on_open_current_savefile)
 
-        hsizer.Add(text_name, proportion=1, flag=wx.GROW)
+        hsizer.Add(text_file, proportion=1, flag=wx.GROW)
         hsizer.Add(button_open)
         sizer.Add(dir_ctrl, border=10, proportion=1, flag=wx.ALL ^ wx.BOTTOM | wx.GROW)
         sizer.Add(hsizer, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW)
@@ -666,6 +666,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Handler for selecting a file in dir list, refreshes file textbox."""
         path = event.EventObject.GetPath()
         self.text_file.Value = path if os.path.isfile(path) else ""
+        self.button_open.Enable(os.path.isfile(path))
 
 
     def on_open_current_savefile(self, event=None):
