@@ -741,6 +741,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             if wx.YES == resp:
                 if not page.save_file(): return event.Veto()
 
+        page.undoredo.ClearCommands()
+        page.undoredo.SetMenuStrings()
+
         self.files.pop(page.filename, None)
         conf.FilesOpen.discard(page.filename)
         logger.info("Closed tab for %s.", page.filename)
