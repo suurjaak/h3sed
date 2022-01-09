@@ -53,7 +53,6 @@ class MainApp(wx.App):
 
 def except_hook(etype, evalue, etrace):
     """Handler for all unhandled exceptions."""
-    sys.exit()
     text = "".join(traceback.format_exception(etype, evalue, etrace)).strip()
     log = "An unexpected error has occurred:\n\n%s"
     logger.error(log, text)
