@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    13.04.2020
+@modified    09.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import OrderedDict
@@ -184,10 +184,15 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         ColourManager.Manage(page, "BackgroundColour", "MainBgColour")
         notebook.AddPage(page, "Choose file")
         sizer = page.Sizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         dir_ctrl = self.dir_ctrl = wx.GenericDirCtrl(page,
             style=wx.DIRCTRL_SHOW_FILTERS, filter=data.wildcard(), defaultFilter=0)
+        text_name = self.text_file = wx.TextCtrl(page)
+        button_open = self.button_open = wx.Button(page, label="&Open")
+
         dir_ctrl.ShowHidden(True)
+        text_name.Disable()
         choice, tree = dir_ctrl.GetFilterListCtrl(), dir_ctrl.GetTreeCtrl()
         ColourManager.Manage(dir_ctrl, "ForegroundColour", wx.SYS_COLOUR_WINDOWTEXT)
         ColourManager.Manage(dir_ctrl, "BackgroundColour", wx.SYS_COLOUR_WINDOW)
@@ -196,9 +201,14 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         ColourManager.Manage(tree, "BackgroundColour", wx.SYS_COLOUR_WINDOW)
 
         page.Bind(wx.EVT_CHAR_HOOK, self.on_refresh_dir_ctrl)
-        dir_ctrl.Bind(wx.EVT_DIRCTRL_FILEACTIVATED, self.on_open_from_dir_ctrl)
+        dir_ctrl.Bind(wx.EVT_DIRCTRL_SELECTIONCHANGED, self.on_change_dir_ctrl)
+        dir_ctrl.Bind(wx.EVT_DIRCTRL_FILEACTIVATED,    self.on_open_from_dir_ctrl)
+        button_open.Bind(wx.EVT_BUTTON,                self.on_open_current_savefile)
 
-        sizer.Add(dir_ctrl, border=10, proportion=1, flag=wx.ALL | wx.GROW)
+        hsizer.Add(text_name, proportion=1, flag=wx.GROW)
+        hsizer.Add(button_open)
+        sizer.Add(dir_ctrl, border=10, proportion=1, flag=wx.ALL ^ wx.BOTTOM | wx.GROW)
+        sizer.Add(hsizer, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW)
 
         def after():
             choice.Size = (1, choice.BestSize[1]) # Can be set too high
@@ -647,9 +657,16 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.load_savefile_page(filename)
 
 
+    def on_change_dir_ctrl(self, event):
+        """Handler for selecting a file in dir list, refreshes file textbox."""
+        path = event.EventObject.GetPath()
+        self.text_file.Value = path if os.path.isfile(path) else ""
+
+
     def on_open_current_savefile(self, event=None):
         """Handler for clicking to open selected file from dir list."""
-        self.load_savefile_page(self.dir_ctrl.GetPath())
+        if os.path.isfile(self.dir_ctrl.GetPath()):
+            self.load_savefile_page(self.dir_ctrl.GetPath())
 
 
     def on_open_from_dir_ctrl(self, event):
