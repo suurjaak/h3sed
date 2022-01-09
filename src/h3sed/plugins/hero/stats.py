@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  12.04.2020
+@modified  09.01.2022
 ------------------------------------------------------------------------------
 """
 import logging
@@ -227,8 +227,8 @@ class StatsPlugin(object):
                 if v:
                     v = IDS.get(v)
                     if v is None:
-                        logger.warn("Unknown stats %s value: %s.", prop["name"],
-                                    self._state[prop["name"]])
+                        logger.warning("Unknown stats %s value: %s.", prop["name"],
+                                       self._state[prop["name"]])
                         continue # for prop
                     b = util.itoby(v, 4)[:4] + result[pos + 4:pos + 8]
                 else: b = data.Blank * 4

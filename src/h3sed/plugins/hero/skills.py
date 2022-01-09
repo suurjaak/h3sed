@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  12.04.2020
+@modified  09.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import OrderedDict
@@ -151,7 +151,7 @@ class SkillsPlugin(object):
             name, level = skill["name"], skill["level"]
             pos = IDS.get(name)
             if pos is None:
-                logger.warn("Unknown skill at slot #%s: %s.", slot + 1, name)
+                logger.warning("Unknown skill at slot #%s: %s.", slot + 1, name)
                 continue # for slot, skill
             count += 1
             levels[pos] = LEVELS[level]

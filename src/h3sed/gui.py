@@ -951,8 +951,8 @@ class SavefilePage(wx.Panel):
             try:
                 shutil.copy(filename2, backupname)
             except Exception as e:
-                logger.warn("Error saving backup of %s as %s.",
-                            filename2, backupname, exc_info=True)
+                logger.warning("Error saving backup of %s as %s.",
+                               filename2, backupname, exc_info=True)
         if success and rename:
             try:
                 shutil.copy(tempname, filename2)
@@ -970,7 +970,7 @@ class SavefilePage(wx.Panel):
 
         self.filename = self.savefile.filename = filename2
         try: self.savefile.read()
-        except Exception: logger.warn("Error re-reading %s.", filename2, exc_info=True)
+        except Exception: logger.warning("Error re-reading %s.", filename2, exc_info=True)
         self.update_fileinfo()
         if rename:
             evt = SavefilePageEvent(self.Id, source=self, rename=True,

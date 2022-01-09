@@ -371,8 +371,8 @@ class HeroPlugin(object):
                 pos += start + len(blob)
                 m = re.search(RGX, raw[pos:])
             if not vresult:
-                logger.warn("No heroes detected in %s as version '%s'.",
-                            self.savefile.filename, ver)
+                logger.warning("No heroes detected in %s as version '%s'.",
+                               self.savefile.filename, ver)
                 continue  # while versions
             logger.info("Detected %s heroes in %s as version '%s'.",
                         len(vresult), self.savefile.filename, ver)
@@ -428,7 +428,7 @@ class HeroPlugin(object):
         """
         p = next((x for x in self._plugins if x["name"] == name), None)
         if not p:
-            logger.warn("Call to render unknown plugin %s.", name)
+            logger.warning("Call to render unknown plugin %s.", name)
             return
 
         obj = obj0 = p.get("instance")
