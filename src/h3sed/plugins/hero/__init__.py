@@ -157,7 +157,7 @@ POS = {
 
 # Since savefile format is unknown, hero structs are identified heuristically,
 # by matching byte patterns.
-RGX_HERO = re.compile("""
+RGX_HERO = re.compile(b"""
     # There are at least 60 bytes more at front, but those can also include
     # hero biography, making length indeterminate.
     # Bio ends at position -32 from total movement point start.
@@ -352,7 +352,7 @@ class HeroPlugin(object):
         if detect_version and getattr(plugins, "version", None):
             versions = [x["name"] for x in plugins.version.PLUGINS]
         if not versions: versions = [self.savefile.version]
-        rgx_strip = re.compile(r"[\x00-\x19]")
+        rgx_strip = re.compile(br"[\x00-\x19]")
 
         while versions:
             ver = versions.pop()
@@ -362,18 +362,18 @@ class HeroPlugin(object):
 
             pos = 10000 # Hero structs are more to the end of the file
             m = re.search(RGX, raw[pos:])
-            while m and rgx_strip.sub("", m.group("name")):
+            while m and rgx_strip.sub(b"", m.group("name")):
                 start, end = m.span()
                 blob = bytearray(raw[pos + start:pos + end])
-                vresult.append(Hero(rgx_strip.sub("", m.group("name")), blob,
-                                    tuple(x + pos for x in m.span()),
+                vresult.append(Hero(util.to_unicode(rgx_strip.sub(b"", m.group("name"))),
+                                    blob, tuple(x + pos for x in m.span()),
                                     self.savefile))
                 pos += start + len(blob)
                 m = re.search(RGX, raw[pos:])
             if not vresult:
                 logger.warn("No heroes detected in %s as version '%s'.",
                             self.savefile.filename, ver)
-                continue # while
+                continue  # while versions
             logger.info("Detected %s heroes in %s as version '%s'.",
                         len(vresult), self.savefile.filename, ver)
 

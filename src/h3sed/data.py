@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    29.05.2020
+@modified    09.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -25,8 +25,8 @@ logger = logging.getLogger(__package__)
 
 
 """Blank value bytes."""
-Blank = "\xFF"
-Null  = "\x00"
+Blank = b"\xFF"
+Null  = b"\x00"
 
 
 """Hero primary attributes, in file order."""
@@ -973,7 +973,7 @@ class Savefile(object):
     def patch(self, bytes, span):
         """Patches unpacked contents with bytes from span[0] to span[1]."""
         if not span or not bytes: return
-        self.raw = self.raw[0:span[0]] + str(bytes) + self.raw[span[1]:]
+        self.raw = self.raw[0:span[0]] + bytes + self.raw[span[1]:]
         self.usize = len(self.raw)
 
 
@@ -1033,7 +1033,7 @@ class Store(object):
         result = None
 
         vv = [None, version] if version else [None] + list(Store.DATA.get(name, {}))
-        for v in sorted(set(vv)):
+        for v in sorted(set(vv), key=lambda x: x or ""):
             r = Store.DATA.get(name, {}).get(v, {}).get(category)
             if r is None: continue # for v
             if result is None: result = copy.deepcopy(r)

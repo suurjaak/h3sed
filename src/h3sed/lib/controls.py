@@ -17,11 +17,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.03.2020
+@modified    09.01.2022
 ------------------------------------------------------------------------------
 """
 import collections
 import os
+import webbrowser
 
 import wx
 import wx.html
@@ -29,6 +30,9 @@ import wx.lib.agw.labelbook
 import wx.lib.gizmos
 import wx.lib.wordwrap
 
+
+try: text_types = (str, unicode)        # Py2
+except Exception: text_types = (str, )  # Py3
 
 
 class AboutDialog(wx.Dialog):
@@ -91,7 +95,7 @@ class BusyPanel(wx.Window):
         self.Sizer.Add(label, border=15, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
         self.Fit()
 
-        maxsize = [self.Parent.Size.width / 2, self.Parent.Size.height * 2 / 3]
+        maxsize = [self.Parent.Size.width // 2, self.Parent.Size.height * 2 // 3]
         self.Size = tuple(min(a, b) for a, b in zip(self.Size, maxsize))
 
         self.Bind(wx.EVT_PAINT, lambda e: (e.Skip(), self.Refresh()))
@@ -215,7 +219,7 @@ class ColourManager(object):
     @classmethod
     def GetColour(cls, colour):
         return wx.Colour(getattr(cls.colourcontainer, colour)) \
-               if isinstance(colour, basestring) \
+               if isinstance(colour, text_types) \
                else wx.SystemSettings.GetColour(colour)
 
 

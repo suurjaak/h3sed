@@ -35,11 +35,9 @@ a terminal and run `python -m h3sed.main` in h3sed directory.
 Source Dependencies
 -------------------
 
-If running from source code, h3sed needs Python 2.7,
+If running from source code, h3sed needs Python 2.7 or Python 3,
 and the following 3rd-party Python packages:
 * wxPython 4.0+ (https://wxpython.org)
-
-Python 3 is yet unsupported.
 
 
 Attribution

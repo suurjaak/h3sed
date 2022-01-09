@@ -12,10 +12,13 @@ Released under the MIT License.
 @modified    09.01.2022
 ------------------------------------------------------------------------------
 """
-from ConfigParser import RawConfigParser
+try: from ConfigParser import RawConfigParser                 # Py2
+except ImportError: from configparser import RawConfigParser  # Py3
 import datetime
+import io
 import json
 import os
+import re
 import sys
 
 
@@ -136,17 +139,18 @@ MaxRecentFiles = 20
 def load():
     """Loads FileDirectives from ConfigFile into this module's attributes."""
     global Defaults
+
+    try: VARTYPES = (basestring, bool, int, long, list, tuple, dict, type(None))         # Py2
+    except Exception: VARTYPES = (bytes, str, bool, int, list, tuple, dict, type(None))  # Py3
+
     section = "*"
     module = sys.modules[__name__]
-    VARTYPES = (basestring, bool, int, long, list, tuple, dict, type(None))
     Defaults = {k: v for k, v in vars(module).items() if not k.startswith("_")
                 and isinstance(v, VARTYPES)}
 
     parser = RawConfigParser()
     parser.optionxform = str # Force case-sensitivity on names
     try:
-        parser.read(ConfigFile)
-
         def parse_value(name):
             try: # parser.get can throw an error if value not found
                 value_raw = parser.get(section, name)
@@ -157,6 +161,13 @@ def load():
             except ValueError:
                 value = value_raw
             return value, True
+
+        with open(ConfigFile, "r") as f:
+            txt = f.read()
+        try: txt = txt.decode()
+        except Exception: pass
+        if not re.search("\\[\\w+\\]", txt): txt = "[DEFAULT]\n" + txt
+        parser.readfp(io.StringIO(txt), ConfigFile)
 
         for name in FileDirectives:
             [setattr(module, name, v) for v, s in [parse_value(name)] if s]
@@ -174,7 +185,7 @@ def save():
     parser.optionxform = str # Force case-sensitivity on names
     parser.add_section(section)
     try:
-        f = open(ConfigFile, "wb")
+        f = open(ConfigFile, "w")
         f.write("# %s %s configuration written on %s.\n" % (Title, Version,
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         for name in FileDirectives:

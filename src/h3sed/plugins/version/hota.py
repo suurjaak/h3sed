@@ -261,7 +261,7 @@ POS = {
 
 # Since savefile format is unknown, hero structs are identified heuristically,
 # by matching byte patterns.
-RGX_HERO = re.compile("""
+RGX_HERO = re.compile(b"""
     .{4}                     #   4 bytes: movement points in total             000-003
     .{4}                     #   4 bytes: movement points remaining            004-007
     .{4}                     #   4 bytes: experience                           008-011

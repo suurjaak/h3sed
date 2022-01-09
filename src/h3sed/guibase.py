@@ -12,7 +12,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.03.2020
+@modified    09.01.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -76,7 +76,7 @@ class GUILogHandler(logging.Handler):
         if "\n" in text:
             text = text.replace("\n", "\n\t\t") # Indent linebreaks
             text = re.sub(r"^\s+$", "", text, flags=re.M) # Unindent whitespace-only lines
-        msg = "%s.%03d\t%s" % (now.strftime("%H:%M:%S"), now.microsecond / 1000, text)
+        msg = "%s.%03d\t%s" % (now.strftime("%H:%M:%S"), now.microsecond // 1000, text)
 
         window = wx.GetApp() and wx.GetApp().GetTopWindow()
         if window:
@@ -227,7 +227,7 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
             # form, and position it immediately under the main form, or
             # covering its bottom if no room.
             self.frame_console_shown = True
-            size = wx.Size(self.Size.width, max(200, self.Size.height / 3))
+            size = wx.Size(self.Size.width, max(200, self.Size.height // 3))
             self.frame_console.Size = size
             display = wx.GetDisplaySize()
             y = 0
@@ -240,7 +240,7 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
                 self.Position.x, self.Position.y + self.Size.height + y
             )
         if show: self.console.ScrollToLine(self.console.LineCount + 3 - (
-            self.console.Size.height / self.console.GetTextExtent(" ")[1]
+            self.console.Size.height // self.console.GetTextExtent(" ")[1]
         )) # Scroll to the last line
         self.frame_console.Show(show)
         if hasattr(self, "menu_console"): self.menu_console.Check(show)

@@ -41,8 +41,19 @@ ARGUMENTS = {
 }
 
 
+class MainApp(wx.App):
+
+    def InitLocale(self):
+        self.ResetLocale()
+        if "win32" == sys.platform:  # Avoid dialog buttons in native language
+            mylocale = wx.Locale(wx.LANGUAGE_ENGLISH_US, wx.LOCALE_LOAD_DEFAULT)
+            mylocale.AddCatalog("wxstd")
+            self._initial_locale = mylocale
+
+
 def except_hook(etype, evalue, etrace):
     """Handler for all unhandled exceptions."""
+    sys.exit()
     text = "".join(traceback.format_exception(etype, evalue, etrace)).strip()
     log = "An unexpected error has occurred:\n\n%s"
     logger.error(log, text)
@@ -73,12 +84,13 @@ def patch_gzip_for_partial():
     """
     Replaces gzip.GzipFile._read_eof with a no-op.
     This is useful when decompressing partial files, something that won't
-    work if GzipFile does it's checksum comparison.
+    work if GzipFile does its checksum comparison.
 
     @from https://stackoverflow.com/questions/1732709/unzipping-part-of-a-gz-file-using-python
     """
-    _read_eof = gzip.GzipFile._read_eof
-    gzip.GzipFile._read_eof = lambda *args, **kwargs: None
+    if hasattr(gzip.GzipFile, "_read_eof"):
+        _read_eof = gzip.GzipFile._read_eof
+        gzip.GzipFile._read_eof = lambda *args, **kwargs: None
 
 
 def run_gui(filename):
@@ -94,11 +106,7 @@ def run_gui(filename):
     sys.excepthook = except_hook
 
     # Create application main window
-    app = wx.App(redirect=True) # stdout and stderr redirected to wx popup
-
-    # Avoid dialog buttons in native language
-    mylocale = wx.Locale(wx.LANGUAGE_ENGLISH_US, wx.LOCALE_LOAD_DEFAULT)
-    mylocale.AddCatalog("wxstd")
+    app = MainApp(redirect=True) # stdout and stderr redirected to wx popup
 
     window = gui.MainWindow()
     app.SetTopWindow(window) # stdout/stderr popup closes with MainWindow

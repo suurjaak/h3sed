@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     12.04.2020
-@modified    14.04.2020
+@modified    09.01.2022
 ------------------------------------------------------------------------------
 """
 import setuptools
@@ -51,6 +51,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
     ],
 
     long_description="h3sed is a Heroes3 Savegame Editor, written in Python.",

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    16.11.2020
+@modified    09.01.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -25,6 +25,14 @@ import urllib
 import warnings
 
 
+try: int_types = (int, long)            # Py2
+except Exception: int_types = (int, )   # Py3
+try: text_types = (str, unicode)        # Py2
+except Exception: text_types = (str, )  # Py3
+try: string_type = unicode              # Py2
+except Exception: string_type = str     # Py3
+
+
 def m(o, name, case_insensitive=True):
     """Returns the members of the object or dict, filtered by name."""
     members = o.keys() if isinstance(o, dict) else dir(o)
@@ -34,10 +42,10 @@ def m(o, name, case_insensitive=True):
         return [i for i in members if name in i]
 
 
-def bytoi(bytes):
+def bytoi(blob):
     """Converts a string of bytes or a bytearray to unsigned integer."""
-    fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[len(bytes)]
-    return struct.unpack(fmt, str(bytes))[0]
+    fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[len(blob)]
+    return struct.unpack(fmt, blob)[0]
 
 
 def itoby(v, length):
@@ -128,7 +136,7 @@ def unique_path(pathname, suffix="%(ext)s_%(counter)s"):
     @param   suffix  string to append, formatted with variables counter, ext
     """
     result = pathname
-    if "linux2" == sys.platform and isinstance(result, unicode) \
+    if "linux2" == sys.platform and isinstance(result, string_type) \
     and "utf-8" != sys.getfilesystemencoding():
         result = result.encode("utf-8") # Linux has trouble if locale not UTF-8
     path, name = os.path.split(result)
@@ -158,7 +166,7 @@ def select_file(filepath):
     except Exception: start_file(os.path.split(filepath)[0])
 
 
-def add_unique(lst, item, direction=1, maxlen=sys.maxint):
+def add_unique(lst, item, direction=1, maxlen=sys.maxsize):
     """
     Adds the item to the list from start or end. If item is already in list,
     removes it first. If list is longer than maxlen, shortens it.
@@ -203,7 +211,7 @@ def get(collection, *path, **kwargs):
     if len(path) == 1 and isinstance(path[0], list): path = path[0]
     for p in path:
         if isinstance(result, collections.Sequence):  # Iterable with index
-            if isinstance(p, (int, long)) and p < len(result):
+            if isinstance(p, int_types) and p < len(result):
                 result = result[p]
             else:
                 result = default
@@ -219,18 +227,20 @@ def get(collection, *path, **kwargs):
 def to_unicode(value, encoding=None):
     """
     Returns the value as a Unicode string. Tries decoding as UTF-8 if
-    locale encoading fails.
+    locale encoding fails.
     """
     result = value
-    if not isinstance(value, unicode):
+    if not isinstance(value, string_type):
         encoding = encoding or locale.getpreferredencoding()
-        if isinstance(value, str):
+        if isinstance(value, bytes):
             try:
-                result = unicode(value, encoding)
+                result = string_type(value, encoding)
             except Exception:
-                result = unicode(value, "utf-8", errors="replace")
+                result = string_type(value, "utf-8", errors="replace")
         else:
-            result = unicode(str(value), errors="replace")
+            result = str(value)
+            if not isinstance(result, string_type):
+                result = string_type(result, errors="replace")
     return result
 
 
@@ -240,11 +250,11 @@ def longpath(path):
     try:
         buf = ctypes.create_unicode_buffer(65536)
         GetLongPathNameW = ctypes.windll.kernel32.GetLongPathNameW
-        if GetLongPathNameW(unicode(path), buf, 65536):
+        if GetLongPathNameW(string_type(path), buf, 65536):
             result = buf.value
         else:
             head, tail = os.path.split(path)
-            if GetLongPathNameW(unicode(head), buf, 65536):
+            if GetLongPathNameW(string_type(head), buf, 65536):
                 result = os.path.join(buf.value, tail)
     except Exception: pass
     return result
@@ -290,5 +300,6 @@ def win32_unicode_argv():
     if argc.value:
         # Remove Python executable and commands if present
         start = argc.value - len(sys.argv)
-        result = [argv[i].encode("utf-8") for i in range(start, argc.value)]
+        result = [argv[i] for i in range(start, argc.value)]
+        #result = [argv[i].encode("utf-8") for i in range(start, argc.value)]
     return result

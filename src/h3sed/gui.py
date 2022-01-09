@@ -463,7 +463,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             # Use parent/file.gm1 or C:/file.gm1
             subtitle = os.path.join(os.path.split(path)[-1] or path, file)
         elif not isinstance(page, SavefilePage) and len(self.files) == 1:
-            page = self.files.values()[0]["page"]
+            page = next(iter(self.files.values()))["page"]
 
         if isinstance(page, SavefilePage):
             self.menu_save_as.Enabled = self.menu_close.Enabled = True
@@ -562,7 +562,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Handler for clicking undo, invokes current page CommandProcessor."""
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
-            page = self.files.values()[0]["page"]
+            page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage): page.undoredo.Undo()
 
 
@@ -570,7 +570,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Handler for clicking redo, invokes current page CommandProcessor."""
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
-            page = self.files.values()[0]["page"]
+            page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage): page.undoredo.Redo()
 
 
@@ -598,7 +598,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Handler for clicking to save changes to the active file."""
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
-            page = self.files.values()[0]["page"]
+            page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage): page.save_file()
 
 
@@ -609,7 +609,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
-            page = self.files.values()[0]["page"]
+            page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage): page.save_file(rename=True)
 
 
@@ -619,7 +619,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
-            page = self.files.values()[0]["page"]
+            page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage):
             self.notebook.DeletePage(self.notebook.GetPageIndex(page))
 
@@ -630,7 +630,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
-            page = self.files.values()[0]["page"]
+            page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage): page.reload_file()
 
 
@@ -1132,7 +1132,7 @@ def build(plugin, panel):
                         sizer.Add(c0, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
                     elif "combo" == itemprop.get("type"):
                         choices = itemprop["choices"]
-                        if isinstance(choices, dict): choices = choices.values()
+                        if isinstance(choices, dict): choices = list(choices.values())
                         if prop.get("nullable") and "" not in choices: choices = [""] + choices
                         if v and v not in choices: choices = [v] + choices
                         c = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY, name="%s_%s" % (plugin.name, i))
@@ -1175,7 +1175,7 @@ def build(plugin, panel):
                     
             if prop.get("addable") and ("max" not in prop or len(state) < prop["max"]):
                 choices = prop.get("choices") or []
-                if isinstance(choices, dict): choices = choices.values()
+                if isinstance(choices, dict): choices = list(choices.values())
                 if prop.get("exclusive"):
                     choices = [x for x in choices if x not in values_present]
                 c1 = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
@@ -1219,7 +1219,7 @@ def build(plugin, panel):
             v = state[prop["name"]]
             choices = prop["choices"]
             if isinstance(choices, dict):
-                choices = choices.values()
+                choices = list(choices.values())
                 v = next((y for x, y in prop["choices"].items() if v == x), v)
             if prop.get("nullable") and "" not in choices: choices = [""] + choices
             if v and v not in choices: choices = [v] + choices
