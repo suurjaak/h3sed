@@ -543,19 +543,24 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def on_savefile_page_event(self, event):
         """Handler for notification from SavefilePage, updates UI."""
         idx = self.notebook.GetPageIndex(event.source)
-        ready, modified = (getattr(event, x, None) for x in ("ready", "modified"))
+        ready, modified, rename = (getattr(event, x, None) for x in ("ready", "modified", "rename"))
+        filename1, filename2 = (getattr(event, x, None) for x in ("filename1", "filename2"))
 
-        if ready: self.update_notebook_header()
+        if filename1 and filename2 and filename1 in self.files:
+            self.files[filename2] = self.files.pop(filename1)
+            self.files[filename2]["filename"] = filename2
 
-        if modified is not None:
+        if ready or rename: self.update_notebook_header()
+
+        if modified is not None or rename:
             suffix = "*" if modified else ""
-            title1 = self.files[event.source.filename].get("title") \
+            title1 = not rename and self.files[event.source.filename].get("title") \
                      or self.get_unique_tab_title(event.source.filename)
             self.files[event.source.filename]["title"] = title1
             title2 = title1 + suffix
             if self.notebook.GetPageText(idx) != title2:
                 self.notebook.SetPageText(idx, title2)
-            self.menu_save.Enabled = modified
+            self.menu_save.Enabled = bool(modified)
 
 
     def on_menu_undo(self, event=None):
@@ -971,7 +976,7 @@ class SavefilePage(wx.Panel):
                                     filename1=filename1, filename2=filename2)
         else:
             evt = SavefilePageEvent(self.Id, source=self, modified=False)
-        wx.PostEvent(self, evt)
+        wx.PostEvent(self.Parent, evt)
         guibase.status("Saved %s." % filename2, flash=True)
         return True
 
