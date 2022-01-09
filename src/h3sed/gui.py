@@ -187,8 +187,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         text_file = self.text_file = wx.TextCtrl(page)
-        button_browse = self.button_browse = wx.Button(page, label="&Browse")
         button_open   = self.button_open   = wx.Button(page, label="&Open")
+        button_browse = self.button_browse = wx.Button(page, label="&Browse")
         dir_ctrl = self.dir_ctrl = wx.GenericDirCtrl(page,
             style=wx.DIRCTRL_SHOW_FILTERS, filter=data.wildcard(), defaultFilter=0)
         dialog = self.dialog_browse = wx.FileDialog(
@@ -197,6 +197,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         )
 
         text_file.SetEditable(False)
+        button_open.SetDefault()
+        button_open.ToolTip = "Open currently selected file"
+        button_browse.ToolTip = "Open dialog for selecting a file"
         dir_ctrl.ShowHidden(True)
         choice, tree = dir_ctrl.GetFilterListCtrl(), dir_ctrl.GetTreeCtrl()
         ColourManager.Manage(dir_ctrl, "ForegroundColour", wx.SYS_COLOUR_WINDOWTEXT)
@@ -213,8 +216,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         button_open.Bind(wx.EVT_BUTTON,                self.on_open_current_savefile)
 
         hsizer.Add(text_file, border=5, proportion=1, flag=wx.BOTTOM | wx.GROW)
-        hsizer.Add(button_browse, border=5, flag=wx.BOTTOM | wx.LEFT)
         hsizer.Add(button_open,   border=5, flag=wx.BOTTOM | wx.LEFT)
+        hsizer.Add(button_browse, border=5, flag=wx.BOTTOM | wx.LEFT)
         sizer.Add(hsizer, border=10, flag=wx.ALL ^ wx.BOTTOM | wx.GROW)
         sizer.Add(dir_ctrl, border=10, proportion=1, flag=wx.ALL ^ wx.TOP | wx.GROW)
 
