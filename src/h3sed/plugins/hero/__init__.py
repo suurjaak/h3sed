@@ -68,7 +68,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  12.04.2020
+@modified  09.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
@@ -178,7 +178,7 @@ RGX_HERO = re.compile("""
     .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
 
                              #  13 bytes: hero name, null-padded               138-150
-    (?P<name>[^\x00-\x20].{12})
+    (?P<name>[^\x00-\x20,\xF0-\xFF].{12})
     [\x00-\x03]{28}          #  28 bytes: skill levels                         151-178
     [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
     .{4}                     #   4 bytes: primary stats                        207-210
@@ -348,7 +348,7 @@ class HeroPlugin(object):
         result, raw = [], self.savefile.raw
 
         ver0 = self.savefile.version
-        versions = []
+        versions, version_results = [], {}
         if detect_version and getattr(plugins, "version", None):
             versions = [x["name"] for x in plugins.version.PLUGINS]
         if not versions: versions = [self.savefile.version]
@@ -358,28 +358,33 @@ class HeroPlugin(object):
             ver = versions.pop()
             self.savefile.version = ver
             RGX = plugins.adapt(self, "regex", RGX_HERO)
+            vresult = version_results.setdefault(ver, [])
 
             pos = 10000 # Hero structs are more to the end of the file
             m = re.search(RGX, raw[pos:])
             while m and rgx_strip.sub("", m.group("name")):
                 start, end = m.span()
-                bytes = bytearray(raw[pos + start:pos + end])
-                result.append(Hero(rgx_strip.sub("", m.group("name")), bytes,
-                                   tuple(x + pos for x in m.span()),
-                                   self.savefile))
-                pos += start + len(bytes)
+                blob = bytearray(raw[pos + start:pos + end])
+                vresult.append(Hero(rgx_strip.sub("", m.group("name")), blob,
+                                    tuple(x + pos for x in m.span()),
+                                    self.savefile))
+                pos += start + len(blob)
                 m = re.search(RGX, raw[pos:])
-            if not result:
+            if not vresult:
                 logger.warn("No heroes detected in %s as version '%s'.",
                             self.savefile.filename, ver)
                 continue # while
             logger.info("Detected %s heroes in %s as version '%s'.",
-                        len(result), self.savefile.filename, ver)
+                        len(vresult), self.savefile.filename, ver)
 
-            result.sort(key=lambda x: x.name.lower())
+        vcounts = {k: len(v) for k, v in version_results.items() if v}
+        ver = sorted(vcounts.items(), key=lambda x: x[1])[-1][0] if vcounts else None
+        if ver:
             self.savefile.version = ver
-            break # while
-        if not result:
+            result = sorted(version_results[ver], key=lambda x: x.name.lower())
+            logger.info("Interpreting %s as version '%s' with %s heroes.",
+                        self.savefile.filename, ver, len(result))
+        else:
             self.savefile.version = ver0
             wx.CallAfter(guibase.status, "No heroes identified in %s.",
                          self.savefile.filename, flash=True)
