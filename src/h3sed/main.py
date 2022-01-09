@@ -8,7 +8,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.03.2020
+@modified    09.01.2022
 ------------------------------------------------------------------------------
 """
 import argparse
@@ -95,6 +95,11 @@ def run_gui(filename):
 
     # Create application main window
     app = wx.App(redirect=True) # stdout and stderr redirected to wx popup
+
+    # Avoid dialog buttons in native language
+    mylocale = wx.Locale(wx.LANGUAGE_ENGLISH_US, wx.LOCALE_LOAD_DEFAULT)
+    mylocale.AddCatalog("wxstd")
+
     window = gui.MainWindow()
     app.SetTopWindow(window) # stdout/stderr popup closes with MainWindow
 
