@@ -240,9 +240,9 @@ class ColourManager(object):
     @classmethod
     def UpdateControls(cls):
         """Updates all managed controls."""
-        for ctrl, props in cls.ctrls.items():
+        for ctrl, props in list(cls.ctrls.items()):
             if not ctrl: # Component destroyed
-                cls.ctrls.pop(ctrl)
+                cls.ctrls.pop(ctrl, None)
                 continue # for ctrl, props
 
             for prop, colour in props.items():
