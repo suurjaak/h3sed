@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  09.01.2022
+@modified  10.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import OrderedDict
@@ -100,14 +100,14 @@ class ArmyPlugin(object):
         """Loads hero to plugin."""
         self._hero = hero
         self._state[:] = []
-        if panel: self._panel, self._ctrls = panel, []
+        if panel: self._panel = panel
         if hero:
             self.parse(hero.bytes)
             hero.army = self._state
 
 
     def render(self):
-        """Updates controls from state, using existing if already built."""
+        """Populates controls from state, using existing if already built."""
         if self._ctrls and all(all(x.values()) for x in self._ctrls):
             ver = self._hero.savefile.version
             cc = [""] + sorted(data.Store.get("creatures", version=ver))
@@ -125,7 +125,7 @@ class ArmyPlugin(object):
                     if value is not None: ctrl.Value = value
         else:
             self._ctrls = gui.build(self, self._panel)[0]
-            # Disable count controls where no creature type selected
+            # Hide count controls where no creature type selected
             for i, row in enumerate(self._state):
                 creature = None
                 for prop in UIPROPS[0]["item"]:

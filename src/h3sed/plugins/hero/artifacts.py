@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  09.01.2022
+@modified  10.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -169,24 +169,26 @@ class ArtifactsPlugin(object):
         """Loads hero to plugin."""
         self._hero = hero
         self._state.clear()
-        if panel: self._panel, self._ctrls = panel, []
+        if panel: self._panel = panel
         if hero:
             self.parse(hero.bytes)
             hero.artifacts = self._state
 
 
     def render(self):
-        """Updates controls from state, using existing if already built."""
+        """Populates controls from state, using existing if already built."""
         ver = self._hero.savefile.version
-        for prop in UIPROPS if self._ctrls and all(self._ctrls.values()) else ():
-            name, slot = prop["name"], prop.get("slot", prop["name"])
-            cc = [""] + sorted(data.Store.get("artifacts", version=ver, category=slot))
+        if self._ctrls and all(self._ctrls.values()):
+            for prop in UIPROPS:
+                name, slot = prop["name"], prop.get("slot", prop["name"])
+                cc = [""] + sorted(data.Store.get("artifacts", version=ver, category=slot))
 
-            ctrl, value, choices = self._ctrls[name], self._state.get(name), cc
-            if value and value not in choices: choices = [value] + cc
-            ctrl.SetItems(choices)
-            if value: ctrl.Value = value
-        if not self._ctrls: self._ctrls = gui.build(self, self._panel)
+                ctrl, value, choices = self._ctrls[name], self._state.get(name), cc
+                if value and value not in choices: choices = [value] + cc
+                if choices != ctrl.GetItems(): ctrl.SetItems(choices)
+                ctrl.Value = value or ""
+        else:
+            self._ctrls = gui.build(self, self._panel)
         self.update_slots()
 
 

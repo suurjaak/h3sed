@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  09.01.2022
+@modified  10.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import OrderedDict
@@ -94,24 +94,19 @@ class InventoryPlugin(object):
         """Loads hero to plugin."""
         self._hero = hero
         self._state[:] = []
-        if panel: self._panel, self._ctrls = panel, []
+        if panel: self._panel = panel
         if hero:
             self.parse(hero.bytes)
             hero.inventory = self._state
 
 
     def render(self):
-        """Updates controls from state, using existing if already built."""
-        if self._ctrls:
-            ver = self._hero.savefile.version
-            cc = [""] + sorted(data.Store.get("artifacts", version=ver, category="inventory"))
-        for prop in UIPROPS if self._ctrls and all(self._ctrls) else ():
-            for i, prop in enumerate(UIPROPS):
-                ctrl, value, choices = self._ctrls[i], self._state[i], cc
-                if value and value not in choices: choices = [value] + cc
-                ctrl.SetItems(choices)
-                if value: ctrl.Value = value
-        if not self._ctrls: self._ctrls = gui.build(self, self._panel)[0]
+        """Populates controls from state, using existing if already built."""
+        if self._ctrls and all(self._ctrls):
+            for i, value in enumerate(self._state):
+                self._ctrls[i].Value = value or ""
+        else:
+            self._ctrls = gui.build(self, self._panel)[0]
 
 
     def parse(self, bytes):
