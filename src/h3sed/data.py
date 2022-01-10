@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    09.01.2022
+@modified    10.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -787,9 +787,9 @@ ArtifactSlots = {
     "Endless Purse of Gold":             ["side"],
     "Endless Sack of Gold":              ["side"],
     "Equestrian's Gloves":               ["hand"],
-    "Everflowing Crystal Cloak":         ["side"],
+    "Everflowing Crystal Cloak":         ["cloak"],
     "Everpouring Vial of Mercury":       ["side"],
-    "Eversmoking Ring of Sulfur":        ["side"],
+    "Eversmoking Ring of Sulfur":        ["hand"],
     "Garniture of Interference":         ["neck"],
     "Glyph of Gallantry":                ["side"],
     "Golden Bow":                        ["side"],
