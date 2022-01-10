@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    09.01.2022
+@modified    10.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import OrderedDict
@@ -1008,6 +1008,7 @@ class SavefilePage(wx.Panel):
         else:
             evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
+        self.button_save.Enable(False)
         guibase.status("Saved %s." % filename2, flash=True)
         return True
 
