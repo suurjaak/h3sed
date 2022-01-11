@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  12.04.2020
+@modified  11.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import OrderedDict
@@ -153,6 +153,7 @@ ArtifactStats = {
 
 """Spells that artifacts make available to hero."""
 ArtifactSpells = {
+    "Admiral's Hat":                     ["Scuttle Boat", "Summon Boat"],
     "Armageddon's Blade":                ["Armageddon"],
     "Titan's Thunder":                   ["Titan's Lightning Bolt"],
 }

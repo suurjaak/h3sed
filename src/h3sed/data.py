@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    12.01.2022
+@modified    11.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -161,10 +161,10 @@ Artifacts = [
     "Thunder Helmet",
     "Titan's Cuirass",
     "Titan's Gladius",
-    "Tome of Earth Magic",
-    "Tome of Fire Magic",
-    "Tome of Water Magic",
-    "Tome of Wind Magic",
+    "Tome of Air",
+    "Tome of Earth",
+    "Tome of Fire",
+    "Tome of Water",
     "Torso of Legion",
     "Tunic of the Cyclops King",
     "Vampire's Cowl",
@@ -500,10 +500,10 @@ IDs = {
     "Thunder Helmet":                    0x18,
     "Titan's Cuirass":                   0x1E,
     "Titan's Gladius":                   0x0C,
-    "Tome of Earth Magic":               0x59,
-    "Tome of Fire Magic":                0x56,
-    "Tome of Water Magic":               0x58,
-    "Tome of Wind Magic":                0x57,
+    "Tome of Air":                       0x57,
+    "Tome of Earth":                     0x59,
+    "Tome of Fire":                      0x56,
+    "Tome of Water":                     0x58,
     "Torso of Legion":                   0x78,
     "Tunic of the Cyclops King":         0x1C,
     "Vampire's Cowl":                    0x37,
@@ -860,10 +860,10 @@ ArtifactSlots = {
     "Thunder Helmet":                    ["helm"],
     "Titan's Cuirass":                   ["armor"],
     "Titan's Gladius":                   ["weapon"],
-    "Tome of Earth Magic":               ["side"],
-    "Tome of Fire Magic":                ["side"],
-    "Tome of Water Magic":               ["side"],
-    "Tome of Wind Magic":                ["side"],
+    "Tome of Air":                       ["side"],
+    "Tome of Earth":                     ["side"],
+    "Tome of Fire":                      ["side"],
+    "Tome of Water":                     ["side"],
     "Torso of Legion":                   ["side"],
     "Tunic of the Cyclops King":         ["armor"],
     "Vampire's Cowl":                    ["cloak"],
@@ -878,6 +878,32 @@ ArtifactSpells = {
                                           "Summon Earth Elemental",
                                           "Summon Fire Elemental",
                                           "Summon Water Elemental"],
+
+    "Tome of Air":                       ["Air Shield", "Chain Lightning", "Counterstrike",
+                                          "Destroy Undead", "Dimension Door", "Disguise",
+                                          "Disrupting Ray", "Fly", "Fortune", "Haste",
+                                          "Hypnotize", "Lightning Bolt", "Magic Arrow",
+                                          "Magic Mirror", "Precision", "Protection from Air",
+                                          "Summon Air Elemental", "View Air", "Visions"],
+
+    "Tome of Earth":                     ["Animate Dead", "Anti-Magic", "Death Ripple",
+                                          "Earthquake", "Force Field", "Implosion",
+                                          "Magic Arrow", "Meteor Shower", "Protection from Earth",
+                                          "Quicksand", "Resurrection", "Shield", "Slow",
+                                          "Sorrow", "Stone Skin", "Summon Earth Elemental",
+                                          "Town Portal", "View Earth", "Visions"],
+
+    "Tome of Fire":                      ["Armageddon", "Berserk", "Blind", "Bloodlust",
+                                          "Curse", "Fire Shield", "Fire Wall", "Fireball",
+                                          "Frenzy", "Inferno", "Land Mine", "Magic Arrow",
+                                          "Misfortune", "Protection from Fire", "Sacrifice",
+                                          "Slayer", "Summon Fire Elemental", "Visions"],
+
+    "Tome of Water":                     ["Bless", "Clone", "Cure", "Dispel", "Forgetfulness",
+                                          "Frost Ring", "Ice Bolt", "Magic Arrow", "Mirth",
+                                          "Prayer", "Protection from Water", "Remove Obstacle",
+                                          "Scuttle Boat", "Summon Boat", "Summon Water Elemental",
+                                          "Teleport", "Visions", "Water Walk", "Weakness"],
 }
 
 
