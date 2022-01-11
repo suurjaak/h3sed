@@ -5,8 +5,7 @@ Hero plugin, parses savefile for heroes.
 All hero specifics are handled by subplugins in file directory, auto-loaded.
 
 If version-plugin is available, tries to parse file as the latest version,
-working backwards to earliest until some heroes are successfully parsed.
-
+working backwards to earliest, chooses version which yields more heroes.
 
 
 Subplugin modules are expected to have the following API (all methods optional):
@@ -251,6 +250,7 @@ class HeroPlugin(object):
         self._tabs     = []    # [{name, }]
         self._ctrls    = {}    # {name: wx.Control, }
         self._hero     = None  # Currently selected Hero instance
+        self._pending  = None  # Hero selected but not yet loaded
         self.parse(detect_version=True)
         panel.Bind(gui.EVT_PLUGIN, self.on_plugin_event)
 
@@ -321,7 +321,7 @@ class HeroPlugin(object):
     def on_select_hero(self, event):
         """Handler for selecting a hero, populates tabs with hero data."""
         name = event.EventObject.Value
-        if self._hero and name == self._hero.name: return
+        if self._pending or (self._hero and name == self._hero.name): return
         hero2 = next((x for x in self._heroes if name == x.name), None)
         if not hero2:
             wx.MessageBox("Hero '%s' not found." % name,
@@ -338,9 +338,11 @@ class HeroPlugin(object):
                 self._hero = hero2
                 for p in self._plugins: self.render_plugin(p["name"], reload=True)
             finally:
+                self._pending = None
                 self._panel.Thaw()
                 busy.Close()
             return True
+        self._pending = hero2
         if self._hero: wx.CallAfter(self.command, do, "select hero: %s" % hero2.name)
         else: wx.CallAfter(do)
 
