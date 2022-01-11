@@ -68,7 +68,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  09.01.2022
+@modified  11.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
@@ -86,6 +86,7 @@ from h3sed import gui
 from h3sed import guibase
 from h3sed import images
 from h3sed import plugins
+from h3sed.lib import controls
 from h3sed.lib import util
 from h3sed.lib import wx_accel
 
@@ -328,13 +329,20 @@ class HeroPlugin(object):
             return
 
         def do():
-            if self._hero: self.patch()
-            logger.info("Loading hero %s.", name)
-            self._hero = hero2
-            for p in self._plugins: self.render_plugin(p["name"], reload=True)
+            if not self._panel: return
+            busy = controls.BusyPanel(self._panel, 'Loading %s.' % hero2.name)
+            self._panel.Freeze()
+            try:
+                if self._hero: self.patch()
+                logger.info("Loading hero %s.", name)
+                self._hero = hero2
+                for p in self._plugins: self.render_plugin(p["name"], reload=True)
+            finally:
+                self._panel.Thaw()
+                busy.Close()
             return True
-        if self._hero: self.command(do, "select hero: %s" % hero2.name)
-        else: do()
+        if self._hero: wx.CallAfter(self.command, do, "select hero: %s" % hero2.name)
+        else: wx.CallAfter(do)
 
 
     def parse(self, detect_version=False):
