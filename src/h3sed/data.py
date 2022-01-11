@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    10.01.2022
+@modified    12.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -979,7 +979,7 @@ class Savefile(object):
 
     def read(self):
         """Reads in file contents and attributes."""
-        with gzip.GzipFile(self.filename, "rb") as f: self.raw = f.read()
+        with gzip.GzipFile(self.filename, "rb") as f: self.raw = bytearray(f.read())
         self.raw0 = self.raw
         self.update_info()
         logger.info("Opened %s (%s, unzipped %s).", self.filename,
@@ -989,7 +989,7 @@ class Savefile(object):
     def write(self, filename=None):
         """Writes out gzipped file."""
         filename = filename or self.filename
-        with gzip.GzipFile(filename, "wb") as f: f.write(self.raw)
+        with gzip.GzipFile(filename, "wb") as f: f.write(bytes(self.raw))
         self.raw0 = self.raw
         self.update_info(filename)
         logger.info("Saved %s (%s, unzipped %s).", filename,

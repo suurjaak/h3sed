@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  10.01.2022
+@modified  11.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import OrderedDict
@@ -185,7 +185,7 @@ class ArmyPlugin(object):
                     b1 = bytes0[MYPOS["army_types"]  + i * 4:MYPOS["army_types"]  + i * 4 + 4]
                     b2 = bytes0[MYPOS["army_counts"] + i * 4:MYPOS["army_counts"] + i * 4 + 4]
                 else:
-                    b1, b2 = data.Blank * 4, util.itoby(0, 4)
+                    b1, b2 = data.Blank * 4, data.Null * 4
                     if count and name in IDS:
                         b1 = util.itoby(IDS[name], 4)
                         b2 = util.itoby(count,     4)

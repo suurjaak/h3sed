@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    09.01.2022
+@modified    11.01.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -50,10 +50,10 @@ def bytoi(blob):
 
 def itoby(v, length):
     """
-    Converts an unsigned integer to a string of bytes of specified length.
+    Converts an unsigned integer to a bytearray of specified length.
     """
     fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[length]
-    return struct.pack(fmt, v)
+    return bytearray(struct.pack(fmt, v))
 
 
 def safe_filename(filename):
