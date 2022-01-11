@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    09.01.2022
+@modified    11.01.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -36,10 +36,9 @@ from h3sed import conf
 Savefile editor for Heroes of Might and Magic III.<br />
 Released as free open source software under the MIT License.<br /><br />
 
-<b>Warning:</b> this program was written mainly for personal use,
-based on savefile information gathered from observation and online forums.
-Since Heroes3 savefile format is not publicly known, 
+<b>Warning:</b> as Heroes3 savefile format is not publicly known, 
 loaded data and saved results may be invalid and cause problems in game.
+This program is based on unofficial information gathered from observation and online forums.
 <br /><br />
 Always choose the correct game version. 
 A wrong choice will result in file data being misinterpreted, 
@@ -63,13 +62,7 @@ Installer and binary executable created with:
 <ul>
   <li>Nullsoft Scriptable Install System, <a href="https://nsis.sourceforge.net/"><font color="{{ conf.LinkColour }}">nsis.sourceforge.net</font></a></li>
   <li>PyInstaller, <a href="https://www.pyinstaller.org"><font color="{{ conf.LinkColour }}">pyinstaller.org</font></a></li>
-</ul><br /><br />
-%endif
-
-%if getattr(sys, 'frozen', False):
-<br /><br />
-Installer created with Nullsoft Scriptable Install System,
-<a href="http://nsis.sourceforge.net/"><font color="{{ conf.LinkColour }}">nsis.sourceforge.net</font></a>
+</ul>
 %endif
 
 </font>

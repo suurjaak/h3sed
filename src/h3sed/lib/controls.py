@@ -17,7 +17,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    09.01.2022
+@modified    11.01.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -55,7 +55,10 @@ class AboutDialog(wx.Dialog):
         self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChange)
 
         self.Layout()
-        self.Size = (self.Size[0], html.VirtualSize[1] + 65)
+        FRAMEH = 2 * wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_Y, self) + \
+                 wx.SystemSettings.GetMetric(wx.SYS_CAPTION_Y, self)
+        height = FRAMEH + html.VirtualSize[1] + sizer_buttons.Size[1] + 2*8
+        self.Size = self.MinSize = (self.Size[0], height)
         self.CenterOnParent()
 
 
