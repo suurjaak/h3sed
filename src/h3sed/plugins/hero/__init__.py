@@ -318,11 +318,12 @@ class HeroPlugin(object):
             self.render_plugin(event.name)
 
 
-    def on_select_hero(self, event):
+    def on_select_hero(self, event=None, name=None):
         """Handler for selecting a hero, populates tabs with hero data."""
-        name = event.EventObject.Value
-        if self._pending or (self._hero and name == self._hero.name): return
-        hero2 = next((x for x in self._heroes if name == x.name), None)
+        if self._pending: return
+        name, index = event.EventObject.Value, event.EventObject.Selection
+        hero2 = self._heroes[index] if index < len(self._heroes) else None
+        if self._hero and hero2 is self._hero: return
         if not hero2:
             wx.MessageBox("Hero '%s' not found." % name,
                           conf.Title, wx.OK | wx.ICON_ERROR)
