@@ -281,6 +281,8 @@ class HeroPlugin(object):
         wx_accel.accelerate(self._panel)
         for p in self._plugins if self._hero else ():
             self.render_plugin(p["name"])
+        if self._heroes:
+            wx.CallAfter(lambda: self and (combo.SetSelection(0), self.on_select_hero(index=0)))
 
 
     def command(self, callable, name=None):
@@ -318,12 +320,13 @@ class HeroPlugin(object):
             self.render_plugin(event.name)
 
 
-    def on_select_hero(self, event=None, name=None):
+    def on_select_hero(self, event=None, index=None):
         """Handler for selecting a hero, populates tabs with hero data."""
         if self._pending: return
-        name, index = event.EventObject.Value, event.EventObject.Selection
+        if event: index = event.EventObject.Selection
         hero2 = self._heroes[index] if index < len(self._heroes) else None
         if self._hero and hero2 is self._hero: return
+        name = hero2.name if hero2 else event.EventObject.Value if event else None
         if not hero2:
             wx.MessageBox("Hero '%s' not found." % name,
                           conf.Title, wx.OK | wx.ICON_ERROR)
