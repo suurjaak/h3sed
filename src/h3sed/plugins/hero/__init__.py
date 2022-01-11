@@ -183,8 +183,8 @@ RGX_HERO = re.compile(b"""
     [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
     .{4}                     #   4 bytes: primary stats                        207-210
 
-    [\x00-\x01]{70}          #  70 bytes: spells available                     211-280
-    [\x00-\x01]{70}          #  70 bytes: spells in book                       281-350
+    [\x00-\x01]{70}          #  70 bytes: spells in book                       211-280
+    [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
 
                              # 152 bytes: 19 8-byte equipments worn            351-502
                              # Blank spots:   FF FF FF FF 00 00 00 00
