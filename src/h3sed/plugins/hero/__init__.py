@@ -67,7 +67,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  11.01.2022
+@modified  12.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
@@ -281,7 +281,7 @@ class HeroPlugin(object):
         wx_accel.accelerate(self._panel)
         for p in self._plugins if self._hero else ():
             self.render_plugin(p["name"])
-        if self._heroes:
+        if conf.Populate and self._heroes:
             wx.CallAfter(lambda: self and (combo.SetSelection(0), self.on_select_hero(index=0)))
 
 
