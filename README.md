@@ -18,7 +18,22 @@ Supports savegames from Shadow of Death and Horn of the Abyss.
 
 Automatically creates a timestamped backup copy of the savegame file.
 
-Binary downloads at http://suurjaak.github.io/h3sed.
+Downloads at http://suurjaak.github.io/h3sed.
+
+
+Usage
+-----
+
+Navigate the file view to Heroes3 games-folder, and open a savegame file to edit.
+
+**Warning:** as Heroes3 savefile format is not publicly known,
+loaded data and saved results may be invalid and cause problems in game.
+This program is based on unofficial information
+gathered from observation and online forums.
+
+Always choose the correct game version. A wrong choice will result
+in file data being misinterpreted, and saving later version items
+or creatures to an earlier version savefile may cause the game to crash.
 
 
 Installation
@@ -38,7 +53,7 @@ elsewhere, same goes for the source code.
 
 If running from pip installation, run `h3sed` from the command-line. 
 If running straight from source code, open a terminal to `h3sed/src`
-and run `python -m h3sed.main`.
+and run `python -m h3sed`.
 
 
 Source Dependencies

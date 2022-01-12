@@ -21,6 +21,21 @@ Automatically creates a timestamped backup copy of the savegame file.
 Downloads at http://suurjaak.github.io/h3sed.
 
 
+Usage
+-----
+
+Navigate the file view to Heroes3 games-folder, and open a savegame file to edit.
+
+**Warning:** as Heroes3 savefile format is not publicly known,
+loaded data and saved results may be invalid and cause problems in game.
+This program is based on unofficial information
+gathered from observation and online forums.
+
+Always choose the correct game version. A wrong choice will result
+in file data being misinterpreted, and saving later version items
+or creatures to an earlier version savefile may cause the game to crash.
+
+
 Attribution
 -----------
 
