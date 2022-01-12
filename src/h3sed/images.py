@@ -6,7 +6,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     21.03.2020
-@modified    12.04.2020
+@modified    12.01.2022
 ------------------------------------------------------------------------------
 """
 try:
@@ -228,4 +228,18 @@ PageHero = PyEmbeddedImage(
     "XYKkBAuFu90oQkhD9jyEorfdT5k4nuTE8bQ5HWzdXMzosYms2VwHQDBg8LVMGZeC4fdSWlHD"
     "pZYBTB6p82WZBKkGZ4CQBWx6Kw6Hs5nuTkHr9Vs+YA7oeNVwzv3Zfce94KMVNwQcGng7FI7a"
     "jJC8Rtzlq0SqIAK3DQHxn7NH4UawMfL+f/n60Y8HD/8CJkMWqBywNrcAAAAASUVORK5CYII="
+)
+
+
+"""Toolbar icon for refresh button."""
+ToolbarRefresh = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAABnUlEQVQ4y9XUPWtUQRTG8d/c"
+    "rGuljeJLIwmYtTeKinZ2YuHdBUmnYCUWhuRjKDZaxiaVKO4mEPIBFFGxymKxIQiCaJqAik0I"
+    "ZsciN5u7d2/WlHq6M+fMf+Y88zD86xGGVp+pqJrAOEbwWdV7122AlpOia+qeDgfOq+qawZTg"
+    "WKH6SzSLWUELidT43sCXjgqWBOf3OeUnqdM7SdJXWnJAYrEHi9q4hZpoDHW8HUav9GUbZgQX"
+    "MticTXdM+p2Tois6MQyY5JpHBFMZbHkAtr2+gLECI5bfsOuc4Him7KMB2HbcxJEC7mc5MKjl"
+    "mt6UzpNaxSpoOpTpS0uU6hQ1/CC6mwHX9uHgU3icZZMUgamOlqrosOCsZm/j+s7phVEv90wX"
+    "rZS/MguC0cLGd7jUt/bCQcF0Vv9qzXK5D2PB6FFHUB+AVczhTLbywL3dl678RakfuKKpLahk"
+    "Y07nYK8lnuxt7H5vBcFFPO/dO/R1vBLd0LBVbuzdxo+imuhh0WNZfMF9m65q+D78+2q6LVrU"
+    "sJ77dSYwii3Bim/aec3+v/gDVpZ0g1sFQpUAAAAASUVORK5CYII="
 )

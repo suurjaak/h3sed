@@ -10,7 +10,6 @@ Released under the MIT License.
 @modified    12.01.2022
 ------------------------------------------------------------------------------
 """
-from collections import OrderedDict
 import datetime
 import functools
 import logging
@@ -101,8 +100,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.page_log.is_hidden = True
 
         sizer = panel.Sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(notebook, proportion=1, flag=wx.GROW | wx.RIGHT | wx.BOTTOM)
+        sizer.Add(notebook, proportion=1, flag=wx.GROW)
         self.create_menu()
+        self.create_toolbar()
 
         # Memory file system for showing images in wx.HtmlWindow
         self.memoryfs = {"files": {}, "handler": wx.MemoryFSHandler()}
@@ -317,11 +317,42 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_menu_backup,      menu_backup)
         self.Bind(wx.EVT_MENU, self.on_menu_confirm,     menu_confirm)
         self.Bind(wx.EVT_MENU, self.on_exit,             menu_exit)
-        self.Bind(wx.EVT_MENU, self.on_menu_undo,        menu_undo)
-        self.Bind(wx.EVT_MENU, self.on_menu_redo,        menu_redo)
+        self.Bind(wx.EVT_MENU, self.on_undo_savefile,    menu_undo)
+        self.Bind(wx.EVT_MENU, self.on_redo_savefile,    menu_redo)
         self.Bind(wx.EVT_MENU, self.on_showhide_log,     menu_log)
         self.Bind(wx.EVT_MENU, self.on_toggle_console,   menu_console)
         self.Bind(wx.EVT_MENU, self.on_about,            menu_about)
+
+
+    def create_toolbar(self):
+        """Creates the program toolbar."""
+        TOOLS = [(wx.ID_OPEN,    wx.ART_FILE_OPEN,    self.on_open_savefile),
+                 (wx.ID_SAVE,    wx.ART_FILE_SAVE,    self.on_save_savefile),
+                 (wx.ID_SAVEAS,  wx.ART_FILE_SAVE_AS, self.on_save_savefile_as),
+                 (),
+                 (wx.ID_UNDO,    wx.ART_UNDO,         self.on_undo_savefile),
+                 (wx.ID_REDO,    wx.ART_REDO,         self.on_redo_savefile),
+                 (),
+                 (wx.ID_REFRESH, "ToolbarRefresh",    self.on_reload_savefile)]
+        TOOL_HELPS = {wx.ID_OPEN:    "Choose a savefile to open",                   
+                      wx.ID_SAVE:    "Save changes to the active file",             
+                      wx.ID_SAVEAS:  "Save the active file under a new name",       
+                      wx.ID_UNDO:    "Undo the last action",                        
+                      wx.ID_REDO:    "Redo the previously undone action",           
+                      wx.ID_REFRESH: "Reload savefile, losing any current changes"}
+        tb = self.CreateToolBar(wx.TB_FLAT | wx.TB_NODIVIDER)
+        tb.SetToolBitmapSize((16, 16))
+        for tool in TOOLS:
+            if not tool: tb.AddSeparator()
+            if not tool: continue  # for tool
+            toolid, art, handler = tool
+            bmp = getattr(images, art).Bitmap if isinstance(art, str) and hasattr(images, art) else \
+                  wx.ArtProvider.GetBitmap(art, wx.ART_TOOLBAR, (16, 16))
+            tb.AddTool(toolid, "", bmp, shortHelp=TOOL_HELPS[toolid])
+            tb.EnableTool(toolid, False)
+            tb.Bind(wx.EVT_TOOL, handler, id=toolid)
+        tb.EnableTool(wx.ID_OPEN, True)
+        tb.Realize()
 
 
     def load_fs_images(self):
@@ -460,6 +491,20 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.notebook.SetAGWWindowStyleFlag(style)
 
 
+    def update_toolbar(self, page):
+        """Updates program toolbar for given page."""
+        for i in range(self.ToolBar.ToolsCount):
+            self.ToolBar.EnableTool(self.ToolBar.GetToolByPos(i).Id, False)
+        self.ToolBar.EnableTool(wx.ID_OPEN, True)
+        if isinstance(page, SavefilePage):
+            self.ToolBar.EnableTool(wx.ID_SAVE,    page.get_unsaved())
+            self.ToolBar.EnableTool(wx.ID_SAVEAS,  True)
+            self.ToolBar.EnableTool(wx.ID_UNDO,    page.undoredo.CanUndo())
+            self.ToolBar.EnableTool(wx.ID_REDO,    page.undoredo.CanRedo())
+            self.ToolBar.EnableTool(wx.ID_SAVEAS,  True)
+            self.ToolBar.EnableTool(wx.ID_REFRESH, True)
+
+
     def on_change_page(self, event):
         """
         Handler for changing a page in the main Notebook, remembers the visit.
@@ -488,6 +533,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.menu_save.Enabled = page.get_unsaved()
             page.undoredo.SetEditMenu(self.menu_edit)
             page.undoredo.SetMenuStrings()
+        self.update_toolbar(page)
 
         self.Title = " - ".join(filter(bool, (conf.Title, subtitle)))
         wx.CallAfter(self.update_notebook_header)
@@ -559,7 +605,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def on_savefile_page_event(self, event):
         """Handler for notification from SavefilePage, updates UI."""
-        idx = self.notebook.GetPageIndex(event.source)
+        page, idx = event.source, self.notebook.GetPageIndex(event.source)
         ready, modified, rename = (getattr(event, x, None) for x in ("ready", "modified", "rename"))
         filename1, filename2 = (getattr(event, x, None) for x in ("filename1", "filename2"))
 
@@ -578,9 +624,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             if self.notebook.GetPageText(idx) != title2:
                 self.notebook.SetPageText(idx, title2)
             self.menu_save.Enabled = bool(modified)
+            self.update_toolbar(page)
 
 
-    def on_menu_undo(self, event=None):
+    def on_undo_savefile(self, event=None):
         """Handler for clicking undo, invokes current page CommandProcessor."""
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
@@ -588,7 +635,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if isinstance(page, SavefilePage): page.undoredo.Undo()
 
 
-    def on_menu_redo(self, event=None):
+    def on_redo_savefile(self, event=None):
         """Handler for clicking redo, invokes current page CommandProcessor."""
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
@@ -1116,7 +1163,8 @@ def build(plugin, panel):
 
         def handler(event):
             ctrl, value = event.EventObject, event.EventObject.Value
-            cname = "set %s: %s %s" % (plugin.name, "" if name is None else name, "<blank>" if not value else value)
+            cname = "set %s: %s %s" % (plugin.name, "" if name is None else name,
+                                       "<blank>" if value is False or value in ("", None) else value)
             action = functools.partial(on_do, ctrl, value)
             plugin.parent.command(action, cname)
         return handler

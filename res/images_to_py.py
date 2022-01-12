@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     21.03.2020
-@modified    21.03.2020
+@modified    12.01.2022
 ------------------------------------------------------------------------------
 """
 import base64
@@ -17,7 +17,7 @@ import shutil
 import wx.tools.img2py
 
 """Target Python script to write."""
-TARGET = os.path.join("..", "h3sed", "images.py")
+TARGET = os.path.join("..", "src", "h3sed", "images.py")
 
 Q3 = '"""'
 
@@ -28,6 +28,8 @@ APPICONS = [("Icon_{0}x{0}_{1}bit.png".format(s, b),
 IMAGES = {
     "PageHero.png":
         "Icon for the Hero page in a savefile tab.",
+    "ToolbarRefresh.png":
+        "Toolbar icon for refresh button.",
 }
 HEADER = """%s
 Contains embedded image and icon resources. Auto-generated.
