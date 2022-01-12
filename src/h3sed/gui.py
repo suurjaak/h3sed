@@ -1164,6 +1164,8 @@ def build(plugin, panel):
 
 
     count = 0
+    BTN_WPLUS  = 0 if "nt" == os.name else 20
+    SPIN_WPLUS = 0 if "nt" == os.name else 80
     for prop in props if isinstance(props, (list, tuple)) else [props]:
         if "itemlist" == prop.get("type"):
             values_present = []
@@ -1184,14 +1186,15 @@ def build(plugin, panel):
                         if isinstance(choices, dict): choices = list(choices.values())
                         if prop.get("nullable") and "" not in choices: choices = [""] + choices
                         if v and v not in choices: choices = [v] + choices
-                        c = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY, name="%s_%s" % (plugin.name, i))
+                        c = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY,
+                                        name="%s_%s" % (plugin.name, i))
                         c.SetItems(choices)
                         if v is not None: c.Value = v
                         elif "" in choices: c.Value = ""
                         c.Bind(wx.EVT_COMBOBOX, make_value_handler(c, itemprop, row, index=i))
                         bsizer.Add(c)
                     elif "number" == itemprop.get("type"):
-                        c = wx.SpinCtrl(panel, name=itemprop["name"], size=(80, -1),
+                        c = wx.SpinCtrl(panel, name=itemprop["name"], size=(80 + SPIN_WPLUS, -1),
                                         style=wx.ALIGN_RIGHT)
                         rng = list(c.Range)
                         if "min" in itemprop: rng[0] = min(itemprop["min"], 2**30) # SpinCtrl limit
@@ -1209,19 +1212,20 @@ def build(plugin, panel):
                 if resultitem: resultitems.append(resultitem)
 
                 if prop.get("orderable"):
-                    c1, c2 = (wx.Button(panel, label=x, size=(40, -1)) for x in ("down", "up"))
+                    c1, c2 = (wx.Button(panel, label=x, size=(40 + BTN_WPLUS, -1))
+                              for x in ("down", "up"))
                     c1.Enabled, c2.Enabled = (i < len(state) - 1), bool(i)
                     c1.Bind(wx.EVT_BUTTON, make_move_handler(c1, i, +1))
                     c2.Bind(wx.EVT_BUTTON, make_move_handler(c2, i, -1))
                     bsizer.Add(c1, border=10, flag=wx.LEFT), bsizer.Add(c2)
                 if prop.get("removable"):
-                    c = wx.Button(panel, label="remove", size=(50, -1))
+                    c = wx.Button(panel, label="remove", size=(50 + BTN_WPLUS, -1))
                     c.Bind(wx.EVT_BUTTON, make_remove_handler(c, i))
                     bsizer.Add(c)
                 if bsizer.Children: sizer.Add(bsizer, pos=(count, 1))
                 else: sizer.AddSpacer(10)
                 count += 1
-                    
+
             if prop.get("addable") and ("max" not in prop or len(state) < prop["max"]):
                 choices = prop.get("choices") or []
                 if isinstance(choices, dict): choices = list(choices.values())
@@ -1242,7 +1246,7 @@ def build(plugin, panel):
         elif "number" == prop.get("type"):
             c1 = wx.StaticText(panel, label=prop.get("label", prop["name"]),
                                name="%s_label" % prop["name"])
-            c2 = wx.SpinCtrl(panel, name=prop["name"], size=(80, -1),
+            c2 = wx.SpinCtrl(panel, name=prop["name"], size=(80 + SPIN_WPLUS, -1),
                              style=wx.ALIGN_RIGHT)
             rng = list(c2.Range)
             if "min" in prop: rng[0] = min(prop["min"], 2**30) # SpinCtrl limit

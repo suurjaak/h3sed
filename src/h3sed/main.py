@@ -8,7 +8,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    09.01.2022
+@modified    12.01.2022
 ------------------------------------------------------------------------------
 """
 import argparse
@@ -48,7 +48,7 @@ class MainApp(wx.App):
         if "win32" == sys.platform:  # Avoid dialog buttons in native language
             mylocale = wx.Locale(wx.LANGUAGE_ENGLISH_US, wx.LOCALE_LOAD_DEFAULT)
             mylocale.AddCatalog("wxstd")
-            self._initial_locale = mylocale
+            self._initial_locale = mylocale  # Override wx.App._initial_locale
 
 
 def except_hook(etype, evalue, etrace):
@@ -130,11 +130,12 @@ def run_gui(filename):
     app.SetTopWindow(window) # stdout/stderr popup closes with MainWindow
 
     # Override stdout/stderr.write to swallow Gtk warnings
-    swallow = lambda w, s: None if ("Gtk" in s and "eprecat" in s) else w(s)
-    try:
-        sys.stdout.write = functools.partial(swallow, sys.stdout.write)
-        sys.stderr.write = functools.partial(swallow, sys.stderr.write)
-    except Exception: raise
+    if "linux" == sys.platform:
+        try:
+            swallow = lambda w, s: None if "Gtk-" in s else w(s)
+            sys.stdout.write = functools.partial(swallow, sys.stdout.write)
+            sys.stderr.write = functools.partial(swallow, sys.stderr.write)
+        except Exception: pass
 
     # Some debugging support
     window.run_console("import datetime, math, os, re, time, sys, wx")
@@ -147,7 +148,7 @@ def run_gui(filename):
     window.run_console("")
     window.run_console("self = wx.GetApp().TopWindow # Application main window")
     if filename and os.path.isfile(filename):
-        wx.CallAfter(wx.PostEvent, window, gui.OpenFileEvent(-1, file=filename))
+        wx.CallAfter(wx.PostEvent, window, gui.OpenSavefileEvent(-1, filename=filename))
     app.MainLoop()
 
 

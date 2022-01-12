@@ -17,7 +17,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    11.01.2022
+@modified    12.01.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -58,7 +58,7 @@ class AboutDialog(wx.Dialog):
         FRAMEH = 2 * wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_Y, self) + \
                  wx.SystemSettings.GetMetric(wx.SYS_CAPTION_Y, self)
         height = FRAMEH + html.VirtualSize[1] + sizer_buttons.Size[1] + 2*8
-        self.Size = self.MinSize = (self.Size[0], height)
+        self.Size = self.MinSize = (max(400, self.Size[0]), height)
         self.CenterOnParent()
 
 
@@ -149,7 +149,6 @@ class ColourManager(object):
         @param   darkcolourmap    colours changed if dark background,
                                   {"attribute": wx.SYS_COLOUR_XYZ or wx.Colour}
         """
-        if "nt" != os.name: return
 
         cls.colourcontainer = colourcontainer
         cls.colourmap.update(colourmap)
@@ -159,6 +158,7 @@ class ColourManager(object):
             cls.darkoriginals[name] = getattr(colourcontainer, name)
 
         cls.UpdateContainer()
+        if "nt" != os.name: return
 
         # Hack: monkey-patch FlatImageBook with non-hardcoded background
         class HackContainer(wx.lib.agw.labelbook.ImageContainer):

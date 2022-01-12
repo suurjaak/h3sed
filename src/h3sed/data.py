@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    11.01.2022
+@modified    12.01.2022
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -974,8 +974,10 @@ def wildcard():
     """Returns wildcard string for file controls, as "label (*.ext)|*.ext|.."."""
     result = "All files (*.*)|*.*"
     for name, exts in conf.FileExtensions[::-1]:
-        exts = ";".join("*" + x for x in exts)
-        result = "%s (%s)|%s|%s" % (name, exts, exts, result)
+        exts1 = ";".join("*" + x for x in exts)
+        # Some OSes are fully case-sensitive
+        exts2 = ";".join("*%s;*%s" % (x.lower(), x.upper()) for x in exts)
+        result = "%s (%s)|%s|%s" % (name, exts1, exts2, result)
     return result
 
 
