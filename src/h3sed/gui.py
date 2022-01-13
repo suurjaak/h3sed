@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    12.01.2022
+@modified    13.01.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -978,12 +978,14 @@ class SavefilePage(wx.Panel):
         evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
         self.button_save.Enable(False)
-        wx.Yield()
+        busy = controls.BusyPanel(self.Parent, "Reloading file.")
         self.Freeze()
         try:
             for p in self.plugins: p.render(reparse=True)
             self.SendSizeEvent()
-        finally: self.Thaw()
+        finally:
+            self.Thaw()
+            busy.Close()
 
 
     def save_file(self, rename=False):

@@ -67,7 +67,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  12.01.2022
+@modified  13.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
@@ -282,7 +282,9 @@ class HeroPlugin(object):
         for p in self._plugins if self._hero else ():
             self.render_plugin(p["name"])
         if conf.Populate and self._heroes:
-            wx.CallAfter(lambda: self and (combo.SetSelection(0), self.on_select_hero(index=0)))
+            index = next((i for i, h in enumerate(self._heroes) if h is self._hero), 0)
+            self._hero = None
+            wx.CallAfter(lambda: self and (combo.SetSelection(index), self.on_select_hero(index=index)))
 
 
     def command(self, callable, name=None):
