@@ -512,11 +512,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if getattr(self, "_ignore_paging", False): return
         if event: event.Skip() # Pass event along to next handler
         page = self.notebook.GetCurrentPage()
+        logger.info("on_change_page: %s", page)
         if not self.pages_visited or self.pages_visited[-1] != page:
             self.pages_visited.append(page)
 
         self.menu_close.Enabled = self.menu_reload.Enabled = False
         self.menu_save.Enabled = self.menu_save_as.Enabled = False
+        self.menu_undo.Enabled = self.menu_redo.Enabled = False
         self.Title, subtitle = conf.Title, ""
 
         if isinstance(page, SavefilePage):
@@ -524,8 +526,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             path, file = os.path.split(page.filename)
             # Use parent/file.gm1 or C:/file.gm1
             subtitle = os.path.join(os.path.split(path)[-1] or path, file)
-        elif not isinstance(page, SavefilePage) and len(self.files) == 1:
-            page = next(iter(self.files.values()))["page"]
 
         if isinstance(page, SavefilePage):
             self.menu_save_as.Enabled = self.menu_close.Enabled = True
