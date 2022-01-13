@@ -1,4 +1,4 @@
-:: Creates NSIS setup file for executable in current directory named 
+:: Creates NSIS setup file for executable in current directory named
 :: h3sed_%conf.Version%[_x64].exe, or filename given in argument.
 :: Processor architecture is determined from OS environment.
 ::

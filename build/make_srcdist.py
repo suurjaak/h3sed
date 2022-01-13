@@ -30,7 +30,7 @@ if "__main__" == __name__:
         size = 0
         for filename in filenames:
             if filename.lower().endswith(".exe"): continue # for filename
-                
+
             fullpath = os.path.join(BASE_DIR,
                 subdir_local if subdir_local is not None else subdir, filename)
             zi = zipfile.ZipInfo()

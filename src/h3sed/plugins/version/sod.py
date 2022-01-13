@@ -93,7 +93,7 @@ IDs = {
     "Vial of Dragonblood":               0x7F,
     "Wizard's Well":                     0x8A,
 
-    # Creatures                          
+    # Creatures
     "Azure Dragon":                      0x84,
     "Boar":                              0x8C,
     "Crystal Dragon":                    0x85,

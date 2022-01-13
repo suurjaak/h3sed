@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Main stats subplugin for hero-plugin, shows primary skills like attack-defense,
-hero level, movement and experience and spell points, spellbook toggle, 
+hero level, movement and experience and spell points, spellbook toggle,
 and war machines.
 
 ------------------------------------------------------------------------------

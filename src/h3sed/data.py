@@ -518,7 +518,7 @@ IDs = {
     "Spellbook":                         0x00,
     "The Grail":                         0x02,
 
-    # Creatures                          
+    # Creatures
     "Air Elemental":                     0x70,
     "Ancient Behemoth":                  0x61,
     "Angel":                             0x0C,
@@ -673,7 +673,7 @@ IDs = {
     "Advanced":                          0x02,
     "Expert":                            0x03,
 
-    # Spells                             
+    # Spells
     "Air Shield":                        0x1C,
     "Animate Dead":                      0x27,
     "Anti-Magic":                        0x22,
@@ -917,10 +917,10 @@ ArtifactStats = {
     "Helm of the Alabaster Unicorn":     ( 0,  0,  0, +1),
     "Skull Helmet":                      ( 0,  0,  0, +2),
     "Thunder Helmet":                    ( 0,  0, -2, 10),
-                                         
+
     "Celestial Necklace of Bliss":       (+3, +3, +3, +3),
     "Necklace of Dragonteeth":           ( 0,  0, +3, +3),
-                                         
+
     "Blackshard of the Dead Knight":     (+3,  0,  0,  0),
     "Centaur's Axe":                     (+2,  0,  0,  0),
     "Greater Gnoll's Flail":             (+4,  0,  0,  0),
@@ -929,7 +929,7 @@ ArtifactStats = {
     "Sword of Hellfire":                 (+6,  0,  0,  0),
     "Sword of Judgement":                (+5, +5, +5, +5),
     "Titan's Gladius":                   (12, -3,  0,  0),
-                                         
+
     "Buckler of the Gnoll King":         ( 0, +4,  0,  0),
     "Dragon Scale Shield":               ( 0,  0, +3, +3),
     "Lion's Shield of Courage":          (+4, +4, +4, +4),
@@ -938,7 +938,7 @@ ArtifactStats = {
     "Shield of the Dwarven Lords":       ( 0, +2,  0,  0),
     "Shield of the Yawning Dead":        ( 0, +3,  0,  0),
     "Targ of the Rampaging Ogre":        ( 0, +5,  0,  0),
-                                         
+
     "Armor of Wonder":                   (+1, +1, +1, +1),
     "Rib Cage":                          ( 0,  0, +2,  0),
     "Breastplate of Brimstone":          ( 0,  0, +5,  0),
@@ -947,9 +947,9 @@ ArtifactStats = {
     "Scales of the Greater Basilisk":    ( 0,  0, +3,  0),
     "Titan's Cuirass":                   ( 0,  0, 10, -2),
     "Tunic of the Cyclops King":         ( 0,  0, +4,  0),
-                                         
+
     "Quiet Eye of the Dragon":           (+1, +1,  0,  0),
-                                         
+
     "Dragonbone Greaves":                ( 0,  0, +1, +1),
     "Sandals of the Saint":              (+2, +2, +2, +2),
 }

@@ -46,12 +46,12 @@ Mac/Linux/other: install Python and pip, run `pip install h3sed`.
 
 The pip installation will add the `h3sed` command to path.
 
-Windows installers have been provided for convenience. The program itself 
+Windows installers have been provided for convenience. The program itself
 is stand-alone, can work from any directory, and does not need additional
 installation. The installed program can be copied to a USB stick and used
 elsewhere, same goes for the source code.
 
-If running from pip installation, run `h3sed` from the command-line. 
+If running from pip installation, run `h3sed` from the command-line.
 If running straight from source code, open a terminal to `h3sed/src`
 and run `python -m h3sed`.
 

@@ -36,13 +36,13 @@ from h3sed import conf
 Savefile editor for Heroes of Might and Magic III.<br />
 Released as free open source software under the MIT License.<br /><br />
 
-<b>Warning:</b> as Heroes3 savefile format is not publicly known, 
+<b>Warning:</b> as Heroes3 savefile format is not publicly known,
 loaded data and saved results may be invalid and cause problems in game.
 This program is based on unofficial information gathered from observation and online forums.
 <br /><br />
-Always choose the correct game version. 
-A wrong choice will result in file data being misinterpreted, 
-and saving later version items or creatures to an earlier version savefile 
+Always choose the correct game version.
+A wrong choice will result in file data being misinterpreted,
+and saving later version items or creatures to an earlier version savefile
 may cause the game to crash.
 
 <hr />

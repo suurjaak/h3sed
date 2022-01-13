@@ -140,7 +140,7 @@ IDs = {
     # Special artifacts
     "Cannon":                            0x92,
 
-    # Creatures                             
+    # Creatures
     "Ayssid":                            0xA0,
     "Azure Dragon":                      0x84,
     "Boar":                              0x8C,

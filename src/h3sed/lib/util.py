@@ -267,7 +267,7 @@ def shortpath(path):
 
     ctypes.windll.kernel32.GetShortPathNameW.argtypes = [
         # lpszLongPath, lpszShortPath, cchBuffer
-        wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD 
+        wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD
     ]
     ctypes.windll.kernel32.GetShortPathNameW.restype = wintypes.DWORD
     buf = ctypes.create_unicode_buffer(4 * len(path))

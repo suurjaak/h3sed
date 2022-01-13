@@ -239,9 +239,8 @@ class ArtifactsPlugin(object):
         slots_full = [k for k, v in slots_free.items() if v < 0]
         if slots_full:
             wx.MessageBox("Cannot don %s, required slot taken:\n\n%s." %
-                (v2, 
-                 "\n".join("- %s (by %s)" % (x, ", ".join(sorted(slots_owner[x])))
-                           for x in sorted(slots_full))),
+                (v2, "\n".join("- %s (by %s)" % (x, ", ".join(sorted(slots_owner[x])))
+                               for x in sorted(slots_full))),
                 conf.Title, wx.OK | wx.ICON_WARNING
             )
             ctrl.Value = v1 or ""

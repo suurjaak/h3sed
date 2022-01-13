@@ -334,11 +334,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                  (wx.ID_REDO,    wx.ART_REDO,         self.on_redo_savefile),
                  (),
                  (wx.ID_REFRESH, "ToolbarRefresh",    self.on_reload_savefile)]
-        TOOL_HELPS = {wx.ID_OPEN:    "Choose a savefile to open",                   
-                      wx.ID_SAVE:    "Save changes to the active file",             
-                      wx.ID_SAVEAS:  "Save the active file under a new name",       
-                      wx.ID_UNDO:    "Undo the last action",                        
-                      wx.ID_REDO:    "Redo the previously undone action",           
+        TOOL_HELPS = {wx.ID_OPEN:    "Choose a savefile to open",
+                      wx.ID_SAVE:    "Save changes to the active file",
+                      wx.ID_SAVEAS:  "Save the active file under a new name",
+                      wx.ID_UNDO:    "Undo the last action",
+                      wx.ID_REDO:    "Redo the previously undone action",
                       wx.ID_REFRESH: "Reload savefile, losing any current changes"}
         tb = self.CreateToolBar(wx.TB_FLAT | wx.TB_NODIVIDER)
         tb.SetToolBitmapSize((16, 16))
@@ -970,7 +970,7 @@ class SavefilePage(wx.Panel):
         try: self.savefile.read()
         except Exception as e:
             logger.exception("Error reloading %s.", self.filename)
-            return wx.MessageBox("Error reloading %s:\n\n%s" % 
+            return wx.MessageBox("Error reloading %s:\n\n%s" %
                                  (self.filename, util.format_exc(c)),
                                  wx.OK | wx.ICON_ERROR)
         self.undoredo.ClearCommands()
@@ -1011,7 +1011,7 @@ class SavefilePage(wx.Panel):
 
         logger.info("Saving %s as %s.", filename1, filename2) if rename \
         else logger.info("Saving %s.", filename1)
-            
+
         if rename:
             # Use a tertiary file in case something fails
             fh, tempname = tempfile.mkstemp(".gm1")
@@ -1193,7 +1193,7 @@ def build(plugin, panel):
             return True
 
         def handler(event):
-            if not ctrl.Value: return                
+            if not ctrl.Value: return
             cname = "add %s: %s" % (plugin.name, ctrl.Value)
             plugin.parent.command(functools.partial(on_do, ctrl.Value), cname)
         return handler
