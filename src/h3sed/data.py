@@ -16,6 +16,7 @@ import datetime
 import gzip
 import logging
 import os
+import sys
 
 from h3sed import conf
 from h3sed.lib import util
@@ -968,9 +969,9 @@ def wildcard():
     """Returns wildcard string for file controls, as "label (*.ext)|*.ext|.."."""
     result = "All files (*.*)|*.*"
     for name, exts in conf.FileExtensions[::-1]:
-        exts1 = ";".join("*" + x for x in exts)
-        # Some OSes are fully case-sensitive
-        exts2 = ";".join("*%s;*%s" % (x.lower(), x.upper()) for x in exts)
+        exts1 = exts2 = ";".join("*" + x for x in exts)
+        if "linux" in sys.platform:  # Case-sensitive operating system
+            exts2 = ";".join("*%s;*%s" % (x.lower(), x.upper()) for x in exts)
         result = "%s (%s)|%s|%s" % (name, exts1, exts2, result)
     return result
 

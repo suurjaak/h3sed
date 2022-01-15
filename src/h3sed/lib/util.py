@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    11.01.2022
+@modified    15.01.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -136,7 +136,7 @@ def unique_path(pathname, suffix="%(ext)s_%(counter)s"):
     @param   suffix  string to append, formatted with variables counter, ext
     """
     result = pathname
-    if "linux2" == sys.platform and isinstance(result, string_type) \
+    if "linux" in sys.platform and isinstance(result, string_type) \
     and "utf-8" != sys.getfilesystemencoding():
         result = result.encode("utf-8") # Linux has trouble if locale not UTF-8
     path, name = os.path.split(result)

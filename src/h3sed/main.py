@@ -8,7 +8,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    12.01.2022
+@modified    15.01.2022
 ------------------------------------------------------------------------------
 """
 import argparse
@@ -130,7 +130,7 @@ def run_gui(filename):
     app.SetTopWindow(window) # stdout/stderr popup closes with MainWindow
 
     # Override stdout/stderr.write to swallow Gtk warnings
-    if "linux" == sys.platform:
+    if "linux" in sys.platform:
         try:
             swallow = lambda w, s: None if "Gtk-" in s else w(s)
             sys.stdout.write = functools.partial(swallow, sys.stdout.write)
