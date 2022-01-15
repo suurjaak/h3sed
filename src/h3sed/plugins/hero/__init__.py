@@ -382,7 +382,8 @@ class HeroPlugin(object):
             self._panel.Freeze()
             try:
                 if self._hero: self.patch()
-                logger.info("Loading hero %s.", name)
+                logger.info("Loading hero %s (bytes %s-%s in savefile).",
+                            name, hero2.span[0], hero2.span[1] - 1)
                 self._hero = hero2
                 for p in self._plugins: self.render_plugin(p["name"], reload=True)
             finally:
