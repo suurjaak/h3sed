@@ -27,34 +27,38 @@ logger = logging.getLogger(__package__)
 
 
 PROPS = {"name": "stats", "label": "Main attributes", "index": 0}
+## Valid raw values for primary stats range from 0..127.
+## 100..127 is probably used as a buffer for artifact boosts;
+## game will only show and use a maximum of 99.
+## 128 or higher will cause overflow wraparound to 0.
 UIPROPS = [{
     "name":   "attack",
     "label":  "Attack",
     "type":   "number",
     "len":    1,
     "min":    0,
-    "max":    99,
+    "max":    127,
 }, {
     "name":   "defense",
     "label":  "Defense",
     "type":   "number",
     "len":    1,
     "min":    0,
-    "max":    99,
+    "max":    127,
 }, {
     "name":   "power",
     "label":  "Spell Power",
     "type":   "number",
     "len":    1,
     "min":    0,
-    "max":    99,
+    "max":    127,
 }, {
     "name":   "knowledge",
     "label":  "Knowledge",
     "type":   "number",
     "len":    1,
     "min":    0,
-    "max":    99,
+    "max":    127,
 }, {
     "name":   "exp",
     "label":  "Experience",

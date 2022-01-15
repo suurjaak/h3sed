@@ -310,7 +310,7 @@ class ArtifactsPlugin(object):
             # Artifact bonuses like +2 Attack are kept in primary stats
             for n, v in zip(["attack", "defense", "power", "knowledge"], stats_diff):
                 self._hero.stats[n] += v
-                self._hero.stats[n] = min(max(0, self._hero.stats[n]), 99)
+                self._hero.stats[n] = min(max(0, self._hero.stats[n]), 127)
         return apply
 
 
