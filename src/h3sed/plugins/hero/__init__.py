@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Hero plugin, parses savefile for heroes. 
+Hero plugin, parses savefile for heroes.
 
 All hero specifics are handled by subplugins in file directory, auto-loaded.
 
@@ -67,16 +67,19 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  13.01.2022
+@modified  15.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
+import functools
 import glob
 import importlib
+import json
 import logging
 import os
 import re
 
+import yaml
 import wx
 
 from h3sed import conf
@@ -260,7 +263,23 @@ class HeroPlugin(object):
         self._panel.DestroyChildren()
         label = wx.StaticText(self._panel, label="&Select hero:")
         combo = wx.ComboBox(self._panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        tb    = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
         nb    = wx.Notebook(self._panel)
+
+        combo.SetItems([x.name for x in self._heroes])
+        combo.Value = self._hero.name if self._hero else ""
+        combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
+
+        bmp1 = wx.ArtProvider.GetBitmap(wx.ART_COPY,  wx.ART_TOOLBAR, (16, 16))
+        bmp2 = wx.ArtProvider.GetBitmap(wx.ART_PASTE, wx.ART_TOOLBAR, (16, 16))
+        tb.AddTool(wx.ID_COPY,  "", bmp1, shortHelp="Copy current hero data to clipboard")
+        tb.AddTool(wx.ID_PASTE, "", bmp2, shortHelp="Paste data from clipboard to current hero")
+        tb.EnableTool(wx.ID_COPY,  False)
+        tb.EnableTool(wx.ID_PASTE, False)
+        tb.Bind(wx.EVT_TOOL, self.on_copy_hero,  id=wx.ID_COPY)
+        tb.Bind(wx.EVT_TOOL, self.on_paste_hero, id=wx.ID_PASTE)
+        tb.Realize()
+
         for p in self._plugins:
             subpanel = p["panel"] = wx.ScrolledWindow(nb)
             if p.get("instance"): p["instance"].load(self._hero, subpanel)
@@ -271,13 +290,12 @@ class HeroPlugin(object):
         sizer_top           = wx.BoxSizer(wx.HORIZONTAL)
         sizer_top.Add(label, flag=wx.RIGHT | wx.ALIGN_CENTER, border=10)
         sizer_top.Add(combo, flag=wx.GROW)
+        sizer_top.Add(tb, border=10, flag=wx.LEFT)
         sizer.Add(sizer_top, border=10, flag=wx.LEFT | wx.TOP | wx.GROW)
         sizer.Add(nb,        border=10, proportion=1, flag=wx.ALL | wx.GROW)
 
-        combo.SetItems([x.name for x in self._heroes])
-        combo.Value = self._hero.name if self._hero else ""
-        combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
         self._ctrls["hero"] = combo
+        self._ctrls["toolbar"] = tb
         wx_accel.accelerate(self._panel)
         for p in self._plugins if self._hero else ():
             self.render_plugin(p["name"])
@@ -309,6 +327,30 @@ class HeroPlugin(object):
         elif self._panel.Children and self._hero:
             for p in self._plugins: self.render_plugin(p["name"], reload=reparse or reload)
         else: self.build()
+
+
+    def on_copy_hero(self, event=None):
+        """Handler for copying a hero, adds hero data to clipboard."""
+        if self._hero and wx.TheClipboard.Open():
+            d = wx.TextDataObject(self.serialize_yaml())
+            wx.TheClipboard.SetData(d), wx.TheClipboard.Close()
+            guibase.status("Copied hero %s data to clipboard.",
+                           self._hero.name, flash=True, log=True)
+
+
+    def on_paste_hero(self, event=None):
+        """Handler for copying a hero, adds hero data to clipboard."""
+        data = None
+        if self._hero and wx.TheClipboard.Open():
+            if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
+                o = wx.TextDataObject()
+                wx.TheClipboard.GetData(o)
+                data = o.Text
+            wx.TheClipboard.Close()
+        if data:
+            guibase.status("Pasting data to hero %s from clipboard.",
+                           self._hero.name, flash=True, log=True)
+            self.parse_yaml(data)
 
 
     def on_plugin_event(self, event):
@@ -345,6 +387,8 @@ class HeroPlugin(object):
                 for p in self._plugins: self.render_plugin(p["name"], reload=True)
             finally:
                 self._pending = None
+                self._ctrls["toolbar"].EnableTool(wx.ID_COPY,  True)
+                self._ctrls["toolbar"].EnableTool(wx.ID_PASTE, True)
                 self._panel.Thaw()
                 busy.Close()
             return True
@@ -403,9 +447,95 @@ class HeroPlugin(object):
         else:
             self.savefile.version = ver0
             wx.CallAfter(guibase.status, "No heroes identified in %s.",
-                         self.savefile.filename, flash=True)
+                         self.savefile.filename, flash=True, log=True)
 
         self._heroes[:] = result
+
+
+    def parse_yaml(self, value):
+        """Populates current hero with value parsed as YAML."""
+        try:
+            states = next(iter(yaml.safe_load(value).values()))
+            assert isinstance(states, dict)
+        except Exception as e:
+            logger.warn("Error loading hero data from clipboard: %s", e)
+            return
+        pluginmap = {p["name"]: p["instance"] for p in self._plugins}
+        usables = {}  # {plugin name: state}
+        for category, state in states.items():
+            plugin = pluginmap.get(category)
+            if not callable(getattr(plugin, "load_state", None)):
+                continue  # for
+            if not plugin:
+                logger.warn("Unknown category in hero data: %r", category)
+                continue  # for
+            state0 = plugin.state()
+            if state is None: state = type(state0)()
+            if not isinstance(state0, type(state)):
+                logger.warn("Invalid data type in hero data %r for %s: %s",
+                            category, type(state0).__name__, state)
+                continue  # for
+            usables[category] = state
+        if not usables: return
+
+        def on_do(states):
+            pluginmap = {p["name"]: p["instance"] for p in self._plugins}
+            changeds = []  # [plugin name, ]
+            for category, state in states.items():
+                plugin = pluginmap.get(category)
+                state0 = plugin.state()
+                if state is None: state = type(state0)()
+                if plugin.load_state(state): changeds.append(category)
+            if changeds:
+                self.patch()
+                for name in changeds:
+                    self.render_plugin(name)
+            return bool(changeds)
+
+        cname = "paste hero data from clipboard"
+        self.command(functools.partial(on_do, usables), cname)
+
+
+    def serialize_yaml(self):
+        """Returns current hero data as YAML."""
+        LF, INDENT = os.linesep, "  "
+        maxlen = 0
+        states = []  # [(category, [(prefix, value), ])]
+        fmt = lambda v: "" if v in (None, {}) else \
+                        next((x[1:-1] if isinstance(v, util.text_types)
+                              and re.match(r"[\x20-\x7e]+$", x) else x for x in [json.dumps(v)]))
+        for p in self._plugins:  # Assemble YAML by hand for more readable indentation
+            pairs = []
+            props, state = p["instance"].props(), copy.copy(p["instance"].state())
+            for prop in props if isinstance(props, (list, tuple)) else [props]:
+                if "itemlist" == prop["type"]:
+                    while state and not state[-1]: state.pop()  # Strip empty trailing values
+                    for v in state:
+                        itempairs = []
+                        if not v or not isinstance(v, dict):
+                            itempairs += [("-%s" % ("" if v in (None, {}) else " "), fmt(v))]
+                        else:
+                            for itemprop in prop["item"]:
+                                if "name" in itemprop and itemprop["name"] in v:
+                                    maxlen = max(maxlen, len(itemprop["name"]))
+                                    lead = " " if itempairs else "-"
+                                    itempairs += [("%s %s:" % (lead, itemprop["name"]),
+                                                   fmt(v[itemprop["name"]]))]
+                        pairs.extend(itempairs)
+                elif "label" != prop["type"]:
+                    maxlen = max(maxlen, len(prop["name"]))
+                    pairs += [("%s%s:" % (INDENT, prop["name"]), fmt(state[prop["name"]]))]
+            states.append((p["name"], pairs))
+
+        maxlen += len(INDENT) + 3
+        formatted = LF + "".join(
+            "%s%s:%s%s%s%s" % (
+                INDENT, category, LF if pairs else "", INDENT if pairs else "",
+                (LF + INDENT).join("%s%s" % (a.ljust(maxlen) if a.strip() != "-" else a, b)
+                                   for a, b in pairs), LF
+            ) for category, pairs in states
+        )
+        return yaml.safe_dump({self._hero.name: None}).replace(" null\n", formatted)
 
 
     def get_data(self):

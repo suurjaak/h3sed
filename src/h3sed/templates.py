@@ -7,13 +7,9 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    11.01.2022
+@modified    15.01.2022
 ------------------------------------------------------------------------------
 """
-import datetime
-import re
-
-from . import conf
 
 # Modules imported inside templates:
 #from h3sed import conf
@@ -51,10 +47,12 @@ may cause the game to crash.
 <ul>
   <li>Python,
       <a href="https://www.python.org/"><font color="{{ conf.LinkColour }}">python.org</font></a></li>
+  <li>pyyaml,
+      <a href="https://pyyaml.org/"><font color="{{ conf.LinkColour }}">pyyaml.org</font></a></li>
   <li>step, Simple Template Engine for Python,
       <a href="https://github.com/dotpy/step"><font color="{{ conf.LinkColour }}">github.com/dotpy/step</font></a></li>
   <li>wxPython{{ " %s" % getattr(wx, "__version__", "") if getattr(sys, 'frozen', False) else "" }},
-      <a href="http://wxpython.org"><font color="{{ conf.LinkColour }}">wxpython.org</font></a></li>
+      <a href="https://wxpython.org"><font color="{{ conf.LinkColour }}">wxpython.org</font></a></li>
 </ul>
 %if getattr(sys, 'frozen', False):
 <br /><br />

@@ -14,6 +14,8 @@ and edit any and all hero attributes:
 - spells, like Slow
 - army creatures, like Golden Dragons
 
+Attributes can be copied from one hero and pasted to another.
+
 Supports savegames from Shadow of Death and Horn of the Abyss.
 
 Automatically creates a timestamped backup copy of the savegame file.
@@ -25,6 +27,9 @@ Usage
 -----
 
 Navigate the file view to Heroes3 games-folder, and open a savegame file to edit.
+
+Choose a hero to modify, change attributes to your liking, and save the file.
+Changes will be available in Heroes3 after loading the changed savegame.
 
 **Warning:** as Heroes3 savefile format is not publicly known,
 loaded data and saved results may be invalid and cause problems in game.
@@ -61,6 +66,7 @@ Source Dependencies
 
 If running from source code, h3sed needs Python 2.7 or higher,
 and the following 3rd-party Python packages:
+* pyyaml (https://pyyaml.org)
 * wxPython 4.0+ (https://wxpython.org)
 
 

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    13.01.2022
+@modified    15.01.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -512,7 +512,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if getattr(self, "_ignore_paging", False): return
         if event: event.Skip() # Pass event along to next handler
         page = self.notebook.GetCurrentPage()
-        logger.info("on_change_page: %s", page)
         if not self.pages_visited or self.pages_visited[-1] != page:
             self.pages_visited.append(page)
 

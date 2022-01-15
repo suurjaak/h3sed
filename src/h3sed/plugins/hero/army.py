@@ -7,14 +7,11 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  11.01.2022
+@modified  15.01.2022
 ------------------------------------------------------------------------------
 """
-from collections import OrderedDict
 import copy
 import logging
-
-import wx
 
 from h3sed import data
 from h3sed import gui
@@ -106,14 +103,38 @@ class ArmyPlugin(object):
             hero.army = self._state
 
 
+    def load_state(self, state):
+        """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
+        MYPROPS = self.props()
+        state0 = type(self._state)(self._state)
+        state = state + [{}] * (MYPROPS[0]["max"] - len(state))
+        ver = self._hero.savefile.version
+        cmap = {x.lower(): x for x in data.Store.get("creatures", version=ver)}
+        MIN, MAX = MYPROPS[0]["item"][-1]["min"], MYPROPS[0]["item"][-1]["max"]
+        for i, v in enumerate(state):
+            if not isinstance(v, (dict, type(None))):
+                logger.warning("Invalid data type in army #%s: %r", i + 1, v)
+                continue  # for
+            name, count = v and v.get("name"), v and v.get("count")
+            if name and hasattr(name, "lower") and name.lower() in cmap \
+            and isinstance(count, int) and MIN <= count <= MAX:
+                self._state[i] = {"name": cmap[name.lower()], "count": count}
+            elif v in ({}, None):
+                self._state[i] = {}
+            else:
+                logger.warning("Invalid army #%s: %r", i + 1, v)
+        return state0 != self._state
+
+
     def render(self):
         """Populates controls from state, using existing if already built."""
+        MYPROPS = self.props()
         if self._ctrls and all(all(x.values()) for x in self._ctrls):
             ver = self._hero.savefile.version
             cc = [""] + sorted(data.Store.get("creatures", version=ver))
             for i, row in enumerate(self._state):
                 creature = None
-                for prop in UIPROPS[0]["item"]:
+                for prop in MYPROPS[0]["item"]:
                     if "name" not in prop: continue # for prop
                     name, choices = prop["name"], cc
                     ctrl, value = self._ctrls[i][name], self._state[i].get(name)
@@ -128,7 +149,7 @@ class ArmyPlugin(object):
             # Hide count controls where no creature type selected
             for i, row in enumerate(self._state):
                 creature = None
-                for prop in UIPROPS[0]["item"]:
+                for prop in MYPROPS[0]["item"]:
                     if "name" not in prop: continue # for prop
                     name = prop["name"]
                     ctrl, value = self._ctrls[i][name], self._state[i].get(name)
@@ -157,7 +178,7 @@ class ArmyPlugin(object):
                  for y in data.Store.get("creatures")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        for prop in UIPROPS:
+        for prop in self.props():
             for i in range(prop["max"]):
                 unit  = util.bytoi(bytes[MYPOS["army_types"]  + i * 4:MYPOS["army_types"]  + i * 4 + 4])
                 count = util.bytoi(bytes[MYPOS["army_counts"] + i * 4:MYPOS["army_counts"] + i * 4 + 4])
@@ -177,7 +198,7 @@ class ArmyPlugin(object):
                for y in data.Store.get("creatures")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        for prop in UIPROPS:
+        for prop in self.props():
             for i in range(prop["max"]):
                 name, count = (self._state[i].get(x) for x in ("name", "count"))
                 if (not name or not count) and not self._state0[i].get("name"):

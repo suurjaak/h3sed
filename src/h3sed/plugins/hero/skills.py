@@ -7,10 +7,9 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  09.01.2022
+@modified  15.01.2022
 ------------------------------------------------------------------------------
 """
-from collections import OrderedDict
 import logging
 
 from h3sed import data
@@ -104,6 +103,26 @@ class SkillsPlugin(object):
         if hero:
             self.parse(hero.bytes)
             hero.skills = self._state
+
+
+    def load_state(self, state):
+        """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
+        state0 = type(self._state)(self._state)
+        state = state[:self.props()[0]["max"]]
+        ver = self._hero.savefile.version
+        smap = {x.lower(): x for x in data.Store.get("skills", version=ver)}
+        lmap = {x.lower(): x for x in data.Store.get("skill_levels", version=ver)}
+        self._state = type(self._state)()
+        for i, v in enumerate(state):
+            if not isinstance(v, dict):
+                logger.warning("Invalid data type in skill #%s: %r", i + 1, v)
+                continue  # for
+            name, level = v.get("name"), v.get("level")
+            if name and name.lower() in smap and level and level.lower() in lmap:
+                self._state += [{"name": smap[name.lower()], "level": lmap[level.lower()]}]
+            else:
+                logger.warning("Invalid skill #%s: %r", i + 1, v)
+        return state0 != self._state
 
 
     def on_add(self, prop, value):

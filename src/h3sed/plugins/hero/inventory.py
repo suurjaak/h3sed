@@ -7,10 +7,9 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  10.01.2022
+@modified  15.01.2022
 ------------------------------------------------------------------------------
 """
-from collections import OrderedDict
 import copy
 import logging
 
@@ -100,6 +99,22 @@ class InventoryPlugin(object):
             hero.inventory = self._state
 
 
+    def load_state(self, state):
+        """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
+        state0 = type(self._state)(self._state)
+        state = state + [None] * (self.props()[0]["max"] - len(state))
+        ver = self._hero.savefile.version
+        cmap = {x.lower(): x for x in data.Store.get("artifacts", version=ver, category="inventory")}
+        for i, v in enumerate(state):
+            if v and hasattr(v, "lower") and v.lower() in cmap:
+                self._state[i] = cmap[v.lower()]
+            elif v in ("", None):
+                self._state[i] = None
+            else:
+                logger.warning("Invalid inventory item #%s: %r", i + 1, v)
+        return state0 != self._state
+
+
     def render(self):
         """Populates controls from state, using existing if already built."""
         if self._ctrls and all(self._ctrls):
@@ -123,7 +138,7 @@ class InventoryPlugin(object):
             if all(x == data.Blank for x in b): return None # Blank
             return util.bytoi(bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
 
-        for prop in UIPROPS:
+        for prop in self.props():
             for i in range(prop["max"]):
                 v = parse_item(MYPOS["inventory"] + i*8)
                 result.append(NAMES.get(v))
@@ -141,7 +156,7 @@ class InventoryPlugin(object):
         MYPOS = plugins.adapt(self, "pos", POS)
         pos = MYPOS["inventory"]
 
-        for prop in UIPROPS:
+        for prop in self.props():
             for i, name in enumerate(self._state) if "itemlist" == prop["type"] else ():
                 v = IDS.get(name)
                 if name in SCROLL_ARTIFACTS:

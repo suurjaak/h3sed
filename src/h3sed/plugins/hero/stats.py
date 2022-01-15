@@ -9,11 +9,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  09.01.2022
+@modified  15.01.2022
 ------------------------------------------------------------------------------
 """
 import logging
-import math
 
 import wx
 
@@ -164,6 +163,22 @@ class StatsPlugin(object):
         if hero:
             self.parse(hero.bytes)
             hero.stats = self._state
+
+
+    def load_state(self, state):
+        """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
+        state0 = type(self._state)(self._state)
+        for prop in self.props():
+            if prop["name"] not in state:
+                continue  # for
+            v = state[prop["name"]]
+            if "check" == prop["type"] and isinstance(v, bool):
+                self._state[prop["name"]] = v
+            elif "number" == prop["type"] and isinstance(v, int):
+                self._state[prop["name"]] = min(prop["max"], max(prop["min"], v))
+            else:
+                logger.warning("Invalid stats item %r: %r", prop["name"], v)
+        return state0 != self._state
 
 
     def on_change(self, prop, row, ctrl, value):

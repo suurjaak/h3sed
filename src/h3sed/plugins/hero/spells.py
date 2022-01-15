@@ -7,10 +7,9 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  09.01.2022
+@modified  15.01.2022
 ------------------------------------------------------------------------------
 """
-from collections import OrderedDict
 import logging
 
 from h3sed import data
@@ -87,6 +86,21 @@ class SpellsPlugin(object):
         if hero:
             self.parse(hero.bytes)
             hero.spells = self._state
+
+
+    def load_state(self, state):
+        """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
+        state0 = type(self._state)(self._state)
+        self._state = []
+        ver = self._hero.savefile.version
+        cmap = {x.lower(): x for x in data.Store.get("spells", version=ver)}
+        for i, v in enumerate(state):
+            if v and hasattr(v, "lower") and v.lower() in cmap:
+                self._state += [cmap[v.lower()]]
+            elif v:
+                logger.warning("Invalid spell #%s: %s", i + 1, v)
+        self._state.sort()
+        return state0 != self._state
 
 
     def render(self):
