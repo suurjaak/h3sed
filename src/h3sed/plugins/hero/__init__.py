@@ -340,17 +340,17 @@ class HeroPlugin(object):
 
     def on_paste_hero(self, event=None):
         """Handler for copying a hero, adds hero data to clipboard."""
-        data = None
+        value = None
         if self._hero and wx.TheClipboard.Open():
             if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
                 o = wx.TextDataObject()
                 wx.TheClipboard.GetData(o)
-                data = o.Text
+                value = o.Text
             wx.TheClipboard.Close()
-        if data:
+        if value:
             guibase.status("Pasting data to hero %s from clipboard.",
                            self._hero.name, flash=True, log=True)
-            self.parse_yaml(data)
+            self.parse_yaml(value)
 
 
     def on_plugin_event(self, event):
