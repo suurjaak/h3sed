@@ -7,10 +7,9 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  11.01.2022
+@modified  15.01.2022
 ------------------------------------------------------------------------------
 """
-from collections import OrderedDict
 import logging
 
 from h3sed.data import Store

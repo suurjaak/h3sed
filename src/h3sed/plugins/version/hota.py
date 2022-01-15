@@ -7,14 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  09.01.2022
+@modified  15.01.2022
 ------------------------------------------------------------------------------
 """
-from collections import OrderedDict
 import logging
 import re
 
-from h3sed import data
 from h3sed.data import Store
 from h3sed.lib import util
 
@@ -347,7 +345,7 @@ def adapt(source, category, value):
                 cc = ["", "Ballista", "Cannon"]
                 prop = dict(prop, type="combo", choices=cc)
             result.append(prop)
-    if "props" == category and "skills" == util.get(source, "name"):
+    elif "props" == category and "skills" == util.get(source, "name"):
         result = []
         for prop in value:
             if "max" in prop: prop = dict(prop, max=prop["max"] + len(Skills))

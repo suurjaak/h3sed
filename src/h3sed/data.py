@@ -7,10 +7,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    12.01.2022
+@modified    15.01.2022
 ------------------------------------------------------------------------------
 """
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 import copy
 import datetime
 import gzip
@@ -383,14 +383,12 @@ Spells = [
 IDs = {
     # Artifacts
     "Ambassador's Sash":                 0x44,
-    "Ammo Cart":                         0x05,
     "Amulet of the Undertaker":          0x36,
     "Angel Feather Arrows":              0x3E,
     "Angel Wings":                       0x48,
     "Armor of Wonder":                   0x1F,
     "Arms of Legion":                    0x79,
     "Badge of Courage":                  0x31,
-    "Ballista":                          0x04,
     "Bird of Perception":                0x3F,
     "Blackshard of the Dead Knight":     0x08,
     "Boots of Levitation":               0x5A,
@@ -404,7 +402,6 @@ IDs = {
     "Cape of Conjuring":                 0x4E,
     "Cape of Velocity":                  0x63,
     "Cards of Prophecy":                 0x2F,
-    "Catapult":                          0x03,
     "Celestial Necklace of Bliss":       0x21,
     "Centaur's Axe":                     0x07,
     "Charm of Mana":                     0x49,
@@ -427,7 +424,6 @@ IDs = {
     "Everflowing Crystal Cloak":         0x6D,
     "Everpouring Vial of Mercury":       0x6F,
     "Eversmoking Ring of Sulfur":        0x71,
-    "First Aid Tent":                    0x06,
     "Garniture of Interference":         0x39,
     "Glyph of Gallantry":                0x33,
     "Golden Bow":                        0x5B,
@@ -484,7 +480,6 @@ IDs = {
     "Skull Helmet":                      0x14,
     "Speculum":                          0x34,
     "Spellbinder's Hat":                 0x7C,
-    "Spellbook":                         0x00,
     "Sphere of Permanence":              0x5C,
     "Spirit of Oppression":              0x54,
     "Spyglass":                          0x35,
@@ -496,7 +491,6 @@ IDs = {
     "Sword of Judgement":                0x23,
     "Talisman of Mana":                  0x4A,
     "Targ of the Rampaging Ogre":        0x10,
-    "The Grail":                         0x02,
     "Thunder Helmet":                    0x18,
     "Titan's Cuirass":                   0x1E,
     "Titan's Gladius":                   0x0C,
@@ -983,9 +977,7 @@ def wildcard():
 
 
 class Savefile(object):
-    """
-    Game savefile.
-    """
+    """Game savefile."""
 
     def __init__(self, filename):
         self.filename = filename
