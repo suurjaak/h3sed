@@ -1253,6 +1253,9 @@ def build(plugin, panel):
                         c.Bind(wx.EVT_TEXT,     make_value_handler(c, itemprop, row, index=i))
                         c.Bind(wx.EVT_SPINCTRL, make_value_handler(c, itemprop, row, index=i))
                         bsizer.Add(c)
+                    elif "window" == itemprop.get("type"):
+                        c = wx.Window(panel)
+                        bsizer.Add(c)
 
                     if c:
                         if isinstance(row, dict) and "name" in itemprop:

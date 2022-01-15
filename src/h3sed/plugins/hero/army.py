@@ -36,12 +36,15 @@ UIPROPS = [{
       }, {
         "name":    "name",
         "type":    "combo",
-        "choices": None, # Populated later
+        "choices": None,  # Populated later
       }, {
         "name":    "count",
         "type":    "number",
         "min":     1,
         "max":     2**32 - 1,
+      }, {
+        "name":    "placeholder",
+        "type":    "window",
     }]
 }]
 
@@ -110,7 +113,8 @@ class ArmyPlugin(object):
         state = state + [{}] * (MYPROPS[0]["max"] - len(state))
         ver = self._hero.savefile.version
         cmap = {x.lower(): x for x in data.Store.get("creatures", version=ver)}
-        MIN, MAX = MYPROPS[0]["item"][-1]["min"], MYPROPS[0]["item"][-1]["max"]
+        countitem = next(x for x in MYPROPS[0]["item"] if "count" == x.get("name"))
+        MIN, MAX = countitem["min"], countitem["max"]
         for i, v in enumerate(state):
             if not isinstance(v, (dict, type(None))):
                 logger.warning("Invalid data type in army #%s: %r", i + 1, v)
@@ -142,19 +146,23 @@ class ArmyPlugin(object):
                         choices = ([value] if value and value not in cc else []) + cc
                         ctrl.SetItems(choices)
                         creature = value
-                    else: ctrl.Show(bool(creature))
-                    if value is not None: ctrl.Value = value
+                    else: ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
+                    if value is not None and hasattr(ctrl, "Value"): ctrl.Value = value
         else:
             self._ctrls = gui.build(self, self._panel)[0]
             # Hide count controls where no creature type selected
             for i, row in enumerate(self._state):
-                creature = None
+                creature, size = None, None
                 for prop in MYPROPS[0]["item"]:
                     if "name" not in prop: continue # for prop
                     name = prop["name"]
                     ctrl, value = self._ctrls[i][name], self._state[i].get(name)
-                    if "choices" in prop: creature = self._state[i].get(name)
-                    else: self._ctrls[i][name].Show(bool(creature))
+                    if "choices" in prop: creature = value
+                    else:  # Show blank placeholder instead of count-control
+                        if "window" == prop.get("type"): ctrl.Size = ctrl.MinSize = size
+                        ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
+                    size = ctrl.Size
+        self._panel.Layout()
 
 
     def on_change(self, prop, row, ctrl, value):
