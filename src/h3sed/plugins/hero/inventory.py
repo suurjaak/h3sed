@@ -7,14 +7,14 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  15.01.2022
+@modified  16.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
 import logging
 
-from h3sed import data
 from h3sed import gui
+from h3sed import metadata
 from h3sed import plugins
 from h3sed.lib import util
 from h3sed.plugins.hero import POS
@@ -74,7 +74,7 @@ class InventoryPlugin(object):
         """Returns props for inventory-tab, as [{type: "itemlist", ..}]."""
         result = []
         ver = self._hero.savefile.version
-        cc = sorted(data.Store.get("artifacts", version=ver, category="inventory"))
+        cc = sorted(metadata.Store.get("artifacts", version=ver, category="inventory"))
         for prop in UIPROPS:
             myprop = dict(prop, item=[])
             for item in prop["item"]:
@@ -104,7 +104,7 @@ class InventoryPlugin(object):
         state0 = type(self._state)(self._state)
         state = state + [None] * (self.props()[0]["max"] - len(state))
         ver = self._hero.savefile.version
-        cmap = {x.lower(): x for x in data.Store.get("artifacts", version=ver, category="inventory")}
+        cmap = {x.lower(): x for x in metadata.Store.get("artifacts", version=ver, category="inventory")}
         for i, v in enumerate(state):
             if v and hasattr(v, "lower") and v.lower() in cmap:
                 self._state[i] = cmap[v.lower()]
@@ -128,14 +128,14 @@ class InventoryPlugin(object):
         """Builds inventory state from hero bytearray."""
         result = []
 
-        IDS   = data.Store.get("ids")
+        IDS   = metadata.Store.get("ids")
         NAMES = {x[y]: y for x in [IDS]
-                 for y in data.Store.get("artifacts", category="inventory")}
+                 for y in metadata.Store.get("artifacts", category="inventory")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         def parse_item(pos):
             b, v = bytes[pos:pos + 4], util.bytoi(bytes[pos:pos + 4])
-            if all(x == data.Blank for x in b): return None # Blank
+            if all(x == metadata.Blank for x in b): return None # Blank
             return util.bytoi(bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
 
         for prop in self.props():
@@ -151,8 +151,8 @@ class InventoryPlugin(object):
         result = self._hero.bytes[:]
         bytes0 = self._hero.get_bytes(original=True)
 
-        IDS = data.Store.get("ids")
-        SCROLL_ARTIFACTS = data.Store.get("artifacts", category="scroll")
+        IDS = metadata.Store.get("ids")
+        SCROLL_ARTIFACTS = metadata.Store.get("artifacts", category="scroll")
         MYPOS = plugins.adapt(self, "pos", POS)
         pos = MYPOS["inventory"]
 
@@ -162,12 +162,12 @@ class InventoryPlugin(object):
                 if name in SCROLL_ARTIFACTS:
                     b = util.itoby(v, 8)
                 elif v:
-                    b = util.itoby(v, 4) + data.Blank * 4
+                    b = util.itoby(v, 4) + metadata.Blank * 4
                 elif not self._state0[i]:
                     # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
                     b = bytes0[pos + i * 8:pos + (i + 1) * 8]
                 else:
-                    b = data.Blank * 4 + data.Null * 4
+                    b = metadata.Blank * 4 + metadata.Null * 4
                 result[pos + i * len(b):pos + (i + 1) * len(b)] = b
 
         return result

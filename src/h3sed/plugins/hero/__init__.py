@@ -83,10 +83,10 @@ import yaml
 import wx
 
 from h3sed import conf
-from h3sed import data
 from h3sed import gui
 from h3sed import guibase
 from h3sed import images
+from h3sed import metadata
 from h3sed import plugins
 from h3sed.lib import controls
 from h3sed.lib import util
@@ -546,7 +546,7 @@ class HeroPlugin(object):
         if not self._hero: return None
         hero = Hero(None, None, None, None)
         for k, v in vars(self._hero).items():
-            v2 = v if isinstance(v, data.Savefile) else copy.deepcopy(v)
+            v2 = v if isinstance(v, metadata.Savefile) else copy.deepcopy(v)
             setattr(hero, k, v2)
         return hero
 
@@ -555,7 +555,7 @@ class HeroPlugin(object):
         """Sets current hero object."""
         self._hero = Hero(hero.name, hero.bytes, hero.span, hero.savefile)
         for k, v in vars(hero).items():
-            v2 = v if isinstance(v, data.Savefile) else copy.deepcopy(v)
+            v2 = v if isinstance(v, metadata.Savefile) else copy.deepcopy(v)
             setattr(self._hero, k, v2)
         self._ctrls["hero"].Value = hero.name
 

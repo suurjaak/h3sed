@@ -7,12 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  15.01.2022
+@modified  16.01.2022
 ------------------------------------------------------------------------------
 """
 import logging
 
-from h3sed import data
+from h3sed import metadata
 from h3sed import plugins
 from h3sed.plugins.hero import POS
 
@@ -77,8 +77,8 @@ class SkillsPlugin(object):
         """Returns props for skills-tab, as {type: "itemlist", ..}."""
         result = []
         ver = self._hero.savefile.version
-        ss = sorted(data.Store.get("skills", version=ver))
-        ll = data.Store.get("skill_levels", version=ver)
+        ss = sorted(metadata.Store.get("skills", version=ver))
+        ll = metadata.Store.get("skill_levels", version=ver)
         for prop in UIPROPS:
             myprop = dict(prop)
             if "itemlist" == prop["type"]:
@@ -110,8 +110,8 @@ class SkillsPlugin(object):
         state0 = type(self._state)(self._state)
         state = state[:self.props()[0]["max"]]
         ver = self._hero.savefile.version
-        smap = {x.lower(): x for x in data.Store.get("skills", version=ver)}
-        lmap = {x.lower(): x for x in data.Store.get("skill_levels", version=ver)}
+        smap = {x.lower(): x for x in metadata.Store.get("skills", version=ver)}
+        lmap = {x.lower(): x for x in metadata.Store.get("skill_levels", version=ver)}
         self._state = type(self._state)()
         for i, v in enumerate(state):
             if not isinstance(v, dict):
@@ -129,7 +129,7 @@ class SkillsPlugin(object):
         """Adds skill at first level."""
         if any(value == x["name"] for x in self._state):
             return False
-        level = next(iter(data.Store.get("skill_levels")))
+        level = next(iter(metadata.Store.get("skill_levels")))
         self._state.append({"name": value, "level": level})
         return True
 
@@ -137,15 +137,15 @@ class SkillsPlugin(object):
     def parse(self, bytes):
         """Builds skills state from hero bytearray."""
         result = []
-        IDS    = {y: x[y] for x in [data.Store.get("ids")]
-                  for y in data.Store.get("skills")}
-        LEVELNAMES = {x[y]: y for x in [data.Store.get("ids")]
-                      for y in data.Store.get("skill_levels")}
+        IDS    = {y: x[y] for x in [metadata.Store.get("ids")]
+                  for y in metadata.Store.get("skills")}
+        LEVELNAMES = {x[y]: y for x in [metadata.Store.get("ids")]
+                      for y in metadata.Store.get("skill_levels")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         count = bytes[MYPOS["skills_count"]]
         ver = self._hero.savefile.version
-        for name in data.Store.get("skills", version=ver):
+        for name in metadata.Store.get("skills", version=ver):
             pos = IDS.get(name)
             level, slot = bytes[MYPOS["skills_level"] + pos], bytes[MYPOS["skills_slot"] + pos]
             if not level or not slot or slot > count:
@@ -158,10 +158,10 @@ class SkillsPlugin(object):
         """Returns new hero bytearray, with edited skills sections."""
         result = self._hero.bytes[:]
         ver = self._hero.savefile.version
-        IDS    = {y: x[y] for x in [data.Store.get("ids")]
-                  for y in data.Store.get("skills", version=ver)}
-        LEVELS = {y: x[y] for x in [data.Store.get("ids")]
-                  for y in data.Store.get("skill_levels")}
+        IDS    = {y: x[y] for x in [metadata.Store.get("ids")]
+                  for y in metadata.Store.get("skills", version=ver)}
+        LEVELS = {y: x[y] for x in [metadata.Store.get("ids")]
+                  for y in metadata.Store.get("skill_levels")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         levels, count = bytearray(len(IDS)), 0

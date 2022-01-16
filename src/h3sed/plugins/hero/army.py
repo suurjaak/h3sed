@@ -7,14 +7,14 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  15.01.2022
+@modified  16.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
 import logging
 
-from h3sed import data
 from h3sed import gui
+from h3sed import metadata
 from h3sed import plugins
 from h3sed.lib import util
 from h3sed.plugins.hero import POS
@@ -81,7 +81,7 @@ class ArmyPlugin(object):
         """Returns props for army-tab, as [{type: "itemlist", ..}]."""
         result = []
         ver = self._hero.savefile.version
-        cc = sorted(data.Store.get("creatures", version=ver))
+        cc = sorted(metadata.Store.get("creatures", version=ver))
         for prop in UIPROPS:
             myprop = dict(prop, item=[])
             for item in prop["item"]:
@@ -112,7 +112,7 @@ class ArmyPlugin(object):
         state0 = type(self._state)(self._state)
         state = state + [{}] * (MYPROPS[0]["max"] - len(state))
         ver = self._hero.savefile.version
-        cmap = {x.lower(): x for x in data.Store.get("creatures", version=ver)}
+        cmap = {x.lower(): x for x in metadata.Store.get("creatures", version=ver)}
         countitem = next(x for x in MYPROPS[0]["item"] if "count" == x.get("name"))
         MIN, MAX = countitem["min"], countitem["max"]
         for i, v in enumerate(state):
@@ -135,7 +135,7 @@ class ArmyPlugin(object):
         MYPROPS = self.props()
         if self._ctrls and all(all(x.values()) for x in self._ctrls):
             ver = self._hero.savefile.version
-            cc = [""] + sorted(data.Store.get("creatures", version=ver))
+            cc = [""] + sorted(metadata.Store.get("creatures", version=ver))
             for i, row in enumerate(self._state):
                 creature = None
                 for prop in MYPROPS[0]["item"]:
@@ -182,8 +182,8 @@ class ArmyPlugin(object):
         """Builds army state from hero bytearray."""
         result = []
 
-        NAMES = {x[y]: y for x in [data.Store.get("ids")]
-                 for y in data.Store.get("creatures")}
+        NAMES = {x[y]: y for x in [metadata.Store.get("ids")]
+                 for y in metadata.Store.get("creatures")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         for prop in self.props():
@@ -202,8 +202,8 @@ class ArmyPlugin(object):
         result = self._hero.bytes[:]
         bytes0 = self._hero.get_bytes(original=True)
 
-        IDS = {y: x[y] for x in [data.Store.get("ids")]
-               for y in data.Store.get("creatures")}
+        IDS = {y: x[y] for x in [metadata.Store.get("ids")]
+               for y in metadata.Store.get("creatures")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         for prop in self.props():
@@ -214,7 +214,7 @@ class ArmyPlugin(object):
                     b1 = bytes0[MYPOS["army_types"]  + i * 4:MYPOS["army_types"]  + i * 4 + 4]
                     b2 = bytes0[MYPOS["army_counts"] + i * 4:MYPOS["army_counts"] + i * 4 + 4]
                 else:
-                    b1, b2 = data.Blank * 4, data.Null * 4
+                    b1, b2 = metadata.Blank * 4, metadata.Null * 4
                     if count and name in IDS:
                         b1 = util.itoby(IDS[name], 4)
                         b2 = util.itoby(count,     4)

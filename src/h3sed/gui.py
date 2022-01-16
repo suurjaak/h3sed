@@ -31,9 +31,9 @@ from h3sed.lib import util
 from h3sed.lib import wx_accel
 from h3sed.lib.vendor import step
 from h3sed import conf
-from h3sed import data
 from h3sed import guibase
 from h3sed import images
+from h3sed import metadata
 from h3sed import plugins
 from h3sed import templates
 
@@ -192,9 +192,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         button_open   = self.button_open   = wx.Button(page, label="&Open")
         button_browse = self.button_browse = wx.Button(page, label="&Browse")
         dir_ctrl = self.dir_ctrl = wx.GenericDirCtrl(page,
-            style=wx.DIRCTRL_SHOW_FILTERS, filter=data.wildcard(), defaultFilter=0)
+            style=wx.DIRCTRL_SHOW_FILTERS, filter=metadata.wildcard(), defaultFilter=0)
         dialog = self.dialog_browse = wx.FileDialog(
-            parent=self, message="Select file", wildcard=data.wildcard(),
+            parent=self, message="Select file", wildcard=metadata.wildcard(),
             style=wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.RESIZE_BORDER
         )
 
@@ -386,7 +386,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         savefile = None
         if os.path.exists(filename):
             try:
-                savefile = data.Savefile(filename)
+                savefile = metadata.Savefile(filename)
             except Exception as e:
                 logger.exception("Error opening %s.", filename)
                 if not silent:
@@ -788,7 +788,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         Handler for open savefile menu or button, displays a file dialog and
         loads the chosen file.
         """
-        dialog = wx.FileDialog(self, message="Open", wildcard=data.wildcard(),
+        dialog = wx.FileDialog(self, message="Open", wildcard=metadata.wildcard(),
             style=wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_OPEN | wx.RESIZE_BORDER
         )
         if wx.ID_OK == dialog.ShowModal():
@@ -1028,7 +1028,7 @@ class SavefilePage(wx.Panel):
         if rename:
             title = "Save %s as.." % os.path.split(self.filename)[-1]
             dialog = wx.FileDialog(self,
-                message=title, wildcard=data.wildcard(),
+                message=title, wildcard=metadata.wildcard(),
                 defaultDir=os.path.split(self.filename)[0],
                 defaultFile=os.path.basename(self.filename),
                 style=wx.FD_OVERWRITE_PROMPT | wx.FD_SAVE | wx.RESIZE_BORDER

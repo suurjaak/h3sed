@@ -7,13 +7,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  15.01.2022
+@modified  16.01.2022
 ------------------------------------------------------------------------------
 """
 import logging
 
-from h3sed import data
 from h3sed import gui
+from h3sed import metadata
 from h3sed import plugins
 from h3sed.lib import util
 from h3sed.plugins.hero import POS
@@ -68,7 +68,7 @@ class SpellsPlugin(object):
         result = []
         ver = self._hero.savefile.version
         for prop in UIPROPS:
-            cc = data.Store.get("spells", version=ver)
+            cc = metadata.Store.get("spells", version=ver)
             result.append(dict(prop, choices=sorted(cc)))
         return result
 
@@ -93,7 +93,7 @@ class SpellsPlugin(object):
         state0 = type(self._state)(self._state)
         self._state = []
         ver = self._hero.savefile.version
-        cmap = {x.lower(): x for x in data.Store.get("spells", version=ver)}
+        cmap = {x.lower(): x for x in metadata.Store.get("spells", version=ver)}
         for i, v in enumerate(state):
             if v and hasattr(v, "lower") and v.lower() in cmap:
                 self._state += [cmap[v.lower()]]
@@ -121,8 +121,8 @@ class SpellsPlugin(object):
     def parse(self, bytes):
         """Builds spells state from hero bytearray."""
         result = [] # List of values like ["Haste", ..]
-        IDS = {y: x[y] for x in [data.Store.get("ids")]
-               for y in data.Store.get("spells")}
+        IDS = {y: x[y] for x in [metadata.Store.get("ids")]
+               for y in metadata.Store.get("spells")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         for name, pos in IDS.items():
@@ -134,14 +134,14 @@ class SpellsPlugin(object):
         """Returns new hero bytearray, with edited spells sections."""
         result = self._hero.bytes[:]
 
-        IDS = {y: x[y] for x in [data.Store.get("ids")]
-               for y in data.Store.get("spells")}
+        IDS = {y: x[y] for x in [metadata.Store.get("ids")]
+               for y in metadata.Store.get("spells")}
         MYPOS = plugins.adapt(self, "pos", POS)
         state = self._state
 
         artispells = set()
         if getattr(self._hero, "artifacts", None):
-            SPELL_ARTIFACTS = data.Store.get("artifact_spells")
+            SPELL_ARTIFACTS = metadata.Store.get("artifact_spells")
             artispells = set(y for x in self._hero.artifacts.values()
                              for y in SPELL_ARTIFACTS.get(x, []))
         if not util.get(self._hero, "stats", "spellbook"): state = []

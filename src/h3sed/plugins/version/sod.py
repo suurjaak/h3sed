@@ -7,12 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  15.01.2022
+@modified  16.01.2022
 ------------------------------------------------------------------------------
 """
 import logging
 
-from h3sed.data import Store
+from h3sed.metadata import Store
 
 
 logger = logging.getLogger(__package__)

@@ -8,7 +8,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    15.01.2022
+@modified    16.01.2022
 ------------------------------------------------------------------------------
 """
 import argparse
@@ -141,8 +141,8 @@ def run_gui(filename):
     window.run_console("import datetime, math, os, re, time, sys, wx")
     window.run_console("# All %s standard modules:" % conf.Title)
     window.run_console("import h3sed")
-    window.run_console("from h3sed import conf, data, guibase, gui, "
-                       "images, main, plugins, templates")
+    window.run_console("from h3sed import conf, guibase, gui, images, "
+                       "main, metadata, plugins, templates")
     window.run_console("from h3sed.lib import controls, util, wx_accel")
 
     window.run_console("")

@@ -9,15 +9,15 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  15.01.2022
+@modified  16.01.2022
 ------------------------------------------------------------------------------
 """
 import logging
 
 import wx
 
-from h3sed import data
 from h3sed import gui
+from h3sed import metadata
 from h3sed import plugins
 from h3sed.lib import util
 from h3sed.plugins.hero import POS
@@ -147,7 +147,7 @@ class StatsPlugin(object):
     def props(self):
         """Returns props for stats-tab, as [{type: "number", ..}]."""
         result = []
-        IDS = data.Store.get("ids")
+        IDS = metadata.Store.get("ids")
         for prop in UIPROPS:
             if "value" in prop: prop = dict(prop, value=IDS[prop["label"]])
             result.append(prop)
@@ -208,13 +208,13 @@ class StatsPlugin(object):
         """Builds stats state from hero bytearray."""
         result = {}
 
-        NAMES = {x[y]: y for x in [data.Store.get("ids")]
-                 for y in data.Store.get("special_artifacts")}
+        NAMES = {x[y]: y for x in [metadata.Store.get("ids")]
+                 for y in metadata.Store.get("special_artifacts")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         def parse_special(pos):
             b, v = bytes[pos:pos + 4], util.bytoi(bytes[pos:pos + 4])
-            return None if all(x == ord(data.Blank) for x in b) else v
+            return None if all(x == ord(metadata.Blank) for x in b) else v
 
         for prop in self.props():
             pos = MYPOS[prop["name"]]
@@ -233,13 +233,13 @@ class StatsPlugin(object):
         """Returns new hero bytearray, with edited stats sections."""
         result = self._hero.bytes[:]
 
-        IDS = data.Store.get("ids")
+        IDS = metadata.Store.get("ids")
         MYPOS = plugins.adapt(self, "pos", POS)
 
         for prop in self.props():
             v, pos = self._state[prop["name"]], MYPOS[prop["name"]]
             if "check" == prop["type"]:
-                b = (util.itoby(prop["value"], 4) if v else data.Blank * 4)
+                b = (util.itoby(prop["value"], 4) if v else metadata.Blank * 4)
                 b = b[:4] + result[pos + 4:pos + 8]
             elif "number" == prop["type"]: b = util.itoby(v, prop["len"])
             elif "combo" == prop["type"]:
@@ -250,7 +250,7 @@ class StatsPlugin(object):
                                        self._state[prop["name"]])
                         continue # for prop
                     b = util.itoby(v, 4)[:4] + result[pos + 4:pos + 8]
-                else: b = data.Blank * 4
+                else: b = metadata.Blank * 4
             result[pos:pos + len(b)] = b
 
         return result
