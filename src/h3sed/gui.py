@@ -355,7 +355,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             tb.Bind(wx.EVT_TOOL, handler, id=toolid)
 
         combo_game = self.combo_game = wx.ComboBox(tb, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        combo_game.ToolTip = "Set choice for artifacts, creatures etc"
+        combo_game.ToolTip = "Select game version to interpret savegame as"
         combo_game.Enable(False)
         combo_game.Bind(wx.EVT_COMBOBOX, self.on_change_game_version)
         tb.AddSeparator()
@@ -530,7 +530,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.ToolBar.EnableTool(self.ToolBar.GetToolByPos(i).Id, False)
         self.ToolBar.EnableTool(wx.ID_OPEN, True)
         if isinstance(page, SavefilePage):
-            self.ToolBar.EnableTool(wx.ID_SAVE,    page.get_unsaved())
+            self.ToolBar.EnableTool(wx.ID_SAVE,    True)
             self.ToolBar.EnableTool(wx.ID_SAVEAS,  True)
             self.ToolBar.EnableTool(wx.ID_UNDO,    page.undoredo.CanUndo())
             self.ToolBar.EnableTool(wx.ID_REDO,    page.undoredo.CanRedo())
@@ -562,8 +562,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             subtitle = os.path.join(os.path.split(path)[-1] or path, file)
 
             self.menu_save_as.Enabled = self.menu_close.Enabled = True
-            self.menu_reload.Enabled = True
-            self.menu_save.Enabled = page.get_unsaved()
+            self.menu_reload.Enabled = self.menu_save.Enabled = True
             page.undoredo.SetEditMenu(self.menu_edit)
             page.undoredo.SetMenuStrings()
         self.update_toolbar(page)
@@ -686,7 +685,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             title2 = title1 + suffix
             if self.notebook.GetPageText(idx) != title2:
                 self.notebook.SetPageText(idx, title2)
-            self.menu_save.Enabled = bool(modified)
             self.update_toolbar(page)
 
 
