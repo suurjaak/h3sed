@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    15.01.2022
+@modified    16.01.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -103,6 +103,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         sizer.Add(notebook, proportion=1, flag=wx.GROW)
         self.create_menu()
         self.create_toolbar()
+        self.populate_statusbar()
 
         # Memory file system for showing images in wx.HtmlWindow
         self.memoryfs = {"files": {}, "handler": wx.MemoryFSHandler()}
@@ -176,6 +177,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Show(True)
         logger.info("Started application.")
         plugins.init()
+        self.populate_toolbar()
 
 
     def create_page_main(self, notebook):
@@ -215,7 +217,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         button_browse.Bind(wx.EVT_BUTTON,              self.on_browse)
         button_open.Bind(wx.EVT_BUTTON,                self.on_open_current_savefile)
 
-        hsizer.Add(text_file, border=5, proportion=1, flag=wx.BOTTOM | wx.GROW)
+        hsizer.Add(text_file,     border=5, proportion=1, flag=wx.BOTTOM | wx.GROW)
         hsizer.Add(button_open,   border=5, flag=wx.BOTTOM | wx.LEFT)
         hsizer.Add(button_browse, border=5, flag=wx.BOTTOM | wx.LEFT)
         sizer.Add(hsizer, border=10, flag=wx.ALL ^ wx.BOTTOM | wx.GROW)
@@ -239,7 +241,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             wx.ID_ANY, "&Open savefile...\tCtrl-O", "Choose a savefile to open"
         )
         menu_close = self.menu_close = menu_file.Append(
-            wx.ID_ANY, "&Close file...\tCtrl-F4", "Close current savefile"
+            wx.ID_ANY, "&Close file\tCtrl-F4", "Close current savefile"
         )
         menu_reload = self.menu_reload = menu_file.Append(
             wx.ID_ANY, "Re&load", "Reload savefile, losing any current changes"
@@ -326,31 +328,40 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def create_toolbar(self):
         """Creates the program toolbar."""
-        TOOLS = [(wx.ID_OPEN,    wx.ART_FILE_OPEN,    self.on_open_savefile),
-                 (wx.ID_SAVE,    wx.ART_FILE_SAVE,    self.on_save_savefile),
-                 (wx.ID_SAVEAS,  wx.ART_FILE_SAVE_AS, self.on_save_savefile_as),
+        TOOLS = [("Open",    wx.ID_OPEN,    wx.ART_FILE_OPEN,    self.on_open_savefile),
+                 ("Save",    wx.ID_SAVE,    wx.ART_FILE_SAVE,    self.on_save_savefile),
+                 ("Save as", wx.ID_SAVEAS,  wx.ART_FILE_SAVE_AS, self.on_save_savefile_as),
                  (),
-                 (wx.ID_UNDO,    wx.ART_UNDO,         self.on_undo_savefile),
-                 (wx.ID_REDO,    wx.ART_REDO,         self.on_redo_savefile),
+                 ("Undo",    wx.ID_UNDO,    wx.ART_UNDO,         self.on_undo_savefile),
+                 ("Redo",    wx.ID_REDO,    wx.ART_REDO,         self.on_redo_savefile),
                  (),
-                 (wx.ID_REFRESH, "ToolbarRefresh",    self.on_reload_savefile)]
+                 ("Reload",  wx.ID_REFRESH, "ToolbarRefresh",    self.on_reload_savefile)]
         TOOL_HELPS = {wx.ID_OPEN:    "Choose a savefile to open",
                       wx.ID_SAVE:    "Save changes to the active file",
                       wx.ID_SAVEAS:  "Save the active file under a new name",
                       wx.ID_UNDO:    "Undo the last action",
                       wx.ID_REDO:    "Redo the previously undone action",
                       wx.ID_REFRESH: "Reload savefile, losing any current changes"}
-        tb = self.CreateToolBar(wx.TB_FLAT | wx.TB_NODIVIDER)
+        tb = self.CreateToolBar(wx.TB_FLAT | wx.TB_HORIZONTAL | wx.TB_TEXT)
         tb.SetToolBitmapSize((16, 16))
         for tool in TOOLS:
             if not tool: tb.AddSeparator()
             if not tool: continue  # for tool
-            toolid, art, handler = tool
+            label, toolid, art, handler = tool
             bmp = getattr(images, art).Bitmap if isinstance(art, str) and hasattr(images, art) else \
                   wx.ArtProvider.GetBitmap(art, wx.ART_TOOLBAR, (16, 16))
-            tb.AddTool(toolid, "", bmp, shortHelp=TOOL_HELPS[toolid])
+            tb.AddTool(toolid, label, bmp, shortHelp=TOOL_HELPS[toolid])
             tb.EnableTool(toolid, False)
             tb.Bind(wx.EVT_TOOL, handler, id=toolid)
+
+        combo_game = self.combo_game = wx.ComboBox(tb, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        combo_game.ToolTip = "Set choice for artifacts, creatures etc"
+        combo_game.Enable(False)
+        combo_game.Bind(wx.EVT_COMBOBOX, self.on_change_game_version)
+        tb.AddSeparator()
+        tb.AddControl(combo_game, "Game version")
+        tb.EnableTool(self.combo_game.Id, False)
+
         tb.EnableTool(wx.ID_OPEN, True)
         tb.Realize()
 
@@ -457,6 +468,27 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                           conf.Title, wx.OK | wx.ICON_ERROR)
 
 
+    def populate_statusbar(self):
+        """Adds file status fields to program statusbar."""
+        self.StatusBar.SetFieldsCount(3)
+        extent1 = self.StatusBar.GetTextExtent("2222-22-22 22:22:22")[0]
+        extent2 = self.StatusBar.GetTextExtent("222.22 KB")[0]
+        self.StatusBar.SetStatusWidths([-2, extent1 + 10, extent2 + 10])
+
+
+    def populate_toolbar(self):
+        """Populates game version control in program toolbar."""
+        combo_game = self.combo_game
+        if getattr(plugins, "version", None):
+            combo_game.SetItems([x["label"] for x in plugins.version.PLUGINS])
+            if conf.GameVersion:
+                label = next((x["label"] for x in plugins.version.PLUGINS
+                              if x["name"] == conf.GameVersion), None)
+                if label: combo_game.Value = label
+        else:
+            combo_game.Show(False)
+
+
     def get_unique_tab_title(self, title):
         """
         Returns a title that is unique for the current notebook - if the
@@ -493,6 +525,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def update_toolbar(self, page):
         """Updates program toolbar for given page."""
+        if not page: return
         for i in range(self.ToolBar.ToolsCount):
             self.ToolBar.EnableTool(self.ToolBar.GetToolByPos(i).Id, False)
         self.ToolBar.EnableTool(wx.ID_OPEN, True)
@@ -503,6 +536,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.ToolBar.EnableTool(wx.ID_REDO,    page.undoredo.CanRedo())
             self.ToolBar.EnableTool(wx.ID_SAVEAS,  True)
             self.ToolBar.EnableTool(wx.ID_REFRESH, True)
+            self.ToolBar.EnableTool(self.combo_game.Id, self.combo_game.Count > 1)
+        self.combo_game.Enable(isinstance(page, SavefilePage) and self.combo_game.Count > 1)
 
 
     def on_change_page(self, event):
@@ -526,13 +561,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             # Use parent/file.gm1 or C:/file.gm1
             subtitle = os.path.join(os.path.split(path)[-1] or path, file)
 
-        if isinstance(page, SavefilePage):
             self.menu_save_as.Enabled = self.menu_close.Enabled = True
             self.menu_reload.Enabled = True
             self.menu_save.Enabled = page.get_unsaved()
             page.undoredo.SetEditMenu(self.menu_edit)
             page.undoredo.SetMenuStrings()
         self.update_toolbar(page)
+        self.update_fileinfo()
 
         self.Title = " - ".join(filter(bool, (conf.Title, subtitle)))
         wx.CallAfter(self.update_notebook_header)
@@ -602,6 +637,33 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.menu_log.Check(False)
 
 
+    def on_change_game_version(self, event):
+        """Handler for selecting savegame version, updates plugin content and choices."""
+        page = self.notebook.GetCurrentPage()
+        p2 = next(x for x in plugins.version.PLUGINS
+                  if x["label"] == event.EventObject.Value)
+
+        if page.savefile.version == p2["name"]: return
+        p1 = next(x for x in plugins.version.PLUGINS
+                  if x["name"] == page.savefile.version)
+
+        def switch(opts):
+            self.combo_game.Value = opts["label"]
+            page.savefile.version = conf.GameVersion = opts["name"]
+            page.Freeze()
+            try:
+                for p in page.plugins: p.render(reparse=True)
+                page.SendSizeEvent()
+            finally: page.Thaw()
+            conf.save()
+            wx.CallAfter(self.update_toolbar, page)
+            return True
+
+        cname = "set version: %s" % p2["label"]
+        do, undo = (functools.partial(switch, x) for x in (p2, p1))
+        page.undoredo.Submit(GenericCommand(do, undo, cname))
+
+
     def on_savefile_page_event(self, event):
         """Handler for notification from SavefilePage, updates UI."""
         page, idx = event.source, self.notebook.GetPageIndex(event.source)
@@ -613,6 +675,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.files[filename2]["filename"] = filename2
 
         if ready or rename: self.update_notebook_header()
+
+        self.update_fileinfo()
 
         if modified is not None or rename:
             suffix = "*" if modified else ""
@@ -745,10 +809,30 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
 
     def on_change_dir_ctrl(self, event):
-        """Handler for selecting a file in dir list, refreshes file textbox."""
-        path = event.EventObject.GetPath()
-        self.text_file.Value = path if os.path.isfile(path) else ""
-        self.button_open.Enable(os.path.isfile(path))
+        """Handler for selecting a file in dir list, refreshes file controls."""
+        filename = event.EventObject.GetPath()
+        self.text_file.Value = filename if os.path.isfile(filename) else ""
+        self.button_open.Enable(os.path.isfile(filename))
+        self.update_fileinfo()
+
+
+    def update_fileinfo(self):
+        """Updates file data in toolbar and statusbar."""
+        filename = self.dir_ctrl.GetPath()
+        page = self.notebook.GetCurrentPage()
+        if isinstance(page, SavefilePage) and self.combo_game.Count > 1:
+            filename = page.savefile.filename
+            ver = next(x for x in plugins.version.PLUGINS
+                       if x["name"] == page.savefile.version)
+            self.combo_game.Value = ver["label"]
+
+        dt, sz = "", ""
+        if os.path.isfile(filename):
+            stamp = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
+            dt = stamp.strftime("%Y-%m-%d %H:%M:%S")
+            sz = util.format_bytes(os.path.getsize(filename))
+        self.StatusBar.SetStatusText(dt, 1)
+        self.StatusBar.SetStatusText(sz, 2)
 
 
     def on_open_current_savefile(self, event=None):
@@ -880,19 +964,6 @@ class SavefilePage(wx.Panel):
         busy = controls.BusyPanel(self, 'Loading "%s".' % self.filename)
         ColourManager.Manage(self, "BackgroundColour", "WidgetColour")
 
-        label_mtime = wx.StaticText(self, label="Last modified:", name="mtime_label")
-        text_mtime  = self.text_mtime = wx.TextCtrl(self, style=wx.NO_BORDER, name="mtime")
-        label_size  = wx.StaticText(self, label="File size:", name="size_label")
-        text_size   = self.text_size = wx.TextCtrl(self, style=wx.NO_BORDER, name="size")
-        label_game  = wx.StaticText(self, label="&Game version:")
-        combo_game  = self.combo_game = wx.ComboBox(self, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        button_save = self.button_save = wx.Button(self, label="Save")
-        button_save.Bitmap = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE, wx.ART_TOOLBAR, (16, 16))
-        label_game.ToolTip = combo_game.ToolTip = "Set choice for artifacts, creatures etc"
-        button_save.Enabled = False
-        ColourManager.Manage(text_mtime, "BackgroundColour", "WidgetColour")
-        ColourManager.Manage(text_size,  "BackgroundColour", "WidgetColour")
-
         bookstyle = wx.lib.agw.fmresources.INB_LEFT
         if (wx.version().startswith("2.8") and sys.version_info.major == 2
         and sys.version_info < (2, 7, 3)):
@@ -904,32 +975,12 @@ class SavefilePage(wx.Panel):
         il.Add(images.Icon_32x32_32bit.Bitmap)
         notebook.AssignImageList(il)
 
-        if getattr(plugins, "version", None):
-            combo_game.SetItems([x["label"] for x in plugins.version.PLUGINS])
-            combo_game.Bind(wx.EVT_COMBOBOX, self.on_change_game_version)
-            if conf.GameVersion:
-                label = next((x["label"] for x in plugins.version.PLUGINS
-                              if x["name"] == conf.GameVersion), None)
-                if label: combo_game.Value = label
-
         self.TopLevelParent.page_file_latest = self
         self.Bind(EVT_SAVEFILE_PAGE, self.on_page_event)
-        button_save.Bind(wx.EVT_BUTTON, lambda e: self.save_file())
         self.TopLevelParent.run_console(
             "page = self.page_file_latest # Savefile tab")
 
-        tsizer = wx.GridBagSizer(vgap=5, hgap=10)
-        tsizer.Add(label_mtime, pos=(0, 0))
-        tsizer.Add(text_mtime,  pos=(0, 1), flag=wx.GROW)
-        tsizer.Add(label_size,  pos=(1, 0))
-        tsizer.Add(text_size,   pos=(1, 1), flag=wx.GROW)
-        tsizer.Add(label_game,  pos=(2, 0), flag=wx.ALIGN_CENTER_VERTICAL)
-        tsizer.Add(combo_game,  pos=(2, 1))
-        tsizer.Add(button_save, pos=(0, 2), span=(3, 1), border=5, flag=wx.RIGHT | wx.ALIGN_BOTTOM)
-        tsizer.AddGrowableCol(1)
-
         sizer = self.Sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(tsizer, border=10, flag=wx.GROW | wx.LEFT | wx.TOP)
         sizer.Add(notebook, proportion=1, border=5, flag=wx.GROW | wx.ALL)
         self.Layout()
 
@@ -939,20 +990,6 @@ class SavefilePage(wx.Panel):
             guibase.status("Opened %s." % self.filename, flash=True)
         finally:
             busy.Close()
-
-
-    def update_fileinfo(self):
-        """Updates file information controls."""
-        self.text_mtime.Value = self.savefile.dt.strftime("%Y-%m-%d %H:%M:%S")
-        self.text_size.Value  = "%s (%s unpacked)" % (
-            util.format_bytes(self.savefile.size),
-            util.format_bytes(self.savefile.usize)
-        )
-        p = next(x for x in plugins.version.PLUGINS
-                 if x["name"] == self.savefile.version) \
-            if getattr(plugins, "version", None) else None
-        if p:
-            self.combo_game.Value = p["label"]
 
 
     def get_unsaved(self):
@@ -976,7 +1013,6 @@ class SavefilePage(wx.Panel):
         self.undoredo.SetMenuStrings()
         evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
-        self.button_save.Enable(False)
         busy = controls.BusyPanel(self.Parent, "Reloading file.")
         self.Freeze()
         try:
@@ -1061,14 +1097,12 @@ class SavefilePage(wx.Panel):
         self.filename = self.savefile.filename = filename2
         try: self.savefile.read()
         except Exception: logger.warning("Error re-reading %s.", filename2, exc_info=True)
-        self.update_fileinfo()
         if rename:
             evt = SavefilePageEvent(self.Id, source=self, rename=True,
                                     filename1=filename1, filename2=filename2)
         else:
             evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
-        self.button_save.Enable(False)
         guibase.status("Saved %s." % filename2, flash=True)
         return True
 
@@ -1077,37 +1111,13 @@ class SavefilePage(wx.Panel):
         """Loads data from our file."""
         if not self.plugins:
             self.plugins = plugins.render(self.savefile, self.notebook, self.undoredo)
-        self.update_fileinfo()
-
-
-    def on_change_game_version(self, event):
-        """Handler for selecting savegame version, updates UI choices."""
-        p2 = next(x for x in plugins.version.PLUGINS
-                  if x["label"] == event.EventObject.Value)
-        if self.savefile.version == p2["name"]: return
-        p1 = next(x for x in plugins.version.PLUGINS
-                  if x["name"] == self.savefile.version)
-
-        def switch(opts):
-            self.savefile.version = conf.GameVersion = opts["name"]
-            self.combo_game.Value = opts["label"]
-            self.Freeze()
-            try:
-                for p in self.plugins: p.render(reparse=True)
-                self.SendSizeEvent()
-            finally: self.Thaw()
-            conf.save()
-            return True
-
-        cname = "set version: %s" % p2["label"]
-        do, undo = (functools.partial(switch, x) for x in (p2, p1))
-        self.undoredo.Submit(GenericCommand(do, undo, cname))
+        evt = SavefilePageEvent(self.Id, source=self, modified=False)
+        wx.PostEvent(self.Parent, evt)
 
 
     def on_page_event(self, event):
         """Handler for notification from subtabs, updates UI if modified."""
         changed = self.savefile.is_changed()
-        self.button_save.Enable(changed)
         evt = SavefilePageEvent(self.Id, source=self, modified=changed)
         wx.PostEvent(self.Parent, evt)
 
