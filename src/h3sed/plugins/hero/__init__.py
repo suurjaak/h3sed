@@ -67,7 +67,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  15.01.2022
+@modified  16.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
@@ -413,6 +413,7 @@ class HeroPlugin(object):
         if detect_version and getattr(plugins, "version", None):
             versions = [x["name"] for x in plugins.version.PLUGINS]
         if not versions: versions = [self.savefile.version]
+        all_versions = versions[:]
         rgx_strip = re.compile(br"[\x00-\x19]")
 
         while versions:
@@ -438,8 +439,9 @@ class HeroPlugin(object):
             logger.info("Detected %s heroes in %s as version '%s'.",
                         len(vresult), self.savefile.filename, ver)
 
-        vcounts = {k: len(v) for k, v in version_results.items() if v}
-        ver = sorted(vcounts.items(), key=lambda x: x[1])[-1][0] if vcounts else None
+        vcounts = {k: len(v) for k, v in version_results.items()}
+        maxcount_vers = [k for k in all_versions if vcounts[k] == max(vcounts.values())]
+        ver = maxcount_vers[-1] if maxcount_vers else None
         if ver:
             self.savefile.version = ver
             result = sorted(version_results[ver], key=lambda x: x.name.lower())
