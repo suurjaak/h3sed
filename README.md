@@ -73,6 +73,9 @@ and the following 3rd-party Python packages:
 Attribution
 -----------
 
+Knowledge on Heroes3 savegames gathered mostly from Heroes Community forum,
+http://heroescommunity.com/viewthread.php3?TID=18817.
+
 Includes a modified version of step, Simple Template Engine for Python,
 (c) 2012, Daniele Mazzocchio, https://github.com/dotpy/step.
 
