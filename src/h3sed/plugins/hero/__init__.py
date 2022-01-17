@@ -67,7 +67,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  16.01.2022
+@modified  17.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
@@ -462,6 +462,7 @@ class HeroPlugin(object):
             assert isinstance(states, dict)
         except Exception as e:
             logger.warn("Error loading hero data from clipboard: %s", e)
+            guibase.status("No valid hero data in clipboard.", flash=True)
             return
         pluginmap = {p["name"]: p["instance"] for p in self._plugins}
         usables = {}  # {plugin name: state}
