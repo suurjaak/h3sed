@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    16.01.2022
+@modified    17.01.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -820,9 +820,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         page = self.notebook.GetCurrentPage()
         if isinstance(page, SavefilePage) and self.combo_game.Count > 1:
             filename = page.savefile.filename
-            ver = next(x for x in plugins.version.PLUGINS
-                       if x["name"] == page.savefile.version)
-            self.combo_game.Value = ver["label"]
+            ver = next((x for x in plugins.version.PLUGINS
+                        if x["name"] == page.savefile.version), None)
+            if ver: self.combo_game.Value = ver["label"]
 
         dt, sz = "", ""
         if os.path.isfile(filename):
