@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  09.01.2022
+@modified  18.01.2022
 ------------------------------------------------------------------------------
 """
 import os
@@ -90,7 +90,7 @@ def load_modules(basepackage, basefile, dirsonly=False):
     result = []
     myname = os.path.realpath(basefile)
     for f in glob.glob(os.path.join(os.path.dirname(myname), "*")):
-        if f == myname or f.endswith(".pyc"): continue # for f
+        if f == myname or f.endswith("__") or f.endswith(".pyc"): continue # for f
         if dirsonly and not os.path.isdir(f): continue # for f
 
         name = os.path.splitext(os.path.split(f)[-1])[0]
