@@ -473,7 +473,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.StatusBar.SetFieldsCount(3)
         extent1 = self.StatusBar.GetTextExtent("2222-22-22 22:22:22")[0]
         extent2 = self.StatusBar.GetTextExtent("222.22 KB")[0]
-        self.StatusBar.SetStatusWidths([-2, extent1 + 10, extent2 + 10])
+        WPLUS = 10 if "nt" == os.name else 30
+        self.StatusBar.SetStatusStyles([wx.SB_SUNKEN] * 3)
+        self.StatusBar.SetStatusWidths([-2, extent1 + WPLUS, extent2 + WPLUS])
 
 
     def populate_toolbar(self):
