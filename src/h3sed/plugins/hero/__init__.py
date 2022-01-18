@@ -540,11 +540,12 @@ class HeroPlugin(object):
         formatted = LF + "".join(
             "%s%s:%s%s%s%s" % (
                 INDENT, category, LF if pairs else "", INDENT if pairs else "",
-                (LF + INDENT).join("%s%s" % (a.ljust(maxlen) if a.strip() != "-" else a, b)
+                (LF + INDENT).join("%s%s" % (a.ljust(maxlen) if b and a.strip() != "-" else a, b)
                                    for a, b in pairs), LF
             ) for category, pairs in states
         )
-        return yaml.safe_dump({self._hero.name: None}).replace(" null\n", formatted)
+        name = yaml.safe_dump([self._hero.name], default_flow_style=True).strip()[1:-1]
+        return name + ":" + formatted
 
 
     def get_data(self):
