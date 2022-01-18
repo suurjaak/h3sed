@@ -6,7 +6,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     21.03.2020
-@modified    12.01.2022
+@modified    18.01.2022
 ------------------------------------------------------------------------------
 """
 try:

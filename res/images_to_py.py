@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     21.03.2020
-@modified    12.01.2022
+@modified    18.01.2022
 ------------------------------------------------------------------------------
 """
 import base64
@@ -20,6 +20,8 @@ import wx.tools.img2py
 TARGET = os.path.join("..", "src", "h3sed", "images.py")
 
 Q3 = '"""'
+
+LF = "\n"
 
 """Application icons of different size and colour depth."""
 APPICONS = [("Icon_{0}x{0}_{1}bit.png".format(s, b),
@@ -55,12 +57,13 @@ except ImportError:
 
 def create_py(target):
     global HEADER, APPICONS, IMAGES
-    f = open(target, "w")
-    f.write(HEADER)
+    f = open(target, "wb")
+    fwrite = lambda s: f.write(s.replace("\n", LF))
+    fwrite(HEADER)
     icons = [os.path.splitext(x)[0] for x, _ in APPICONS]
     icon_parts = [", ".join(icons[2*i:2*i+2]) for i in range(len(icons) / 2)]
     iconstr = ",\n        ".join(icon_parts)
-    f.write("\n\n%s%s%s\ndef get_appicons():\n    icons = wx.IconBundle()\n"
+    fwrite("\n\n%s%s%s\ndef get_appicons():\n    icons = wx.IconBundle()\n"
             "    [icons.AddIcon(i.Icon) "
             "for i in [\n        %s\n    ]]\n    return icons\n" % (Q3,
         "Returns the application icon bundle, "
@@ -69,20 +72,20 @@ def create_py(target):
     ))
     for filename, desc in APPICONS:
         name, extension = os.path.splitext(filename)
-        f.write("\n\n%s%s%s\n%s = PyEmbeddedImage(\n" % (Q3, desc, Q3, name))
+        fwrite("\n\n%s%s%s\n%s = PyEmbeddedImage(\n" % (Q3, desc, Q3, name))
         data = base64.b64encode(open(filename, "rb").read())
         while data:
-            f.write("    \"%s\"\n" % data[:72])
+            fwrite("    \"%s\"\n" % data[:72])
             data = data[72:]
-        f.write(")\n")
+        fwrite(")\n")
     for filename, desc in sorted(IMAGES.items()):
         name, extension = os.path.splitext(filename)
-        f.write("\n\n%s%s%s\n%s = PyEmbeddedImage(\n" % (Q3, desc, Q3, name))
+        fwrite("\n\n%s%s%s\n%s = PyEmbeddedImage(\n" % (Q3, desc, Q3, name))
         data = base64.b64encode(open(filename, "rb").read())
         while data:
-            f.write("    \"%s\"\n" % data[:72])
+            fwrite("    \"%s\"\n" % data[:72])
             data = data[72:]
-        f.write(")\n")
+        fwrite(")\n")
     f.close()
 
 
