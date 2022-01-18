@@ -41,6 +41,9 @@ Subplugin instances are expected to have the following API:
     def load(self, hero, panel=None):
         '''Mandatory. Loads subplugin state from hero, optionally resetting panel.'''
 
+    def load_state(self, state):
+        '''Optional. Loads subplugin state from given data. Returns whether state changed.'''
+
     def serialize(self):
         '''Mandatory. Returns new hero bytearray from subplugin state.'''
 
@@ -67,7 +70,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  17.01.2022
+@modified  18.01.2022
 ------------------------------------------------------------------------------
 """
 import copy
@@ -378,12 +381,13 @@ class HeroPlugin(object):
 
         def do():
             if not self._panel: return
-            busy = controls.BusyPanel(self._panel, 'Loading %s.' % hero2.name)
+            busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name)
+            if event: guibase.status("Loading %s." % hero2.name, flash=True)
             self._panel.Freeze()
             try:
                 if self._hero: self.patch()
                 logger.info("Loading hero %s (bytes %s-%s in savefile).",
-                            name, hero2.span[0], hero2.span[1] - 1)
+                            hero2.name, hero2.span[0], hero2.span[1] - 1)
                 self._hero = hero2
                 for p in self._plugins: self.render_plugin(p["name"], reload=True)
             finally:
@@ -392,6 +396,7 @@ class HeroPlugin(object):
                 self._ctrls["toolbar"].EnableTool(wx.ID_PASTE, True)
                 self._panel.Thaw()
                 busy.Close()
+                if event: wx.CallLater(500, guibase.status, "")
             return True
         self._pending = hero2
         if self._hero: wx.CallAfter(self.command, do, "select hero: %s" % hero2.name)
