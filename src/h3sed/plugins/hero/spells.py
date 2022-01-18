@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  16.01.2022
+@modified  18.01.2022
 ------------------------------------------------------------------------------
 """
 import logging
@@ -144,7 +144,6 @@ class SpellsPlugin(object):
             SPELL_ARTIFACTS = metadata.Store.get("artifact_spells")
             artispells = set(y for x in self._hero.artifacts.values()
                              for y in SPELL_ARTIFACTS.get(x, []))
-        if not util.get(self._hero, "stats", "spellbook"): state = []
         for name, pos in IDS.items():
             in_book   = name in state
             available = in_book or name in artispells
