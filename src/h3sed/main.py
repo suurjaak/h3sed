@@ -8,11 +8,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    16.01.2022
+@modified    19.01.2022
 ------------------------------------------------------------------------------
 """
 import argparse
-import functools
 import gzip
 import logging
 import os
@@ -125,17 +124,8 @@ def run_gui(filename):
 
     # Create application main window
     app = MainApp(redirect=True) # stdout and stderr redirected to wx popup
-
     window = gui.MainWindow()
     app.SetTopWindow(window) # stdout/stderr popup closes with MainWindow
-
-    # Override stdout/stderr.write to swallow Gtk warnings
-    if "linux" in sys.platform:
-        try:
-            swallow = lambda w, s: None if "Gtk-" in s else w(s)
-            sys.stdout.write = functools.partial(swallow, sys.stdout.write)
-            sys.stderr.write = functools.partial(swallow, sys.stderr.write)
-        except Exception: pass
 
     # Some debugging support
     window.run_console("import datetime, math, os, re, time, sys, wx")
