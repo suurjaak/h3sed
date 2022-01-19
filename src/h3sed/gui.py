@@ -474,8 +474,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def populate_statusbar(self):
         """Adds file status fields to program statusbar."""
         self.StatusBar.SetFieldsCount(3)
-        extent1 = self.StatusBar.GetTextExtent("2222-22-22 22:22:22")[0]
-        extent2 = self.StatusBar.GetTextExtent("222.22 KB")[0]
+        extent1 = self.StatusBar.GetTextExtent("222.22 KB")[0]
+        extent2 = self.StatusBar.GetTextExtent("2222-22-22 22:22:22")[0]
         WPLUS = 10 if "nt" == os.name else 30
         self.StatusBar.SetStatusStyles([wx.SB_SUNKEN] * 3)
         self.StatusBar.SetStatusWidths([-2, extent1 + WPLUS, extent2 + WPLUS])
@@ -834,13 +834,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 conf.GameVersion = page.savefile.version
                 conf.save()
 
-        dt, sz = "", ""
+        sz, dt = "", ""
         if os.path.isfile(filename):
+            sz = util.format_bytes(os.path.getsize(filename))
             stamp = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
             dt = stamp.strftime("%Y-%m-%d %H:%M:%S")
-            sz = util.format_bytes(os.path.getsize(filename))
-        self.StatusBar.SetStatusText(dt, 1)
-        self.StatusBar.SetStatusText(sz, 2)
+        self.StatusBar.SetStatusText(sz, 1)
+        self.StatusBar.SetStatusText(dt, 2)
 
 
     def on_open_current_savefile(self, event=None):
