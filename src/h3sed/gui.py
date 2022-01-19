@@ -530,6 +530,17 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.notebook.SetAGWWindowStyleFlag(style)
 
 
+    def update_title(self, page):
+        """Updates program title with name and state of given page."""
+        subtitle = ""
+        if isinstance(page, SavefilePage):
+            path, file = os.path.split(page.filename)
+            # Use parent/file.gm1 or C:/file.gm1
+            subtitle = os.path.join(os.path.split(path)[-1] or path, file)
+            if page.get_unsaved(): subtitle += " *"
+        self.Title = " - ".join(filter(bool, (conf.Title, subtitle)))
+
+
     def update_toolbar(self, page):
         """Updates program toolbar for given page."""
         if not page: return
@@ -564,18 +575,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         if isinstance(page, SavefilePage):
             self.page_file_latest = page
-            path, file = os.path.split(page.filename)
-            # Use parent/file.gm1 or C:/file.gm1
-            subtitle = os.path.join(os.path.split(path)[-1] or path, file)
-
             self.menu_save_as.Enabled = self.menu_close.Enabled = True
             self.menu_reload.Enabled = self.menu_save.Enabled = True
             page.undoredo.SetEditMenu(self.menu_edit)
             page.undoredo.SetMenuStrings()
         self.update_toolbar(page)
         self.update_fileinfo()
-
-        self.Title = " - ".join(filter(bool, (conf.Title, subtitle)))
+        self.update_title(page)
         wx.CallAfter(self.update_notebook_header)
 
 
@@ -693,6 +699,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             if self.notebook.GetPageText(idx) != title2:
                 self.notebook.SetPageText(idx, title2)
             self.update_toolbar(page)
+            self.update_title(page)
 
 
     def on_undo_savefile(self, event=None):
@@ -936,13 +943,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         conf.save()
 
         # Remove any dangling references
+        self.pages_visited = [x for x in self.pages_visited if x != page]
         if self.page_file_latest == page:
             self.page_file_latest = next((i for i in self.pages_visited[::-1]
                                         if isinstance(i, SavefilePage)), None)
         self.SendSizeEvent() # Multiline wx.Notebooks need redrawing
 
-        # Remove page from visited pages order
-        self.pages_visited = [x for x in self.pages_visited if x != page]
+        # Change notebook page to last visited
         index_new = 0
         if self.pages_visited:
             for i in range(self.notebook.GetPageCount()):
