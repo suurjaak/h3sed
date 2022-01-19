@@ -34,6 +34,8 @@ and pasted onto another hero, overwriting their data.
 
 A timestamped backup copy is automatically created of the savegame file.
 
+![Screenshot](https://raw.githubusercontent.com/suurjaak/h3sed/gh-pages/img/screen.png)
+
 **Warning:** as Heroes3 savefile format is not publicly known,
 loaded data and saved results may be invalid and cause problems in game.
 This program is based on unofficial information
