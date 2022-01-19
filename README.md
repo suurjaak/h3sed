@@ -3,8 +3,8 @@ h3sed
 
 h3sed is a Heroes3 Savegame Editor, written in Python.
 
-It can open savegame files from Heroes of Might and Magic III
-and edit any and all hero attributes:
+It opens savegame files from Heroes of Might and Magic III,
+allowing to edit any and all hero attributes:
 
 - primary skills, like Attack
 - other primary attributes, like level, experience points, spell points etc
@@ -18,8 +18,6 @@ Attributes can be copied from one hero and pasted to another.
 
 Supports savegames from Shadow of Death and Horn of the Abyss.
 
-Automatically creates a timestamped backup copy of the savegame file.
-
 Downloads at http://suurjaak.github.io/h3sed.
 
 
@@ -30,6 +28,11 @@ Navigate the file view to Heroes3 games-folder, and open a savegame file to edit
 
 Choose a hero to modify, change attributes to your liking, and save the file.
 Changes will be available in Heroes3 after loading the changed savegame.
+
+Attributes from one hero can be copied to clipboard as text,
+and pasted onto another hero, overwriting their data.
+
+A timestamped backup copy is automatically created of the savegame file.
 
 **Warning:** as Heroes3 savefile format is not publicly known,
 loaded data and saved results may be invalid and cause problems in game.
