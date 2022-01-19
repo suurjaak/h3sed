@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    18.01.2022
+@modified    19.01.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -485,11 +485,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Populates game version control in program toolbar."""
         combo_game = self.combo_game
         if getattr(plugins, "version", None):
-            combo_game.SetItems([x["label"] for x in plugins.version.PLUGINS])
+            items = [x["label"] for x in plugins.version.PLUGINS]
+            combo_game.SetItems(items)
             if conf.GameVersion:
                 label = next((x["label"] for x in plugins.version.PLUGINS
                               if x["name"] == conf.GameVersion), None)
                 if label: combo_game.Value = label
+            if items: combo_game.Size = combo_game.GetSizeFromText(items[0])
         else:
             combo_game.Show(False)
 
@@ -828,6 +830,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             ver = next((x for x in plugins.version.PLUGINS
                         if x["name"] == page.savefile.version), None)
             if ver: self.combo_game.Value = ver["label"]
+            if ver and page.savefile.version != conf.GameVersion:
+                conf.GameVersion = page.savefile.version
+                conf.save()
 
         dt, sz = "", ""
         if os.path.isfile(filename):
