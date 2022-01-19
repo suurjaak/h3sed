@@ -18,7 +18,7 @@ Attributes can be copied from one hero and pasted to another.
 
 Supports savegames from Shadow of Death and Horn of the Abyss.
 
-Downloads at http://suurjaak.github.io/h3sed.
+Downloads at https://suurjaak.github.io/h3sed.
 
 
 Usage
@@ -33,6 +33,8 @@ Attributes from one hero can be copied to clipboard as text,
 and pasted onto another hero, overwriting their data.
 
 A timestamped backup copy is automatically created of the savegame file.
+
+![Screenshot](https://raw.githubusercontent.com/suurjaak/h3sed/gh-pages/img/screen.png)
 
 **Warning:** as Heroes3 savefile format is not publicly known,
 loaded data and saved results may be invalid and cause problems in game.
