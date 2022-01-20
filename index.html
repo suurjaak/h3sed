@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Heroes3 Savegame Editor | Downloads</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Heroes3 Savegame Editor" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://suurjaak.github.io/h3sed/" />
+<meta property="og:url" content="https://suurjaak.github.io/h3sed/" />
+<meta property="og:site_name" content="h3sed" />
+
+
+    <link rel="stylesheet" href="css/style.css">
+    <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="https://suurjaak.github.io/h3sed/">h3sed</a></h1>
+
+        <p></p>
+
+        <p class="view">
+
+          <a href="index.html">Index</a><br />
+          <span class="subview">
+            <a href="#using">Using the program</a><br />
+            <a href="#installation">Installation</a><br />
+            <a href="#dependencies">Source dependencies</a><br />
+            <a href="#attribution">Attribution</a><br />
+            <a href="#license">License</a><br />
+          </span>
+          <a href="downloads.html">Downloads</a><br />
+          <a href="https://github.com/suurjaak/h3sed">View the Project on GitHub <small>suurjaak/h3sed</small></a>
+
+          <ul>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.0_setup.exe">Download <strong>Setup</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.0_x64_setup.exe">Download <strong>64bit Setup</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.0-src.zip">Download <strong>Source</strong></a></li>
+          </ul>
+        </p>
+
+      </header>
+      <section>
+
+<h1 id="h3sed-10">Heroes3 Savegame Editor</h1>
+
+<p>h3sed is a Heroes3 Savegame Editor, written in Python.</p>
+
+<p>It opens savegame files from Heroes of Might and Magic III, allowing to edit any and all hero attributes:</p>
+
+<ul>
+  <li>primary skills, like Attack</li>
+  <li>other primary attributes, like level, experience points, spell points etc</li>
+  <li>war machines, like Ballista</li>
+  <li>secondary skills, like Logistics (more than 8 skills can be added)</li>
+  <li>artifacts, like Boots of Speed, both worn and inventory items</li>
+  <li>spells, like Slow</li>
+  <li>army creatures, like Golden Dragons</li>
+  <li>Attributes can be copied from one hero and pasted to another.</li>
+</ul>
+
+<p>Supports savegames from Shadow of Death and Horn of the Abyss.</p>
+
+
+<h2 id="using-the-program">Using The Program</h2>
+
+<p>Navigate the file view to Heroes3 games-folder, and open a savegame file to edit.<p>
+
+<p>Choose a hero to modify, change attributes to your liking, and save the file. Changes will be available in Heroes3 after loading the changed savegame.</p>
+
+<p>Attributes from one hero can be copied to clipboard as text, and pasted onto another hero, overwriting their data.<p>
+
+<p>A timestamped backup copy is automatically created of the savegame file.</p>
+
+<img title="Screenshot" alt="Screenshot" src="img/screen.png" />
+
+<p><b>Warning:</b> as Heroes3 savefile format is not publicly known, loaded data and saved results may be invalid and cause problems in game. This program is based on unofficial information gathered from observation and online forums.</p>
+
+<p>Always choose the correct game version. A wrong choice will result in file data being misinterpreted, and saving later version items or creatures to an earlier version savefile may cause the game to crash.</p>
+
+
+<h2 id="installation">Installation</h2>
+
+<p>Windows: download and launch the latest setup.</p>
+
+<p>Mac/Linux/other: install Python and pip, run pip install h3sed.</p>
+
+<p>The pip installation will add the h3sed command to path.</p>
+
+<p>Windows installers have been provided for convenience. The program itself is stand-alone, can work from any directory, and does not need additional installation. The installed program can be copied to a USB stick and used elsewhere, same goes for the source code.</p>
+
+<p>If running from pip installation, run <code>h3sed</code> from the command-line. If running straight from source code, open a terminal to <code>h3sed/src</code> and run <code>python -m h3sed</code>.</p>
+
+
+<h2 id="dependencies">Source dependencies</h2>
+
+<p>If running from source code, h3sed needs Python 2.7 or higher, and the following 3rd-party Python packages:</p>
+
+<ul>
+  <li>pyyaml (<a href="https://pyyaml.org">pyyaml.org</a>)</li>
+  <li>wxPython 4.0+ (<a href="https://wxpython.org">wxpython.org</a>)</li>
+</ul>
+
+
+<h2 id="attribution">Attribution</h2>
+
+<p>Knowledge on Heroes3 savegames gathered mostly from Heroes Community forum, <a href="http://heroescommunity.com/viewthread.php3?TID=18817">heroescommunity.com/viewthread.php3?TID=18817</a>.</p>
+
+<p>Includes a modified version of step, Simple Template Engine for Python,
+&copy; 2012, Daniele Mazzocchio, <a href="https://github.com/dotpy/step">github.com/dotpy/step</a>.</p>
+
+<p>Includes several icons Heroes of Might and Magic III, &copy; 1999 3DO.</p>
+
+<p>Binaries compiled with PyInstaller, <a href="https://www.pyinstaller.org">www.pyinstaller.org</a>.</p>
+
+<p>Installers created with Nullsoft Scriptable Install System, <a href="https://nsis.sourceforge.net/">nsis.sourceforge.net</a>.</p>
+
+<h2 id="license">License</h2>
+
+<p>The MIT License</p>
+
+<p>Copyright &copy; 2020 by Erki Suurjaak</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.</p>
+
+<p>The software is provided "as is", without warranty of any kind, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose and noninfringement. In no event shall the
+authors or copyright holders be liable for any claim, damages or other
+liability, whether in an action of contract, tort or otherwise, arising from,
+out of or in connection with the software or the use or other dealings in
+the software.<p>
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/suurjaak">suurjaak</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="js/scale.fix.js"></script>
+    
+  </body>
+</html>
