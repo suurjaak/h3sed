@@ -2,7 +2,7 @@
 ; installer for h3sed.
 ;
 ; Expected command-line parameters:
-; /DPRODUCT_VERSION=<program version>
+; /DVERSION=<program version>
 ; /DSUFFIX64=<"_x64" for 64-bit installer>
 ;
 ; @created   12.04.2020
@@ -13,7 +13,7 @@ Unicode True
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Heroes3 Savegame Editor"
 !define PRODUCT_PUBLISHER "Erki Suurjaak"
-!define PRODUCT_WEB_SITE "https://suurjaak.github.io/SQLitely"
+!define PRODUCT_WEB_SITE "https://suurjaak.github.io/h3sed"
 !define BASENAME "h3sed"
 !define PROGEXE "${BASENAME}.exe"
 

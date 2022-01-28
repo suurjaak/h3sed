@@ -6,6 +6,7 @@
 :: @created   21.08.2019
 :: @modified  19.01.2022
 @echo off
+:: Expand variables at execution time rather than at parse time
 setlocal EnableDelayedExpansion
 set INITIAL_DIR=%CD%
 cd %0\..
