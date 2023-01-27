@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    19.01.2022
+@modified    27.01.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1236,6 +1236,13 @@ def build(plugin, panel):
             plugin.parent.command(on_do, cname)
         return handler
 
+    def make_info(prop, sizer, pos):
+        value = prop["info"](prop, state) if callable(prop["info"]) else prop["info"]
+        c = wx.StaticText(panel, label=value)
+        ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
+        sizer.Add(c, pos=pos)
+        result["%s-info" % prop["name"]] = c
+
 
     count = 0
     BTN_WPLUS  = 0 if "nt" == os.name else 20
@@ -1333,11 +1340,10 @@ def build(plugin, panel):
             c2.Bind(wx.EVT_TEXT,     make_value_handler(c2, prop, state))
             c2.Bind(wx.EVT_SPINCTRL, make_value_handler(c2, prop, state))
 
-            bsizer = wx.BoxSizer(wx.HORIZONTAL)
-            bsizer.Add(c2)
-            sizer.Add(c1,     pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
-            sizer.Add(bsizer, pos=(count, 1))
+            sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
+            sizer.Add(c2, pos=(count, 1))
             result[prop["name"]] = c2
+            if "info" in prop: make_info(prop, sizer, (count, 2))
             count += 1
 
 
@@ -1360,6 +1366,7 @@ def build(plugin, panel):
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
             result[prop["name"]] = c2
+            if "info" in prop: make_info(prop, sizer, (count, 2))
             count += 1
 
 
@@ -1374,7 +1381,9 @@ def build(plugin, panel):
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1))
             result[prop["name"]] = c2
+            if "info" in prop: make_info(prop, sizer, (count, 2))
             count += 1
+
 
         elif "label" == prop.get("type"):
             c = wx.StaticText(panel, label=prop.get("label", ""))

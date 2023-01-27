@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  16.01.2022
+@modified  27.01.2023
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -26,6 +26,16 @@ from h3sed.plugins.hero import POS
 logger = logging.getLogger(__package__)
 
 
+def format_stats(prop, state, artifact_stats=None):
+    """Return item primaty stats modifer text like "+1 Attack, +1 Defense", or "" if no effect."""
+    value = state.get(prop.get("name"))
+    if not value: return ""
+    STATS = artifact_stats or metadata.Store.get("artifact_stats")
+    if value not in STATS: return ""
+    return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
+                     for k, v in zip(metadata.PrimaryAttributes, STATS[value]) if v)
+
+
 PROPS = {"name": "artifacts", "label": "Artifacts", "index": 2}
 UIPROPS = [{
     "name":     "helm",
@@ -33,30 +43,35 @@ UIPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None, # Populated later
+    "info":     format_stats,
 }, {
     "name":     "neck",
     "label":    "Neck slot",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "armor",
     "label":    "Armor slot",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "weapon",
     "label":    "Weapon slot",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "shield",
     "label":    "Shield slot",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "lefthand",
     "label":    "Left hand slot",
@@ -64,6 +79,7 @@ UIPROPS = [{
     "slot":     "hand",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "righthand",
     "label":    "Right hand slot",
@@ -71,18 +87,21 @@ UIPROPS = [{
     "slot":     "hand",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "cloak",
     "label":    "Cloak slot",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "feet",
     "label":    "Feet slot",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "side1",
     "label":    "Side slot 1",
@@ -90,6 +109,7 @@ UIPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "side2",
     "label":    "Side slot 2",
@@ -97,6 +117,7 @@ UIPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "side3",
     "label":    "Side slot 3",
@@ -104,6 +125,7 @@ UIPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "side4",
     "label":    "Side slot 4",
@@ -111,6 +133,7 @@ UIPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }, {
     "name":     "side5",
     "label":    "Side slot 5",
@@ -118,6 +141,7 @@ UIPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "info":     format_stats,
 }]
 
 
@@ -142,8 +166,8 @@ class ArtifactsPlugin(object):
         self.parent  = parent
         self._hero   = hero
         self._panel  = panel # Plugin contents panel
-        self._state  = {}    # {helm: "Skull Helmet", ..}
-        self._ctrls  = {}    # {"head": wx.ComboBox, }
+        self._state  = {}    # {"helm": "Skull Helmet", ..}
+        self._ctrls  = {}    # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
         if hero:
             self.parse(hero.bytes)
             hero.artifacts = self._state
@@ -217,6 +241,7 @@ class ArtifactsPlugin(object):
         """Populates controls from state, using existing if already built."""
         ver = self._hero.savefile.version
         if self._ctrls and all(self._ctrls.values()):
+            STATS = metadata.Store.get("artifact_stats")
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
                 cc = [""] + sorted(metadata.Store.get("artifacts", version=ver, category=slot))
@@ -225,6 +250,7 @@ class ArtifactsPlugin(object):
                 if value and value not in choices: choices = [value] + cc
                 if choices != ctrl.GetItems(): ctrl.SetItems(choices)
                 ctrl.Value = value or ""
+                self._ctrls["%s-info" % name].Label = format_stats(prop, self._state, STATS)
         else:
             self._ctrls = gui.build(self, self._panel)
         self.update_slots()
@@ -289,6 +315,7 @@ class ArtifactsPlugin(object):
             evt = gui.PluginEvent(self._panel.Id, action="render", name="stats")
             wx.PostEvent(self._panel, evt)
         self.update_slots()
+        self._ctrls["%s-info" % prop["name"]].Label = format_stats(prop, self._state)
         return True
 
 
