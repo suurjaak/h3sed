@@ -8,11 +8,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    19.01.2022
+@modified    20.03.2022
 ------------------------------------------------------------------------------
 """
 import argparse
 import gzip
+import locale
 import logging
 import os
 import sys
@@ -48,6 +49,11 @@ class MainApp(wx.App):
             mylocale = wx.Locale(wx.LANGUAGE_ENGLISH_US, wx.LOCALE_LOAD_DEFAULT)
             mylocale.AddCatalog("wxstd")
             self._initial_locale = mylocale  # Override wx.App._initial_locale
+            # Workaround for MSW giving locale as "en-US"; standard format is "en_US".
+            # Py3 provides "en[-_]US" in wx.Locale names and accepts "en" in locale.setlocale();
+            # Py2 provides "English_United States.1252" in wx.Locale.SysName and accepts only that.
+            name = mylocale.SysName if sys.version_info < (3, ) else mylocale.Name.split("_", 1)[0]
+            locale.setlocale(locale.LC_ALL, name)
 
 
 def except_hook(etype, evalue, etrace):
