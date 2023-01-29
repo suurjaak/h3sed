@@ -595,7 +595,7 @@ class HeroPlugin(object):
             states = next(iter(yaml.safe_load(value).values()))
             assert isinstance(states, dict)
         except Exception as e:
-            logger.warn("Error loading hero data from clipboard: %s", e)
+            logger.warning("Error loading hero data from clipboard: %s", e)
             guibase.status("No valid hero data in clipboard.", flash=True)
             return
         pluginmap = {p["name"]: p["instance"] for p in self._plugins}
@@ -605,13 +605,13 @@ class HeroPlugin(object):
             if not callable(getattr(plugin, "load_state", None)):
                 continue  # for
             if not plugin:
-                logger.warn("Unknown category in hero data: %r", category)
+                logger.warning("Unknown category in hero data: %r", category)
                 continue  # for
             state0 = plugin.state()
             if state is None: state = type(state0)()
             if not isinstance(state0, type(state)):
-                logger.warn("Invalid data type in hero data %r for %s: %s",
-                            category, type(state0).__name__, state)
+                logger.warning("Invalid data type in hero data %r for %s: %s",
+                               category, type(state0).__name__, state)
                 continue  # for
             usables[category] = state
         if not usables: return
