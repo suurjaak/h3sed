@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  16.01.2022
+@modified  29.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -286,7 +286,7 @@ RGX_HERO = re.compile(b"""
                              # Artifacts:     XY 00 00 00 FF FF FF FF
                              # Scrolls:       XY 00 00 00 00 00 00 00
                              # Catapult etc:  XY 00 00 00 XY XY 00 00
-    ( ((.\x00{3}) | \xFF{4}) (\x00{4} | \xFF{4} | (.{2}\x00{2})) ){19}
+    ( (\xFF{4} (\x00{4} | \xFF{4})) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2}) ){19}
 
                              # 512 bytes: 64 8-byte artifacts in backpack      503-1014
     ( ((.\x00{3}) | \xFF{4}) (\x00{4} | \xFF{4}) ){64}

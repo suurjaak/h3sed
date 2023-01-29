@@ -195,10 +195,11 @@ RGX_HERO = re.compile(b"""
 
                              # 152 bytes: 19 8-byte equipments worn            351-502
                              # Blank spots:   FF FF FF FF 00 00 00 00
+                             #                FF FF FF FF FF FF FF FF
                              # Artifacts:     XY 00 00 00 FF FF FF FF
                              # Scrolls:       XY 00 00 00 00 00 00 00
                              # Catapult etc:  XY 00 00 00 XY XY 00 00
-    ( ((.\x00{3}) | \xFF{4}) (\x00{4} | \xFF{4} | (.{2}\x00{2})) ){19}
+    ( (\xFF{4} (\x00{4} | \xFF{4})) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2}) ){19}
 
                              # 512 bytes: 64 8-byte artifacts in backpack      503-1014
     ( ((.\x00{3}) | \xFF{4}) (\x00{4} | \xFF{4}) ){64}
@@ -547,7 +548,7 @@ class HeroPlugin(object):
             versions = [x["name"] for x in plugins.version.PLUGINS]
         if not versions: versions = [self.savefile.version]
         all_versions = versions[:]
-        rgx_strip = re.compile(br"[\x00-\x19]")
+        rgx_strip = re.compile(br"^[^\x00-\x19]+")
 
         while versions:
             ver = versions.pop()
@@ -557,12 +558,11 @@ class HeroPlugin(object):
 
             pos = 10000 # Hero structs are more to the end of the file
             m = re.search(RGX, raw[pos:])
-            while m and rgx_strip.sub(b"", m.group("name")) not in (b"", b"0"):
+            while m and rgx_strip.match(m.group("name")):
                 start, end = m.span()
                 blob = bytearray(raw[pos + start:pos + end])
-                vresult.append(Hero(util.to_unicode(rgx_strip.sub(b"", m.group("name"))),
-                                    -1, blob, tuple(x + pos for x in m.span()),
-                                    self.savefile))
+                name = util.to_unicode(rgx_strip.match(m.group("name")).group())
+                vresult.append(Hero(name, -1, blob, (start + pos, end + pos), self.savefile))
                 pos += start + len(blob)
                 m = re.search(RGX, raw[pos:])
             if not vresult:
