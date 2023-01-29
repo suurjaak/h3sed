@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    27.01.2023
+@modified    29.01.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -74,8 +74,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.frame_console.SetIcons(icons)
 
         panel = self.panel_main = wx.Panel(self)
-        notebook = self.notebook = wx.lib.agw.flatnotebook.FlatNotebook(
-            panel, style=wx.NB_TOP,
+        notebook = self.notebook = wx.lib.agw.flatnotebook.FlatNotebook(panel,
             agwStyle=wx.lib.agw.flatnotebook.FNB_DROPDOWN_TABS_LIST |
                      wx.lib.agw.flatnotebook.FNB_MOUSE_MIDDLE_CLOSES_TABS |
                      wx.lib.agw.flatnotebook.FNB_NO_NAV_BUTTONS |
@@ -707,7 +706,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
             page = next(iter(self.files.values()))["page"]
-        if isinstance(page, SavefilePage): page.undoredo.Undo()
+        if isinstance(page, SavefilePage) and page.undoredo.CanUndo():
+            guibase.status("Undoing %s" % page.undoredo.CurrentCommand.Name, flash=True, log=True)
+            page.undoredo.Undo()
 
 
     def on_redo_savefile(self, event=None):
@@ -715,7 +716,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
             page = next(iter(self.files.values()))["page"]
-        if isinstance(page, SavefilePage): page.undoredo.Redo()
+        if isinstance(page, SavefilePage) and page.undoredo.CanRedo():
+            cmd = page.undoredo.CurrentCommand or page.undoredo.Commands[0]
+            guibase.status("Redoing %s" % cmd.Name, flash=True, log=True)
+            page.undoredo.Redo()
 
 
     def on_menu_backup(self, event):
@@ -1126,6 +1130,10 @@ class SavefilePage(wx.Panel):
         """Loads data from our file."""
         if not self.plugins:
             self.plugins = plugins.render(self.savefile, self.notebook, self.undoredo)
+        if self.notebook.PageCount < 2:
+            tabarea = next((x for x in self.notebook.Children
+                            if isinstance(x, wx.lib.agw.labelbook.ImageContainer)), None)
+            tabarea and (tabarea.Hide(), self.notebook.Layout())
         evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
 
@@ -1168,16 +1176,14 @@ def build(plugin, panel):
     panel.Sizer = wx.BoxSizer(wx.HORIZONTAL)
     panel.Sizer.Add(sizer, border=10, proportion=1, flag=wx.ALL | wx.GROW)
 
-    def make_value_handler(ctrl, myprops, row, index=None):
-        name = myprops.get("name")
-        target = next((x for x in (row, state) if isinstance(x, (list, dict))), None)
-
-        key = myprops.get("name", index)
-        target = next((x for x in (row, state) if isinstance(x, (list, dict))), None)
-
+    def make_value_handler(ctrl, myprops, rowindex=None):
+        name, key = myprops.get("name"), myprops.get("name", rowindex)
 
         def on_do(ctrl, value):
             result = False
+            state  = plugin.state() if callable(getattr(plugin, "state", None)) else {}
+            row    = state[rowindex] if rowindex is not None and isinstance(state, list) else state
+            target = next((x for x in (row, state) if isinstance(x, (list, dict))), None)
             if None not in (key, target) and util.get(target, key) == value:
                 return result
             if callable(getattr(plugin, "on_change", None)):
@@ -1197,6 +1203,7 @@ def build(plugin, panel):
 
     def make_move_handler(ctrl, index, direction):
         def on_do():
+            state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             index2 = index + direction
             state[index], state[index2] = state[index2], state[index]
             plugin.parent.patch()
@@ -1210,6 +1217,7 @@ def build(plugin, panel):
 
     def make_add_handler(ctrl, myprops):
         def on_do(value):
+            state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             if callable(getattr(plugin, "on_add", None)): plugin.on_add(myprops, value)
             else: state.append({"name": value})
             plugin.parent.patch()
@@ -1224,12 +1232,14 @@ def build(plugin, panel):
 
     def make_remove_handler(ctrl, index):
         def on_do():
+            state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             del state[index]
             plugin.parent.patch()
             wx.PostEvent(panel, PluginEvent(panel.Id, action="render", name=plugin.name))
             return True
 
         def handler(event):
+            state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             v = state[index]
             if isinstance(v, dict): v = v.get("name", v)
             cname = "remove %s: %s" % (plugin.name, v)
@@ -1272,7 +1282,7 @@ def build(plugin, panel):
                         c.SetItems(choices)
                         if v is not None: c.Value = v
                         elif "" in choices: c.Value = ""
-                        c.Bind(wx.EVT_COMBOBOX, make_value_handler(c, itemprop, row, index=i))
+                        c.Bind(wx.EVT_COMBOBOX, make_value_handler(c, itemprop, rowindex=i))
                         bsizer.Add(c)
                     elif "number" == itemprop.get("type"):
                         c = wx.SpinCtrl(panel, name=itemprop["name"], size=(80 + SPIN_WPLUS, -1),
@@ -1282,8 +1292,8 @@ def build(plugin, panel):
                         if "max" in itemprop: rng[1] = min(itemprop["max"], 2**30)
                         c.SetRange(*rng)
                         if itemprop["name"] in row: c.Value = row[itemprop["name"]]
-                        c.Bind(wx.EVT_TEXT,     make_value_handler(c, itemprop, row, index=i))
-                        c.Bind(wx.EVT_SPINCTRL, make_value_handler(c, itemprop, row, index=i))
+                        c.Bind(wx.EVT_TEXT,     make_value_handler(c, itemprop, rowindex=i))
+                        c.Bind(wx.EVT_SPINCTRL, make_value_handler(c, itemprop, rowindex=i))
                         bsizer.Add(c)
                     elif "window" == itemprop.get("type"):
                         c = wx.Window(panel)
@@ -1337,8 +1347,8 @@ def build(plugin, panel):
             if "max" in prop: rng[1] = min(prop["max"], 2**30)
             c2.SetRange(*rng)
             c2.Value = state[prop["name"]]
-            c2.Bind(wx.EVT_TEXT,     make_value_handler(c2, prop, state))
-            c2.Bind(wx.EVT_SPINCTRL, make_value_handler(c2, prop, state))
+            c2.Bind(wx.EVT_TEXT,     make_value_handler(c2, prop))
+            c2.Bind(wx.EVT_SPINCTRL, make_value_handler(c2, prop))
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1))
@@ -1361,7 +1371,7 @@ def build(plugin, panel):
             if v and v not in choices: choices = [v] + choices
             c2.SetItems(choices)
             if v is not None: c2.Value = v
-            c2.Bind(wx.EVT_COMBOBOX, make_value_handler(c2, prop, state))
+            c2.Bind(wx.EVT_COMBOBOX, make_value_handler(c2, prop))
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
@@ -1376,7 +1386,7 @@ def build(plugin, panel):
             c2 = wx.CheckBox(panel, name=prop["name"])
 
             c2.Value = bool(state[prop["name"]])
-            c2.Bind(wx.EVT_CHECKBOX, make_value_handler(c2, prop, state))
+            c2.Bind(wx.EVT_CHECKBOX, make_value_handler(c2, prop))
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1))
