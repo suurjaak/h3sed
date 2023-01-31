@@ -110,12 +110,13 @@ class ArmyPlugin(object):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
         MYPROPS = self.props()
         state0 = type(self._state)(self._state)
-        state = state + [{}] * (MYPROPS[0]["max"] - len(state))
         ver = self._hero.savefile.version
         cmap = {x.lower(): x for x in metadata.Store.get("creatures", version=ver)}
         countitem = next(x for x in MYPROPS[0]["item"] if "count" == x.get("name"))
         MIN, MAX = countitem["min"], countitem["max"]
-        for i, v in enumerate(state):
+        state = state + [{}] * (MYPROPS[0]["max"] - len(state))
+        for i, v in enumerate(state[:MYPROPS[0]["max"]]):
+            self._state[i] = {}
             if not isinstance(v, (dict, type(None))):
                 logger.warning("Invalid data type in army #%s: %r", i + 1, v)
                 continue  # for
@@ -123,9 +124,7 @@ class ArmyPlugin(object):
             if name and hasattr(name, "lower") and name.lower() in cmap \
             and isinstance(count, int) and MIN <= count <= MAX:
                 self._state[i] = {"name": cmap[name.lower()], "count": count}
-            elif v in ({}, None):
-                self._state[i] = {}
-            else:
+            elif v:
                 logger.warning("Invalid army #%s: %r", i + 1, v)
         return state0 != self._state
 
