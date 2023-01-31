@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  27.01.2023
+@modified  31.01.2023
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -33,7 +33,7 @@ def format_stats(prop, state, artifact_stats=None):
     STATS = artifact_stats or metadata.Store.get("artifact_stats")
     if value not in STATS: return ""
     return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
-                     for k, v in zip(metadata.PrimaryAttributes, STATS[value]) if v)
+                     for k, v in zip(metadata.PrimaryAttributes.values(), STATS[value]) if v)
 
 
 PROPS = {"name": "artifacts", "label": "Artifacts", "index": 2}
@@ -165,12 +165,13 @@ class ArtifactsPlugin(object):
         self.name    = PROPS["name"]
         self.parent  = parent
         self._hero   = hero
-        self._panel  = panel # Plugin contents panel
-        self._state  = {}    # {"helm": "Skull Helmet", ..}
-        self._ctrls  = {}    # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
+        self._panel  = panel  # Plugin contents panel
+        self._state  = {}     # {"helm": "Skull Helmet", ..}
+        self._ctrls  = {}     # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
         if hero:
             self.parse(hero.bytes)
             hero.artifacts = self._state
+            hero.ensure_basestats()
 
 
     def props(self):
@@ -197,13 +198,13 @@ class ArtifactsPlugin(object):
         if hero:
             self.parse(hero.bytes)
             hero.artifacts = self._state
+            hero.ensure_basestats()
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values."""
         state0 = type(self._state)(self._state)
         ver = self._hero.savefile.version
-        stats_diff = [0, 0, 0, 0]
 
         for prop in self.props():  # First pass: don items
             name, slot = prop["name"], prop.get("slot", prop["name"])
@@ -213,8 +214,6 @@ class ArtifactsPlugin(object):
             cmap = {x.lower(): x for x in metadata.Store.get("artifacts", version=ver, category=slot)}
 
             if not v or hasattr(v, "lower") and v.lower() in cmap:
-                v0 = self._state[name]
-                stats_diff = [a + b for a, b in zip(stats_diff, self._get_stats_diff(v0, v))]
                 self._state[name] = v
             else:
                 logger.warning("Invalid artifact for %r: %r", name, v)
@@ -230,11 +229,12 @@ class ArtifactsPlugin(object):
                 logger.warning("Cannot don %s, required slot taken:\n\n%s.",
                                v, "\n".join("- %s (by %s)" % (x, ", ".join(sorted(slots_owner[x])))
                                             for x in sorted(slots_full)))
-                stats_diff = [a + b for a, b in zip(stats_diff, self._get_stats_diff(v, None))]
                 self._state[name] = None
 
-        self._apply_stats_diff(stats_diff)
-        return state0 != self._state
+        result = (state0 != self._state)
+        self._hero.artifacts = self._state
+        if result: self._apply_artifact_stats()
+        return result
 
 
     def render(self):
@@ -311,7 +311,8 @@ class ArtifactsPlugin(object):
             return False
 
         self._state[prop["name"]] = v2
-        if self._apply_stats_diff(self._get_stats_diff(v1, v2)):
+        self._hero.artifacts = self._state
+        if self._apply_artifact_stats():
             evt = gui.PluginEvent(self._panel.Id, action="render", name="stats")
             wx.PostEvent(self._panel, evt)
         self.update_slots()
@@ -319,26 +320,21 @@ class ArtifactsPlugin(object):
         return True
 
 
-    def _get_stats_diff(self, item1, item2):
-        """Returns change in hero stats from swapping item1 for item2, as [int, int, int, int]."""
-        stats_diff = [0, 0, 0, 0]
-        STATS = metadata.Store.get("artifact_stats")
-        if item1 in STATS:
-            stats_diff = [a - b for a, b in zip(stats_diff, STATS[item1])]
-        if item2 in STATS:
-            stats_diff = [a + b for a, b in zip(stats_diff, STATS[item2])]
-        return stats_diff
+    def _apply_artifact_stats(self):
+        """
+        Applies current artifact stats to hero primary stats, returns whether anything changed.
+        """
+        result = False
+        if not all(getattr(self._hero, k, None) for k in ("stats", "basestats")): return result
 
-
-    def _apply_stats_diff(self, stats_diff):
-        """Apply change in hero main stats, returns whether anything was changed."""
-        apply = any(stats_diff) and hasattr(self._hero, "stats")
-        if apply:
-            # Artifact bonuses like +2 Attack are kept in primary stats
-            for n, v in zip(["attack", "defense", "power", "knowledge"], stats_diff):
-                self._hero.stats[n] += v
-                self._hero.stats[n] = min(max(0, self._hero.stats[n]), 127)
-        return apply
+        STATS, diff = metadata.Store.get("artifact_stats"), [0] * len(metadata.PrimaryAttributes)
+        for prop in self.props():
+            item = self._state[prop["name"]]
+            if item in STATS: diff = [a + b for a, b in zip(diff, STATS[item])]
+        for k, v in zip(metadata.PrimaryAttributes, diff):
+            v1, v2 = self._hero.stats[k], min(max(0, self._hero.basestats[k] + v), 127)
+            if v1 != v2: result, self._hero.stats[k] = True, v2
+        return result
 
 
     def _slots(self, prop=None, value=None):

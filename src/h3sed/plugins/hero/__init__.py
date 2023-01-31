@@ -70,7 +70,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  29.01.2023
+@modified  31.01.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -229,19 +229,42 @@ def factory(savefile, panel, commandprocessor):
 
 
 class Hero(object):
-    """Container for all hero attributes."""
+    """
+    Container for all hero attributes.
 
-    def __init__(self, name, index, bytes, span, savefile):
-        self.name     = name
-        self.index    = index
-        self.bytes    = bytes
-        self.span     = span
-        self.savefile = savefile
+    Plugins will add their own specific attributes like `inventory`.
+    """
+
+    def __init__(self, name, bytes, index, span, savefile):
+        self.name      = name
+        self.bytes     = bytes
+        self.index     = index
+        self.span      = span
+        self.savefile  = savefile
+        self.basestats = {}  # Primary attributes without artifact bonuses
+
+    def copy(self):
+        """Returns a copy of this hero."""
+        hero = Hero(self.name, self.bytes, self.index, self.span, self.savefile)
+        for k, v in vars(self).items():
+            v2 = v if isinstance(v, metadata.Savefile) else copy.deepcopy(v)
+            setattr(hero, k, v2)
+        return hero
 
     def get_bytes(self, original=False):
         """Returns hero bytearray, current or original."""
         if not original: return copy.copy(self.bytes)
         return bytearray(self.savefile.raw0[self.span[0]:self.span[1]])
+
+    def ensure_basestats(self, clear=False):
+        """Populates internal hero stats without artifacts, if not already populated."""
+        if clear: self.basestats.clear()
+        if self.basestats or not hasattr(self, "artifacts"): return
+        STATS, diff = metadata.Store.get("artifact_stats"), [0] * len(metadata.PrimaryAttributes)
+        for item in filter(STATS.get, self.artifacts.values()):
+            diff = [a + b for a, b in zip(diff, STATS[item])]
+        for k, v in zip(metadata.PrimaryAttributes, diff):
+            self.basestats[k] = self.stats[k] - v
 
     def __eq__(self, other):
         """Returns whether this hero is the same as given (same name and index)."""
@@ -259,7 +282,7 @@ class HeroPlugin(object):
         self._panel      = panel   # wxPanel container for plugin components
         self._undoredo   = commandprocessor # wx.CommandProcessor
         self._plugins    = []      # [{name, label, instance, panel}, ]
-        self._heroes     = []      # [{name, span: (start, stop), bytes: bytearray()}, ]
+        self._heroes     = []      # [Hero(name, bytes, index, span, ..), ]
         self._ctrls      = {}      # {name: wx.Control, }
         self._pages      = {}      # {wx.Window from self._ctrls["tabs"]: hero index in self._heroes}
         self._hero       = None    # Currently selected Hero instance
@@ -317,8 +340,8 @@ class HeroPlugin(object):
         sizer = self._panel.Sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_top = wx.BoxSizer(wx.HORIZONTAL)
         sizer_top.Add(label,  border=10, flag=wx.RIGHT | wx.ALIGN_CENTER)
-        sizer_top.Add(combo,  border=5,  flag=wx.BOTTOM | wx.GROW)
-        sizer_top.Add(tb,     border=10, flag=wx.LEFT)
+        sizer_top.Add(combo,  border=5,  flag=wx.TOP | wx.BOTTOM | wx.GROW)
+        sizer_top.Add(tb,     border=10, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
         sizer.Add(sizer_top,  border=10, flag=wx.LEFT | wx.GROW)
         sizer.Add(tabs,       border=10, flag=wx.BOTTOM | wx.GROW)
         sizer.Add(self._heropanel, flag=wx.GROW, proportion=1)
@@ -381,7 +404,6 @@ class HeroPlugin(object):
         """Reparses state from savefile and refreshes UI."""
         tabs = self._ctrls["tabs"]
         hero0 = self._hero
-        index0 = next(i for i, x in enumerate(self._heroes) if x == hero0) if hero0 else None
         pages0 = [self._pages[p] for i in range(tabs.GetPageCount())
                   for p in [tabs.GetPage(i)] if p in self._pages]  # [hero index, ]
         heroes0  = self._heroes[:]
@@ -401,8 +423,10 @@ class HeroPlugin(object):
             for index in pages0:
                 hero1 = heroes0[index]
                 hero2 = index < len(self._heroes) and self._heroes[index]
-                if not hero2: hero2 = next((x for x in self._heroes if x.name == hero1.name), None)
-                if not hero2 or hero1.name != hero2.name:
+                if hero1 != hero2:
+                    hero2 = next((x for x in self._heroes if x == hero1), None)  # Match name+index
+                    hero2 = hero2 or next((x for x in self._heroes if x.name == hero1.name), None)
+                if not hero2:
                     visited0 = [i for i in visited0 if i != index]
                     continue  # for index
                 page = wx.Window(tabs)
@@ -462,7 +486,7 @@ class HeroPlugin(object):
 
 
     def on_close_page(self, event):
-        """Handler for closing a hero page, selects another opened hero."""
+        """Handler for closing a hero page, selects a previous hero page, if any."""
         tabs = self._ctrls["tabs"]
         page = tabs.GetPage(event.GetSelection())
         page0 = tabs.GetCurrentPage()
@@ -491,7 +515,13 @@ class HeroPlugin(object):
 
 
     def select_hero(self, index, status=True, autoload=False):
-        """Populates panel with hero data."""
+        """
+        Populates panel with hero data.
+
+        @param   index     hero index in local structure
+        @param   status    whether to show status messages
+        @param   autoload  whether auto-populating
+        """
         if not self._panel: return
         hero2 = self._heroes[index] if index < len(self._heroes) else None
         if not hero2 or self._hero and hero2 is self._hero: return
@@ -499,6 +529,7 @@ class HeroPlugin(object):
         self._pending = True
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
         if status: guibase.status("Loading %s." % hero2.name, flash=True)
+        hero2.ensure_basestats()
         tabs = self._ctrls["tabs"]
         self._panel.Freeze()
         self._heropanel.Show()
@@ -540,7 +571,7 @@ class HeroPlugin(object):
         @param   detect_version  whether to try parsing with all version plugins
                                  instead of savefile current
         """
-        result, raw = [], self.savefile.raw
+        heroes = []
 
         ver0 = self.savefile.version
         versions, version_results = [], {}
@@ -557,14 +588,15 @@ class HeroPlugin(object):
             vresult = version_results.setdefault(ver, [])
 
             pos = 10000 # Hero structs are more to the end of the file
-            m = re.search(RGX, raw[pos:])
+            m = re.search(RGX, self.savefile.raw[pos:])
             while m and rgx_strip.match(m.group("name")):
                 start, end = m.span()
-                blob = bytearray(raw[pos + start:pos + end])
+                blob = bytearray(self.savefile.raw[pos + start:pos + end])
                 name = util.to_unicode(rgx_strip.match(m.group("name")).group())
-                vresult.append(Hero(name, -1, blob, (start + pos, end + pos), self.savefile))
+                hero = Hero(name, blob, len(vresult), (start + pos, end + pos), self.savefile)
+                vresult.append(hero)
                 pos += start + len(blob)
-                m = re.search(RGX, raw[pos:])
+                m = re.search(RGX, self.savefile.raw[pos:])
             if not vresult:
                 logger.warning("No heroes detected in %s as version '%s'.",
                                self.savefile.filename, ver)
@@ -577,16 +609,16 @@ class HeroPlugin(object):
         ver = maxcount_vers[-1] if maxcount_vers else None
         if ver:
             self.savefile.version = ver
-            result = sorted(version_results[ver], key=lambda x: x.name.lower())
-            for i, hero in enumerate(result): hero.index = i
+            heroes = sorted(version_results[ver], key=lambda x: x.name.lower())
+            for i, hero in enumerate(heroes): hero.index = i
             logger.info("Interpreting %s as version '%s' with %s heroes.",
-                        self.savefile.filename, ver, len(result))
+                        self.savefile.filename, ver, len(heroes))
         else:
             self.savefile.version = ver0
             wx.CallAfter(guibase.status, "No heroes identified in %s.",
                          self.savefile.filename, flash=True, log=True)
 
-        self._heroes[:] = result
+        self._heroes[:] = heroes
 
 
     def parse_yaml(self, value):
@@ -624,6 +656,7 @@ class HeroPlugin(object):
                 state0 = plugin.state()
                 if state is None: state = type(state0)()
                 if plugin.load_state(state): changeds.append(category)
+                self._hero.ensure_basestats(clear=True)
             if changeds:
                 self.patch()
                 for name in changeds:
@@ -677,12 +710,7 @@ class HeroPlugin(object):
 
     def get_data(self):
         """Returns copy of current hero object."""
-        if not self._hero: return None
-        hero = Hero(None, None, None, None, None)
-        for k, v in vars(self._hero).items():
-            v2 = v if isinstance(v, metadata.Savefile) else copy.deepcopy(v)
-            setattr(hero, k, v2)
-        return hero
+        return self._hero.copy() if self._hero else None
 
 
     def set_data(self, hero):
@@ -697,7 +725,7 @@ class HeroPlugin(object):
             self._pages[page] = hero.index
             tabs.AddPage(page, hero.name, select=True)
             self._heropanel.Show()
-        self._hero = Hero(hero.name, hero.index, hero.bytes, hero.span, hero.savefile)
+        self._hero = hero.copy()
 
 
     def patch(self):

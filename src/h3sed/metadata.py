@@ -7,10 +7,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    15.01.2022
+@modified    31.01.2023
 ------------------------------------------------------------------------------
 """
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import copy
 import datetime
 import gzip
@@ -30,8 +30,11 @@ Blank = b"\xFF"
 Null  = b"\x00"
 
 
-"""Hero primary attributes, in file order."""
-PrimaryAttributes = ["Attack", "Defense", "Spell Power", "Knowledge"]
+"""Hero primary attributes, in file order, as {name: label}."""
+PrimaryAttributes = OrderedDict([
+    ('attack', 'Attack'),      ('defense',   'Defense'),
+    ('power',  'Spell Power'), ('knowledge', 'Knowledge')
+])
 
 
 """Hero skills, in file order."""

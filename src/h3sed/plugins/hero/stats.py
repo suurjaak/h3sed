@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  16.01.2022
+@modified  31.01.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -142,6 +142,7 @@ class StatsPlugin(object):
         if hero:
             self.parse(hero.bytes)
             hero.stats = self._state
+            hero.ensure_basestats()
 
 
     def props(self):
@@ -167,6 +168,7 @@ class StatsPlugin(object):
         if hero:
             self.parse(hero.bytes)
             hero.stats = self._state
+            hero.ensure_basestats()
 
 
     def load_state(self, state):
@@ -187,21 +189,20 @@ class StatsPlugin(object):
 
     def on_change(self, prop, row, ctrl, value):
         """
-        Handler for artifact slot change, updates state,
-        and hero stats if old or new artifact affects primary skills.
-        Rolls back change if lacking free slot due to a combination artifact.
-        Returns whether action succeeded.
+        Handler for stats change, updates state, notifies other plugins if spellbook was toggled.
+        Returns whether anything changed in stats.
         """
         v2, v1 = None if value == "" else value, self._state[prop["name"]]
         if v2 == v1: return False
 
         self._state[prop["name"]] = v2
 
+        if prop["name"] in self._hero.basestats:
+            self._hero.basestats[prop["name"]] += v2 - v1
         if "spellbook" == prop["name"]:
             evt = gui.PluginEvent(self._panel.Id, action="render", name="spells")
             wx.PostEvent(self._panel, evt)
         return True
-
 
 
     def parse(self, bytes):
