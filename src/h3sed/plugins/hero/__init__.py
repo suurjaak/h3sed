@@ -70,7 +70,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  31.01.2023
+@modified  01.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -760,6 +760,10 @@ class HeroPlugin(object):
         if reload or not obj0:
             logger.info("Loaded hero %s %s %s.", self._hero.name, p["name"], obj.state())
 
-        if   callable(getattr(obj, "render", None)): obj.render()
-        elif callable(getattr(obj, "props",  None)): gui.build(obj, p["panel"])
-        if not obj0 or reload: wx_accel.accelerate(p["panel"])
+        p["panel"].Freeze()
+        try:
+            if   callable(getattr(obj, "render", None)): obj.render()
+            elif callable(getattr(obj, "props",  None)): gui.build(obj, p["panel"])
+            if not obj0 or reload: wx_accel.accelerate(p["panel"])
+        finally:
+            p["panel"].Thaw()
