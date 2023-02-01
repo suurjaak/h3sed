@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    29.01.2023
+@modified    01.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -129,7 +129,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             if notebook and notebook.GetSelection() != number \
             and number < notebook.GetPageCount():
                 notebook.SetSelection(number)
-                self.on_change_page(None)
+                self.on_change_page()
 
         id_close = wx.NewIdRef().Id
         accelerators = [(wx.ACCEL_CTRL, k, id_close) for k in [wx.WXK_F4, ord("W")]]
@@ -420,20 +420,27 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """
         opts = self.files.get(filename) or {}
         page = opts.get("page")
-        if not page:
-            savefile = self.load_savefile(filename)
-            if not savefile: return
+        if page:
+            for i in range(self.notebook.GetPageCount()):
+                if self.notebook.GetPage(i) == page:
+                    self.notebook.SetSelection(i)
+                    break # for i
+            self.on_change_page()
+            return
 
-            guibase.status("Opening page for %s." % filename, flash=True)
-            tab_title = self.get_unique_tab_title(filename)
-            opts.update(filename=filename, savefile=savefile, title=tab_title)
-            page = opts["page"] = SavefilePage(self.notebook, tab_title, savefile)
-            self.files[filename] = opts
-            conf.FilesOpen.add(filename)
-            conf.SelectedPath = filename
-            self.dir_ctrl.ExpandPath(conf.SelectedPath)
-            conf.save()
-        for i in range(self.notebook.GetPageCount()) if page else ():
+        savefile = self.load_savefile(filename)
+        if not savefile: return
+
+        guibase.status("Opening page for %s." % filename, flash=True)
+        tab_title = self.get_unique_tab_title(filename)
+        opts.update(filename=filename, savefile=savefile, title=tab_title)
+        page = opts["page"] = SavefilePage(self.notebook, tab_title, savefile)
+        self.files[filename] = opts
+        conf.FilesOpen.add(filename)
+        conf.SelectedPath = filename
+        self.dir_ctrl.ExpandPath(conf.SelectedPath)
+        conf.save()
+        for i in range(self.notebook.GetPageCount()):
             if self.notebook.GetPage(i) == page:
                 self.notebook.SetSelection(i)
                 wx.CallAfter(self.update_notebook_header)
@@ -557,7 +564,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.combo_game.Enable(isinstance(page, SavefilePage) and self.combo_game.Count > 1)
 
 
-    def on_change_page(self, event):
+    def on_change_page(self, event=None):
         """
         Handler for changing a page in the main Notebook, remembers the visit.
         """
@@ -636,11 +643,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.page_log.is_hidden = False
             self.page_log.Show()
             self.notebook.SetSelection(self.notebook.GetPageCount() - 1)
-            self.on_change_page(None)
+            self.on_change_page()
             self.menu_log.Check(True)
         elif self.notebook.GetPageIndex(self.page_log) != self.notebook.GetSelection():
             self.notebook.SetSelection(self.notebook.GetPageCount() - 1)
-            self.on_change_page(None)
+            self.on_change_page()
             self.menu_log.Check(True)
         else:
             self.page_log.is_hidden = True
