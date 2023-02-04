@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    01.02.2023
+@modified    04.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -287,6 +287,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu_redo = self.menu_redo = menu_edit.Append(
             wx.ID_REDO, "&Redo", "Redo the previously undone action"
         )
+        menu_changes = self.menu_changes = menu_edit.Append(
+            wx.ID_ANY, "Show unsaved &changes", "Show pending changes to savegame"
+        )
 
         menu_help = wx.Menu()
         menu.Append(menu_help, "&Help")
@@ -326,6 +329,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_showhide_log,     menu_log)
         self.Bind(wx.EVT_MENU, self.on_toggle_console,   menu_console)
         self.Bind(wx.EVT_MENU, self.on_about,            menu_about)
+        self.Bind(wx.EVT_MENU, self.on_show_changes,     menu_changes)
 
 
     def create_toolbar(self):
@@ -577,12 +581,14 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.menu_close.Enabled = self.menu_reload.Enabled = False
         self.menu_save.Enabled = self.menu_save_as.Enabled = False
         self.menu_undo.Enabled = self.menu_redo.Enabled = False
+        self.menu_changes.Enabled = False
         self.Title, subtitle = conf.Title, ""
 
         if isinstance(page, SavefilePage):
             self.page_file_latest = page
             self.menu_save_as.Enabled = self.menu_close.Enabled = True
             self.menu_reload.Enabled = self.menu_save.Enabled = True
+            self.menu_changes.Enabled = page.get_unsaved()
             page.undoredo.SetEditMenu(self.menu_edit)
             page.undoredo.SetMenuStrings()
         self.update_toolbar(page)
@@ -695,6 +701,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if ready or rename: self.update_notebook_header()
 
         self.update_fileinfo()
+        self.menu_changes.Enabled = page.get_unsaved()
 
         if modified is not None or rename:
             suffix = "*" if modified else ""
@@ -747,10 +754,16 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         conf.save()
 
 
+    def on_show_changes(self, event=None):
+        """Handler for clicking to show unsaved changes, pops up info dialog."""        
+        page = self.notebook.GetCurrentPage()
+        if isinstance(page, SavefilePage): page.show_changes()
+
+
     def on_about(self, event=None):
         """Handler for clicking "About program" menu, opens a small info frame."""
         maketext = lambda: step.Template(templates.ABOUT_HTML).expand()
-        controls.AboutDialog(self, "About %s" % conf.Title, maketext).ShowModal()
+        controls.HtmlDialog(self, "About %s" % conf.Title, maketext).ShowModal()
 
 
     def on_browse(self, event=None):
@@ -1143,6 +1156,13 @@ class SavefilePage(wx.Panel):
             tabarea and (tabarea.Hide(), self.notebook.Layout())
         evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
+
+
+    def show_changes(self):
+        """Shows unsaved changes in a popup dialog."""
+        title = "Changes in %s" % self.savefile.filename
+        content = "".join(p.get_changes() for p in self.plugins)
+        controls.HtmlDialog(self, title, content, wx.RESIZE_BORDER).ShowModal()
 
 
     def on_page_event(self, event):

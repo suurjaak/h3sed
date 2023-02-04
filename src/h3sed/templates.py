@@ -7,11 +7,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    15.01.2022
+@modified    04.02.2023
 ------------------------------------------------------------------------------
 """
 
 # Modules imported inside templates:
+#import difflib
+#from h3sed.lib import util
 #from h3sed import conf
 
 
@@ -63,5 +65,52 @@ Installer and binary executable created with:
 </ul>
 %endif
 
+</font>
+"""
+
+
+"""
+Text shown for hero unsaved changes diff.
+
+@param   name     hero name
+@param   changes  [(category content1, category content2), ]
+"""
+HERO_DIFF_HTML = """<%
+import difflib
+from h3sed.lib import util
+from h3sed import conf
+%>
+<font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
+<b>{{ name }}</b>
+<font size="2"><table cellpadding="0" cellspacing="0">
+%for v1, v2 in changes:
+<%
+entries, entry = [], []
+for line in difflib.Differ().compare(v1.splitlines(), v2.splitlines()):
+    if line.startswith("  "):
+        if entry: entries.append(entry + [""])
+        entries.append((line, line))
+        entry = []
+    elif line.startswith("- "):
+        if entry: entries.append(entry + [""])
+        entry = [line]
+    elif line.startswith("+ "):
+        entries.append((entry or [""]) + [line])
+        entry = []
+if entry: entries.append(entry + [""])
+entries = [[util.html_escape(l[2:].rstrip()).replace(" ", "&nbsp;") for l in ll] for ll in entries]
+%>
+    %for i, (l1, l2) in enumerate(entries):
+        %if not i:
+    <tr><td colspan="2"><code>{{! l1 }}</code></td></tr>
+        %elif l1 == l2:
+    <tr><td><code>{{! l1 }}</code></td><td><code>{{! l2 }}</code></td></tr>
+        %else:
+    <tr><td bgcolor="{{ conf.DiffOldColour }}"><code>{{! l1 }}</code></td>
+        <td bgcolor="{{ conf.DiffNewColour }}"><code>{{! l2 }}</code></td></tr>
+        %endif
+    %endfor
+%endfor
+</table></font>
 </font>
 """

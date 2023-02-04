@@ -2,8 +2,8 @@
 """
 Stand-alone GUI components for wx:
 
-- AboutDialog(wx.Dialog):
-  About-dialog using wx.HtmlWindow.
+- HtmlDialog(wx.Dialog):
+  Popup dialog showing a wx.HtmlWindow.
 
 - BusyPanel(wx.Window):
   Primitive hover panel with a message that stays in the center of parent
@@ -17,7 +17,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    12.01.2022
+@modified    04.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -35,30 +35,39 @@ try: text_types = (str, unicode)        # Py2
 except Exception: text_types = (str, )  # Py3
 
 
-class AboutDialog(wx.Dialog):
+class HtmlDialog(wx.Dialog):
+    """Popup dialog showing a wx.HtmlWindow, with an OK-button."""
 
-    def __init__(self, parent, title, content):
+    def __init__(self, parent, title, content, style=0):
         wx.Dialog.__init__(self, parent, title=title,
-                           style=wx.CAPTION | wx.CLOSE_BOX)
-        html = self.html = wx.html.HtmlWindow(self)
+                           style=wx.CAPTION | wx.CLOSE_BOX | style)
+        wrapper = wx.ScrolledWindow(self) if style & wx.RESIZE_BORDER else None
+        html = self.html = wx.html.HtmlWindow(wrapper or self)
         self.content = content
 
         html.SetPage(content() if callable(content) else content)
         html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
+        html.ForegroundColour = ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
         html.Bind(wx.html.EVT_HTML_LINK_CLICKED,
                   lambda e: webbrowser.open(e.GetLinkInfo().Href))
 
+        if wrapper:
+            wrapper.Sizer = wx.BoxSizer(wx.VERTICAL)
+            wrapper.Sizer.Add(html, proportion=1, flag=wx.GROW)
         self.Sizer = wx.BoxSizer(wx.VERTICAL)
-        self.Sizer.Add(html, proportion=1, flag=wx.GROW)
+        self.Sizer.Add(wrapper or html, proportion=1, flag=wx.GROW)
         sizer_buttons = self.CreateButtonSizer(wx.OK)
         self.Sizer.Add(sizer_buttons, border=8, flag=wx.ALIGN_CENTER | wx.ALL)
         self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChange)
 
         self.Layout()
+        DISPSIZE = wx.Display(self).ClientArea.Size
         FRAMEH = 2 * wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_Y, self) + \
                  wx.SystemSettings.GetMetric(wx.SYS_CAPTION_Y, self)
+        width = html.VirtualSize[0] + 2*8
         height = FRAMEH + html.VirtualSize[1] + sizer_buttons.Size[1] + 2*8
-        self.Size = self.MinSize = (max(400, self.Size[0]), height)
+        self.Size = min(width, DISPSIZE.Width), min(height, DISPSIZE.Height)
+        self.MinSize = (400, 300)
         self.CenterOnParent()
 
 

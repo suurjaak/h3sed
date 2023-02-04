@@ -70,7 +70,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  01.02.2023
+@modified  04.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -92,6 +92,8 @@ from h3sed import guibase
 from h3sed import images
 from h3sed import metadata
 from h3sed import plugins
+from h3sed import templates
+from h3sed.lib.vendor import step
 from h3sed.lib import controls
 from h3sed.lib import util
 from h3sed.lib import wx_accel
@@ -242,14 +244,20 @@ class Hero(object):
         self.span      = span
         self.savefile  = savefile
         self.basestats = {}  # Primary attributes without artifact bonuses
+        self.yamls1    = []  # Data after first load, as [category YAML, ]
+        self.yamls2    = []  # Data after last change, as [category YAML, ]
 
     def copy(self):
         """Returns a copy of this hero."""
         hero = Hero(self.name, self.bytes, self.index, self.span, self.savefile)
-        for k, v in vars(self).items():
-            v2 = v if isinstance(v, metadata.Savefile) else copy.deepcopy(v)
-            setattr(hero, k, v2)
+        hero.update(self)
         return hero
+
+    def update(self, hero):
+        """Replaces attributes on hero with copies from given hero."""
+        for k, v in vars(hero).items():
+            v2 = v if isinstance(v, metadata.Savefile) else copy.deepcopy(v)
+            setattr(self, k, v2)
 
     def get_bytes(self, original=False):
         """Returns hero bytearray, current or original."""
@@ -539,6 +547,8 @@ class HeroPlugin(object):
                         hero2.name, hero2.span[0], hero2.span[1] - 1)
             self._hero = hero2
             for p in self._plugins: self.render_plugin(p["name"], reload=True)
+            if not self._hero.yamls1:
+                self._hero.yamls1 = self.serialize_yaml(split=True)
         finally:
             self._pending = False
             self._ctrls["toolbar"].EnableTool(wx.ID_COPY,  True)
@@ -665,47 +675,60 @@ class HeroPlugin(object):
         self.command(functools.partial(on_do, usables), "paste hero data from clipboard")
 
 
-    def serialize_yaml(self):
-        """Returns current hero data as YAML."""
+    def serialize_yaml(self, split=False):
+        """
+        Returns current hero data as YAML.
+
+        @param   split   whether to return as [category YAML, ] instead of hero full YAML
+        """
         LF, INDENT = os.linesep, "  "
-        maxlen = 0
-        states = []  # [(category, [(prefix, value), ])]
+        states, maxlen = [], 0, # [(category, [(prefix, value), ])]
+        for p in self._plugins:  # Assemble YAML by hand for more readable indentation
+            pairs, prefixlen = self.serialize_plugin_yaml(p["instance"], INDENT)
+            states.append((p["name"], pairs))
+            maxlen = max(maxlen, prefixlen)
+        maxlen += len(INDENT) + 3
+        formatteds = ["%s%s:%s%s%s%s" % (
+            INDENT, category, LF if pairs else "", INDENT if pairs else "",
+            (LF + INDENT).join("%s%s" % (a.ljust(maxlen) if b and a.strip() != "-" else a, b)
+                               for a, b in pairs), LF
+        ) for category, pairs in states]
+        name = yaml.safe_dump([self._hero.name], default_flow_style=True).strip()[1:-1]
+        return formatteds if split else name + ":" + LF + "".join(formatteds)
+
+
+    def serialize_plugin_yaml(self, plugin, indent="  "):
+        """
+        Returns current hero data from plugin as YAML components.
+
+        @param   plugin  plugin instance
+        @param   indent  line leading indent
+        @return          [(formatted prefix, formatted value)], raw prefix maxlen
+        """
+        pairs, maxlen = [], 0
         fmt = lambda v: "" if v in (None, {}) else \
                         next((x[1:-1] if isinstance(v, util.text_types)
                               and re.match(r"[\x20-\x7e]+$", x) else x for x in [json.dumps(v)]))
-        for p in self._plugins:  # Assemble YAML by hand for more readable indentation
-            pairs = []
-            props, state = p["instance"].props(), copy.copy(p["instance"].state())
-            for prop in props if isinstance(props, (list, tuple)) else [props]:
-                if "itemlist" == prop["type"]:
-                    while state and not state[-1]: state.pop()  # Strip empty trailing values
-                    for v in state:
-                        itempairs = []
-                        if not v or not isinstance(v, dict):
-                            itempairs += [("-%s" % ("" if v in (None, {}) else " "), fmt(v))]
-                        else:
-                            for itemprop in prop["item"]:
-                                if "name" in itemprop and itemprop["name"] in v:
-                                    maxlen = max(maxlen, len(itemprop["name"]))
-                                    lead = " " if itempairs else "-"
-                                    itempairs += [("%s %s:" % (lead, itemprop["name"]),
-                                                   fmt(v[itemprop["name"]]))]
-                        pairs.extend(itempairs)
-                elif "label" != prop["type"]:
-                    maxlen = max(maxlen, len(prop["name"]))
-                    pairs += [("%s%s:" % (INDENT, prop["name"]), fmt(state[prop["name"]]))]
-            states.append((p["name"], pairs))
-
-        maxlen += len(INDENT) + 3
-        formatted = LF + "".join(
-            "%s%s:%s%s%s%s" % (
-                INDENT, category, LF if pairs else "", INDENT if pairs else "",
-                (LF + INDENT).join("%s%s" % (a.ljust(maxlen) if b and a.strip() != "-" else a, b)
-                                   for a, b in pairs), LF
-            ) for category, pairs in states
-        )
-        name = yaml.safe_dump([self._hero.name], default_flow_style=True).strip()[1:-1]
-        return name + ":" + formatted
+        props, state = plugin.props(), copy.copy(plugin.state())
+        for prop in props if isinstance(props, (list, tuple)) else [props]:
+            if "itemlist" == prop["type"]:
+                while state and not state[-1]: state.pop()  # Strip empty trailing values
+                for v in state:
+                    itempairs = []
+                    if not v or not isinstance(v, dict):
+                        itempairs += [("-%s" % ("" if v in (None, {}) else " "), fmt(v))]
+                    else:
+                        for itemprop in prop["item"]:
+                            if "name" in itemprop and itemprop["name"] in v:
+                                maxlen = max(maxlen, len(itemprop["name"]))
+                                lead = " " if itempairs else "-"
+                                itempairs += [("%s %s:" % (lead, itemprop["name"]),
+                                               fmt(v[itemprop["name"]]))]
+                    pairs.extend(itempairs)
+            elif "label" != prop["type"]:
+                maxlen = max(maxlen, len(prop["name"]))
+                pairs += [("%s%s:" % (indent, prop["name"]), fmt(state[prop["name"]]))]
+        return pairs, maxlen
 
 
     def get_data(self):
@@ -725,7 +748,20 @@ class HeroPlugin(object):
             self._pages[page] = hero.index
             tabs.AddPage(page, hero.name, select=True)
             self._heropanel.Show()
-        self._hero = hero.copy()
+        if not self._hero:
+            self._hero = mext(h for h in self._heroes if h == hero)
+        self._hero.update(hero)
+
+
+    def get_changes(self):
+        """Returns changes to current heroes, as HTML diff content."""
+        changes, tpl = [], step.Template(templates.HERO_DIFF_HTML, escape=True)
+        for hero in self._heroes:
+            if hero.yamls1 and hero.yamls2 and hero.yamls1 != hero.yamls2:
+                changes.append(tpl.expand(name=hero.name, changes=[
+                    (v1, v2) for v1, v2 in zip(hero.yamls1, hero.yamls2) if v1 != v2
+                ]))
+        return "\n".join(changes)
 
 
     def patch(self):
@@ -734,6 +770,7 @@ class HeroPlugin(object):
             if callable(getattr(p.get("instance"), "serialize", None)):
                 self._hero.bytes = p["instance"].serialize()
         self.savefile.patch(self._hero.bytes, self._hero.span)
+        self._hero.yamls2 = self.serialize_yaml(split=True)
         wx.PostEvent(self._panel, gui.SavefilePageEvent(self._panel.Id))
 
 

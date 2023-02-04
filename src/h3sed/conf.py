@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    01.02.2023
+@modified    04.02.2023
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
@@ -26,7 +26,7 @@ import sys
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
 Version = "1.1"
-VersionDate = "01.02.2023"
+VersionDate = "04.02.2023"
 
 if getattr(sys, "frozen", False):
     # Running as a pyinstaller executable
@@ -131,6 +131,12 @@ WidgetColour = "#D4D0C8"
 
 """Colour for clickable links."""
 LinkColour = "#0000FF"
+
+"""Colour for original value in savegame diff."""
+DiffOldColour = "#FFAAAA"
+
+"""Colour for new value in savegame diff."""
+DiffNewColour = "#AAFFAA"
 
 """Duration of "flashed" status message on StatusBar, in seconds."""
 StatusFlashLength = 20
