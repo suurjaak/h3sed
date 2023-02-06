@@ -70,7 +70,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  04.02.2023
+@modified  06.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -321,14 +321,19 @@ class HeroPlugin(object):
 
         combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
 
-        bmp1 = wx.ArtProvider.GetBitmap(wx.ART_COPY,  wx.ART_TOOLBAR, (16, 16))
-        bmp2 = wx.ArtProvider.GetBitmap(wx.ART_PASTE, wx.ART_TOOLBAR, (16, 16))
+        bmp1 = wx.ArtProvider.GetBitmap(wx.ART_COPY,      wx.ART_TOOLBAR, (16, 16))
+        bmp2 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,     wx.ART_TOOLBAR, (16, 16))
+        bmp3 = wx.ArtProvider.GetBitmap(wx.ART_GO_DIR_UP, wx.ART_TOOLBAR, (16, 16))
         tb.AddTool(wx.ID_COPY,  "", bmp1, shortHelp="Copy current hero data to clipboard")
         tb.AddTool(wx.ID_PASTE, "", bmp2, shortHelp="Paste data from clipboard to current hero")
+        tb.AddSeparator()
+        tb.AddTool(wx.ID_OPEN,  "", bmp3, shortHelp="Show savefile in folder")
         tb.EnableTool(wx.ID_COPY,  False)
         tb.EnableTool(wx.ID_PASTE, False)
-        tb.Bind(wx.EVT_TOOL, self.on_copy_hero,  id=wx.ID_COPY)
-        tb.Bind(wx.EVT_TOOL, self.on_paste_hero, id=wx.ID_PASTE)
+        tb.EnableTool(wx.ID_OPEN,  True)
+        tb.Bind(wx.EVT_TOOL, self.on_copy_hero,   id=wx.ID_COPY)
+        tb.Bind(wx.EVT_TOOL, self.on_paste_hero,  id=wx.ID_PASTE)
+        tb.Bind(wx.EVT_TOOL, self.on_open_folder, id=wx.ID_OPEN)
         tb.Realize()
 
         tabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_page, tabs)
@@ -474,6 +479,11 @@ class HeroPlugin(object):
             guibase.status("Pasting data to hero %s from clipboard.",
                            self._hero.name, flash=True, log=True)
             self.parse_yaml(value)
+
+
+    def on_open_folder(self, event=None):
+        """Opens folder to savefile location."""
+        util.select_file(self.savefile.filename)
 
 
     def on_plugin_event(self, event):
