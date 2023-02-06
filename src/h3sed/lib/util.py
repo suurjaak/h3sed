@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    02.02.2023
+@modified    06.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -54,11 +54,6 @@ def itoby(v, length):
     """
     fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[length]
     return bytearray(struct.pack(fmt, v))
-
-
-def safe_filename(filename):
-    """Returns the filename with characters like \:*?"<>| removed."""
-    return re.sub(r"[\/\\\:\*\?\"\<\>\|\x00-\x1f]", "", filename)
 
 
 def html_escape(s, quote=True):
