@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    04.02.2023
+@modified    06.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -666,10 +666,15 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         page = self.notebook.GetCurrentPage()
         p2 = next(x for x in plugins.version.PLUGINS
                   if x["label"] == event.EventObject.Value)
-
-        if page.savefile.version == p2["name"]: return
         p1 = next(x for x in plugins.version.PLUGINS
                   if x["name"] == page.savefile.version)
+
+        if page.savefile.version == p2["name"]: return
+        if page.get_unsaved():
+            event.EventObject.Value = p1["label"]
+            wx.MessageBox("Cannot change game version: there are unsaved changes.",
+                          conf.Title, wx.OK | wx.ICON_WARNING)
+            return
 
         def switch(opts):
             self.combo_game.Value = opts["label"]
