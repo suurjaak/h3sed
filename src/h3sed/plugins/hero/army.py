@@ -7,11 +7,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  16.01.2022
+@modified  06.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
 import logging
+
+import wx
 
 from h3sed import gui
 from h3sed import metadata
@@ -75,6 +77,7 @@ class ArmyPlugin(object):
         if hero:
             self.parse(hero.bytes)
             hero.army = self._state
+        panel.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_colour_change)
 
 
     def props(self):
@@ -175,6 +178,17 @@ class ArmyPlugin(object):
                 row["count"] = ctrl.GetNextSibling().Value = 1
             ctrl.GetNextSibling().Show(bool(value))
         return True
+
+
+    def on_colour_change(self, event):
+        """Handler for system colour change, refreshes panel to clear any display issues."""
+        event.Skip()
+        def after():
+            if not self._panel: return
+            for c in self._panel.Children:
+                if isinstance(c, wx.SpinCtrl) and not c.Shown: c.Show(), c.Hide()
+            wx.CallAfter(lambda: self._panel and self._panel.Refresh())
+        wx.CallLater(100, after)  # Hidden SpinCtrl arrows can become visible on colour change
 
 
     def parse(self, bytes):
