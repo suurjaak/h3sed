@@ -38,6 +38,9 @@ Subplugin instances are expected to have the following API:
     def state(self):
         '''Optional. Returns subplugin state for gui.build().'''
 
+    def item(self):
+        '''Mandatory. Returns current hero.'''
+
     def load(self, hero, panel=None):
         '''Mandatory. Loads subplugin state from hero, optionally resetting panel.'''
 
@@ -70,7 +73,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  06.02.2023
+@modified  07.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -277,6 +280,10 @@ class Hero(object):
     def __eq__(self, other):
         """Returns whether this hero is the same as given (same name and index)."""
         return isinstance(other, Hero) and (self.name, self.index) == (other.name, other.index)
+
+    def __str__(self):
+        """Returns hero name."""
+        return self.name
 
 
 

@@ -1254,7 +1254,8 @@ def build(plugin, panel):
 
         def handler(event):
             ctrl, value = event.EventObject, event.EventObject.Value
-            cname = "set %s: %s %s" % (plugin.name, "" if name is None else name,
+            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
+            cname = "set %s: %s %s" % (label, "" if name is None else name,
                                        "<blank>" if value is False or value in ("", None) else value)
             action = functools.partial(on_do, ctrl, value)
             plugin.parent.command(action, cname)
@@ -1270,7 +1271,8 @@ def build(plugin, panel):
             return True
 
         def handler(event):
-            cname = "swap %s: #%s and #%s" % (plugin.name, index + 1, index + direction + 1)
+            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
+            cname = "swap %s: #%s and #%s" % (label, index + 1, index + direction + 1)
             plugin.parent.command(on_do, cname)
         return handler
 
@@ -1285,7 +1287,8 @@ def build(plugin, panel):
 
         def handler(event):
             if not ctrl.Value: return
-            cname = "add %s: %s" % (plugin.name, ctrl.Value)
+            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
+            cname = "add %s: %s" % (label, ctrl.Value)
             plugin.parent.command(functools.partial(on_do, ctrl.Value), cname)
         return handler
 
@@ -1301,7 +1304,8 @@ def build(plugin, panel):
             state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             v = state[index]
             if isinstance(v, dict): v = v.get("name", v)
-            cname = "remove %s: %s" % (plugin.name, v)
+            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
+            cname = "remove %s: %s" % (label, v)
             plugin.parent.command(on_do, cname)
         return handler
 

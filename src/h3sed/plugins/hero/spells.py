@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  18.01.2022
+@modified  07.02.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -76,6 +76,11 @@ class SpellsPlugin(object):
     def state(self):
         """Returns data state for spells-plugin, as {mana, exp, ..}."""
         return self._state
+
+
+    def item(self):
+        """Returns current hero."""
+        return self._hero
 
 
     def load(self, hero, panel=None):

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  06.02.2023
+@modified  07.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -97,6 +97,11 @@ class ArmyPlugin(object):
     def state(self):
         """Returns data state for army-plugin, as [{"name": "Roc", "count": 6}, {}, ]."""
         return self._state
+
+
+    def item(self):
+        """Returns current hero."""
+        return self._hero
 
 
     def load(self, hero, panel=None):
