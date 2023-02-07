@@ -66,6 +66,7 @@ import os
 import glob
 import importlib
 import logging
+import time
 
 import wx
 
@@ -160,6 +161,7 @@ class PluginCommand(wx.Command):
         self._data1 = None
         self._data2 = None
         self._plugin = plugin
+        self._timestamp = time.time()
 
     def Do(self):
         if self._done:
@@ -177,3 +179,8 @@ class PluginCommand(wx.Command):
         self._plugin.render(reload=True)
         self._plugin.patch()
         return True
+
+    @property
+    def Timestamp(self):
+        """Returns command creation timestamp, as UNIX epoch."""
+        return self._timestamp

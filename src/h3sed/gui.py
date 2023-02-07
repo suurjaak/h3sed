@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.02.2023
+@modified    07.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -287,6 +287,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu_redo = self.menu_redo = menu_edit.Append(
             wx.ID_REDO, "&Redo", "Redo the previously undone action"
         )
+        menu_history = self.menu_history = menu_edit.Append(
+            wx.ID_ANY, "Command &history", "View current changes done to savegame"
+        )
+        menu_edit.AppendSeparator()
         menu_changes = self.menu_changes = menu_edit.Append(
             wx.ID_ANY, "Show unsaved &changes", "Show pending changes to savegame"
         )
@@ -307,6 +311,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         menu_close.Enabled = menu_reload.Enabled = False
         menu_save.Enabled = menu_save_as.Enabled = False
+        for x in menu_edit.MenuItems: x.Enable(False)
 
         self.history_file = wx.FileHistory(conf.MaxRecentFiles)
         self.history_file.UseMenu(menu_recent)
@@ -330,6 +335,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_toggle_console,   menu_console)
         self.Bind(wx.EVT_MENU, self.on_about,            menu_about)
         self.Bind(wx.EVT_MENU, self.on_show_changes,     menu_changes)
+        self.Bind(wx.EVT_MENU, self.on_open_history,     menu_history)
 
 
     def create_toolbar(self):
@@ -581,7 +587,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.menu_close.Enabled = self.menu_reload.Enabled = False
         self.menu_save.Enabled = self.menu_save_as.Enabled = False
         self.menu_undo.Enabled = self.menu_redo.Enabled = False
-        self.menu_changes.Enabled = False
+        self.menu_changes.Enabled = self.menu_history.Enabled = False
         self.Title, subtitle = conf.Title, ""
 
         if isinstance(page, SavefilePage):
@@ -589,6 +595,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.menu_save_as.Enabled = self.menu_close.Enabled = True
             self.menu_reload.Enabled = self.menu_save.Enabled = True
             self.menu_changes.Enabled = page.get_unsaved()
+            self.menu_history.Enabled = bool(page.undoredo.Commands)
             page.undoredo.SetEditMenu(self.menu_edit)
             page.undoredo.SetMenuStrings()
         self.update_toolbar(page)
@@ -707,6 +714,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         self.update_fileinfo()
         self.menu_changes.Enabled = page.get_unsaved()
+        self.menu_history.Enabled = bool(page.undoredo.Commands)
 
         if modified is not None or rename:
             suffix = "*" if modified else ""
@@ -763,6 +771,19 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Handler for clicking to show unsaved changes, pops up info dialog."""        
         page = self.notebook.GetCurrentPage()
         if isinstance(page, SavefilePage): page.show_changes()
+
+
+    def on_open_history(self, event=None):
+        """Handler for clicking to show command history, pops up history dialog."""
+        page = self.notebook.GetCurrentPage()
+        if not isinstance(page, SavefilePage): return
+        dlg = controls.CommandHistoryDialog(self, page.undoredo)
+        if dlg.ShowModal() != wx.ID_OK: return
+        count, cando, do = dlg.GetSelection(), page.undoredo.CanUndo, page.undoredo.Undo
+        if count >= 0: cando, do = page.undoredo.CanRedo, page.undoredo.Redo
+        guibase.status("%sdoing %s", "Un" if count < 0 else "Re",
+                       util.plural("action", abs(count)), flash=True, log=True)
+        for _ in range(abs(count)): cando() and do()
 
 
     def on_about(self, event=None):
@@ -1184,10 +1205,16 @@ class GenericCommand(wx.Command):
     def __init__(self, do, undo, name=""):
         super(GenericCommand, self).__init__(canUndo=True, name=name)
         self._do, self._undo = do, undo
+        self._timestamp = time.time()
 
     def Do(self):   return bool(self._do())
 
     def Undo(self): return bool(self._undo())
+
+    @property
+    def Timestamp(self):
+        """Returns command creation timestamp, as UNIX epoch."""
+        return self._timestamp
 
 
 

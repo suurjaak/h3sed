@@ -12,16 +12,22 @@ Stand-alone GUI components for wx:
 - ColourManager(object):
   Updates managed component colours on Windows system colour change.
 
+- CommandHistoryDialog(wx.Dialog):
+  Popup dialog for wx.CommandProcessor history, allows selecting a range to undo or redo.
+
+
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    04.02.2023
+@modified    07.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
+import datetime
 import os
+import time
 import webbrowser
 
 import wx
@@ -269,3 +275,113 @@ class ColourManager(object):
             setattr(ctrl, prop, mycolour)
         elif hasattr(ctrl, "Set" + prop):
             getattr(ctrl, "Set" + prop)(mycolour)
+
+
+
+class CommandHistoryDialog(wx.Dialog):
+    """
+    Popup dialog for wx.CommandProcessor history, allows selecting a range to undo or redo.
+
+    A "Time since" column is included in the history
+    if the commands in CommandProcessor have `Timestamp` attributes as UNIX epoch.
+    """
+
+    def __init__(self, parent, cmdproc, title="Command History", style=0):
+        wx.Dialog.__init__(self, parent, title=title,
+                           style=wx.CAPTION | wx.CLOSE_BOX | wx.RESIZE_BORDER | style)
+        self.edge = -1  # Choice index for first undo command
+        cmdpos = cmdproc.Commands.index(cmdproc.CurrentCommand) if cmdproc.CurrentCommand else None
+        if cmdpos is not None: self.edge = len(cmdproc.Commands) - cmdpos - 1
+        headertext, choices = self._MakeTexts(cmdproc)
+
+        label = wx.StaticText(self, label="Select command(s) to undo or redo:")
+        header = wx.StaticText(self)
+        listbox = wx.ListBox(self, choices=choices, style=wx.LB_MULTIPLE)
+        sizer_buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+
+        header.Label = headertext
+        okbutton = next(c for c in self.Children if isinstance(c, wx.Button) and wx.ID_OK == c.Id)
+        okbutton.Label = "Redo" if self.edge < 0 else "Undo"
+        self.listbox = listbox
+        self.okbutton = okbutton
+
+        self.Sizer = wx.BoxSizer(wx.VERTICAL)
+        self.Sizer.Add(label,         border=8, flag=wx.ALL)
+        self.Sizer.Add(header,        border=8, flag=wx.LEFT)
+        self.Sizer.Add(listbox,       border=8, flag=wx.LEFT | wx.RIGHT | wx.GROW, proportion=1)
+        self.Sizer.Add(sizer_buttons, border=8, flag=wx.ALL | wx.ALIGN_CENTER)
+        self.Layout()
+        self.Size = self.MinSize = (400, 250)
+
+        self._EnsureSelection()
+        listbox.SetFocus()
+        self.Bind(wx.EVT_LISTBOX, self._OnSelectChange, listbox)
+        self.Bind(wx.EVT_LISTBOX_DCLICK, self._OnSubmit, listbox)
+        self.CenterOnParent()
+
+
+    def GetSelection(self):
+        """Returns the number of entries selected, negative if Undo."""
+        sels = self.listbox.GetSelections()
+        return (1 if self.edge < 0 or sels[0] < self.edge else -1) * len(sels) if sels else 0
+
+
+    def _EnsureSelection(self, index=None):
+        """
+        Ensures a valid range of undo or redo entries being selected.
+
+        @param   index  listbox index changed
+        """
+        if index is None:
+            if self.edge >= 0: self.listbox.Select(self.edge)  # Select first undo
+            for i in range(self.listbox.Count) if self.edge < 0 else ():
+                self.listbox.Select(i)  # Select all redos if only redos
+        else:
+            rng = [self.edge, index]  # Undo range
+            if self.edge < 0 or index < self.edge:  # Redo range
+                rng = [index, self.listbox.Count - 1 if self.edge < 0 else self.edge - 1]
+            for i in range(self.listbox.Count):
+                (self.listbox.SetSelection if rng[0] <= i <= rng[1] else self.listbox.Deselect)(i)
+            self.okbutton.Label = "Redo" if self.edge < 0 or index < self.edge else "Undo"
+
+
+    def _MakeTexts(self, cmdproc):
+        """Returns a list of texts for populating command history listbox."""
+        choices = []
+        columns, maxwidths, now = ["Number", "", "Command"], {}, time.time()
+        has_stamps = cmdproc.Commands and all(
+            isinstance(getattr(x, "Timestamp", None), (int, float)) and x.Timestamp > 0
+            for x in cmdproc.Commands
+        )
+        if has_stamps: columns.insert(1, "Time since")
+        headertext, INTER = "", " " * 6
+        getw = lambda x: self.GetTextExtent(str(x))[0]
+        spacew = self.GetTextExtent(" ")[0]
+        for i, c in enumerate(columns):
+            inter = "" if not i else INTER + ("" if c else " " * int(getw("Undo") / spacew))
+            headertext += inter + c
+            maxwidths[i] = max(maxwidths.get(i, 0), getw(c))
+        for index, c in enumerate(x.Name for x in reversed(cmdproc.Commands)):
+            category = "Redo" if self.edge < 0 or index < self.edge else "Undo"
+            item = [len(cmdproc.Commands) - index, category, c]
+            if has_stamps:
+                cmd = cmdproc.Commands[len(cmdproc.Commands) - index - 1]
+                since = str(datetime.timedelta(seconds=int(now - cmd.Timestamp)))
+                item.insert(1, since[2:] if since.startswith("0:") else since)
+            text = ""
+            for i, (c, v) in enumerate(zip(columns, item)):
+                pad = " " * int((maxwidths[i] - getw(v)) / spacew) if i < len(columns) - 1 else ""
+                lpad, rpad = ("", pad) if i > 1 else (pad[:-1], " ")
+                text += ("%s%s%s%s" % (INTER if i else "", lpad, v, rpad))
+            choices.append(text)
+        return headertext, choices
+
+
+    def _OnSelectChange(self, event):
+        """Handler for changing selection, ensures a valid range is selected."""
+        self._EnsureSelection(event.Selection)
+
+
+    def _OnSubmit(self, event):
+        """Handler for double-clicking listbox, submits dialog."""
+        self.EndModal(wx.ID_OK)
