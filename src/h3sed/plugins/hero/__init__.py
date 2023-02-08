@@ -73,7 +73,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  07.02.2023
+@modified  08.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -570,7 +570,7 @@ class HeroPlugin(object):
             self._pending = False
             self._ctrls["toolbar"].EnableTool(wx.ID_COPY,  True)
             self._ctrls["toolbar"].EnableTool(wx.ID_PASTE, True)
-            if autoload or self._autoloaded:
+            if (autoload or self._autoloaded) and not self.savefile.is_changed():
                 tabs.DeleteAllPages()  # Replace auto-populated tab
                 self._pages.clear()
                 del self._pages_visited[:]
