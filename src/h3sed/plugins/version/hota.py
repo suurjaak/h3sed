@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  29.2023
+@modified  09.02.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -273,7 +273,7 @@ RGX_HERO = re.compile(b"""
     .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
 
                              #  13 bytes: hero name, null-padded               138-150
-    (?P<name>[^\x00-\x20,\xF0-\xFF].{12})
+    (?P<name>[^\x00-\x20,\xF0-\xFF].{11}\x00)
     [\x00-\x03]{29}          #  29 bytes: skill levels (Interference last)     151-179
     .{27}                    #  27 bytes: skill slots (legacy, unused)         180-206
     .{4}                     #   4 bytes: primary stats                        207-210
@@ -282,11 +282,12 @@ RGX_HERO = re.compile(b"""
     [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
 
                              # 152 bytes: 19 8-byte equipments worn            351-502
-                             # Blank spots:   FF FF FF FF 00 00 00 00
+                             # Blank spots:   FF FF FF FF XY XY XY XY
                              # Artifacts:     XY 00 00 00 FF FF FF FF
                              # Scrolls:       XY 00 00 00 00 00 00 00
-                             # Catapult etc:  XY 00 00 00 XY XY 00 00
-    ( (\xFF{4} (\x00{4} | \xFF{4})) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2}) ){19}
+    (?P<artifacts>           # Catapult etc:  XY 00 00 00 XY XY 00 00
+      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
+    ){19}
 
                              # 512 bytes: 64 8-byte artifacts in backpack      503-1014
     ( ((.\x00{3}) | \xFF{4}) (\x00{4} | \xFF{4}) ){64}

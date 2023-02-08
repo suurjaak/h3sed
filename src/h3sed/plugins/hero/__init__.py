@@ -73,7 +73,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  08.02.2023
+@modified  09.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -174,8 +174,7 @@ RGX_HERO = re.compile(b"""
     # hero biography, making length indeterminate.
     # Bio ends at position -32 from total movement point start.
     # If bio end position is \x00, then bio is empty, otherwise bio extends back
-    # until a 4-byte span giving bio length (which always ends with \x00
-    # because bio can't be gigabytes long).
+    # until a 4-byte span giving bio length (which always ends with \x00).
 
     .{4}                     #   4 bytes: movement points in total             000-003
     .{4}                     #   4 bytes: movement points remaining            004-007
@@ -190,7 +189,7 @@ RGX_HERO = re.compile(b"""
     .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
 
                              #  13 bytes: hero name, null-padded               138-150
-    (?P<name>[^\x00-\x20,\xF0-\xFF].{12})
+    (?P<name>[^\x00-\x20,\xF0-\xFF].{11}\x00)
     [\x00-\x03]{28}          #  28 bytes: skill levels                         151-178
     [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
     .{4}                     #   4 bytes: primary stats                        207-210
@@ -199,12 +198,12 @@ RGX_HERO = re.compile(b"""
     [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
 
                              # 152 bytes: 19 8-byte equipments worn            351-502
-                             # Blank spots:   FF FF FF FF 00 00 00 00
-                             #                FF FF FF FF FF FF FF FF
+                             # Blank spots:   FF FF FF FF XY XY XY XY
                              # Artifacts:     XY 00 00 00 FF FF FF FF
                              # Scrolls:       XY 00 00 00 00 00 00 00
-                             # Catapult etc:  XY 00 00 00 XY XY 00 00
-    ( (\xFF{4} (\x00{4} | \xFF{4})) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2}) ){19}
+    (?P<artifacts>(          # Catapult etc:  XY 00 00 00 XY XY 00 00
+      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
+    ){19})
 
                              # 512 bytes: 64 8-byte artifacts in backpack      503-1014
     ( ((.\x00{3}) | \xFF{4}) (\x00{4} | \xFF{4}) ){64}
@@ -240,10 +239,10 @@ class Hero(object):
     Plugins will add their own specific attributes like `inventory`.
     """
 
-    def __init__(self, name, bytes, index, span, savefile):
+    def __init__(self, name, bytes, place, span, savefile):
         self.name      = name
         self.bytes     = bytes
-        self.index     = index
+        self.place     = place
         self.span      = span
         self.savefile  = savefile
         self.basestats = {}  # Primary attributes without artifact bonuses
@@ -252,7 +251,7 @@ class Hero(object):
 
     def copy(self):
         """Returns a copy of this hero."""
-        hero = Hero(self.name, self.bytes, self.index, self.span, self.savefile)
+        hero = Hero(self.name, self.bytes, self.place, self.span, self.savefile)
         hero.update(self)
         return hero
 
@@ -278,8 +277,8 @@ class Hero(object):
             self.basestats[k] = self.stats[k] - v
 
     def __eq__(self, other):
-        """Returns whether this hero is the same as given (same name and index)."""
-        return isinstance(other, Hero) and (self.name, self.index) == (other.name, other.index)
+        """Returns whether this hero is the same as given (same name and place)."""
+        return isinstance(other, Hero) and (self.name, self.place) == (other.name, other.place)
 
     def __str__(self):
         """Returns hero name."""
@@ -297,7 +296,7 @@ class HeroPlugin(object):
         self._panel      = panel   # wxPanel container for plugin components
         self._undoredo   = commandprocessor # wx.CommandProcessor
         self._plugins    = []      # [{name, label, instance, panel}, ]
-        self._heroes     = []      # [Hero(name, bytes, index, span, ..), ]
+        self._heroes     = []      # [Hero(name, bytes, place, span, ..), ]
         self._ctrls      = {}      # {name: wx.Control, }
         self._pages      = {}      # {wx.Window from self._ctrls["tabs"]: hero index in self._heroes}
         self._hero       = None    # Currently selected Hero instance
@@ -305,7 +304,7 @@ class HeroPlugin(object):
         self._pending    = False   # Whether hero selected but not yet loaded
         self._reparsing  = False   # Whether reparsing file
         self._autoloaded = None    # Whether current hero was auto-populated
-        self._pages_visited = []   # List of visited hero tabs, as [index, ]
+        self._pages_visited = []   # List of visited hero tabs, as [hero index in self._heroes, ]
         self.parse(detect_version=True)
         self.prebuild()
         panel.Bind(gui.EVT_PLUGIN, self.on_plugin_event)
@@ -444,7 +443,7 @@ class HeroPlugin(object):
                 hero1 = heroes0[index]
                 hero2 = index < len(self._heroes) and self._heroes[index]
                 if hero1 != hero2:
-                    hero2 = next((x for x in self._heroes if x == hero1), None)  # Match name+index
+                    hero2 = next((x for x in self._heroes if x == hero1), None)  # Match name+place
                     hero2 = hero2 or next((x for x in self._heroes if x.name == hero1.name), None)
                 if not hero2:
                     visited0 = [i for i in visited0 if i != index]
@@ -454,6 +453,7 @@ class HeroPlugin(object):
                 if not hero and hero0 and hero2.name == hero0.name: hero = hero2
                 tabs.AddPage(page, hero2.name, select=hero2 is hero)
 
+            visited0 = [v for i, v in enumerate(visited0) if not i or v != visited0[i - 1]]
             self._pages_visited[:] = visited0
             if not hero and self._pages_visited: hero = self._heroes[self._pages_visited[-1]]
             index = next(i for i, x in enumerate(self._heroes) if x is hero) if hero else None
@@ -517,7 +517,8 @@ class HeroPlugin(object):
         page0 = tabs.GetCurrentPage()
         index = next((i for p, i in self._pages.items() if p == page), 0)
         self._pages.pop(page, None)
-        self._pages_visited = [x for x in self._pages_visited if x != index]
+        visited = [x for x in self._pages_visited if x != index]
+        self._pages_visited = [v for i, v in enumerate(visited) if not i or v != visited[i - 1]]
         if page0 is page and self._pages_visited:
             self.select_hero(self._pages_visited[-1], status=False)
         elif not self._pages:
@@ -606,7 +607,8 @@ class HeroPlugin(object):
             versions = [x["name"] for x in plugins.version.PLUGINS]
         if not versions: versions = [self.savefile.version]
         all_versions = versions[:]
-        rgx_strip = re.compile(br"^[^\x00-\x19]+")
+        rgx_strip = re.compile(br"^([^\x00-\x19,\xF0-\xFF]+)\x00+$")
+        rgx_nulls = re.compile(br"^(\x00+)|(\x00{4}\xFF{4})+$")
 
         while versions:
             ver = versions.pop()
@@ -616,13 +618,16 @@ class HeroPlugin(object):
 
             pos = 10000 # Hero structs are more to the end of the file
             m = re.search(RGX, self.savefile.raw[pos:])
-            while m and rgx_strip.match(m.group("name")):
+            while m:
                 start, end = m.span()
-                blob = bytearray(self.savefile.raw[pos + start:pos + end])
-                name = util.to_unicode(rgx_strip.match(m.group("name")).group())
-                hero = Hero(name, blob, len(vresult), (start + pos, end + pos), self.savefile)
-                vresult.append(hero)
-                pos += start + len(blob)
+                if rgx_strip.match(m.group("name")) and not rgx_nulls.match(m.group("artifacts")):
+                    blob = bytearray(self.savefile.raw[pos + start:pos + end])
+                    name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
+                    hero = Hero(name, blob, len(vresult), (start + pos, end + pos), self.savefile)
+                    vresult.append(hero)
+                    pos += end
+                else:
+                    pos += start + 1
                 m = re.search(RGX, self.savefile.raw[pos:])
             if not vresult:
                 logger.warning("No heroes detected in %s as version '%s'.",
@@ -637,7 +642,6 @@ class HeroPlugin(object):
         if ver:
             self.savefile.version = ver
             heroes = sorted(version_results[ver], key=lambda x: x.name.lower())
-            for i, hero in enumerate(heroes): hero.index = i
             logger.info("Interpreting %s as version '%s' with %s heroes.",
                         self.savefile.filename, ver, len(heroes))
         else:
@@ -766,7 +770,7 @@ class HeroPlugin(object):
             tabs.AddPage(page, hero.name, select=True)
             self._heropanel.Show()
         if not self._hero:
-            self._hero = mext(h for h in self._heroes if h == hero)
+            self._hero = next(h for h in self._heroes if h == hero)
         self._hero.update(hero)
 
 
