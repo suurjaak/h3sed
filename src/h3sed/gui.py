@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    07.02.2023
+@modified    08.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -781,9 +781,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if dlg.ShowModal() != wx.ID_OK: return
         count, cando, do = dlg.GetSelection(), page.undoredo.CanUndo, page.undoredo.Undo
         if count >= 0: cando, do = page.undoredo.CanRedo, page.undoredo.Redo
-        guibase.status("%sdoing %s", "Un" if count < 0 else "Re",
-                       util.plural("action", abs(count)), flash=True, log=True)
-        for _ in range(abs(count)): cando() and do()
+        verb = "Undo" if count < 0 else "Redo"
+        guibase.status("%sing %s", verb, util.plural("action", abs(count)), flash=True, log=True)
+        for _ in range(abs(count)):
+            if not cando(): break  # for
+            cmd = page.undoredo.CurrentCommand or page.undoredo.Commands[0]
+            guibase.status("%sing %s", verb, cmd.Name, flash=True, log=True)
+            do()
 
 
     def on_about(self, event=None):
