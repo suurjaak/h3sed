@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  07.02.2023
+@modified  08.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -182,6 +182,7 @@ class ArmyPlugin(object):
             if value and not row.get("count"):
                 row["count"] = ctrl.GetNextSibling().Value = 1
             ctrl.GetNextSibling().Show(bool(value))
+            ctrl.GetNextSibling().GetNextSibling().Show(not value)
         return True
 
 
