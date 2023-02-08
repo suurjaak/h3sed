@@ -1259,8 +1259,11 @@ def build(plugin, panel):
         def handler(event):
             ctrl, value = event.EventObject, event.EventObject.Value
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            cname = "set %s: %s %s" % (label, "" if name is None else name,
-                                       "<blank>" if value is False or value in ("", None) else value)
+            namelbl = "" if rowindex is None else "slot %s" % rowindex
+            if name is not None: namelbl += (" " if namelbl else "") + name
+            valuelbl = "<blank>" if value is False or value in ("", None) else value
+            cname = "set %s: %s %s" % (label, namelbl, valuelbl)
+            logger.info("Setting %s: %s to %s.", label, namelbl, valuelbl)
             action = functools.partial(on_do, ctrl, value)
             plugin.parent.command(action, cname)
         return handler
@@ -1277,6 +1280,7 @@ def build(plugin, panel):
         def handler(event):
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             cname = "swap %s: #%s and #%s" % (label, index + 1, index + direction + 1)
+            logger.info("Swapping %s: #%s and #%s.", label, index + 1, index + direction + 1)
             plugin.parent.command(on_do, cname)
         return handler
 
@@ -1293,6 +1297,7 @@ def build(plugin, panel):
             if not ctrl.Value: return
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             cname = "add %s: %s" % (label, ctrl.Value)
+            logger.info("Adding %s: %s.", label, ctrl.Value)
             plugin.parent.command(functools.partial(on_do, ctrl.Value), cname)
         return handler
 
@@ -1310,6 +1315,7 @@ def build(plugin, panel):
             if isinstance(v, dict): v = v.get("name", v)
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             cname = "remove %s: %s" % (label, v)
+            logger.info("Removing %s: %s.", label, v)
             plugin.parent.command(on_do, cname)
         return handler
 
@@ -1359,8 +1365,7 @@ def build(plugin, panel):
                         if "max" in itemprop: rng[1] = min(itemprop["max"], 2**30)
                         c.SetRange(*rng)
                         if itemprop["name"] in row: c.Value = row[itemprop["name"]]
-                        c.Bind(wx.EVT_TEXT,     make_value_handler(c, itemprop, rowindex=i))
-                        c.Bind(wx.EVT_SPINCTRL, make_value_handler(c, itemprop, rowindex=i))
+                        c.Bind(wx.EVT_TEXT, make_value_handler(c, itemprop, rowindex=i))
                         bsizer.Add(c)
                     elif "window" == itemprop.get("type"):
                         c = wx.Window(panel)
