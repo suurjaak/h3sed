@@ -192,7 +192,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         text_file = self.text_file = wx.TextCtrl(page)
         button_open   = self.button_open   = wx.Button(page, label="&Open")
-        button_browse = self.button_browse = wx.Button(page, label="&Browse")
+        button_browse = self.button_browse = wx.Button(page, label="&Browse..")
         dir_ctrl = self.dir_ctrl = wx.GenericDirCtrl(page,
             style=wx.DIRCTRL_SHOW_FILTERS, filter=metadata.wildcard(), defaultFilter=0)
         dialog = self.dialog_browse = wx.FileDialog(
