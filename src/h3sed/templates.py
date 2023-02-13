@@ -7,17 +7,17 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    04.02.2023
+@modified    12.02.2023
 ------------------------------------------------------------------------------
 """
 
 # Modules imported inside templates:
-#import difflib
-#from h3sed.lib import util
-#from h3sed import conf
+#import difflib, sys, wx
+#from h3sed.lib.vendor import step
+#from h3sed import conf, templates
 
 
-"""Text shown in Help -> About dialog (HTML content)."""
+"""HTML text shown in Help -> About dialog."""
 ABOUT_HTML = """<%
 import sys, wx
 from h3sed import conf
@@ -70,18 +70,62 @@ Installer and binary executable created with:
 
 
 """
-Text shown for hero unsaved changes diff.
+HTML text shown for hero full character sheet, toggleable between unsaved changes view.
 
 @param   name     hero name
+@param   texts    [category current content, ]
+@param  ?texts0   [category original content, ] if any, to show changes against current
+@param  ?changes  show changes against current
+
+"""
+HERO_CHARSHEET_HTML = """<%
+import difflib, wx
+from h3sed.lib.vendor import step
+from h3sed import conf, templates
+COLOUR_DISABLED = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT).GetAsString(wx.C2S_HTML_SYNTAX)
+texts0 = isdef("texts0") and texts0 or []
+changes = isdef("changes") and changes
+%>
+<font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
+<table cellpadding="0" cellspacing="0" width="100%"><tr>
+  <td><b>{{ name }}{{ " unsaved changes" if changes else "" }}</b></td>
+%if texts0:
+  <td align="right">
+    <a href="{{ "normal" if changes else "changes" }}"><font color="{{ conf.LinkColour }}">{{ "Normal view" if changes else "Unsaved changes" }}</font></a>
+  </td>
+%endif
+</tr></table>
+<font size="2">
+%if changes:
+{{! step.Template(templates.HERO_DIFF_HTML, escape=True).expand(changes=list(zip(texts0, texts))) }}
+%else:
+<table cellpadding="0" cellspacing="0">
+    %for text in texts:
+        %for line in text.rstrip().splitlines():
+  <tr><td><code>{{! escape(line).rstrip().replace(" ", "&nbsp;") }}</code></td></tr>
+        %endfor
+    %endfor
+%endif
+</table>
+</font>
+</font>
+"""
+
+
+"""
+HTML text shown for hero unsaved changes diff.
+
+@param  ?name     hero name, if any
 @param   changes  [(category content1, category content2), ]
 """
 HERO_DIFF_HTML = """<%
 import difflib
-from h3sed.lib import util
 from h3sed import conf
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
+%if isdef("name") and name:
 <b>{{ name }}</b>
+%endif
 <font size="2"><table cellpadding="0" cellspacing="0">
 %for v1, v2 in changes:
 <%
@@ -98,7 +142,7 @@ for line in difflib.Differ().compare(v1.splitlines(), v2.splitlines()):
         entries.append((entry or [""]) + [line])
         entry = []
 if entry: entries.append(entry + [""])
-entries = [[util.html_escape(l[2:].rstrip()).replace(" ", "&nbsp;") for l in ll] for ll in entries]
+entries = [[escape(l[2:].rstrip()).replace(" ", "&nbsp;") for l in ll] for ll in entries]
 %>
     %for i, (l1, l2) in enumerate(entries):
         %if not i:

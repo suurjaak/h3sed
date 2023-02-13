@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    06.02.2023
+@modified    10.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -54,19 +54,6 @@ def itoby(v, length):
     """
     fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[length]
     return bytearray(struct.pack(fmt, v))
-
-
-def html_escape(s, quote=True):
-    """
-    Replace special characters "&", "<" and ">" to HTML-safe sequences.
-    If the optional flag quote is true (the default), the quotation mark
-    characters, both double quote (") and single quote (') characters are also
-    translated.
-    """
-    REPLS = [("&", "&amp;"), ("<", "&lt;"), (">", "&gt;")]
-    if quote: REPLS += [('"', "&quot;"), ("'", "&#x27;")]
-    for a, b in REPLS: s = s.replace(a, b)
-    return s
 
 
 def format_bytes(size, precision=2, max_units=True, with_units=True):

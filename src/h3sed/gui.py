@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    08.02.2023
+@modified    13.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -132,10 +132,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 self.on_change_page()
 
         id_close = wx.NewIdRef().Id
-        accelerators = [(wx.ACCEL_CTRL, k, id_close) for k in [wx.WXK_F4, ord("W")]]
+        accelerators = [(wx.ACCEL_CMD, k, id_close) for k in [wx.WXK_F4, ord("W")]]
         for i in range(9):
             id_tab = wx.NewIdRef().Id
-            accelerators += [(wx.ACCEL_CTRL, ord(str(i + 1)), id_tab)]
+            accelerators += [(wx.ACCEL_CMD, ord(str(i + 1)), id_tab)]
             notebook.Bind(wx.EVT_MENU, functools.partial(on_tab_hotkey, i), id=id_tab)
 
         notebook.Bind(wx.EVT_MENU, on_close_hotkey, id=id_close)
@@ -1192,7 +1192,7 @@ class SavefilePage(wx.Panel):
         """Shows unsaved changes in a popup dialog."""
         title = "Changes in %s" % self.savefile.filename
         content = "".join(p.get_changes() for p in self.plugins)
-        controls.HtmlDialog(self, title, content, wx.RESIZE_BORDER).ShowModal()
+        controls.HtmlDialog(self, title, content, style=wx.RESIZE_BORDER).ShowModal()
 
 
     def on_page_event(self, event):
