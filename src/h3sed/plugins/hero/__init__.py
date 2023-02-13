@@ -315,7 +315,7 @@ class HeroPlugin(object):
         """Builds general UI components."""
         label = wx.StaticText(self._panel, label="&Select hero:")
         combo = wx.ComboBox(self._panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        tb    = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
+        tbtop = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
         tabs  = wx.lib.agw.flatnotebook.FlatNotebook(self._panel,
             agwStyle=wx.lib.agw.flatnotebook.FNB_DROPDOWN_TABS_LIST |
                      wx.lib.agw.flatnotebook.FNB_MOUSE_MIDDLE_CLOSES_TABS |
@@ -324,30 +324,31 @@ class HeroPlugin(object):
                      wx.lib.agw.flatnotebook.FNB_NO_X_BUTTON |
                      wx.lib.agw.flatnotebook.FNB_X_ON_TAB |
                      wx.lib.agw.flatnotebook.FNB_FF2)
+        tb    = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
         self._heropanel = wx.Panel(self._panel)
 
         combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
+        tabs.Hide()
 
         CTRL = "Cmd" if "darwin" == sys.platform else "Ctrl"
-        bmp1 = wx.ArtProvider.GetBitmap(wx.ART_COPY,        wx.ART_TOOLBAR, (16, 16))
-        bmp2 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,       wx.ART_TOOLBAR, (16, 16))
-        bmp3 = wx.ArtProvider.GetBitmap(wx.ART_GO_DIR_UP,   wx.ART_TOOLBAR, (16, 16))
-        bmp4 = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR, (16, 16))
-        tb.AddTool(wx.ID_COPY,  "", bmp1, shortHelp="Copy current hero data to clipboard")
-        tb.AddTool(wx.ID_PASTE, "", bmp2, shortHelp="Paste data from clipboard to current hero")
+        bmp1 = wx.ArtProvider.GetBitmap(wx.ART_FOLDER,      wx.ART_TOOLBAR, (16, 16))
+        bmp2 = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR, (16, 16))
+        bmp3 = wx.ArtProvider.GetBitmap(wx.ART_COPY,        wx.ART_TOOLBAR, (16, 16))
+        bmp4 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,       wx.ART_TOOLBAR, (16, 16))
+        tbtop.AddTool(wx.ID_OPEN, "", bmp1, shortHelp="Show savefile in folder")
+        tb.AddTool(wx.ID_INFO,    "", bmp2, shortHelp="Show hero full character sheet\t%s-I" % CTRL)
         tb.AddSeparator()
-        tb.AddTool(wx.ID_OPEN,  "", bmp3, shortHelp="Show savefile in folder")
-        tb.AddTool(wx.ID_INFO,  "", bmp4, shortHelp="Show hero full character sheet\t%s-I" % CTRL)
-        tb.EnableTool(wx.ID_COPY,  False)
-        tb.EnableTool(wx.ID_PASTE, False)
-        tb.EnableTool(wx.ID_OPEN,  True)
-        tb.EnableTool(wx.ID_INFO,  False)
-        tb.Bind(wx.EVT_TOOL, self.on_copy_hero,   id=wx.ID_COPY)
-        tb.Bind(wx.EVT_TOOL, self.on_paste_hero,  id=wx.ID_PASTE)
-        tb.Bind(wx.EVT_TOOL, self.on_open_folder, id=wx.ID_OPEN)
-        tb.Bind(wx.EVT_TOOL, self.on_charsheet,   id=wx.ID_INFO)
+        tb.AddTool(wx.ID_COPY,    "", bmp3, shortHelp="Copy current hero data to clipboard")
+        tb.AddTool(wx.ID_PASTE,   "", bmp4, shortHelp="Paste data from clipboard to current hero")
+        tbtop.Bind(wx.EVT_TOOL, self.on_open_folder, id=wx.ID_OPEN)
+        tb.Bind(wx.EVT_TOOL,    self.on_charsheet,   id=wx.ID_INFO)
+        tb.Bind(wx.EVT_TOOL,    self.on_copy_hero,   id=wx.ID_COPY)
+        tb.Bind(wx.EVT_TOOL,    self.on_paste_hero,  id=wx.ID_PASTE)
         self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
+        tbtop.Realize()
         tb.Realize()
+        tb.Disable()
+        tb.Hide()
 
         tabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_page, tabs)
         tabs.Bind(wx.lib.agw.flatnotebook.EVT_FLATNOTEBOOK_PAGE_CLOSING,
@@ -367,10 +368,11 @@ class HeroPlugin(object):
         sizer_top = wx.BoxSizer(wx.HORIZONTAL)
         sizer_top.Add(label,  border=10, flag=wx.RIGHT | wx.ALIGN_CENTER)
         sizer_top.Add(combo,  border=5,  flag=wx.TOP  | wx.BOTTOM | wx.GROW)
-        sizer_top.Add(tb,     border=10, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
+        sizer_top.Add(tbtop,  border=5,  flag=wx.LEFT | wx.TOP | wx.BOTTOM)
         sizer.Add(sizer_top,  border=10, flag=wx.LEFT | wx.GROW)
-        sizer.Add(tabs,       border=10, flag=wx.BOTTOM | wx.GROW)
-        sizer.Add(self._heropanel, flag=wx.GROW, proportion=1)
+        sizer.Add(tabs,       border=5,  flag=wx.BOTTOM | wx.GROW)
+        sizer.Add(tb,         border=10, flag=wx.LEFT)
+        sizer.Add(self._heropanel, border=5, flag=wx.TOP | wx.GROW, proportion=1)
         wx_accel.accelerate(self._panel, accelerators=[(wx.ACCEL_CMD, ord("I"), wx.ID_INFO)])
 
         self._ctrls["tabs"] = tabs
@@ -382,11 +384,13 @@ class HeroPlugin(object):
         """Builds hero UI components."""
         self._heropanel.DestroyChildren()
         self._heropanel.Sizer.Clear()
-        tabs, combo = self._ctrls["tabs"], self._ctrls["hero"]
+        tabs, combo, tb = self._ctrls["tabs"], self._ctrls["hero"], self._ctrls["toolbar"]
         nb = wx.Notebook(self._heropanel)
 
+        tabs.Show()
         tabs.DeleteAllPages()
         combo.SetItems([x.name for x in self._heroes])
+        tb.Show()
         if not self._reparsing and conf.Populate and self._heroes:
             combo.SetSelection(0)
             tabs.AddPage(wx.Window(tabs), self._heroes[0].name)
@@ -403,7 +407,10 @@ class HeroPlugin(object):
             self.render_plugin(p["name"])
         if not self._reparsing and conf.Populate and self._heroes:
             wx.CallAfter(self.select_hero, index=0, autoload=True)
-        else: self._heropanel.Hide()
+        else:
+            tabs.Hide()
+            tb.Hide()
+            self._heropanel.Hide()
 
 
     def command(self, callable, name=None):
@@ -503,15 +510,15 @@ class HeroPlugin(object):
     def on_charsheet(self, event=None):
         """Opens popup with full hero profile."""
         tpl = step.Template(templates.HERO_CHARSHEET_HTML, escape=True)
-        texts = self._hero.yamls2 or self._hero.yamls1
-        texts0 = self._hero.yamls1 if self._hero.yamls1 != self._hero.yamls2 else None
+        texts, texts0 = self._hero.yamls2 or self._hero.yamls1, None
+        if self._hero.yamls2 and self._hero.yamls1 != self._hero.yamls2: texts0 = self._hero.yamls1 
         tplargs = dict(name=self._hero.name, texts=texts, texts0=texts0)
         content, content2 = tpl.expand(**tplargs), tpl.expand(changes=True, **tplargs)
         links = {"normal": content, "changes": content2}
         buttons = {"Copy data": self.on_copy_hero}
-        dlg = controls.HtmlDialog(self._panel, self._hero.name, content, links, buttons,
-                                  style=wx.RESIZE_BORDER)
-        dlg.ShowModal()
+        dlg = controls.HtmlDialog(self._panel.TopLevelParent, "Hero character sheet", content,
+                                  links=links, buttons=buttons, style=wx.RESIZE_BORDER)
+        wx.CallAfter(dlg.ShowModal)
 
 
     def on_plugin_event(self, event):
@@ -543,10 +550,10 @@ class HeroPlugin(object):
         if page0 is page and self._pages_visited:
             self.select_hero(self._pages_visited[-1], status=False)
         elif not self._pages:
+            self._ctrls["toolbar"].Disable()
+            self._ctrls["toolbar"].Hide()
+            self._ctrls["tabs"].Hide()
             self._heropanel.Hide()
-            self._ctrls["toolbar"].EnableTool(wx.ID_COPY,  False)
-            self._ctrls["toolbar"].EnableTool(wx.ID_PASTE, False)
-            self._ctrls["toolbar"].EnableTool(wx.ID_INFO,  False)
 
 
     def on_select_hero(self, event):
@@ -578,8 +585,9 @@ class HeroPlugin(object):
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
         if status: guibase.status("Loading %s." % hero2.name, flash=True)
         hero2.ensure_basestats()
-        tabs = self._ctrls["tabs"]
+        tabs, tb = self._ctrls["tabs"], self._ctrls["toolbar"]
         self._panel.Freeze()
+        tabs.Show()
         self._heropanel.Show()
         try:
             if self._hero: self.patch()
@@ -591,9 +599,6 @@ class HeroPlugin(object):
                 self._hero.yamls1 = self.serialize_yaml(split=True)
         finally:
             self._pending = False
-            self._ctrls["toolbar"].EnableTool(wx.ID_COPY,  True)
-            self._ctrls["toolbar"].EnableTool(wx.ID_PASTE, True)
-            self._ctrls["toolbar"].EnableTool(wx.ID_INFO,  True)
             if (autoload or self._autoloaded) and not self.savefile.is_changed():
                 tabs.DeleteAllPages()  # Replace auto-populated tab
                 self._pages.clear()
@@ -603,6 +608,8 @@ class HeroPlugin(object):
                 page = wx.Window(tabs)
                 self._pages[page] = index
                 tabs.AddPage(page, hero2.name, select=True)
+                tb.Enable()
+                tb.Show()
             else:
                 page = next(p for p, i in self._pages.items() if i == index)
                 idx  = next(i for i in range(tabs.GetPageCount()) if page is tabs.GetPage(i))

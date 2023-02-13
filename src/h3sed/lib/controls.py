@@ -84,12 +84,14 @@ class HtmlDialog(wx.Dialog):
         html.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OnLink)
         self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChange)
 
-        DISPSIZE = wx.Display(self).ClientArea.Size
+        BARWH = [wx.SystemSettings.GetMetric(x, self) for x in (wx.SYS_HSCROLL_Y, wx.SYS_VSCROLL_X)]
+        MAXW = wx.Display(self).ClientArea.Size[0]
+        MAXH = (parent.TopLevelParent if parent else wx.Display(self).ClientArea).Size[1]
         FRAMEH = 2 * wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_Y, self) + \
                  wx.SystemSettings.GetMetric(wx.SYS_CAPTION_Y, self)
-        width = contentwidth + 2*8 + wx.SystemSettings.GetMetric(wx.SYS_VSCROLL_ARROW_Y)
-        height = FRAMEH + html.VirtualSize[1] + sizer_buttons.Size[1] + 2*8
-        self.Size = min(width, DISPSIZE.Width), min(height, DISPSIZE.Height)
+        width = contentwidth + 2*BARWH[0]
+        height = FRAMEH + html.VirtualSize[1] + sizer_buttons.Size[1] + BARWH[1]
+        self.Size = min(width, MAXW - 2*BARWH[0]), min(height, MAXH - 2*BARWH[1])
         self.MinSize = (400, 300)
         self.CenterOnParent()
 
