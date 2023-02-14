@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    13.02.2023
+@modified    14.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -265,7 +265,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         )
         menu_populate.Check(conf.Populate)
         menu_backup = self.menu_backup = menu_options.Append(
-            wx.ID_ANY, "&Back up each save", "Create backup copy of savefile before saving changes",
+            wx.ID_ANY, "&Back up files before saving", "Create backup copy of savefile before saving changes",
             kind=wx.ITEM_CHECK
         )
         menu_backup.Check(conf.Backup)
@@ -1094,7 +1094,7 @@ class SavefilePage(wx.Panel):
 
     def save_file(self, rename=False):
         """Saves the file, under a new name if specified, returns success."""
-        filename1, filename2, tempname = self.filename, self.filename, None
+        filename1, filename2, tempname, error = self.filename, self.filename, None, None
 
         if rename:
             title = "Save %s as.." % os.path.split(self.filename)[-1]
@@ -1112,9 +1112,7 @@ class SavefilePage(wx.Panel):
                 conf.Title, wx.OK | wx.ICON_WARNING
             )
         rename = (filename1 != filename2)
-
-        logger.info("Saving %s as %s.", filename1, filename2) if rename \
-        else logger.info("Saving %s.", filename1)
+        logger.info("Saving %s%s.", filename1, " as %s" % filename2 if rename else "")
 
         if rename:
             # Use a tertiary file in case something fails
@@ -1132,35 +1130,36 @@ class SavefilePage(wx.Panel):
                           conf.Title, wx.OK | wx.ICON_ERROR)
             return
 
-        success, error = True, None
+        if conf.Backup and os.path.exists(filename2):
+            backupname = "%s.%s" % (filename2, datetime.datetime.now().strftime("%Y%m%d"))
+            if os.path.exists(backupname):
+               logger.info("Skipping saving backup file, %s already exists.", backupname) 
+            else:
+                logger.info("Saving backup file %s.", backupname)
+                try:
+                    shutil.copy(filename2, backupname)
+                except Exception as e:
+                    logger.warning("Error saving backup of %s as %s.",
+                                   filename2, backupname, exc_info=True)
+
         try:
             self.savefile.write(tempname)
         except Exception as e:
             logger.exception("Error saving changes in %s.", self.filename)
             error = "Error saving changes:\n\n%s" % util.format_exc(e)
 
-        if success and conf.Backup and os.path.exists(filename2):
-            dt = datetime.datetime.now().strftime("%Y%m%d")
-            backupname = util.unique_path("%s.%s" % (filename2, dt))
-            logger.info("Saving backup file %s.", backupname)
-            try:
-                shutil.copy(filename2, backupname)
-            except Exception as e:
-                logger.warning("Error saving backup of %s as %s.",
-                               filename2, backupname, exc_info=True)
-        if success and rename:
+        if not error and rename:
             try:
                 shutil.copy(tempname, filename2)
             except Exception as e:
                 error = "Error saving %s as %s:\n\n%s" % (filename, filename2, util.format_exc(e))
-                logger.exception("Error saving temporary file %s as %s.",
-                                 tempname, filename2)
+                logger.exception("Error saving temporary file %s as %s.", tempname, filename2)
 
         try: tempname and os.unlink(tempname)
         except Exception: pass
 
-        if not success:
-            if error: wx.MessageBox(error, conf.Title, wx.OK | wx.ICON_ERROR)
+        if error:
+            wx.MessageBox(error, conf.Title, wx.OK | wx.ICON_ERROR)
             return
 
         self.filename = self.savefile.filename = filename2
