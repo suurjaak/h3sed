@@ -2,9 +2,6 @@
 """
 Stand-alone GUI components for wx:
 
-- HtmlDialog(wx.Dialog):
-  Popup dialog showing a wx.HtmlWindow.
-
 - BusyPanel(wx.Window):
   Primitive hover panel with a message that stays in the center of parent
   window.
@@ -15,13 +12,15 @@ Stand-alone GUI components for wx:
 - CommandHistoryDialog(wx.Dialog):
   Popup dialog for wx.CommandProcessor history, allows selecting a range to undo or redo.
 
+- HtmlDialog(wx.Dialog):
+  Popup dialog showing a wx.HtmlWindow.
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    13.02.2023
+@modified    14.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -39,86 +38,6 @@ import wx.lib.wordwrap
 
 try: text_types = (str, unicode)        # Py2
 except Exception: text_types = (str, )  # Py3
-
-
-class HtmlDialog(wx.Dialog):
-    """Popup dialog showing a wx.HtmlWindow, with an OK-button."""
-
-    def __init__(self, parent, title, content, links=None, buttons=None, style=0):
-        """
-        @param   links    {href: page text to show or function(href) to invoke, text result shown}
-        @param   buttons  {label: function() to invoke}
-        """
-        wx.Dialog.__init__(self, parent, title=title, style=wx.CAPTION | wx.CLOSE_BOX | style)
-        self.html = None
-        self.content = content
-        self.links = links.copy() if isinstance(links, dict) else {}
-
-        wrapper = wx.ScrolledWindow(self) if style & wx.RESIZE_BORDER else None
-        html = self.html = wx.html.HtmlWindow(wrapper or self)
-
-        if wrapper:
-            wrapper.Sizer = wx.BoxSizer(wx.VERTICAL)
-            wrapper.Sizer.Add(html, proportion=1, flag=wx.GROW)
-        self.Sizer = wx.BoxSizer(wx.VERTICAL)
-        self.Sizer.Add(wrapper or html, proportion=1, flag=wx.GROW)
-        sizer_buttons = self.CreateButtonSizer(wx.OK)
-        for label, handler in buttons.items() if buttons else ():
-            button = wx.Button(self, label=label)
-            button.Bind(wx.EVT_BUTTON, lambda e, f=handler: handler())
-            sizer_buttons.Add(button, border=3, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER)
-        self.Sizer.Add(sizer_buttons, border=8, flag=wx.ALIGN_CENTER | wx.ALL)
-        self.Layout()
-
-        if callable(content): content = content()
-        html.SetPage(content)
-        contentwidth = html.VirtualSize[0]
-        if links:
-            for x in (x for x in links.values() if isinstance(x, str)):
-                html.SetPage(x)
-                contentwidth = max(contentwidth, html.VirtualSize[0])
-            html.SetPage(content)
-        html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
-        html.ForegroundColour = ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
-
-        html.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OnLink)
-        self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChange)
-
-        BARWH = [wx.SystemSettings.GetMetric(x, self) for x in (wx.SYS_HSCROLL_Y, wx.SYS_VSCROLL_X)]
-        MAXW = wx.Display(self).ClientArea.Size[0]
-        MAXH = (parent.TopLevelParent if parent else wx.Display(self).ClientArea).Size[1]
-        FRAMEH = 2 * wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_Y, self) + \
-                 wx.SystemSettings.GetMetric(wx.SYS_CAPTION_Y, self)
-        width = contentwidth + 2*BARWH[0]
-        height = FRAMEH + html.VirtualSize[1] + sizer_buttons.Size[1] + BARWH[1]
-        self.Size = min(width, MAXW - 2*BARWH[0]), min(height, MAXH - 2*BARWH[1])
-        self.MinSize = (400, 300)
-        self.CenterOnParent()
-
-
-    def OnLink(self, event):
-        """Handler for clicking a link, sets new content if registered link else opens webbrowser."""
-        href = event.GetLinkInfo().Href
-        if href in self.links:
-            page = self.links[href]
-            if callable(page): page = page(href) 
-            if isinstance(page, str):
-                bcol, fcol = event.EventObject.BackgroundColour, event.EventObject.ForegroundColour
-                event.EventObject.SetPage(page)
-                event.EventObject.BackgroundColour, event.EventObject.ForegroundColour = bcol, fcol
-        else: webbrowser.open(href)
-
-
-    def OnSysColourChange(self, event):
-        """Handler for system colour change, refreshes content."""
-        event.Skip()
-        def dorefresh():
-            if not self: return
-            self.html.SetPage(self.content() if callable(self.content) else self.content)
-            self.html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
-            self.html.ForegroundColour = ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
-        wx.CallAfter(dorefresh) # Postpone to allow conf to update
-
 
 
 class BusyPanel(wx.Window):
@@ -417,3 +336,82 @@ class CommandHistoryDialog(wx.Dialog):
     def _OnSubmit(self, event):
         """Handler for double-clicking listbox, submits dialog."""
         self.EndModal(wx.ID_OK)
+
+
+class HtmlDialog(wx.Dialog):
+    """Popup dialog showing a wx.HtmlWindow, with an OK-button."""
+
+    def __init__(self, parent, title, content, links=None, buttons=None, style=0):
+        """
+        @param   links    {href: page text to show or function(href) to invoke, text result shown}
+        @param   buttons  {label: function() to invoke}
+        """
+        wx.Dialog.__init__(self, parent, title=title, style=wx.CAPTION | wx.CLOSE_BOX | style)
+        self.html = None
+        self.content = content
+        self.links = links.copy() if isinstance(links, dict) else {}
+
+        wrapper = wx.ScrolledWindow(self) if style & wx.RESIZE_BORDER else None
+        html = self.html = wx.html.HtmlWindow(wrapper or self)
+
+        if wrapper:
+            wrapper.Sizer = wx.BoxSizer(wx.VERTICAL)
+            wrapper.Sizer.Add(html, proportion=1, flag=wx.GROW)
+        self.Sizer = wx.BoxSizer(wx.VERTICAL)
+        self.Sizer.Add(wrapper or html, proportion=1, flag=wx.GROW)
+        sizer_buttons = self.CreateButtonSizer(wx.OK)
+        for label, handler in buttons.items() if buttons else ():
+            button = wx.Button(self, label=label)
+            button.Bind(wx.EVT_BUTTON, lambda e, f=handler: handler())
+            sizer_buttons.Add(button, border=3, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER)
+        self.Sizer.Add(sizer_buttons, border=8, flag=wx.ALIGN_CENTER | wx.ALL)
+        self.Layout()
+
+        if callable(content): content = content()
+        html.SetPage(content)
+        contentwidth = html.VirtualSize[0]
+        if links:
+            for x in (x for x in links.values() if isinstance(x, str)):
+                html.SetPage(x)
+                contentwidth = max(contentwidth, html.VirtualSize[0])
+            html.SetPage(content)
+        html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
+        html.ForegroundColour = ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
+
+        html.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OnLink)
+        self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChange)
+
+        BARWH = [wx.SystemSettings.GetMetric(x, self) for x in (wx.SYS_HSCROLL_Y, wx.SYS_VSCROLL_X)]
+        MAXW = wx.Display(self).ClientArea.Size[0]
+        MAXH = (parent.TopLevelParent if parent else wx.Display(self).ClientArea).Size[1]
+        FRAMEH = 2 * wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_Y, self) + \
+                 wx.SystemSettings.GetMetric(wx.SYS_CAPTION_Y, self)
+        width = contentwidth + 2*BARWH[0]
+        height = FRAMEH + html.VirtualSize[1] + sizer_buttons.Size[1] + BARWH[1]
+        self.Size = min(width, MAXW - 2*BARWH[0]), min(height, MAXH - 2*BARWH[1])
+        self.MinSize = (400, 300)
+        self.CenterOnParent()
+
+
+    def OnLink(self, event):
+        """Handler for clicking a link, sets new content if registered link else opens webbrowser."""
+        href = event.GetLinkInfo().Href
+        if href in self.links:
+            page = self.links[href]
+            if callable(page): page = page(href) 
+            if isinstance(page, str):
+                bcol, fcol = event.EventObject.BackgroundColour, event.EventObject.ForegroundColour
+                event.EventObject.SetPage(page)
+                event.EventObject.BackgroundColour, event.EventObject.ForegroundColour = bcol, fcol
+        else: webbrowser.open(href)
+
+
+    def OnSysColourChange(self, event):
+        """Handler for system colour change, refreshes content."""
+        event.Skip()
+        def dorefresh():
+            if not self: return
+            self.html.SetPage(self.content() if callable(self.content) else self.content)
+            self.html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
+            self.html.ForegroundColour = ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        wx.CallAfter(dorefresh) # Postpone to allow conf to update
