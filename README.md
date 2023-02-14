@@ -69,7 +69,7 @@ and run `python -m h3sed`.
 Source Dependencies
 -------------------
 
-If running from source code, h3sed needs Python 2.7 or higher,
+If running from source code, h3sed needs Python 2.7 or Python 3.6 or higher,
 and the following 3rd-party Python packages:
 * pyyaml (https://pyyaml.org)
 * wxPython 4.0+ (https://wxpython.org)
