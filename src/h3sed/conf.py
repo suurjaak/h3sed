@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.02.2023
+@modified    17.02.2023
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
@@ -25,8 +25,8 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "1.2"
-VersionDate = "14.02.2023"
+Version = "1.3"
+VersionDate = "17.02.2023"
 
 if getattr(sys, "frozen", False):
     # Running as a pyinstaller executable
@@ -43,8 +43,8 @@ ConfigFile = "%s.ini" % os.path.join(EtcDirectory, Name.lower())
 
 """List of attribute names that can be saved to and loaded from ConfigFile."""
 FileDirectives = [
-    "Backup", "ConfirmUnsaved", "ConsoleHistoryCommands", "GameVersion",
-    "Populate", "RecentFiles", "SelectedPath", "WindowPosition", "WindowSize",
+    "Backup", "ConfirmUnsaved", "ConsoleHistoryCommands", "GameVersion", "Populate",
+    "RecentFiles", "RecentHeroes", "SelectedPath", "WindowPosition", "WindowSize",
 ]
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
@@ -81,6 +81,9 @@ GameVersion = ""
 
 """Contents of Recent Files menu."""
 RecentFiles = []
+
+"""Contents of Recent Heroes menu, as [[hero name, file path]]."""
+RecentHeroes = []
 
 """Main window position, (x, y)."""
 WindowPosition = None
@@ -143,6 +146,9 @@ StatusFlashLength = 20
 
 """How many items in the Recent Files menu."""
 MaxRecentFiles = 20
+
+"""How many items in the Recent Heroes menu."""
+MaxRecentHeroes = 20
 
 
 def load():

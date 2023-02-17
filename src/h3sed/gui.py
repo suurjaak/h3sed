@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.02.2023
+@modified    17.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -257,6 +257,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu_recent = wx.Menu()
         menu_file.AppendSubMenu(menu_recent, "&Recent files", "Recently opened files")
         menu_file.AppendSeparator()
+        menu_recent_hero = wx.Menu()
+        menu_file.AppendSubMenu(menu_recent_hero, "Recent &heroes", "Recently opened heroes")
+        menu_file.AppendSeparator()
         menu_options = wx.Menu()
         menu_file.AppendSubMenu(menu_options, "Opt&ions")
         menu_populate = self.menu_populate = menu_options.Append(
@@ -315,10 +318,15 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         self.history_file = wx.FileHistory(conf.MaxRecentFiles)
         self.history_file.UseMenu(menu_recent)
-        # Reverse list, as FileHistory works like a stack
-        [self.history_file.AddFileToHistory(f) for f in conf.RecentFiles[::-1]]
-        self.Bind(wx.EVT_MENU_RANGE, self.on_recent_file, id=wx.ID_FILE1,
-                  id2=wx.ID_FILE1 + conf.MaxRecentFiles)
+        for f in conf.RecentFiles[::-1]: self.history_file.AddFileToHistory(f)
+        self.Bind(wx.EVT_MENU_RANGE, self.on_recent_file, id=self.history_file.BaseId,
+                  id2=self.history_file.BaseId + conf.MaxRecentFiles)
+        self.history_hero = controls.ItemHistory(conf.MaxRecentHeroes)
+        self.history_hero.UseMenu(menu_recent_hero)
+        self.history_hero.Formatter = "\t".join
+        for x in conf.RecentHeroes[::-1]: self.history_hero.AddItem(x)
+        self.Bind(wx.EVT_MENU_RANGE, self.on_recent_hero, id=self.history_hero.BaseId,
+                  id2=self.history_hero.BaseId + conf.MaxRecentHeroes)
 
         self.Bind(wx.EVT_MENU, self.on_open_savefile,    menu_open)
         self.Bind(wx.EVT_MENU, self.on_close_savefile,   menu_close)
@@ -703,6 +711,14 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def on_savefile_page_event(self, event):
         """Handler for notification from SavefilePage, updates UI."""
         page, idx = event.source, self.notebook.GetPageIndex(event.source)
+
+        if all(getattr(event, k, None) for k in ("plugin", "load")) and "hero" == event.plugin:
+            item = [event.load, page.filename]
+            self.history_hero.AddItem(item)
+            util.add_unique(conf.RecentHeroes, item, -1, conf.MaxRecentHeroes)
+            conf.save()
+            return
+
         ready, modified, rename = (getattr(event, x, None) for x in ("ready", "modified", "rename"))
         filename1, filename2 = (getattr(event, x, None) for x in ("filename1", "filename2"))
 
@@ -870,8 +886,17 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def on_recent_file(self, event):
         """Handler for clicking an entry in Recent Files menu."""
-        filename = self.history_file.GetHistoryFile(event.Id - wx.ID_FILE1)
+        filename = self.history_file.GetHistoryFile(event.Id - self.history_file.BaseId)
         self.load_savefile_page(filename)
+
+
+    def on_recent_hero(self, event):
+        """Handler for clicking an entry in Recent Heroes menu."""
+        heroname, filename = self.history_hero.GetItem(event.Id - self.history_hero.BaseId)
+        self.load_savefile_page(filename)
+        if "page" in self.files.get(filename, {}):
+            page = self.files[filename]["page"]
+            page.plugin_action("hero", load=heroname)
 
 
     def on_change_dir_ctrl(self, event):
@@ -1187,6 +1212,12 @@ class SavefilePage(wx.Panel):
         wx.PostEvent(self.Parent, evt)
 
 
+    def plugin_action(self, name, **kwargs):
+        """Sends action to plugin specified by name."""
+        plugin = next((p for p in self.plugins if p.name == name), None)
+        if plugin: plugin.action(**kwargs)
+
+
     def show_changes(self):
         """Shows unsaved changes in a popup dialog."""
         title = "Changes in %s" % self.savefile.filename
@@ -1197,7 +1228,8 @@ class SavefilePage(wx.Panel):
     def on_page_event(self, event):
         """Handler for notification from subtabs, updates UI if modified."""
         changed = self.savefile.is_changed()
-        evt = SavefilePageEvent(self.Id, source=self, modified=changed)
+        args = event.ClientData if isinstance(event.ClientData, dict) else {}
+        evt = SavefilePageEvent(self.Id, **dict(args, source=self, modified=changed))
         wx.PostEvent(self.Parent, evt)
 
 

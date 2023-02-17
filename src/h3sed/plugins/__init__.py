@@ -54,12 +54,16 @@ Plugin instances are expected to have the following API (all methods mandatory):
     def patch(self):
         '''Serializes current state (like selected hero), and patches savefile binary.'''
 
+    def action(self, **kwargs):
+        '''Invokes plugin action, like (load='Adela').'''
+
+
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  18.01.2022
+@modified  16.02.2022
 ------------------------------------------------------------------------------
 """
 import os

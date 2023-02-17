@@ -20,7 +20,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.02.2023
+@modified    17.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -336,6 +336,195 @@ class CommandHistoryDialog(wx.Dialog):
     def _OnSubmit(self, event):
         """Handler for double-clicking listbox, submits dialog."""
         self.EndModal(wx.ID_OK)
+
+
+class HistoryMenu(wx.Menu):
+    """
+
+cdfdsa
+
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(HistoryMenu, self).__init__(*args, **kwargs)
+        self._formatter = lambda x: u"%s" % (x, )
+        self._items = []
+        self.Bind(wx.EVT_MENU, self._OnMenu)
+
+
+    def GetItems(self):
+        """Returns current content items."""
+        return self._items[:]
+    def SetItems(self, items):
+        """Sets current content items and re-populates menu."""
+        self._items[:] = items
+        self.Populate()
+    Items = property(GetItems, SetItems)
+
+
+    def GetItem(self, index):
+        """Returns content item at specified index."""
+        return self._items[index]
+
+
+    def GetFormatter(self):
+        """Returns menu label formatter function."""
+        return self._hint
+    def SetFormatter(self, fmt):
+        """Sets menu label formatter function, as func(item), and re-populates menu."""
+        if fmt != self._formatter:
+            self._formatter = fmt
+            self.Populate()
+    Formatter = property(GetFormatter, SetFormatter)
+
+
+    def Populate(self):
+        """Clears and populates menu from current content items."""
+        for i in reversed(range(self.MenuItemCount)): self.Destroy(i)
+        for i, item in enumerate(self._items):
+            label = "&%s %s" % (i + 1, self._formatter(item))
+            self.Append(wx.ID_ANY, label)
+
+
+    def _OnMenu(self, event):
+        #print(event, dir(event))
+        print(event.ClientData, event.Id, event.Int, event.Selection, event.String)
+        
+
+
+class ItemHistory(wx.Object):
+    """Like wx.HileHistory but for any kind of item."""
+
+    def __init__(self, maxItems=9, baseId=None):
+        """
+        @param   maxItems  maximum number of items to retain in menu
+        @param   baseId    ID given to the first menu item
+        """
+        super(ItemHistory, self).__init__()
+        self._max       = max(0, maxItems)
+        self._baseId    = wx.NewIdRef().Id if baseId is None else baseId
+        self._formatter = lambda x: u"%s" % (x, )
+        self._items     = []
+        self._menus     = []  # [wx.Menu, ]
+        self._item_ids  = {}  # {wx.Menu: {Id: index}}
+
+
+    def UseMenu(self, menu):
+        """Adds given menu to the list of menus managed by this history object."""
+        if menu not in self._menus:
+            self._menus.append(menu)
+            menu.Bind(wx.EVT_MENU, self._OnMenuItem)
+            self.Populate()
+
+
+    def RemoveMenu(self, menu):
+        """Removes given menu from the list of menus managed by this history object."""
+        if menu in self._menus:
+            self._menus.remove(menu)
+            menu.Unbind(wx.EVT_MENU, handler=self._OnMenuItem)
+
+
+    def GetMenus(self):
+        """Returns the list of menus managed by this history object."""
+        return self._menus[:]
+    Menus = property(GetMenus)
+
+
+    def AddItem(self, item):
+        """Adds item to history, as latest (first position in menus), repopulates menus."""
+        if self._items and item == self._items[0]: return
+        if item in self._items: self._items.remove(item)
+        self._items.insert(0, item)
+        if self._max > len(self._items):
+            del self._items[self._max:]
+        self.Populate()
+
+
+    def RemoveItem(self, item):
+        """Removes item from history, repopulates menus."""
+        if item in self._items:
+            self._items.remove(item)
+            self.Populate()
+
+
+    def GetCount(self):
+        """Returns the number of items currently in history."""
+        return len(self._items)
+    Count = property(GetCount)
+
+
+    def GetMaxItems(self):
+        """Returns the maximum number of items that can be stored."""
+        return self._max
+    def SetMaxItems(self, maxItems):
+        """Sets the maximum number of items that can be stored, repopulates menus if needed."""
+        self._max = max(0, maxItems)
+        if self._max > len(self._items):
+            del self._items[self._max:]
+            self.Populate()
+    MaxItems = property(GetMaxItems, SetMaxItems)
+
+
+    def GetBaseId(self):
+        """Returns the base identifier for menu items."""
+        return self._baseId
+    def SetBaseId(self, baseId):
+        """Sets the base identifier for menu items, repopulates menus if needed."""
+        if baseId is None: baseId = wx.NewIdRef().Id
+        if baseId != self._baseId:
+            self._baseId = baseId
+            self.Populate()
+    BaseId = property(GetBaseId, SetBaseId)
+
+
+    def GetItems(self):
+        """Returns current content items."""
+        return self._items[:]
+    def SetItems(self, items):
+        """Sets current content items, repopulates menus."""
+        self._items[:] = items
+        self.Populate()
+    Items = property(GetItems, SetItems)
+
+
+    def GetItem(self, index):
+        """Returns content item at specified index."""
+        return self._items[index]
+
+
+    def GetFormatter(self):
+        """Returns menu label formatter function."""
+        return self._hint
+    def SetFormatter(self, formatter):
+        """Sets menu label formatter function, as func(item), and repopulates menu."""
+        if formatter != self._formatter:
+            self._formatter = formatter
+            self.Populate()
+    Formatter = property(GetFormatter, SetFormatter)
+
+
+    def Populate(self):
+        """Clears and populates menus from current content items."""
+        for m in self._menus:
+            for x in m.MenuItems: m.Delete(x)
+        self._item_ids.clear()
+        for i, item in enumerate(self._items):
+            label = "&%s %s" % (i + 1, self._formatter(item))
+            for m in self._menus:
+                menuitem = m.Append(wx.ID_ANY, label)
+                self._item_ids.setdefault(m, {})[menuitem.Id] = i
+
+
+    def _OnMenuItem(self, event):
+        """Handler for clicking a menu item in an associated menu, fires EVT_MENU_RANGE."""
+        menu = event.EventObject
+        if event.Id not in self._item_ids.get(menu, {}): return
+        evtId = self._baseId + self._item_ids[menu][event.Id]
+        evt = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, evtId)
+        evt.EventObject = menu
+        wx.PostEvent(menu.Window, evt)
+        
 
 
 class HtmlDialog(wx.Dialog):

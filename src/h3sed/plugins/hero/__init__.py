@@ -73,7 +73,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  13.02.2023
+@modified  17.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -433,6 +433,14 @@ class HeroPlugin(object):
         else: self.build()
 
 
+    def action(self, **kwargs):
+        """Handler for action (load=hero name)"""
+        name = kwargs.get("load")
+        if name:
+            index = next((i for i, x in enumerate(self._heroes) if x.name == name), None)
+            if index is not None: self.select_hero(index)
+
+
     def reparse(self):
         """Reparses state from savefile and refreshes UI."""
         tabs = self._ctrls["tabs"]
@@ -619,6 +627,10 @@ class HeroPlugin(object):
             self._panel.Layout()
             self._panel.Thaw()
             if status: busy.Close(), wx.CallLater(500, guibase.status, "")
+            if not autoload:
+                evt = gui.SavefilePageEvent(self._panel.Id)
+                evt.SetClientData(dict(plugin=self.name, load=hero2.name))
+                wx.PostEvent(self._panel, evt)
 
 
     def parse(self, detect_version=False):
