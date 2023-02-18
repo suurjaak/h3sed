@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    17.02.2023
+@modified    18.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -17,6 +17,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 
 import wx
 import wx.adv
@@ -399,7 +400,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def load_savefile(self, filename, silent=False):
         """
-        Tries to load the specified savefile, and returns unzipped contents.
+        Tries to load the specified savefile, returns Savefile instance.
 
         @param   silent  if true, no error popups on failing to open the file
         """
@@ -473,10 +474,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         subpages for them, if not already created, and focus the subpages.
         Skips files that are not gzipped.
         """
-        save_filenames, notsave_filenames = [], []
+        save_filenames, notsave_filenames, files0 = [], [], set(self.files)
         for f in filenames:
-            raw = self.load_savefile(f, silent=True)
-            if raw: save_filenames.append(f)
+            if f in self.files or self.load_savefile(f, silent=True):
+                save_filenames.append(f)
             else:
                 notsave_filenames.append(f)
                 guibase.status("%s is not a valid gzipped file.", f,
@@ -488,6 +489,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             for f in save_filenames:
                 if not self.load_savefile(f, silent=True): continue # for f
                 self.load_savefile_page(f)
+        for f in save_filenames if conf.Populate else ():
+            if f in self.files and f not in files0:
+                self.files[f]["page"].plugin_action("hero", load=0, auto=True)
         if notsave_filenames:
             t = "valid gzipped files"
             if len(notsave_filenames) == 1: t = "a " + t[:-1]
@@ -888,15 +892,16 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Handler for clicking an entry in Recent Files menu."""
         filename = self.history_file.GetHistoryFile(event.Id - self.history_file.BaseId)
         self.load_savefile_page(filename)
+        if conf.Populate and filename in self.files:
+            self.files[filename]["page"].plugin_action("hero", load=0, auto=True)
 
 
     def on_recent_hero(self, event):
         """Handler for clicking an entry in Recent Heroes menu."""
         heroname, filename = self.history_hero.GetItem(event.Id - self.history_hero.BaseId)
         self.load_savefile_page(filename)
-        if "page" in self.files.get(filename, {}):
-            page = self.files[filename]["page"]
-            page.plugin_action("hero", load=heroname)
+        if filename in self.files:
+            self.files[filename]["page"].plugin_action("hero", load=heroname)
 
 
     def on_change_dir_ctrl(self, event):
@@ -932,12 +937,12 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def on_open_current_savefile(self, event=None):
         """Handler for clicking to open selected file from dir list."""
         if os.path.isfile(self.dir_ctrl.GetPath()):
-            self.load_savefile_page(self.dir_ctrl.GetPath())
+            self.load_savefile_pages([self.dir_ctrl.GetPath()])
 
 
     def on_open_from_dir_ctrl(self, event):
         """Handler for clicking to open selected files from directory list."""
-        self.load_savefile_page(event.EventObject.GetPath())
+        self.load_savefile_pages([event.EventObject.GetPath()])
 
 
     def on_refresh_dir_ctrl(self, event):

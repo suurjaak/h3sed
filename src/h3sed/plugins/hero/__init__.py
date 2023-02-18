@@ -73,7 +73,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  17.02.2023
+@modified  18.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -303,7 +303,6 @@ class HeroPlugin(object):
         self._hero       = None    # Currently selected Hero instance
         self._heropanel  = None    # Container for hero components
         self._pending    = False   # Whether hero selected but not yet loaded
-        self._reparsing  = False   # Whether reparsing file
         self._autoloaded = None    # Whether current hero was auto-populated
         self._pages_visited = []   # List of visited hero tabs, as [hero index in self._heroes, ]
         self.parse(detect_version=True)
@@ -391,9 +390,6 @@ class HeroPlugin(object):
         tabs.DeleteAllPages()
         combo.SetItems([x.name for x in self._heroes])
         tb.Show()
-        if not self._reparsing and conf.Populate and self._heroes:
-            combo.SetSelection(0)
-            tabs.AddPage(wx.Window(tabs), self._heroes[0].name)
 
         for p in self._plugins:
             subpanel = p["panel"] = wx.ScrolledWindow(nb)
@@ -405,12 +401,9 @@ class HeroPlugin(object):
 
         for p in self._plugins if self._hero else ():
             self.render_plugin(p["name"])
-        if not self._reparsing and conf.Populate and self._heroes:
-            wx.CallAfter(self.select_hero, index=0, autoload=True)
-        else:
-            tabs.Hide()
-            tb.Hide()
-            self._heropanel.Hide()
+        tabs.Hide()
+        tb.Hide()
+        self._heropanel.Hide()
 
 
     def command(self, callable, name=None):
@@ -434,11 +427,13 @@ class HeroPlugin(object):
 
 
     def action(self, **kwargs):
-        """Handler for action (load=hero name)"""
-        name = kwargs.get("load")
-        if name:
-            index = next((i for i, x in enumerate(self._heroes) if x.name == name), None)
-            if index is not None: self.select_hero(index)
+        """Handler for action (load=hero name or index, ?auto=bool)"""
+        if kwargs.get("load") is not None:
+            name = kwargs["load"]
+            if isinstance(name, int):
+                index = max(0, min(name, len(self._heroes) - 1))
+            else: index = next((i for i, x in enumerate(self._heroes) if x.name == name), -1)
+            if index >= 0 and self._heroes: self.select_hero(index, autoload=kwargs.get("auto"))
 
 
     def reparse(self):
@@ -453,7 +448,6 @@ class HeroPlugin(object):
         self._pages.clear()
         del self._pages_visited[:]
 
-        self._reparsing = True
         self.parse()
         self.build()
 
@@ -482,7 +476,6 @@ class HeroPlugin(object):
             if index is not None: self.select_hero(index, status=False, autoload=self._autoloaded)
             self._panel.Layout()
         finally:
-            self._reparsing = False
             self._panel.Thaw()
 
 
@@ -590,10 +583,10 @@ class HeroPlugin(object):
         if not hero2 or self._hero and hero2 is self._hero: return
 
         self._pending = True
+        hero2.ensure_basestats()
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
         if status: guibase.status("Loading %s." % hero2.name, flash=True)
-        hero2.ensure_basestats()
-        tabs, tb = self._ctrls["tabs"], self._ctrls["toolbar"]
+        combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
         self._panel.Freeze()
         tabs.Show()
         self._heropanel.Show()
