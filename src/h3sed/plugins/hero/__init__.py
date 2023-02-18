@@ -551,10 +551,12 @@ class HeroPlugin(object):
         if page0 is page and self._pages_visited:
             self.select_hero(self._pages_visited[-1], status=False)
         elif not self._pages:
+            self._ctrls["hero"].SetSelection(-1)
             self._ctrls["toolbar"].Disable()
             self._ctrls["toolbar"].Hide()
             self._ctrls["tabs"].Hide()
             self._heropanel.Hide()
+            self._hero = None
 
 
     def on_select_hero(self, event):
@@ -587,6 +589,7 @@ class HeroPlugin(object):
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
         if status: guibase.status("Loading %s." % hero2.name, flash=True)
         combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
+        combo.SetSelection(index)
         self._panel.Freeze()
         tabs.Show()
         self._heropanel.Show()
