@@ -63,7 +63,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  16.02.2022
+@modified  20.02.2022
 ------------------------------------------------------------------------------
 """
 import os
@@ -111,9 +111,9 @@ def load_modules(basepackage, basefile, dirsonly=False):
     return result
 
 
-def render(savefile, notebook, commandprocessor):
+def populate(savefile, notebook, commandprocessor):
     """
-    Renders main plugin tabs, given savefile and plugins notebook.
+    Populates notebook with main plugin tabs, returns plugin instances.
 
     @return   [plugin instance, ..]
     """
@@ -131,11 +131,7 @@ def render(savefile, notebook, commandprocessor):
                 notebook.SetPageImage(i, idx)
             except Exception:
                 logger.warning("Failed to load plugin '%s' icon.", p["name"])
-        obj = p["module"].factory(savefile, panel, commandprocessor)
-        obj.render()
-        result.append(obj)
-
-    wx_accel.accelerate(notebook)
+        result.append(p["module"].factory(savefile, panel, commandprocessor))
     return result
 
 

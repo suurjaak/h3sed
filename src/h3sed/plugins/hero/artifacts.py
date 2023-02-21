@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  07.02.2023
+@modified  19.02.2023
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -151,9 +151,9 @@ def props():
     return PROPS
 
 
-def factory(parent, hero, panel):
+def factory(savefile, parent, panel):
     """Returns a new artifacts-plugin instance."""
-    return ArtifactsPlugin(parent, hero, panel)
+    return ArtifactsPlugin(savefile, parent, panel)
 
 
 
@@ -161,23 +161,20 @@ class ArtifactsPlugin(object):
     """Encapsulates artifacts-plugin state and behaviour."""
 
 
-    def __init__(self, parent, hero, panel):
-        self.name    = PROPS["name"]
-        self.parent  = parent
-        self._hero   = hero
-        self._panel  = panel  # Plugin contents panel
-        self._state  = {}     # {"helm": "Skull Helmet", ..}
-        self._ctrls  = {}     # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
-        if hero:
-            self.parse(hero.bytes)
-            hero.artifacts = self._state
-            hero.ensure_basestats()
+    def __init__(self, savefile, parent, panel):
+        self.name      = PROPS["name"]
+        self.parent    = parent
+        self._savefile = savefile
+        self._hero     = None
+        self._panel    = panel  # Plugin contents panel
+        self._state    = {}     # {"helm": "Skull Helmet", ..}
+        self._ctrls    = {}     # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
 
 
     def props(self):
         """Returns props for artifacts-tab, as [{type: "combo", ..}]."""
         result = []
-        ver = self._hero.savefile.version
+        ver = self._savefile.version
         for prop in UIPROPS:
             slot = prop.get("slot", prop["name"])
             cc = [""] + sorted(metadata.Store.get("artifacts", version=ver, category=slot))
@@ -199,17 +196,16 @@ class ArtifactsPlugin(object):
         """Loads hero to plugin."""
         self._hero = hero
         self._state.clear()
+        self._state.update(self.parse(hero))
+        hero.artifacts = self._state
+        hero.ensure_basestats()
         if panel: self._panel = panel
-        if hero:
-            self.parse(hero.bytes)
-            hero.artifacts = self._state
-            hero.ensure_basestats()
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values."""
         state0 = type(self._state)(self._state)
-        ver = self._hero.savefile.version
+        ver = self._savefile.version
 
         for prop in self.props():  # First pass: don items
             name, slot = prop["name"], prop.get("slot", prop["name"])
@@ -244,7 +240,7 @@ class ArtifactsPlugin(object):
 
     def render(self):
         """Populates controls from state, using existing if already built."""
-        ver = self._hero.savefile.version
+        ver = self._savefile.version
         if self._ctrls and all(self._ctrls.values()):
             STATS = metadata.Store.get("artifact_stats")
             for prop in self.props():
@@ -263,7 +259,7 @@ class ArtifactsPlugin(object):
 
     def update_slots(self):
         """Updates slots availability."""
-        ver = self._hero.savefile.version
+        ver = self._savefile.version
         slots_free, slots_owner = self._slots()
         SLOTS = metadata.Store.get("artifact_slots")
         self._panel.Freeze()
@@ -363,8 +359,8 @@ class ArtifactsPlugin(object):
         return slots_free, slots_owner
 
 
-    def parse(self, bytes):
-        """Builds artifacts list from hero bytearray, as {helm, ..}."""
+    def parse(self, hero):
+        """Returns artifacts state parsed from hero bytearray, as {helm, ..}."""
         result = {}
         IDS   = metadata.Store.get("ids")
         NAMES = {x[y]: y for x in [IDS]
@@ -372,13 +368,13 @@ class ArtifactsPlugin(object):
         MYPOS = plugins.adapt(self, "pos", POS)
 
         def parse_item(pos):
-            b, v = bytes[pos:pos + 4], util.bytoi(bytes[pos:pos + 4])
+            b, v = hero.bytes[pos:pos + 4], util.bytoi(hero.bytes[pos:pos + 4])
             if all(x == ord(metadata.Blank) for x in b): return None # Blank
-            return util.bytoi(bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
+            return util.bytoi(hero.bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
 
         for prop in self.props():
             result[prop["name"]] = NAMES.get(parse_item(MYPOS[prop["name"]]))
-        self._state.clear(); self._state.update(result)
+        return result
 
 
     def serialize(self):

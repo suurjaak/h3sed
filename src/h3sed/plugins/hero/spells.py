@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  07.02.2023
+@modified  19.02.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -52,21 +52,19 @@ class SpellsPlugin(object):
     """Encapsulates spells-plugin state and behaviour."""
 
 
-    def __init__(self, parent, hero, panel):
-        self.name    = PROPS["name"]
-        self.parent  = parent
-        self._hero   = hero
-        self._panel  = panel # Plugin contents panel
-        self._state  = []    # ["Haste", "Slow", ..]
-        if hero:
-            self.parse(hero.bytes)
-            hero.spells = self._state
+    def __init__(self, savefile, parent, panel):
+        self.name      = PROPS["name"]
+        self.parent    = parent
+        self._savefile = savefile
+        self._hero     = None
+        self._panel    = panel  # Plugin contents panel
+        self._state    = []     # ["Haste", "Slow", ..]
 
 
     def props(self):
         """Returns props for spells-tab, as [{type: "number", ..}]."""
         result = []
-        ver = self._hero.savefile.version
+        ver = self._savefile.version
         for prop in UIPROPS:
             cc = metadata.Store.get("spells", version=ver)
             result.append(dict(prop, choices=sorted(cc)))
@@ -86,18 +84,16 @@ class SpellsPlugin(object):
     def load(self, hero, panel=None):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = []
+        self._state[:] = self.parse(hero)
+        hero.spells = self._state
         if panel: self._panel = panel
-        if hero:
-            self.parse(hero.bytes)
-            hero.spells = self._state
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
         state0 = type(self._state)(self._state)
         self._state = []
-        ver = self._hero.savefile.version
+        ver = self._savefile.version
         cmap = {x.lower(): x for x in metadata.Store.get("spells", version=ver)}
         for i, v in enumerate(state):
             if v and hasattr(v, "lower") and v.lower() in cmap:
@@ -123,16 +119,16 @@ class SpellsPlugin(object):
         return True
 
 
-    def parse(self, bytes):
-        """Builds spells state from hero bytearray."""
+    def parse(self, hero):
+        """Returns spells state parsed from hero bytearray, as [name, ]."""
         result = [] # List of values like ["Haste", ..]
         IDS = {y: x[y] for x in [metadata.Store.get("ids")]
                for y in metadata.Store.get("spells")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         for name, pos in IDS.items():
-            if bytes[MYPOS["spells_book"] + pos]: result.append(name)
-        self._state[:] = sorted(result)
+            if hero.bytes[MYPOS["spells_book"] + pos]: result.append(name)
+        return sorted(result)
 
 
     def serialize(self):

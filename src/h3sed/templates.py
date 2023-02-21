@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    12.02.2023
+@modified    21.02.2023
 ------------------------------------------------------------------------------
 """
 
@@ -156,5 +156,127 @@ entries = [[escape(l[2:].rstrip()).replace(" ", "&nbsp;") for l in ll] for ll in
     %endfor
 %endfor
 </table></font>
+</font>
+"""
+
+
+"""
+Text to search for filtering heroes index.
+
+@param   hero     Hero instance
+@param   plugins  {name: plugin instance}
+"""
+HERO_SEARCH_TEXT = """<%
+from h3sed import conf, metadata
+deviceprops = plugins["stats"].props()
+deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+%>
+{{ hero.name }}
+%for name in metadata.PrimaryAttributes:
+{{ hero.basestats[name] }}
+%endfor
+{{ hero.stats["level"] }}
+%for prop in deviceprops:
+    %if hero.stats.get(prop["name"]):
+{{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}
+    %endif
+%endfor
+%for skill in hero.skills:
+{{ skill["name"] }}: {{ skill["level"] }}
+%endfor
+%for army in filter(bool, hero.army):
+{{ army["name"] }}: {{ army["count"] }}
+%endfor
+%for item in hero.spells:
+{{ item }}
+%endfor
+%for item in filter(bool, hero.artifacts.values()):
+{{ item }}
+%endfor
+%for item in filter(bool, hero.inventory):
+{{ item }}
+%endfor
+"""
+
+
+"""
+HTML text shown in heroes index.
+
+@param   heroes   [Hero instance, ]
+@param   links    [link for hero, ]
+@param   count    total number of heroes
+@param   plugins  {name: plugin instance}
+@param  ?text     current search text if any
+"""
+HERO_INDEX_HTML = """<%
+from h3sed import conf, metadata
+deviceprops = plugins["stats"].props()
+deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+%>
+<font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
+%if heroes:
+<table>
+  <tr>
+    <th align="left" valign="bottom">Name</th>
+%for label in metadata.PrimaryAttributes.values():
+    <th align="left" valign="bottom">{{ label.split()[-1] }}</th>
+%endfor
+    <th align="left" valign="bottom">Level</th>
+    <th align="left" valign="bottom">Devices</th>
+    <th align="left" valign="bottom">Skills</th>
+    <th align="left" valign="bottom">Army</th>
+    <th align="left" valign="bottom">Spells</th>
+    <th align="left" valign="bottom">Artifacts</th>
+    <th align="left" valign="bottom">Inventory</th>
+  </tr>
+%elif count and isdef("text") and text.strip():
+   <i>No heroes to display for "{{ text }}"</i>
+%else:
+   <i>No heroes to display.</i>
+%endif
+%for i, hero in enumerate(heroes):
+  <tr>
+    <td align="left" valign="top" nowrap><a href="{{ links[i] }}"><font color="{{ conf.LinkColour }}">{{ hero.name }}</font></a></td>
+%for name in metadata.PrimaryAttributes:
+    <td align="left" valign="top" nowrap>{{ hero.basestats[name] }}</td>
+%endfor
+    <td align="left" valign="top" nowrap>{{ hero.stats["level"] }}</td>
+    <td align="left" valign="top" nowrap>
+%for prop in deviceprops:
+    %if hero.stats.get(prop["name"]):
+        {{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}<br />
+    %endif
+%endfor
+    </td>
+    <td align="left" valign="top" nowrap>
+%for skill in hero.skills:
+    <b>{{ skill["name"] }}:</b> {{ skill["level"] }}<br />
+%endfor
+    </td>
+    <td align="left" valign="top" nowrap>
+%for army in filter(bool, hero.army):
+    {{ army["name"] }}: {{ army["count"] }}<br />
+%endfor
+    </td>
+    <td align="left" valign="top" nowrap>
+%for item in hero.spells:
+    {{ item }}<br />
+%endfor
+    </td>
+    <td align="left" valign="top" nowrap>
+%for item in filter(bool, hero.artifacts.values()):
+    {{ item }}<br />
+%endfor
+    </td>
+    <td align="left" valign="top" nowrap>
+%for item in filter(bool, hero.inventory):
+    {{ item }}<br />
+%endfor
+    </td>
+  </tr>
+%endfor
+%if heroes:
+</table>
+%endif
 </font>
 """

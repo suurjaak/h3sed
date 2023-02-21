@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  07.02.2023
+@modified  19.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -47,9 +47,9 @@ def props():
     return PROPS
 
 
-def factory(parent, hero, panel):
+def factory(savefile, parent, panel):
     """Returns a new inventory-plugin instance."""
-    return InventoryPlugin(parent, hero, panel)
+    return InventoryPlugin(savefile, parent, panel)
 
 
 
@@ -57,23 +57,21 @@ class InventoryPlugin(object):
     """Encapsulates inventory-plugin state and behaviour."""
 
 
-    def __init__(self, parent, hero, panel):
-        self.name    = PROPS["name"]
-        self.parent  = parent
-        self._hero   = hero
-        self._panel  = panel # Plugin contents panel
-        self._state  = []    # ["Skull Helmet", None, ..]
-        self._state0 = []    # Original state ["Skull Helmet", None, ..]
-        self._ctrls  = []    # [wx.ComboBox, ]
-        if hero:
-            self.parse(hero.bytes)
-            hero.inventory = self._state
+    def __init__(self, savefile, parent, panel):
+        self.name      = PROPS["name"]
+        self.parent    = parent
+        self._savefile = savefile
+        self._hero     = None
+        self._panel    = panel  # Plugin contents panel
+        self._state    = []     # ["Skull Helmet", None, ..]
+        self._state0   = []     # Original state ["Skull Helmet", None, ..]
+        self._ctrls    = []     # [wx.ComboBox, ]
 
 
     def props(self):
         """Returns props for inventory-tab, as [{type: "itemlist", ..}]."""
         result = []
-        ver = self._hero.savefile.version
+        ver = self._savefile.version
         cc = sorted(metadata.Store.get("artifacts", version=ver, category="inventory"))
         for prop in UIPROPS:
             myprop = dict(prop, item=[])
@@ -97,19 +95,19 @@ class InventoryPlugin(object):
     def load(self, hero, panel=None):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = []
+        self._state[:] = self.parse(hero)
+        self._state0 = copy.deepcopy(self._state)
+        hero.inventory = self._state
         if panel: self._panel = panel
-        if hero:
-            self.parse(hero.bytes)
-            hero.inventory = self._state
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
         state0 = type(self._state)(self._state)
         state = state + [None] * (self.props()[0]["max"] - len(state))
-        ver = self._hero.savefile.version
-        cmap = {x.lower(): x for x in metadata.Store.get("artifacts", version=ver, category="inventory")}
+        ver = self._savefile.version
+        cmap = {x.lower(): x
+                for x in metadata.Store.get("artifacts", version=ver, category="inventory")}
         for i, v in enumerate(state):
             if v and hasattr(v, "lower") and v.lower() in cmap:
                 self._state[i] = cmap[v.lower()]
@@ -129,8 +127,8 @@ class InventoryPlugin(object):
             self._ctrls = gui.build(self, self._panel)[0]
 
 
-    def parse(self, bytes):
-        """Builds inventory state from hero bytearray."""
+    def parse(self, hero):
+        """Returns inventory state parsed from hero bytearray, as [item or None, ..]."""
         result = []
 
         IDS   = metadata.Store.get("ids")
@@ -139,16 +137,15 @@ class InventoryPlugin(object):
         MYPOS = plugins.adapt(self, "pos", POS)
 
         def parse_item(pos):
-            b, v = bytes[pos:pos + 4], util.bytoi(bytes[pos:pos + 4])
+            b, v = hero.bytes[pos:pos + 4], util.bytoi(hero.bytes[pos:pos + 4])
             if all(x == metadata.Blank for x in b): return None # Blank
-            return util.bytoi(bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
+            return util.bytoi(hero.bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
 
         for prop in self.props():
             for i in range(prop["max"]):
                 v = parse_item(MYPOS["inventory"] + i*8)
                 result.append(NAMES.get(v))
-        self._state[:] = result
-        self._state0 = copy.deepcopy(result)
+        return result
 
 
     def serialize(self):

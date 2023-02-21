@@ -20,13 +20,13 @@ Subplugin modules are expected to have the following API (all methods optional):
         Index is used for sorting plugins.
         '''
 
-    def factory(parent, hero, panel):
+    def factory(savefile, parent, panel):
         '''
         Returns new plugin instance, if plugin instantiable.
 
-        @param   parent  parent plugin (hero-plugin)
-        @param   hero    plugins.hero.Hero instance
-        @param   panel   wx.Panel for plugin render
+        @param   savefile  xx
+        @param   parent    parent plugin (hero-plugin)
+        @param   panel     metadata.Savefile instance
         '''
 
 
@@ -46,6 +46,9 @@ Subplugin instances are expected to have the following API:
 
     def load_state(self, state):
         '''Optional. Loads subplugin state from given data. Returns whether state changed.'''
+
+    def parse(self, hero):
+        '''Mandatory. Returns subplugin state parsed from hero bytearray.'''
 
     def serialize(self):
         '''Mandatory. Returns new hero bytearray from subplugin state.'''
@@ -73,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  18.02.2023
+@modified  21.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -88,6 +91,7 @@ import sys
 
 import yaml
 import wx
+import wx.html
 import wx.lib.agw.flatnotebook
 
 from h3sed import conf
@@ -290,6 +294,9 @@ class Hero(object):
 class HeroPlugin(object):
     """Encapsulates hero-plugin state and behaviour."""
 
+    """Milliseconds to wait after edit before applying search filter"""
+    SEARCH_INTERVAL = 300
+
 
     def __init__(self, savefile, panel, commandprocessor):
         self.name        = PROPS["name"]
@@ -300,11 +307,19 @@ class HeroPlugin(object):
         self._heroes     = []      # [Hero(name, bytes, place, span, ..), ] ordered by name
         self._ctrls      = {}      # {name: wx.Control, }
         self._pages      = {}      # {wx.Window from self._ctrls["tabs"]: hero index in self._heroes}
+        self._indexpage  = None    # Heroes index panel
         self._hero       = None    # Currently selected Hero instance
         self._heropanel  = None    # Container for hero components
         self._pending    = False   # Whether hero selected but not yet loaded
         self._autoloaded = None    # Whether current hero was auto-populated
-        self._pages_visited = []   # List of visited hero tabs, as [hero index in self._heroes, ]
+        self._pages_visited = []   # Visited tabs, as [hero index in self._heroes or None if index page]
+        self._ignore_paging = False  # Workaround for disallowing index page reordering
+        self._search = {
+            "herotexts": [],       # [hero contents to search in, ]
+            "html":      "",       # Current hero search results HTML
+            "text":      "",       # Current search text
+            "timer":     None,     # wx.Timer for filtering heroes index
+        }
         self.parse(detect_version=True)
         self.prebuild()
         panel.Bind(gui.EVT_PLUGIN, self.on_plugin_event)
@@ -312,22 +327,40 @@ class HeroPlugin(object):
 
     def prebuild(self):
         """Builds general UI components."""
-        label = wx.StaticText(self._panel, label="&Select hero:")
-        combo = wx.ComboBox(self._panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        tbtop = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
-        tabs  = wx.lib.agw.flatnotebook.FlatNotebook(self._panel,
+        self._panel.Freeze()
+        label  = wx.StaticText(self._panel, label="&Select hero:")
+        combo  = wx.ComboBox(self._panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        tbtop  = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
+        search = wx.SearchCtrl(self._panel)
+        tabs = wx.lib.agw.flatnotebook.FlatNotebook(self._panel,
             agwStyle=wx.lib.agw.flatnotebook.FNB_DROPDOWN_TABS_LIST |
                      wx.lib.agw.flatnotebook.FNB_MOUSE_MIDDLE_CLOSES_TABS |
                      wx.lib.agw.flatnotebook.FNB_NO_NAV_BUTTONS |
                      wx.lib.agw.flatnotebook.FNB_NO_TAB_FOCUS |
                      wx.lib.agw.flatnotebook.FNB_NO_X_BUTTON |
-                     wx.lib.agw.flatnotebook.FNB_X_ON_TAB |
                      wx.lib.agw.flatnotebook.FNB_FF2)
-        tb    = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
-        self._heropanel = wx.Panel(self._panel)
+
+        indexpanel = self._indexpanel = wx.Panel(self._panel)
+        html = wx.html.HtmlWindow(self._indexpanel)
+        tabs.AddPage(wx.Window(tabs), " INDEX ")
+
+        search.SetDescriptiveText("Search heroes")
+        search.ShowSearchButton(True)
+        search.ShowCancelButton(True)
+        search.ToolTip = "Filter hero index on any matching text (%s-F)" % \
+                         ("Cmd" if "darwin" == sys.platform else "Ctrl")
+        search.Bind(wx.EVT_CHAR, self.on_search)
+        search.Bind(wx.EVT_TEXT, self.on_search)
+        search.Bind(wx.EVT_SEARCH, self.on_search)
+        controls.ColourManager.Manage(html, "ForegroundColour", wx.SYS_COLOUR_BTNTEXT)
+        controls.ColourManager.Manage(html, "BackgroundColour", wx.SYS_COLOUR_WINDOW)
+        html.Bind(wx.html.EVT_HTML_LINK_CLICKED,
+                  lambda e: self.select_hero(int(e.GetLinkInfo().Href)))
+        html.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_sys_colour_change)
+
+        tb = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
 
         combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
-        tabs.Hide()
 
         CTRL = "Cmd" if "darwin" == sys.platform else "Ctrl"
         bmp1 = wx.ArtProvider.GetBitmap(wx.ART_FOLDER,      wx.ART_TOOLBAR, (16, 16))
@@ -352,6 +385,8 @@ class HeroPlugin(object):
         tabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_page, tabs)
         tabs.Bind(wx.lib.agw.flatnotebook.EVT_FLATNOTEBOOK_PAGE_CLOSING,
                   self.on_close_page, tabs)
+        tabs.Bind(wx.lib.agw.flatnotebook.EVT_FLATNOTEBOOK_PAGE_DROPPED,
+                  self.on_dragdrop_page, tabs)
         controls.ColourManager.Manage(tabs, "ActiveTabColour",        wx.SYS_COLOUR_WINDOW)
         controls.ColourManager.Manage(tabs, "ActiveTabTextColour",    wx.SYS_COLOUR_BTNTEXT)
         controls.ColourManager.Manage(tabs, "NonActiveTabTextColour", wx.SYS_COLOUR_BTNTEXT)
@@ -361,6 +396,11 @@ class HeroPlugin(object):
         controls.ColourManager.Manage(tabs, "ForegroundColour",       wx.SYS_COLOUR_BTNTEXT)
         controls.ColourManager.Manage(tabs, "BackgroundColour",       wx.SYS_COLOUR_WINDOW)
 
+        indexpanel.Sizer = wx.BoxSizer(wx.VERTICAL)
+        indexpanel.Sizer.AddSpacer(5)
+        indexpanel.Sizer.Add(html, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW, proportion=1)
+
+        self._heropanel = wx.Panel(self._panel)
         self._heropanel.Sizer = wx.BoxSizer(wx.VERTICAL)
 
         sizer = self._panel.Sizer = wx.BoxSizer(wx.VERTICAL)
@@ -368,47 +408,51 @@ class HeroPlugin(object):
         sizer_top.Add(label,  border=10, flag=wx.RIGHT | wx.ALIGN_CENTER)
         sizer_top.Add(combo,  border=5,  flag=wx.TOP  | wx.BOTTOM | wx.GROW)
         sizer_top.Add(tbtop,  border=5,  flag=wx.LEFT | wx.TOP | wx.BOTTOM)
+        sizer_top.AddStretchSpacer()
+        sizer_top.Add(search, border=5, flag=wx.ALL)
+        sizer_top.AddSpacer(5)
         sizer.Add(sizer_top,  border=10, flag=wx.LEFT | wx.GROW)
         sizer.Add(tabs,       border=5,  flag=wx.BOTTOM | wx.GROW)
+        sizer.Add(indexpanel, border=5, flag=wx.TOP | wx.GROW, proportion=1)
         sizer.Add(tb,         border=10, flag=wx.LEFT)
         sizer.Add(self._heropanel, border=5, flag=wx.TOP | wx.GROW, proportion=1)
+        self._panel.Bind(wx.EVT_CHAR_HOOK, self.on_key)
         wx_accel.accelerate(self._panel, accelerators=[(wx.ACCEL_CMD, ord("I"), wx.ID_INFO)])
+        self._panel.Layout()
+        self._panel.Thaw()
 
         self._ctrls["tabs"] = tabs
         self._ctrls["hero"] = combo
+        self._ctrls["search"] = search
+        self._ctrls["html"] = html
         self._ctrls["toolbar"] = tb
 
 
     def build(self):
         """Builds hero UI components."""
+        self._panel.Freeze()
         self._heropanel.DestroyChildren()
         self._heropanel.Sizer.Clear()
-        tabs, combo, tb = self._ctrls["tabs"], self._ctrls["hero"], self._ctrls["toolbar"]
+        self._ctrls["hero"].SetItems([x.name for x in self._heroes])
+
         nb = wx.Notebook(self._heropanel)
-
-        tabs.Show()
-        tabs.DeleteAllPages()
-        combo.SetItems([x.name for x in self._heroes])
-        tb.Show()
-
         for p in self._plugins:
             subpanel = p["panel"] = wx.ScrolledWindow(nb)
-            if p.get("instance"): p["instance"].load(self._hero, subpanel)
             title = p.get("label", p["name"])
             nb.AddPage(subpanel, title)
-
         self._heropanel.Sizer.Add(nb, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW, proportion=1)
 
-        for p in self._plugins if self._hero else ():
-            self.render_plugin(p["name"])
-        tabs.Hide()
-        tb.Hide()
         self._heropanel.Hide()
+        self._panel.Thaw()
+        with controls.BusyPanel(self._panel, "Loading heroes."):
+            self.populate_index()
 
 
     def command(self, callable, name=None):
         """Submits callable to undo-redo command processor to be invoked."""
-        if self._panel: self._undoredo.Submit(plugins.PluginCommand(self, callable, name))
+        if not self._panel: return
+        self._undoredo.Submit(plugins.PluginCommand(self, callable, name))
+        wx.CallAfter(self.populate_index)
 
 
     def render(self, reparse=False, reload=False):
@@ -418,8 +462,11 @@ class HeroPlugin(object):
         @param   reparse  whether plugins should re-parse state from savefile
         @param   reload   whether plugins should reload state from hero
         """
-        if not PLUGINS: init()
-        self._plugins = self._plugins or [x.copy() for x in PLUGINS]
+        if not self._plugins:
+            if not PLUGINS: init()
+            self._plugins = [x.copy() for x in PLUGINS]
+            for p in self._plugins:
+                p["instance"] = p["module"].factory(self.savefile, self, panel=None)
         if reparse: self.reparse()
         elif self._hero and self._heropanel.Children:
             for p in self._plugins: self.render_plugin(p["name"], reload=reload)
@@ -447,13 +494,14 @@ class HeroPlugin(object):
         self._hero = None
         self._pages.clear()
         del self._pages_visited[:]
+        for k, v in list(self._search.items()):
+            if isinstance(v, (str, list)): self._search[k] = type(v)()
 
         self.parse()
-        self.build()
-
         self._panel.Freeze()
         try:
-            tabs.DeleteAllPages()
+            while tabs.GetPageCount() > 1: tabs.DeletePage(1)
+            self.build()
             hero = None
             for index in pages0:
                 hero1 = heroes0[index]
@@ -477,6 +525,43 @@ class HeroPlugin(object):
             self._panel.Layout()
         finally:
             self._panel.Thaw()
+
+
+    def populate_index(self, focus=False):
+        """Populates heroes index page, filtered by current search if any."""
+        if not self._panel: return
+        html, searchtext = self._ctrls["html"], self._ctrls["search"].Value.strip()
+        if self._search["text"] == searchtext and self._search["herotexts"]: return
+
+        heroes, links = self._heroes[:], list(range(len(self._heroes)))
+        plugins = {p["name"]: p["instance"] for p in self._plugins}
+        tpl, tplargs = step.Template(templates.HERO_SEARCH_TEXT), dict(plugins=plugins)
+        if not self._search["herotexts"]:
+            for hero in heroes:
+                for p in self._plugins: setattr(hero, p["name"], p["instance"].parse(hero))
+                hero.ensure_basestats()
+            self._search["herotexts"] = [tpl.expand(hero=h, **tplargs).lower() for h in heroes]
+        elif self._hero:
+            self._hero.ensure_basestats()
+            index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
+            self._search["herotexts"][index] = tpl.expand(hero=self._hero, **tplargs).lower()
+
+        if searchtext:
+            words, texts = searchtext.strip().lower().split(), self._search["herotexts"]
+            matches = [(i, h) for i, (h, t) in enumerate(zip(heroes, texts))
+                       if all(w in t for w in words)]
+            links, heroes = zip(*matches) if matches else ([], [])
+        self._search["text"] = searchtext
+        tplargs.update(dict(heroes=heroes, count=len(self._heroes), links=links, text=searchtext))
+        page = step.Template(templates.HERO_INDEX_HTML, escape=True).expand(**tplargs)
+        if page != self._search["html"]:
+            self._search["html"] = page
+            html.SetPage(page)
+            html.Scroll(html.GetScrollPos(wx.HORIZONTAL), 0)
+            html.BackgroundColour = controls.ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
+            html.ForegroundColour = controls.ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        if focus:
+            self.select_index()
 
 
     def on_copy_hero(self, event=None):
@@ -535,28 +620,65 @@ class HeroPlugin(object):
 
     def on_change_page(self, event):
         """Handler for changing a page in the heroes notebook, loads hero data."""
-        if event.GetOldSelection() < 0: return
-        self.select_hero(self._pages[self._ctrls["tabs"].GetCurrentPage()], status=False)
+        if self._ignore_paging or event.GetOldSelection() < 0: return
+        page = self._ctrls["tabs"].GetCurrentPage()
+        if page not in self._pages: self.select_index()
+        else: self.select_hero(self._pages[page], status=False)
 
 
     def on_close_page(self, event):
         """Handler for closing a hero page, selects a previous hero page, if any."""
+        if self._ignore_paging: return
         tabs = self._ctrls["tabs"]
         page = tabs.GetPage(event.GetSelection())
+        if page not in self._pages:
+            event.Veto()  # Disallow closing index
+            return
         page0 = tabs.GetCurrentPage()
         index = next((i for p, i in self._pages.items() if p == page), 0)
         self._pages.pop(page, None)
         visited = [x for x in self._pages_visited if x != index]
         self._pages_visited = [v for i, v in enumerate(visited) if not i or v != visited[i - 1]]
-        if page0 is page and self._pages_visited:
-            self.select_hero(self._pages_visited[-1], status=False)
-        elif not self._pages:
-            self._ctrls["hero"].SetSelection(-1)
-            self._ctrls["toolbar"].Disable()
-            self._ctrls["toolbar"].Hide()
-            self._ctrls["tabs"].Hide()
-            self._heropanel.Hide()
+        if page0 is page:  # Closed the active page
             self._hero = None
+            if self._pages_visited[-1:] in ([], [None]): self.select_index()
+            else: self.select_hero(self._pages_visited[-1], status=False)
+
+
+    def on_dragdrop_page(self, event=None):
+        """Handler for dragging a page, keeps index-page first."""
+        tabs = self._ctrls["tabs"]
+        tabs.Freeze()
+        self._ignore_paging = True
+        try:
+            cur_page = tabs.GetCurrentPage()
+            idx_index, idx_page = next((i, p) for i in range(tabs.GetPageCount())
+                                       for p in [tabs.GetPage(i)] if p not in self._pages)
+            if idx_index > 0:
+                text = tabs.GetPageText(idx_index)
+                tabs.RemovePage(idx_index)
+                tabs.InsertPage(0, page=idx_page, text=text)
+            if tabs.GetCurrentPage() != cur_page:
+                tabs.SetSelection(tabs.GetPageIndex(cur_page))
+        finally:
+            self._ignore_paging = False
+            tabs.Thaw()
+
+
+    def on_key(self, event):
+        """Handler for pressing a key, focuses filter on Ctrl-F."""
+        event.Skip()
+        if event.KeyCode in [ord("F")] and event.CmdDown():
+            self._ctrls["search"].SetFocus()
+
+
+    def on_search(self, event):
+        """Handler for changing search text, filters heroes index after a delay."""
+        event.Skip()
+        self._search["timer"], _ = None, self._search["timer"] and self._search["timer"].Stop()
+        if getattr(event, "KeyCode", None) == wx.WXK_ESCAPE:
+            event.EventObject.Value = ""
+        self._search["timer"] = wx.CallLater(self.SEARCH_INTERVAL, self.populate_index, focus=True)
 
 
     def on_select_hero(self, event):
@@ -564,7 +686,6 @@ class HeroPlugin(object):
         if self._pending: return
         index = event.EventObject.Selection
         hero2 = self._heroes[index] if index < len(self._heroes) else None
-        if self._hero and hero2 is self._hero: return
         if not hero2:
             wx.MessageBox("Hero '%s' not found." % event.EventObject.Value,
                           conf.Title, wx.OK | wx.ICON_ERROR)
@@ -572,9 +693,15 @@ class HeroPlugin(object):
         self.select_hero(index, status=index not in self._pages.values())
 
 
+    def on_sys_colour_change(self, event):
+        """Handler for system colour change, refreshes hero index HTML."""
+        event.Skip()
+        wx.CallAfter(lambda: self and self.populate_index())
+
+
     def select_hero(self, index, status=True, autoload=False):
         """
-        Populates panel with hero data.
+        Populates panel with hero data and ensures hero tab focus.
 
         @param   index     hero index in local structure
         @param   status    whether to show status messages
@@ -582,17 +709,34 @@ class HeroPlugin(object):
         """
         if not self._panel: return
         hero2 = self._heroes[index] if index < len(self._heroes) else None
-        if not hero2 or self._hero and hero2 is self._hero: return
+        if not hero2: return
+        if hero2 is self._hero:
+            self.select_hero_tab(index)
+            return
 
         self._pending = True
         hero2.ensure_basestats()
+        combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
         if status: guibase.status("Loading %s." % hero2.name, flash=True)
-        combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
+        if (autoload or self._autoloaded) and not self.savefile.is_changed():
+            while tabs.GetPageCount() > 1: tabs.DeletePage(1)  # Replace auto-populated tab
+            self._pages.clear()
+            del self._pages_visited[:]
+        self._autoloaded = autoload
+        if index not in self._pages.values():
+            page = wx.Window(tabs)
+            self._pages[page] = index
+            tabs.AddPage(page, hero2.name, select=True)
+        else:
+            self.select_hero_tab(index)
+
         combo.SetSelection(index)
-        self._panel.Freeze()
-        tabs.Show()
+        self._indexpanel.Hide()
         self._heropanel.Show()
+        tb.Enable()
+        tb.Show()
+        self._panel.Freeze()
         try:
             if self._hero: self.patch()
             logger.info("Loading hero %s (bytes %s-%s in savefile).",
@@ -603,23 +747,7 @@ class HeroPlugin(object):
                 self._hero.yamls1 = self.serialize_yaml(split=True)
         finally:
             self._pending = False
-            if (autoload or self._autoloaded) and not self.savefile.is_changed():
-                tabs.DeleteAllPages()  # Replace auto-populated tab
-                self._pages.clear()
-                del self._pages_visited[:]
-            self._autoloaded = autoload
-            if index not in self._pages.values():
-                page = wx.Window(tabs)
-                self._pages[page] = index
-                tabs.AddPage(page, hero2.name, select=True)
-                tb.Enable()
-                tb.Show()
-            else:
-                page = next(p for p, i in self._pages.items() if i == index)
-                idx  = next(i for i in range(tabs.GetPageCount()) if page is tabs.GetPage(i))
-                tabs.SetSelection(idx)
-            if not self._pages_visited or self._pages_visited[-1] != index:
-                self._pages_visited.append(index)
+            if self._pages_visited[-1:] != [index]: self._pages_visited.append(index)
             self._panel.Layout()
             self._panel.Thaw()
             if status: busy.Close(), wx.CallLater(500, guibase.status, "")
@@ -627,6 +755,43 @@ class HeroPlugin(object):
                 evt = gui.SavefilePageEvent(self._panel.Id)
                 evt.SetClientData(dict(plugin=self.name, load=hero2.name))
                 wx.PostEvent(self._panel, evt)
+
+
+    def select_hero_tab(self, index):
+        """Ensures hero tab is selected and hero panel shown."""
+        combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
+        page = next(p for p, i in self._pages.items() if i == index)
+        idx  = next(i for i in range(tabs.GetPageCount()) if page is tabs.GetPage(i))
+        if tabs.GetSelection() != idx: tabs.SetSelection(idx)
+        style = tabs.GetAGWWindowStyleFlag() | wx.lib.agw.flatnotebook.FNB_X_ON_TAB
+        if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
+        if not self._heropanel.Shown:
+            tb.Enable()
+            tb.Show()
+            self._indexpanel.Hide()
+            self._heropanel.Show()
+        if combo.Selection != index: combo.SetSelection(index)
+
+
+    def select_index(self):
+        """Switches to index page if not already there."""
+        combo, tabs, tb, search = (self._ctrls[k] for k in ("hero", "tabs", "toolbar", "search"))
+        searchsel = search.GetSelection()
+        focusctrl = self._panel.FindFocus()
+        combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
+        if tabs.GetSelection(): tabs.SetSelection(0)
+        style = tabs.GetAGWWindowStyleFlag() & (~wx.lib.agw.flatnotebook.FNB_X_ON_TAB)
+        if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
+        if not self._indexpanel.Shown:
+            tb.Hide()
+            tb.Disable()
+            self._heropanel.Hide()
+            self._indexpanel.Show()
+        if combo.Selection >= 0: combo.SetSelection(-1)
+        if self._pages_visited[-1:] != [None]: self._pages_visited.append(None)
+        if focusctrl is search and not search.HasFocus():
+            search.SetFocus()
+            search.SetSelection(*searchsel)
 
 
     def parse(self, detect_version=False):
@@ -807,6 +972,7 @@ class HeroPlugin(object):
             page = wx.Window(tabs)
             self._pages[page] = index
             tabs.AddPage(page, hero.name, select=True)
+            self._indexpanel.Hide()
             self._heropanel.Show()
         if not self._hero:
             self._hero = next(h for h in self._heroes if h == hero)
@@ -845,22 +1011,14 @@ class HeroPlugin(object):
             logger.warning("Call to render unknown plugin %s.", name)
             return
 
-        obj = obj0 = p.get("instance")
-        if not obj:
-            try:
-                obj = p["module"].factory(self, self._hero, p["panel"])
-            except Exception:
-                logger.exception("Error instantiating %s plugin.", p["name"])
-                return
-            p["instance"] = obj
-        elif reload: obj.load(self._hero, p["panel"])
-        if reload or not obj0:
+        obj, item0 = p["instance"], p["instance"].item()
+        if reload or item0 is None:
+            obj.load(self._hero, p["panel"])
             logger.info("Loaded hero %s %s %s.", self._hero.name, p["name"], obj.state())
-
         p["panel"].Freeze()
         try:
             if   callable(getattr(obj, "render", None)): obj.render()
             elif callable(getattr(obj, "props",  None)): gui.build(obj, p["panel"])
-            if not obj0 or reload: wx_accel.accelerate(p["panel"])
+            if reload or item0 is None: wx_accel.accelerate(p["panel"])
         finally:
             p["panel"].Thaw()

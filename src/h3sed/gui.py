@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    18.02.2023
+@modified    20.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1208,11 +1208,14 @@ class SavefilePage(wx.Panel):
     def load_data(self):
         """Loads data from our file."""
         if not self.plugins:
-            self.plugins = plugins.render(self.savefile, self.notebook, self.undoredo)
-        if self.notebook.PageCount < 2:
-            tabarea = next((x for x in self.notebook.Children
-                            if isinstance(x, wx.lib.agw.labelbook.ImageContainer)), None)
-            tabarea and (tabarea.Hide(), self.notebook.Layout())
+            self.plugins = plugins.populate(self.savefile, self.notebook, self.undoredo)
+            if self.notebook.PageCount < 2:
+                tabarea = next((x for x in self.notebook.Children
+                                if isinstance(x, wx.lib.agw.labelbook.ImageContainer)), None)
+                tabarea and (tabarea.Hide(), self.notebook.Layout())
+            self.Refresh()
+            for p in self.plugins: p.render()
+            wx_accel.accelerate(self.notebook)
         evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
 

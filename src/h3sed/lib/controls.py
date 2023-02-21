@@ -3,8 +3,7 @@
 Stand-alone GUI components for wx:
 
 - BusyPanel(wx.Window):
-  Primitive hover panel with a message that stays in the center of parent
-  window.
+  Primitive hover panel with a message that stays in the center of parent window.
 
 - ColourManager(object):
   Updates managed component colours on Windows system colour change.
@@ -15,12 +14,15 @@ Stand-alone GUI components for wx:
 - HtmlDialog(wx.Dialog):
   Popup dialog showing a wx.HtmlWindow.
 
+- ItemHistory(wx.Object):
+  Like wx.HileHistory but for any kind of items.
+
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    17.02.2023
+@modified    20.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -42,8 +44,9 @@ except Exception: text_types = (str, )  # Py3
 
 class BusyPanel(wx.Window):
     """
-    Primitive hover panel with a message that stays in the center of parent
-    window.
+    Primitive hover panel with a message that stays in the center of parent window.
+
+    Acts as an auto-closing context manager.
     """
     FOREGROUND_COLOUR = wx.WHITE
     BACKGROUND_COLOUR = wx.Colour(110, 110, 110, 255)
@@ -77,6 +80,16 @@ class BusyPanel(wx.Window):
         parent.Refresh()
         wx.Yield()
         timer.Start(self.REFRESH_INTERVAL)
+
+
+    def __enter__(self):
+        """Context manager entry, does nothing, returns self."""
+        return self
+
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Context manager exit, destroys panel."""
+        self.Close()
 
 
     def _OnDestroy(self, event):
@@ -338,63 +351,87 @@ class CommandHistoryDialog(wx.Dialog):
         self.EndModal(wx.ID_OK)
 
 
-class HistoryMenu(wx.Menu):
-    """
+class HtmlDialog(wx.Dialog):
+    """Popup dialog showing a wx.HtmlWindow, with an OK-button."""
 
-cdfdsa
+    def __init__(self, parent, title, content, links=None, buttons=None, style=0):
+        """
+        @param   links    {href: page text to show or function(href) to invoke, text result shown}
+        @param   buttons  {label: function() to invoke}
+        """
+        wx.Dialog.__init__(self, parent, title=title, style=wx.CAPTION | wx.CLOSE_BOX | style)
+        self.html = None
+        self.content = content
+        self.links = links.copy() if isinstance(links, dict) else {}
+
+        wrapper = wx.ScrolledWindow(self) if style & wx.RESIZE_BORDER else None
+        html = self.html = wx.html.HtmlWindow(wrapper or self)
+
+        if wrapper:
+            wrapper.Sizer = wx.BoxSizer(wx.VERTICAL)
+            wrapper.Sizer.Add(html, proportion=1, flag=wx.GROW)
+        self.Sizer = wx.BoxSizer(wx.VERTICAL)
+        self.Sizer.Add(wrapper or html, proportion=1, flag=wx.GROW)
+        sizer_buttons = self.CreateButtonSizer(wx.OK)
+        for label, handler in buttons.items() if buttons else ():
+            button = wx.Button(self, label=label)
+            button.Bind(wx.EVT_BUTTON, lambda e, f=handler: handler())
+            sizer_buttons.Add(button, border=3, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER)
+        self.Sizer.Add(sizer_buttons, border=8, flag=wx.ALIGN_CENTER | wx.ALL)
+        self.Layout()
+
+        if callable(content): content = content()
+        html.SetPage(content)
+        contentwidth = html.VirtualSize[0]
+        if links:
+            for x in (x for x in links.values() if isinstance(x, str)):
+                html.SetPage(x)
+                contentwidth = max(contentwidth, html.VirtualSize[0])
+            html.SetPage(content)
+        html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
+        html.ForegroundColour = ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
+
+        html.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OnLink)
+        self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChange)
+
+        BARWH = [wx.SystemSettings.GetMetric(x, self) for x in (wx.SYS_HSCROLL_Y, wx.SYS_VSCROLL_X)]
+        MAXW = wx.Display(self).ClientArea.Size[0]
+        MAXH = (parent.TopLevelParent if parent else wx.Display(self).ClientArea).Size[1]
+        FRAMEH = 2 * wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_Y, self) + \
+                 wx.SystemSettings.GetMetric(wx.SYS_CAPTION_Y, self)
+        width = contentwidth + 2*BARWH[0]
+        height = FRAMEH + html.VirtualSize[1] + sizer_buttons.Size[1] + BARWH[1]
+        self.Size = min(width, MAXW - 2*BARWH[0]), min(height, MAXH - 2*BARWH[1])
+        self.MinSize = (400, 300)
+        self.CenterOnParent()
 
 
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(HistoryMenu, self).__init__(*args, **kwargs)
-        self._formatter = lambda x: u"%s" % (x, )
-        self._items = []
-        self.Bind(wx.EVT_MENU, self._OnMenu)
-
-
-    def GetItems(self):
-        """Returns current content items."""
-        return self._items[:]
-    def SetItems(self, items):
-        """Sets current content items and re-populates menu."""
-        self._items[:] = items
-        self.Populate()
-    Items = property(GetItems, SetItems)
+    def OnLink(self, event):
+        """Handler for clicking a link, sets new content if registered link else opens webbrowser."""
+        href = event.GetLinkInfo().Href
+        if href in self.links:
+            page = self.links[href]
+            if callable(page): page = page(href) 
+            if isinstance(page, str):
+                bcol, fcol = event.EventObject.BackgroundColour, event.EventObject.ForegroundColour
+                event.EventObject.SetPage(page)
+                event.EventObject.BackgroundColour, event.EventObject.ForegroundColour = bcol, fcol
+        else: webbrowser.open(href)
 
 
-    def GetItem(self, index):
-        """Returns content item at specified index."""
-        return self._items[index]
-
-
-    def GetFormatter(self):
-        """Returns menu label formatter function."""
-        return self._hint
-    def SetFormatter(self, fmt):
-        """Sets menu label formatter function, as func(item), and re-populates menu."""
-        if fmt != self._formatter:
-            self._formatter = fmt
-            self.Populate()
-    Formatter = property(GetFormatter, SetFormatter)
-
-
-    def Populate(self):
-        """Clears and populates menu from current content items."""
-        for i in reversed(range(self.MenuItemCount)): self.Destroy(i)
-        for i, item in enumerate(self._items):
-            label = "&%s %s" % (i + 1, self._formatter(item))
-            self.Append(wx.ID_ANY, label)
-
-
-    def _OnMenu(self, event):
-        #print(event, dir(event))
-        print(event.ClientData, event.Id, event.Int, event.Selection, event.String)
-        
+    def OnSysColourChange(self, event):
+        """Handler for system colour change, refreshes content."""
+        event.Skip()
+        def dorefresh():
+            if not self: return
+            self.html.SetPage(self.content() if callable(self.content) else self.content)
+            self.html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
+            self.html.ForegroundColour = ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        wx.CallAfter(dorefresh) # Postpone to allow conf to update
 
 
 class ItemHistory(wx.Object):
-    """Like wx.HileHistory but for any kind of item."""
+    """Like wx.HileHistory but for any kind of items."""
 
     def __init__(self, maxItems=9, baseId=None):
         """
@@ -524,83 +561,3 @@ class ItemHistory(wx.Object):
         evt = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, evtId)
         evt.EventObject = menu
         wx.PostEvent(menu.Window, evt)
-        
-
-
-class HtmlDialog(wx.Dialog):
-    """Popup dialog showing a wx.HtmlWindow, with an OK-button."""
-
-    def __init__(self, parent, title, content, links=None, buttons=None, style=0):
-        """
-        @param   links    {href: page text to show or function(href) to invoke, text result shown}
-        @param   buttons  {label: function() to invoke}
-        """
-        wx.Dialog.__init__(self, parent, title=title, style=wx.CAPTION | wx.CLOSE_BOX | style)
-        self.html = None
-        self.content = content
-        self.links = links.copy() if isinstance(links, dict) else {}
-
-        wrapper = wx.ScrolledWindow(self) if style & wx.RESIZE_BORDER else None
-        html = self.html = wx.html.HtmlWindow(wrapper or self)
-
-        if wrapper:
-            wrapper.Sizer = wx.BoxSizer(wx.VERTICAL)
-            wrapper.Sizer.Add(html, proportion=1, flag=wx.GROW)
-        self.Sizer = wx.BoxSizer(wx.VERTICAL)
-        self.Sizer.Add(wrapper or html, proportion=1, flag=wx.GROW)
-        sizer_buttons = self.CreateButtonSizer(wx.OK)
-        for label, handler in buttons.items() if buttons else ():
-            button = wx.Button(self, label=label)
-            button.Bind(wx.EVT_BUTTON, lambda e, f=handler: handler())
-            sizer_buttons.Add(button, border=3, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER)
-        self.Sizer.Add(sizer_buttons, border=8, flag=wx.ALIGN_CENTER | wx.ALL)
-        self.Layout()
-
-        if callable(content): content = content()
-        html.SetPage(content)
-        contentwidth = html.VirtualSize[0]
-        if links:
-            for x in (x for x in links.values() if isinstance(x, str)):
-                html.SetPage(x)
-                contentwidth = max(contentwidth, html.VirtualSize[0])
-            html.SetPage(content)
-        html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
-        html.ForegroundColour = ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
-
-        html.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OnLink)
-        self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChange)
-
-        BARWH = [wx.SystemSettings.GetMetric(x, self) for x in (wx.SYS_HSCROLL_Y, wx.SYS_VSCROLL_X)]
-        MAXW = wx.Display(self).ClientArea.Size[0]
-        MAXH = (parent.TopLevelParent if parent else wx.Display(self).ClientArea).Size[1]
-        FRAMEH = 2 * wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_Y, self) + \
-                 wx.SystemSettings.GetMetric(wx.SYS_CAPTION_Y, self)
-        width = contentwidth + 2*BARWH[0]
-        height = FRAMEH + html.VirtualSize[1] + sizer_buttons.Size[1] + BARWH[1]
-        self.Size = min(width, MAXW - 2*BARWH[0]), min(height, MAXH - 2*BARWH[1])
-        self.MinSize = (400, 300)
-        self.CenterOnParent()
-
-
-    def OnLink(self, event):
-        """Handler for clicking a link, sets new content if registered link else opens webbrowser."""
-        href = event.GetLinkInfo().Href
-        if href in self.links:
-            page = self.links[href]
-            if callable(page): page = page(href) 
-            if isinstance(page, str):
-                bcol, fcol = event.EventObject.BackgroundColour, event.EventObject.ForegroundColour
-                event.EventObject.SetPage(page)
-                event.EventObject.BackgroundColour, event.EventObject.ForegroundColour = bcol, fcol
-        else: webbrowser.open(href)
-
-
-    def OnSysColourChange(self, event):
-        """Handler for system colour change, refreshes content."""
-        event.Skip()
-        def dorefresh():
-            if not self: return
-            self.html.SetPage(self.content() if callable(self.content) else self.content)
-            self.html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
-            self.html.ForegroundColour = ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
-        wx.CallAfter(dorefresh) # Postpone to allow conf to update

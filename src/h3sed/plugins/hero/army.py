@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  08.02.2023
+@modified  19.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -56,9 +56,9 @@ def props():
     return PROPS
 
 
-def factory(parent, hero, panel):
+def factory(savefile, parent, panel):
     """Returns a new army-plugin instance."""
-    return ArmyPlugin(parent, hero, panel)
+    return ArmyPlugin(savefile, parent, panel)
 
 
 
@@ -66,24 +66,21 @@ class ArmyPlugin(object):
     """Encapsulates army-plugin state and behaviour."""
 
 
-    def __init__(self, parent, hero, panel):
-        self.name    = PROPS["name"]
-        self.parent  = parent
-        self._hero   = hero
-        self._panel  = panel # Plugin contents panel
-        self._state  = []    # [{"name": "Roc", "count": 6}, {}, ]
-        self._state0 = []    # Original state [{"name": "Roc", "count": 6}, {}, ]
-        self._ctrls  = []    # [{"name": wx.ComboBox, "count": wx.SpinCtrl}, ]
-        if hero:
-            self.parse(hero.bytes)
-            hero.army = self._state
-        panel.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_colour_change)
+    def __init__(self, savefile, parent, panel):
+        self.name      = PROPS["name"]
+        self.parent    = parent
+        self._savefile = savefile
+        self._hero     = None
+        self._panel    = panel  # Plugin contents panel
+        self._state    = []     # [{"name": "Roc", "count": 6}, {}, ]
+        self._state0   = []     # Original state [{"name": "Roc", "count": 6}, {}, ]
+        self._ctrls    = []     # [{"name": wx.ComboBox, "count": wx.SpinCtrl}, ]
 
 
     def props(self):
         """Returns props for army-tab, as [{type: "itemlist", ..}]."""
         result = []
-        ver = self._hero.savefile.version
+        ver = self._savefile.version
         cc = sorted(metadata.Store.get("creatures", version=ver))
         for prop in UIPROPS:
             myprop = dict(prop, item=[])
@@ -107,18 +104,19 @@ class ArmyPlugin(object):
     def load(self, hero, panel=None):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = []
-        if panel: self._panel = panel
-        if hero:
-            self.parse(hero.bytes)
-            hero.army = self._state
+        self._state[:] = self.parse(hero)
+        self._state0 = copy.deepcopy(self._state)
+        hero.army = self._state
+        if panel:
+            panel.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_colour_change)
+            self._panel = panel
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
         MYPROPS = self.props()
         state0 = type(self._state)(self._state)
-        ver = self._hero.savefile.version
+        ver = self._savefile.version
         cmap = {x.lower(): x for x in metadata.Store.get("creatures", version=ver)}
         countitem = next(x for x in MYPROPS[0]["item"] if "count" == x.get("name"))
         MIN, MAX = countitem["min"], countitem["max"]
@@ -141,7 +139,7 @@ class ArmyPlugin(object):
         """Populates controls from state, using existing if already built."""
         MYPROPS = self.props()
         if self._ctrls and all(all(x.values()) for x in self._ctrls):
-            ver = self._hero.savefile.version
+            ver = self._savefile.version
             cc = [""] + sorted(metadata.Store.get("creatures", version=ver))
             for i, row in enumerate(self._state):
                 creature = None
@@ -197,8 +195,8 @@ class ArmyPlugin(object):
         wx.CallLater(100, after)  # Hidden SpinCtrl arrows can become visible on colour change
 
 
-    def parse(self, bytes):
-        """Builds army state from hero bytearray."""
+    def parse(self, hero):
+        """Returns army state parsed from hero bytearray, as [{name, count} or {}, ]."""
         result = []
 
         NAMES = {x[y]: y for x in [metadata.Store.get("ids")]
@@ -207,13 +205,12 @@ class ArmyPlugin(object):
 
         for prop in self.props():
             for i in range(prop["max"]):
-                unit  = util.bytoi(bytes[MYPOS["army_types"]  + i * 4:MYPOS["army_types"]  + i * 4 + 4])
-                count = util.bytoi(bytes[MYPOS["army_counts"] + i * 4:MYPOS["army_counts"] + i * 4 + 4])
+                unit, count = (util.bytoi(hero.bytes[MYPOS[k]  + i * 4:MYPOS[k]  + i * 4 + 4])
+                               for k in ("army_types", "army_counts"))
                 name = NAMES.get(unit)
                 if not unit or not count or not name: result.append({})
                 else: result.append({"name": name, "count": count})
-        self._state[:] = result
-        self._state0 = copy.deepcopy(result)
+        return result
 
 
     def serialize(self):
