@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  21.02.2023
+@modified  23.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -408,7 +408,7 @@ class HeroPlugin(object):
         sizer_top.Add(combo,  border=5,  flag=wx.TOP  | wx.BOTTOM | wx.GROW)
         sizer_top.Add(tbtop,  border=5,  flag=wx.LEFT | wx.TOP | wx.BOTTOM)
         sizer_top.AddStretchSpacer()
-        sizer_top.Add(search, border=5, flag=wx.ALL)
+        sizer_top.Add(search, border=5, flag=wx.ALL, proportion=1)
         sizer_top.AddSpacer(5)
         sizer.Add(sizer_top,  border=10, flag=wx.LEFT | wx.GROW)
         sizer.Add(tabs,       border=5,  flag=wx.BOTTOM | wx.GROW)
@@ -725,11 +725,11 @@ class HeroPlugin(object):
             self.select_hero_tab(index)
 
         combo.SetSelection(index)
+        self._panel.Freeze()
         self._indexpanel.Hide()
         self._heropanel.Show()
         tb.Enable()
         tb.Show()
-        self._panel.Freeze()
         try:
             if self._hero: self.patch()
             logger.info("Loading hero %s (bytes %s-%s in savefile).",
