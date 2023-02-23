@@ -311,7 +311,6 @@ class HeroPlugin(object):
         self._hero       = None    # Currently selected Hero instance
         self._heropanel  = None    # Container for hero components
         self._pending    = False   # Whether hero selected but not yet loaded
-        self._autoloaded = None    # Whether current hero was auto-populated
         self._pages_visited = []   # Visited tabs, as [hero index in self._heroes or None if index page]
         self._ignore_paging = False  # Workaround for disallowing index page reordering
         self._search = {
@@ -474,13 +473,13 @@ class HeroPlugin(object):
 
 
     def action(self, **kwargs):
-        """Handler for action (load=hero name or index, ?auto=bool)"""
+        """Handler for action (load=hero name or index)"""
         if kwargs.get("load") is not None:
-            name = kwargs["load"]
-            if isinstance(name, int):
-                index = max(0, min(name, len(self._heroes) - 1))
-            else: index = next((i for i, x in enumerate(self._heroes) if x.name == name), -1)
-            if index >= 0 and self._heroes: self.select_hero(index, autoload=kwargs.get("auto"))
+            value = kwargs["load"]
+            if isinstance(value, int):
+                index = max(0, min(value, len(self._heroes) - 1))
+            else: index = next((i for i, x in enumerate(self._heroes) if x.name == value), -1)
+            if index >= 0 and self._heroes: self.select_hero(index)
 
 
     def reparse(self):
@@ -521,7 +520,7 @@ class HeroPlugin(object):
             self._pages_visited[:] = visited0
             if not hero and visited0: hero = self._heroes[visited0[-1]]
             index = next(i for i, x in enumerate(self._heroes) if x is hero) if hero else None
-            if index is not None: self.select_hero(index, status=False, autoload=self._autoloaded)
+            if index is not None: self.select_hero(index, status=False)
             self._panel.Layout()
         finally:
             self._panel.Thaw()
@@ -699,13 +698,12 @@ class HeroPlugin(object):
         wx.CallAfter(lambda: self and self.populate_index())
 
 
-    def select_hero(self, index, status=True, autoload=False):
+    def select_hero(self, index, status=True):
         """
         Populates panel with hero data and ensures hero tab focus.
 
         @param   index     hero index in local structure
         @param   status    whether to show status messages
-        @param   autoload  whether auto-populating
         """
         if not self._panel: return
         hero2 = self._heroes[index] if index < len(self._heroes) else None
@@ -719,11 +717,6 @@ class HeroPlugin(object):
         combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
         if status: guibase.status("Loading %s." % hero2.name, flash=True)
-        if (autoload or self._autoloaded) and not self.savefile.is_changed():
-            while tabs.GetPageCount() > 1: tabs.DeletePage(1)  # Replace auto-populated tab
-            self._pages.clear()
-            del self._pages_visited[:]
-        self._autoloaded = autoload
         if index not in self._pages.values():
             page = wx.Window(tabs)
             self._pages[page] = index
@@ -751,10 +744,9 @@ class HeroPlugin(object):
             self._panel.Layout()
             self._panel.Thaw()
             if status: busy.Close(), wx.CallLater(500, guibase.status, "")
-            if not autoload:
-                evt = gui.SavefilePageEvent(self._panel.Id)
-                evt.SetClientData(dict(plugin=self.name, load=hero2.name))
-                wx.PostEvent(self._panel, evt)
+            evt = gui.SavefilePageEvent(self._panel.Id)
+            evt.SetClientData(dict(plugin=self.name, load=hero2.name))
+            wx.PostEvent(self._panel, evt)
 
 
     def select_hero_tab(self, index):

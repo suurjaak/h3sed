@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    20.02.2023
+@modified    22.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -263,11 +263,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu_file.AppendSeparator()
         menu_options = wx.Menu()
         menu_file.AppendSubMenu(menu_options, "Opt&ions")
-        menu_populate = self.menu_populate = menu_options.Append(
-            wx.ID_ANY, "&Auto-load savefile content", "Populate content to UI on opening savefile",
-            kind=wx.ITEM_CHECK
-        )
-        menu_populate.Check(conf.Populate)
         menu_backup = self.menu_backup = menu_options.Append(
             wx.ID_ANY, "&Back up files before saving", "Create backup copy of savefile before saving changes",
             kind=wx.ITEM_CHECK
@@ -334,7 +329,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_reload_savefile,  menu_reload)
         self.Bind(wx.EVT_MENU, self.on_save_savefile,    menu_save)
         self.Bind(wx.EVT_MENU, self.on_save_savefile_as, menu_save_as)
-        self.Bind(wx.EVT_MENU, self.on_menu_populate,    menu_populate)
         self.Bind(wx.EVT_MENU, self.on_menu_backup,      menu_backup)
         self.Bind(wx.EVT_MENU, self.on_menu_confirm,     menu_confirm)
         self.Bind(wx.EVT_MENU, self.on_exit,             menu_exit)
@@ -489,9 +483,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             for f in save_filenames:
                 if not self.load_savefile(f, silent=True): continue # for f
                 self.load_savefile_page(f)
-        for f in save_filenames if conf.Populate else ():
-            if f in self.files and f not in files0:
-                self.files[f]["page"].plugin_action("hero", load=0, auto=True)
         if notsave_filenames:
             t = "valid gzipped files"
             if len(notsave_filenames) == 1: t = "a " + t[:-1]
@@ -781,12 +772,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         conf.save()
 
 
-    def on_menu_populate(self, event):
-        """Handler for clicking to toggle populate-option."""
-        conf.Populate = event.IsChecked()
-        conf.save()
-
-
     def on_show_changes(self, event=None):
         """Handler for clicking to show unsaved changes, pops up info dialog."""        
         page = self.notebook.GetCurrentPage()
@@ -892,8 +877,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Handler for clicking an entry in Recent Files menu."""
         filename = self.history_file.GetHistoryFile(event.Id - self.history_file.BaseId)
         self.load_savefile_page(filename)
-        if conf.Populate and filename in self.files:
-            self.files[filename]["page"].plugin_action("hero", load=0, auto=True)
 
 
     def on_recent_hero(self, event):

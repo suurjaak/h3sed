@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    21.02.2023
+@modified    22.02.2023
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
@@ -26,7 +26,7 @@ import sys
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
 Version = "1.4"
-VersionDate = "21.02.2023"
+VersionDate = "22.02.2023"
 
 if getattr(sys, "frozen", False):
     # Running as a pyinstaller executable
@@ -43,7 +43,7 @@ ConfigFile = "%s.ini" % os.path.join(EtcDirectory, Name.lower())
 
 """List of attribute names that can be saved to and loaded from ConfigFile."""
 FileDirectives = [
-    "Backup", "ConfirmUnsaved", "ConsoleHistoryCommands", "GameVersion", "Populate",
+    "Backup", "ConfirmUnsaved", "ConsoleHistoryCommands", "GameVersion",
     "RecentFiles", "RecentHeroes", "SelectedPath", "WindowPosition", "WindowSize",
 ]
 """List of user-modifiable attributes, saved if changed from default."""
@@ -63,9 +63,6 @@ Backup = True
 
 """Confirm on closing files with unsaved changes."""
 ConfirmUnsaved = True
-
-"""Load savefile content to UI upon opening."""
-Populate = True
 
 """Savefile filename extensions, as {'description': ('.ext1', '.ext2')}."""
 FileExtensions = [("Heroes3 savefiles",               (".cgm", ".gm1", ".gm2", ".gm3", ".gm4", ".gm5", ".gm6", ".gm7", ".gm8")),
