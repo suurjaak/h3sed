@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    10.02.2023
+@modified    24.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -107,7 +107,7 @@ def plural(word, items=None, numbers=True, single="1", sep="", pref="", suf=""):
     """
     count   = len(items) if hasattr(items, "__len__") else items or 0
     isupper = word[-1:].isupper()
-    suffix = "es" if word and word[-1:].lower() in "xyz" else "s" if word else ""
+    suffix = "es" if word and word[-1:].lower() in "oxyz" else "s" if word else ""
     if isupper: suffix = suffix.upper()
     if count != 1 and "y" == word[-1:].lower():
         word = word[:-1] + ("I" if isupper else "i")

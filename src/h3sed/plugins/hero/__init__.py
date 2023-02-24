@@ -322,6 +322,7 @@ class HeroPlugin(object):
             "timer":     None,     # wx.Timer for filtering heroes index
             "ids":       {},       # {category: wx ID for toolbar toggle}
             "toggles":   {},       # {category: toggled state}
+            "visible":   0,        # Number of heroes visible
         }
         self.parse(detect_version=True)
         self.prebuild()
@@ -345,7 +346,10 @@ class HeroPlugin(object):
 
         indexpanel = self._indexpanel = wx.Panel(self._panel)
 
+        bmpx = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE_AS, wx.ART_TOOLBAR, (16, 16))
         tb_index = wx.ToolBar(indexpanel, style=wx.TB_FLAT | wx.TB_NODIVIDER | wx.TB_NOICONS | wx.TB_TEXT)
+        info = wx.StaticText(indexpanel)
+
         for category in self.INDEX_CATEGORIES:
             b = tb_index.AddCheckTool(wx.ID_ANY, category.capitalize(), wx.NullBitmap,
                                       shortHelp="Show or hide %s columns" % category)
@@ -412,7 +416,10 @@ class HeroPlugin(object):
 
         indexpanel.Sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_opts = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_opts.Add(tb_index)
+        sizer_labels = wx.BoxSizer(wx.VERTICAL)
+        sizer_labels.Add(tb_index)
+        sizer_labels.Add(info)
+        sizer_opts.Add(sizer_labels, border=5, flag=wx.BOTTOM)
         indexpanel.Sizer.Add(html, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW, proportion=1)
         indexpanel.Sizer.Add(sizer_opts, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
 
@@ -440,6 +447,7 @@ class HeroPlugin(object):
         self._ctrls["tabs"] = tabs
         self._ctrls["hero"] = combo
         self._ctrls["search"] = search
+        self._ctrls["count"] = info
         self._ctrls["html"] = html
         self._ctrls["toolbar"] = tb
 
@@ -573,9 +581,13 @@ class HeroPlugin(object):
                        if all(w in t for w in words)]
             links, heroes = zip(*matches) if matches else ([], [])
         self._index["text"] = searchtext
+        self._index["visible"] = len(heroes)
         tplargs.update(dict(heroes=heroes, count=len(self._heroes), links=links, text=searchtext))
         page = step.Template(templates.HERO_INDEX_HTML, escape=True).expand(**tplargs)
         if page != self._index["html"]:
+            info = util.plural("hero", heroes) if len(heroes) == len(self._heroes) else \
+                   "%s visible (%s total)" % (util.plural("hero", heroes), len(self._heroes))
+            self._ctrls["count"].Label = info
             self._index["html"] = page
             html.SetPage(page)
             html.Scroll(html.GetScrollPos(wx.HORIZONTAL), 0)
