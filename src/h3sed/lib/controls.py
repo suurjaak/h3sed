@@ -22,7 +22,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    20.02.2023
+@modified    24.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -561,3 +561,26 @@ class ItemHistory(wx.Object):
         evt = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, evtId)
         evt.EventObject = menu
         wx.PostEvent(menu.Window, evt)
+
+
+
+def get_dialog_path(dialog):
+    """
+    Returns the file path chosen in FileDialog, adding extension if dialog result
+    has none even though a filter has been selected, or if dialog result has a
+    different extension than what is available in selected filter.
+    """
+    result = dialog.GetPath()
+
+    # "SQLite database (*.db;*.sqlite;*.sqlite3)|*.db;*.sqlite;*.sqlite3|All files|*.*"
+    wcs = dialog.Wildcard.split("|")
+    wcs = wcs[1::2] if len(wcs) > 1 else wcs
+    wcs = [[y.lstrip("*") for y in x.split(";")] for x in wcs] # [['.ext1', '.ext2'], ..]
+
+    extension = os.path.splitext(result)[-1].lower()
+    selexts = wcs[dialog.FilterIndex] if 0 <= dialog.FilterIndex < len(wcs) else None
+    if result and selexts and extension not in selexts and dialog.ExtraStyle & wx.FD_SAVE:
+        ext = next((x for x in selexts if "*" not in x), None)
+        if ext: result += ext
+
+    return result

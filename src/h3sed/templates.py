@@ -7,14 +7,15 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    23.02.2023
+@modified    24.02.2023
 ------------------------------------------------------------------------------
 """
 
 # Modules imported inside templates:
-#import difflib, sys, wx
+#import datetime, difflib, sys, wx
 #from h3sed.lib.vendor import step
-#from h3sed import conf, templates
+#from h3sed.lib import util
+#from h3sed import conf, images, plugins, templates
 
 
 """HTML text shown in Help -> About dialog."""
@@ -163,13 +164,13 @@ entries = [[escape(l[2:].rstrip()).replace(" ", "&nbsp;") for l in ll] for ll in
 """
 Text to search for filtering heroes index.
 
-@param   hero      Hero instance
-@param   plugins   {name: plugin instance}
-@param  ?category  category to produce if not all, or empty string for hero name only
+@param   hero       Hero instance
+@param   pluginmap  {name: plugin instance}
+@param  ?category   category to produce if not all, or empty string for hero name only
 """
 HERO_SEARCH_TEXT = """<%
 from h3sed import conf, metadata
-deviceprops = plugins["stats"].props()
+deviceprops = pluginmap["stats"].props()
 deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
 category = category if isdef("category") else None
 %>
@@ -223,13 +224,13 @@ HTML text shown in heroes index.
 @param   heroes      [Hero instance, ]
 @param   links       [link for hero, ]
 @param   count       total number of heroes
-@param   plugins     {name: plugin instance}
+@param   pluginmap   {name: plugin instance}
 @param  ?categories  {category: whether to show category columns} if not showing all
 @param  ?text        current search text if any
 """
 HERO_INDEX_HTML = """<%
 from h3sed import conf, metadata
-deviceprops = plugins["stats"].props()
+deviceprops = pluginmap["stats"].props()
 deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
 categories = categories if isdef("categories") else None
 %>
@@ -327,4 +328,258 @@ categories = categories if isdef("categories") else None
 </table>
 %endif
 </font>
+"""
+
+
+"""
+HTML text for exporting heroes to file.
+
+@param   heroes      [Hero instance, ]
+@param   pluginmap   {name: plugin instance}
+@param   savefile    metadata.Savefile instance
+@param   count       total number of heroes
+@param  ?categories  {category: whether to show category columns} if not showing all
+"""
+HERO_EXPORT_HTML = """<%
+import datetime
+from h3sed.lib import util
+from h3sed import conf, images, metadata, plugins
+deviceprops = pluginmap["stats"].props()
+deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+%><!DOCTYPE HTML><html lang="en">
+<head>
+  <meta http-equiv='Content-Type' content='text/html;charset=utf-8'>
+  <meta name="Author" content="{{ conf.Title }}">
+  <title>Heroes of Might & Magic III - Savegame export - Heroes</title>
+  <link rel="shortcut icon" type="image/png" href="data:image/png;base64,{{! images.Icon_16x16_16bit.data }}">
+  <style>
+    * { font-family: Tahoma, "DejaVu Sans", "Open Sans", Verdana; color: black; font-size: 11px; }
+    body {
+      background-image: url("data:image/png;base64,{{! images.ExportBg.data }}");
+      margin: 0;
+      padding: 0;
+    }
+    a, a.visited {
+      color: blue;
+      text-decoration: none;
+    }
+    table { border-spacing: 2px; empty-cells: show; }
+    td, th { border: 1px solid #C0C0C0; padding: 5px; }
+    th { text-align: left; white-space: nowrap; }
+    td { vertical-align: top; }
+    td.index, th.index { color: gray; width: 10px; }
+    td.index { color: gray; text-align: right; }
+    a.sort { display: block; }
+    a.sort:hover { cursor: pointer; text-decoration: none; }
+    a.sort::after      { content: ""; display: inline-block; min-width: 6px; position: relative; left: 3px; top: -1px; }
+    a.sort.asc::after  { content: "↓"; }
+    a.sort.desc::after { content: "↑"; }
+    .hidden { display: none; }
+    #content {
+      background-color: white;
+      border-radius: 5px;
+      margin: 10px auto 0 auto;
+      max-width: fit-content;
+      overflow-x: auto;
+      padding: 20px;
+    }
+    #info {
+      margin-bottom: 10px;
+    }
+    #search { margin-right: 2px; text-align: right; }
+    #footer {
+      color: white;
+      padding: 10px 0;
+      text-align: center;
+    }
+  </style>
+  <script>
+  var searchText = "";
+  var searchTimer = null;
+
+  /** Schedules search after delay. */
+  var onSearch = function(evt) {
+    window.clearTimeout(searchTimer); // Avoid reacting to rapid changes
+
+    var mysearch = evt.target.value.trim();
+    if (27 == evt.keyCode) mysearch = evt.target.value = "";
+    var mytimer = searchTimer = window.setTimeout(function() {
+      if (mytimer == searchTimer && mysearch != searchText) {
+        searchText = mysearch;
+        doSearch("heroes", mysearch);
+      };
+      searchTimer = null;
+    }, 200);
+  };
+
+  /** Sorts table by column of given header link. */
+  function onSort(link) {
+    var col = null;
+    var prev_col = null;
+    var prev_direction = null;
+    var table = link.closest("table");
+    var linklist = table.querySelector("tr").querySelectorAll("a.sort");
+    for (var i = 0; i < linklist.length; i++) {
+      if (linklist[i] == link) col = i;
+      if (linklist[i].classList.contains("asc") || linklist[i].classList.contains("desc")) {
+        prev_col = i;
+        prev_direction = linklist[i].classList.contains("asc");
+      };
+      linklist[i].classList.remove("asc");
+      linklist[i].classList.remove("desc");
+    };
+    var sort_col = col;
+    var sort_direction = (sort_col == prev_col) ? !prev_direction : prev_direction;
+    var table = link.closest("table");
+    var rowlist = table.getElementsByTagName("tr");
+    var rows = [];
+    for (var i = 1, ll = rowlist.length; i != ll; rows.push(rowlist[i++]));
+    rows.sort(sortfn.bind(this, sort_col, sort_direction));
+    for (var i = 0; i < rows.length; i++) table.tBodies[0].appendChild(rows[i]);
+
+    linklist[sort_col].classList.add(sort_direction ? "asc" : "desc")
+    return false;
+  };
+
+  /** Filters table by given text, matching any words. */
+  var doSearch = function(table_id, text) {
+    var words = String(text).split(/\s/g).filter(Boolean);
+    var regexes = words.map(function(word) { return new RegExp(escapeRegExp(word), "i"); });
+    var table = document.getElementById(table_id);
+    table.classList.add("hidden");
+    var rowlist = table.getElementsByTagName("tr");
+    for (var i = 1, ll = rowlist.length; i < ll; i++) {
+      var show = !text;
+      var tr = rowlist[i];
+      for (var j = 0, cc = tr.childElementCount; j < cc && !show; j++) {
+        var text = tr.children[j].innerText;
+        if (regexes.every(function(rgx) { return text.match(rgx); })) { show = true; break; };
+      };
+      tr.classList[show ? "remove" : "add"]("hidden");
+    };
+    table.classList.remove("hidden");
+  };
+
+  /** Returns string with special characters escaped for RegExp. */
+  var escapeRegExp = function(string) {
+    return string.replace(/[-[\]{}()*+!<=:?.\/\^$|#\s,]/g, "\$&");
+  };
+
+  /** Shows modal dialog with hero charsheet. */
+  var showHero = function(index) {
+  };
+
+  /** Returns comparison result of given children in a vs b. */
+  var sortfn = function(sort_col, sort_direction, a, b) {
+    var v1 = a.children[sort_col].innerText.toLowerCase();
+    var v2 = b.children[sort_col].innerText.toLowerCase();
+    var result = String(v1).localeCompare(String(v2), undefined, {numeric: true});
+    return sort_direction ? result : -result;
+  };
+
+  </script>
+</head>
+<body>
+<div id="content">
+  <div id="info">
+  Source: <b>{{ savefile.filename }}</b><br />
+  Size: <b>{{ util.format_bytes(savefile.size) }}</b><br />
+  Game version: <b>{{ next((x["label"] for x in plugins.version.PLUGINS if x["name"] == savefile.version), "unknown") }}</b><br />
+  Heroes: <b>{{ len(heroes) if len(heroes) == count else "%s exported (%s total)" % (len(heroes), count) }}</b><br />
+  </div>
+
+<div id="search">
+    <input type="search" placeholder="Filter heroes" title="Filter heroes on any matching text" onkeyup="onSearch(event)" onsearch="onSearch(event)">
+</div>
+<table id="heroes">
+  <tr>
+    <th class="index asc"><a class="sort asc" title="Sort by index" onclick="onSort(this)">#</a></th>
+    <th><a class="sort" title="Sort by name" onclick="onSort(this)">Name</a></th>
+%if not categories or categories["stats"]:
+    <th><a class="sort" title="Sort by level" onclick="onSort(this)">Level</a></th>
+    %for label in metadata.PrimaryAttributes.values():
+    <th><a class="sort" title="Sort by {{ label.lower() }}" onclick="onSort(this)">{{ label.split()[-1] }}</a></th>
+    %endfor
+%endif
+%if not categories or categories["devices"]:
+    <th><a class="sort" title="Sort by devices" onclick="onSort(this)">Devices</a></th>
+%endif
+%if not categories or categories["skills"]:
+    <th><a class="sort" title="Sort by skills" onclick="onSort(this)">Skills</a></th>
+%endif
+%if not categories or categories["army"]:
+    <th><a class="sort" title="Sort by army" onclick="onSort(this)">Army</a></th>
+%endif
+%if not categories or categories["spells"]:
+    <th><a class="sort" title="Sort by spells" onclick="onSort(this)">Spells</a></th>
+%endif
+%if not categories or categories["artifacts"]:
+    <th><a class="sort" title="Sort by artifacts" onclick="onSort(this)">Artifacts</a></th>
+%endif
+%if not categories or categories["inventory"]:
+    <th><a class="sort" title="Sort by inventory" onclick="onSort(this)">Inventory</a></th>
+%endif
+  </tr>
+
+%for i, hero in enumerate(heroes):
+  <tr>
+    <td class="index">{{ i + 1 }}</td>
+    <td><b>{{ hero.name }}</b></td>
+%if not categories or categories["stats"]:
+    <td>{{ hero.stats["level"] }}</td>
+    %for name in metadata.PrimaryAttributes:
+    <td>{{ hero.basestats[name] }}</td>
+    %endfor
+%endif
+%if not categories or categories["devices"]:
+    <td>
+    %for prop in deviceprops:
+        %if hero.stats.get(prop["name"]):
+        {{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}<br />
+        %endif
+    %endfor
+    </td>
+%endif
+%if not categories or categories["skills"]:
+    <td>
+    %for skill in hero.skills:
+    <b>{{ skill["name"] }}:</b> {{ skill["level"] }}<br />
+    %endfor
+    </td>
+%endif
+%if not categories or categories["army"]:
+    <td>
+    %for army in filter(bool, hero.army):
+    {{ army["name"] }}: {{ army["count"] }}<br />
+    %endfor
+    </td>
+%endif
+%if not categories or categories["spells"]:
+    <td>
+    %for item in hero.spells:
+    {{ item }}<br />
+    %endfor
+    </td>
+%endif
+%if not categories or categories["artifacts"]:
+    <td>
+    %for item in filter(bool, hero.artifacts.values()):
+    {{ item }}<br />
+    %endfor
+    </td>
+%endif
+%if not categories or categories["inventory"]:
+    <td>
+    %for item in filter(bool, hero.inventory):
+    {{ item }}<br />
+    %endfor
+    </td>
+  </tr>
+%endif
+%endfor
+
+</table>
+</div>
+<div id="footer">{{ "Exported with %s on %s." % (conf.Title, datetime.datetime.now().strftime("%d.%m.%Y %H:%M")) }}</div>
+</body>
 """

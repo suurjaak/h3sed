@@ -322,7 +322,7 @@ class HeroPlugin(object):
             "timer":     None,     # wx.Timer for filtering heroes index
             "ids":       {},       # {category: wx ID for toolbar toggle}
             "toggles":   {},       # {category: toggled state}
-            "visible":   0,        # Number of heroes visible
+            "visible":   [],       # List of heroes visible
         }
         self.parse(detect_version=True)
         self.prebuild()
@@ -349,6 +349,10 @@ class HeroPlugin(object):
         bmpx = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE_AS, wx.ART_TOOLBAR, (16, 16))
         tb_index = wx.ToolBar(indexpanel, style=wx.TB_FLAT | wx.TB_NODIVIDER | wx.TB_NOICONS | wx.TB_TEXT)
         info = wx.StaticText(indexpanel)
+        export = wx.Button(indexpanel, label="Expo&rt")
+        export.SetBitmap(bmpx)
+        export.SetBitmapMargins(0, 0)
+        export.Bind(wx.EVT_BUTTON, self.on_export_heroes)
 
         for category in self.INDEX_CATEGORIES:
             b = tb_index.AddCheckTool(wx.ID_ANY, category.capitalize(), wx.NullBitmap,
@@ -420,6 +424,8 @@ class HeroPlugin(object):
         sizer_labels.Add(tb_index)
         sizer_labels.Add(info)
         sizer_opts.Add(sizer_labels, border=5, flag=wx.BOTTOM)
+        sizer_opts.AddStretchSpacer()
+        sizer_opts.Add(export, border=5, flag=wx.BOTTOM | wx.ALIGN_BOTTOM)
         indexpanel.Sizer.Add(html, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW, proportion=1)
         indexpanel.Sizer.Add(sizer_opts, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
 
@@ -560,7 +566,7 @@ class HeroPlugin(object):
         heroes, links = self._heroes[:], list(range(len(self._heroes)))
         plugins = {p["name"]: p["instance"] for p in self._plugins}
         tpl = step.Template(templates.HERO_SEARCH_TEXT)
-        tplargs = dict(plugins=plugins, categories=self._index["toggles"])
+        tplargs = dict(pluginmap=plugins, categories=self._index["toggles"])
         maketexts = lambda h: {c: tpl.expand(hero=h, category=c, **tplargs).lower()
                                for c in ([""] + self.INDEX_CATEGORIES)}
         if not self._index["herotexts"]:
@@ -581,7 +587,7 @@ class HeroPlugin(object):
                        if all(w in t for w in words)]
             links, heroes = zip(*matches) if matches else ([], [])
         self._index["text"] = searchtext
-        self._index["visible"] = len(heroes)
+        self._index["visible"] = heroes
         tplargs.update(dict(heroes=heroes, count=len(self._heroes), links=links, text=searchtext))
         page = step.Template(templates.HERO_INDEX_HTML, escape=True).expand(**tplargs)
         if page != self._index["html"]:
@@ -723,6 +729,29 @@ class HeroPlugin(object):
                           conf.Title, wx.OK | wx.ICON_ERROR)
             return
         self.select_hero(index, status=index not in self._pages.values())
+
+
+    def on_export_heroes(self, event):
+        """Handler for exporting heroes to file, opens file dialog and exports template."""
+        if not self._index["visible"]: return
+        dlg = wx.FileDialog(self._panel, wildcard="HTML document (*.html)|*.html",
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT | wx.FD_CHANGE_DIR | wx.RESIZE_BORDER
+        )
+        if wx.ID_OK != dlg.ShowModal(): return
+
+        wx.YieldIfNeeded() # Allow dialog to disappear
+        path = controls.get_dialog_path(dlg)
+        tpl = step.Template(templates.HERO_EXPORT_HTML, strip=False, escape=True)
+        plugins = {p["name"]: p["instance"] for p in self._plugins}
+        tplargs = dict(heroes=self._index["visible"], categories=self._index["toggles"],
+                       pluginmap={p["name"]: p["instance"] for p in self._plugins},
+                       savefile=self.savefile, count=len(self._heroes))
+        for hero in tplargs["heroes"]:
+            " @todo siin veel tegemist, tuleb yamlide populate ümber teha tiba. "
+            if 0 and not hero.yamls1:
+                hero.yamls1 = self.serialize_yaml(split=True)
+        with open(path, "wb") as f:
+            tpl.stream(f, **tplargs)
 
 
     def on_toggle_category(self, event):
