@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    21.02.2023
+@modified    23.02.2023
 ------------------------------------------------------------------------------
 """
 
@@ -163,71 +163,105 @@ entries = [[escape(l[2:].rstrip()).replace(" ", "&nbsp;") for l in ll] for ll in
 """
 Text to search for filtering heroes index.
 
-@param   hero     Hero instance
-@param   plugins  {name: plugin instance}
+@param   hero      Hero instance
+@param   plugins   {name: plugin instance}
+@param  ?category  category to produce if not all, or empty string for hero name only
 """
 HERO_SEARCH_TEXT = """<%
 from h3sed import conf, metadata
 deviceprops = plugins["stats"].props()
 deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+category = category if isdef("category") else None
 %>
+%if category is None or not category:
 {{ hero.name }}
-%for name in metadata.PrimaryAttributes:
-{{ hero.basestats[name] }}
-%endfor
+%endif
+%if category is None or "stats" == category:
 {{ hero.stats["level"] }}
-%for prop in deviceprops:
+    %for name in metadata.PrimaryAttributes:
+{{ hero.basestats[name] }}
+    %endfor
+%endif
+%if category is None or "devices" == category:
+    %for prop in deviceprops:
     %if hero.stats.get(prop["name"]):
 {{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}
     %endif
-%endfor
-%for skill in hero.skills:
+    %endfor
+%endif
+%if category is None or "skills" == category:
+    %for skill in hero.skills:
 {{ skill["name"] }}: {{ skill["level"] }}
-%endfor
-%for army in filter(bool, hero.army):
+    %endfor
+%endif
+%if category is None or "army" == category:
+    %for army in filter(bool, hero.army):
 {{ army["name"] }}: {{ army["count"] }}
-%endfor
-%for item in hero.spells:
+    %endfor
+%endif
+%if category is None or "spells" == category:
+    %for item in hero.spells:
 {{ item }}
-%endfor
-%for item in filter(bool, hero.artifacts.values()):
+    %endfor
+%endif
+%if category is None or "artifacts" == category:
+    %for item in filter(bool, hero.artifacts.values()):
 {{ item }}
-%endfor
-%for item in filter(bool, hero.inventory):
+    %endfor
+%endif
+%if category is None or "inventory" == category:
+    %for item in filter(bool, hero.inventory):
 {{ item }}
-%endfor
+    %endfor
+%endif
 """
 
 
 """
 HTML text shown in heroes index.
 
-@param   heroes   [Hero instance, ]
-@param   links    [link for hero, ]
-@param   count    total number of heroes
-@param   plugins  {name: plugin instance}
-@param  ?text     current search text if any
+@param   heroes      [Hero instance, ]
+@param   links       [link for hero, ]
+@param   count       total number of heroes
+@param   plugins     {name: plugin instance}
+@param  ?categories  {category: whether to show category columns} if not showing all
+@param  ?text        current search text if any
 """
 HERO_INDEX_HTML = """<%
 from h3sed import conf, metadata
 deviceprops = plugins["stats"].props()
 deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+categories = categories if isdef("categories") else None
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
 %if heroes:
 <table>
   <tr>
     <th align="left" valign="bottom">Name</th>
-%for label in metadata.PrimaryAttributes.values():
-    <th align="left" valign="bottom">{{ label.split()[-1] }}</th>
-%endfor
+%if not categories or categories["stats"]:
     <th align="left" valign="bottom">Level</th>
+    %for label in metadata.PrimaryAttributes.values():
+    <th align="left" valign="bottom">{{ label.split()[-1] }}</th>
+    %endfor
+%endif
+%if not categories or categories["devices"]:
     <th align="left" valign="bottom">Devices</th>
+%endif
+%if not categories or categories["skills"]:
     <th align="left" valign="bottom">Skills</th>
+%endif
+%if not categories or categories["army"]:
     <th align="left" valign="bottom">Army</th>
+%endif
+%if not categories or categories["spells"]:
     <th align="left" valign="bottom">Spells</th>
+%endif
+%if not categories or categories["artifacts"]:
     <th align="left" valign="bottom">Artifacts</th>
+%endif
+%if not categories or categories["inventory"]:
     <th align="left" valign="bottom">Inventory</th>
+%endif
   </tr>
 %elif count and isdef("text") and text.strip():
    <i>No heroes to display for "{{ text }}"</i>
@@ -237,43 +271,57 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
 %for i, hero in enumerate(heroes):
   <tr>
     <td align="left" valign="top" nowrap><a href="{{ links[i] }}"><font color="{{ conf.LinkColour }}">{{ hero.name }}</font></a></td>
-%for name in metadata.PrimaryAttributes:
-    <td align="left" valign="top" nowrap>{{ hero.basestats[name] }}</td>
-%endfor
+%if not categories or categories["stats"]:
     <td align="left" valign="top" nowrap>{{ hero.stats["level"] }}</td>
+    %for name in metadata.PrimaryAttributes:
+    <td align="left" valign="top" nowrap>{{ hero.basestats[name] }}</td>
+    %endfor
+%endif
+%if not categories or categories["devices"]:
     <td align="left" valign="top" nowrap>
-%for prop in deviceprops:
-    %if hero.stats.get(prop["name"]):
+    %for prop in deviceprops:
+        %if hero.stats.get(prop["name"]):
         {{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}<br />
-    %endif
-%endfor
+        %endif
+    %endfor
     </td>
+%endif
+%if not categories or categories["skills"]:
     <td align="left" valign="top" nowrap>
-%for skill in hero.skills:
+    %for skill in hero.skills:
     <b>{{ skill["name"] }}:</b> {{ skill["level"] }}<br />
-%endfor
+    %endfor
     </td>
+%endif
+%if not categories or categories["army"]:
     <td align="left" valign="top" nowrap>
-%for army in filter(bool, hero.army):
+    %for army in filter(bool, hero.army):
     {{ army["name"] }}: {{ army["count"] }}<br />
-%endfor
+    %endfor
     </td>
+%endif
+%if not categories or categories["spells"]:
     <td align="left" valign="top" nowrap>
-%for item in hero.spells:
+    %for item in hero.spells:
     {{ item }}<br />
-%endfor
+    %endfor
     </td>
+%endif
+%if not categories or categories["artifacts"]:
     <td align="left" valign="top" nowrap>
-%for item in filter(bool, hero.artifacts.values()):
+    %for item in filter(bool, hero.artifacts.values()):
     {{ item }}<br />
-%endfor
+    %endfor
     </td>
+%endif
+%if not categories or categories["inventory"]:
     <td align="left" valign="top" nowrap>
-%for item in filter(bool, hero.inventory):
+    %for item in filter(bool, hero.inventory):
     {{ item }}<br />
-%endfor
+    %endfor
     </td>
   </tr>
+%endif
 %endfor
 %if heroes:
 </table>
