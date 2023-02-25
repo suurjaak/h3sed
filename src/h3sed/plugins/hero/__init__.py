@@ -76,9 +76,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  24.02.2023
+@modified  25.02.2023
 ------------------------------------------------------------------------------
 """
+import collections
 import copy
 import functools
 import glob
@@ -321,8 +322,8 @@ class HeroPlugin(object):
             "text":      "",       # Current search text
             "timer":     None,     # wx.Timer for filtering heroes index
             "ids":       {},       # {category: wx ID for toolbar toggle}
-            "toggles":   {},       # {category: toggled state}
             "visible":   [],       # List of heroes visible
+            "toggles":   collections.OrderedDict(),  # {category: toggled state}
         }
         self.parse(detect_version=True)
         self.prebuild()
@@ -356,7 +357,8 @@ class HeroPlugin(object):
 
         for category in self.INDEX_CATEGORIES:
             b = tb_index.AddCheckTool(wx.ID_ANY, category.capitalize(), wx.NullBitmap,
-                                      shortHelp="Show or hide %s columns" % category)
+                                      shortHelp="Show or hide %s column%s" %
+                                                (category, "s" if "stats" == category else ""))
             tb_index.ToggleTool(b.Id, True)
             tb_index.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
             self._index["ids"][category] = b.Id

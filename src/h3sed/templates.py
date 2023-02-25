@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    24.02.2023
+@modified    25.02.2023
 ------------------------------------------------------------------------------
 """
 
@@ -338,7 +338,7 @@ HTML text for exporting heroes to file.
 @param   pluginmap   {name: plugin instance}
 @param   savefile    metadata.Savefile instance
 @param   count       total number of heroes
-@param  ?categories  {category: whether to show category columns} if not showing all
+@param   categories  {category: whether to show category columns initially}
 """
 HERO_EXPORT_HTML = """<%
 import datetime
@@ -363,7 +363,7 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
       color: blue;
       text-decoration: none;
     }
-    table { border-spacing: 2px; empty-cells: show; }
+    table { border-spacing: 2px; empty-cells: show; width: 100%; }
     td, th { border: 1px solid #C0C0C0; padding: 5px; }
     th { text-align: left; white-space: nowrap; }
     td { vertical-align: top; }
@@ -386,7 +386,10 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
     #info {
       margin-bottom: 10px;
     }
-    #search { margin-right: 2px; text-align: right; }
+    #opts { display: flex; justify-content: space-between; margin-right: 2px; }
+    #toggles { display: flex; }
+    #toggles > label { display: flex; align-items: center; margin-right: 5px; }
+    #toggles > .last-child { margin-left: auto; }
     #footer {
       color: white;
       padding: 10px 0;
@@ -394,8 +397,29 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
     }
   </style>
   <script>
+<%
+MULTICOLS = {"stats": [3, 4, 5, 6, 7]}
+colptr = 7 if categories["stats"] else 3  # 1: index 2: name
+%>
+  var CATEGORIES = {  // {category: [table column index, ]}
+%for i, (category, state) in enumerate(categories.items()):
+    %if state:
+    "{{ category }}": {{! MULTICOLS.get(category) or [colptr] }},
+    %endif
+<%
+colptr += state
+%>
+%endfor
+  };
+  var toggles = {
+%for category in (k for k, v in categories.items() if v):
+    "{{ category }}": true,
+%endfor
+  };
+  var SEARCH_DELAY = 200;  // Milliseconds to delay search after input
   var searchText = "";
   var searchTimer = null;
+
 
   /** Schedules search after delay. */
   var onSearch = function(evt) {
@@ -409,11 +433,12 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
         doSearch("heroes", mysearch);
       };
       searchTimer = null;
-    }, 200);
+    }, SEARCH_DELAY);
   };
 
-  /** Sorts table by column of given header link. */
-  function onSort(link) {
+
+  /** Sorts table by column of given table header link. */
+  var onSort = function(link) {
     var col = null;
     var prev_col = null;
     var prev_direction = null;
@@ -429,8 +454,7 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
       linklist[i].classList.remove("desc");
     };
     var sort_col = col;
-    var sort_direction = (sort_col == prev_col) ? !prev_direction : prev_direction;
-    var table = link.closest("table");
+    var sort_direction = (sort_col == prev_col) ? !prev_direction : true;
     var rowlist = table.getElementsByTagName("tr");
     var rows = [];
     for (var i = 1, ll = rowlist.length; i != ll; rows.push(rowlist[i++]));
@@ -441,33 +465,50 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
     return false;
   };
 
-  /** Filters table by given text, matching any words. */
+
+  /** Shows or hides category columns. */
+  var onToggle = function(category, elem) {
+    toggles[category] = elem.checked;
+    CATEGORIES[category].forEach(function(col) {
+      document.querySelectorAll("#heroes > tbody > tr > :nth-child(" + col + ")").forEach(function(elem) {
+        toggles[category] ? elem.classList.remove("hidden") : elem.classList.add("hidden");
+      })
+    });
+    doSearch("heroes", searchText);
+  };
+
+
+  /** Filters table by given text, retaining row if all words find a match in row cells. */
   var doSearch = function(table_id, text) {
     var words = String(text).split(/\s/g).filter(Boolean);
     var regexes = words.map(function(word) { return new RegExp(escapeRegExp(word), "i"); });
     var table = document.getElementById(table_id);
     table.classList.add("hidden");
     var rowlist = table.getElementsByTagName("tr");
+    var HIDDENCOLS = Object.keys(CATEGORIES).reduce(function(o, v, i) {
+      if (!toggles[v]) Array.prototype.push.apply(o, CATEGORIES[v]);
+      return o;
+    }, [])
     for (var i = 1, ll = rowlist.length; i < ll; i++) {
-      var show = !text;
+      var matches = {};  // {regex index: bool}
+      var show = !words.length;
       var tr = rowlist[i];
       for (var j = 0, cc = tr.childElementCount; j < cc && !show; j++) {
-        var text = tr.children[j].innerText;
-        if (regexes.every(function(rgx) { return text.match(rgx); })) { show = true; break; };
+        var ctext = (HIDDENCOLS.indexOf(j + 1) < 0) ? tr.children[j].innerText : "";
+        ctext && regexes.forEach(function(rgx, k) { if (ctext.match(rgx)) matches[k] = true; });
       };
+      show = show || regexes.every(function(_, k) { return matches[k]; });
       tr.classList[show ? "remove" : "add"]("hidden");
     };
     table.classList.remove("hidden");
   };
+
 
   /** Returns string with special characters escaped for RegExp. */
   var escapeRegExp = function(string) {
     return string.replace(/[-[\]{}()*+!<=:?.\/\^$|#\s,]/g, "\$&");
   };
 
-  /** Shows modal dialog with hero charsheet. */
-  var showHero = function(index) {
-  };
 
   /** Returns comparison result of given children in a vs b. */
   var sortfn = function(sort_col, sort_direction, a, b) {
@@ -476,7 +517,6 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
     var result = String(v1).localeCompare(String(v2), undefined, {numeric: true});
     return sort_direction ? result : -result;
   };
-
   </script>
 </head>
 <body>
@@ -488,8 +528,13 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
   Heroes: <b>{{ len(heroes) if len(heroes) == count else "%s exported (%s total)" % (len(heroes), count) }}</b><br />
   </div>
 
-<div id="search">
-    <input type="search" placeholder="Filter heroes" title="Filter heroes on any matching text" onkeyup="onSearch(event)" onsearch="onSearch(event)">
+<div id="opts">
+  <div id="toggles">
+%for category in (k for k, v in categories.items() if v):
+    <label for="toggle-{{ category }}" title="Show or hide {{ category }} column{{ "s" if "stats" == k else "" }}"><input type="checkbox" id="toggle-{{ category }}" onclick="onToggle('{{ category }}', this)" checked />{{ category.capitalize() }}</label>
+%endfor
+  </div>
+  <input type="search" placeholder="Filter heroes" title="Filter heroes on any matching text" onkeyup="onSearch(event)" onsearch="onSearch(event)">
 </div>
 <table id="heroes">
   <tr>
