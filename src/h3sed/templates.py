@@ -12,7 +12,7 @@ Released under the MIT License.
 """
 
 # Modules imported inside templates:
-#import datetime, difflib, sys, wx
+#import datetime, difflib, json, sys, wx
 #from h3sed.lib.vendor import step
 #from h3sed.lib import util
 #from h3sed import conf, images, plugins, templates
@@ -341,7 +341,7 @@ HTML text for exporting heroes to file.
 @param   categories  {category: whether to show category columns initially}
 """
 HERO_EXPORT_HTML = """<%
-import datetime
+import datetime, json
 from h3sed.lib import util
 from h3sed import conf, images, metadata, plugins
 deviceprops = pluginmap["stats"].props()
@@ -374,7 +374,7 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
     a.sort::after      { content: ""; display: inline-block; min-width: 6px; position: relative; left: 3px; top: -1px; }
     a.sort.asc::after  { content: "↓"; }
     a.sort.desc::after { content: "↑"; }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
     #content {
       background-color: white;
       border-radius: 5px;
@@ -395,6 +395,47 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
       padding: 10px 0;
       text-align: center;
     }
+    #overlay {
+      display: flex;
+      align-items: center;
+      bottom: 0;
+      justify-content: center;
+      left: 0;
+      position: fixed;
+      right: 0;
+      top: 0;
+      z-index: 10000;
+    }
+    #overlay #overshadow {
+      background: black;
+      bottom: 0;
+      height: 100%;
+      left: 0;
+      opacity: 0.5;
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 100%;
+    }
+    #overlay #overbox {
+      background: white;
+      opacity: 1;
+      padding: 10px;
+      z-index: 10001;
+      max-width: calc(100% - 2 * 10px);
+      max-height: calc(100% - 2 * 10px - 20px);
+      overflow: auto;
+      position: relative;
+    }
+    #overlay #overbox > a {
+      position: absolute;
+      right: 5px;
+      top: 2px;
+    }
+    #overlay #overcontent {
+      font-family: monospace;
+      white-space: pre;
+    }
   </style>
   <script>
 <%
@@ -411,6 +452,11 @@ colptr += state
 %>
 %endfor
   };
+  var HEROES = [
+%for i, hero in enumerate(heroes):
+    {{! json.dumps(hero.yaml) }},
+%endfor
+  ];
   var toggles = {
 %for category in (k for k, v in categories.items() if v):
     "{{ category }}": true,
@@ -510,6 +556,13 @@ colptr += state
   };
 
 
+  /** Toggles modal dialog with hero charsheet. */
+  var showHero = function(index) {
+    document.getElementById("overcontent").innerText = HEROES[index];
+    document.getElementById("overlay").classList.toggle("hidden");
+  };
+
+
   /** Returns comparison result of given children in a vs b. */
   var sortfn = function(sort_col, sort_direction, a, b) {
     var v1 = a.children[sort_col].innerText.toLowerCase();
@@ -517,6 +570,14 @@ colptr += state
     var result = String(v1).localeCompare(String(v2), undefined, {numeric: true});
     return sort_direction ? result : -result;
   };
+
+
+  window.addEventListener("load", function() {
+    document.location.hash = "";
+    document.body.addEventListener("keydown", function(evt) {
+      if (evt.keyCode == 27 && !document.getElementById("overlay").classList.contains("hidden")) showHero();
+    });
+  });
   </script>
 </head>
 <body>
@@ -531,7 +592,7 @@ colptr += state
 <div id="opts">
   <div id="toggles">
 %for category in (k for k, v in categories.items() if v):
-    <label for="toggle-{{ category }}" title="Show or hide {{ category }} column{{ "s" if "stats" == k else "" }}"><input type="checkbox" id="toggle-{{ category }}" onclick="onToggle('{{ category }}', this)" checked />{{ category.capitalize() }}</label>
+    <label for="toggle-{{ category }}" title="Show or hide {{ category }} column{{ "s" if "stats" == category else "" }}"><input type="checkbox" id="toggle-{{ category }}" onclick="onToggle('{{ category }}', this)" checked />{{ category.capitalize() }}</label>
 %endfor
   </div>
   <input type="search" placeholder="Filter heroes" title="Filter heroes on any matching text" onkeyup="onSearch(event)" onsearch="onSearch(event)">
@@ -569,7 +630,7 @@ colptr += state
 %for i, hero in enumerate(heroes):
   <tr>
     <td class="index">{{ i + 1 }}</td>
-    <td><b>{{ hero.name }}</b></td>
+    <td><a href="#{{ hero.name }}" title="Show {{ hero.name }} character sheet" onclick="showHero({{ i }})">{{ hero.name }}</a></td>
 %if not categories or categories["stats"]:
     <td>{{ hero.stats["level"] }}</td>
     %for name in metadata.PrimaryAttributes:
@@ -626,5 +687,6 @@ colptr += state
 </table>
 </div>
 <div id="footer">{{ "Exported with %s on %s." % (conf.Title, datetime.datetime.now().strftime("%d.%m.%Y %H:%M")) }}</div>
+<div id="overlay" class="hidden"><div id="overshadow" onclick="showHero()"></div><div id="overbox"><a href="" title="Close" onclick="showHero()">x</a><div id="overcontent"></div></div></div>
 </body>
 """
