@@ -532,6 +532,7 @@ class HeroPlugin(object):
 
         self.parse()
         self._panel.Freeze()
+        self._ignore_paging = True
         try:
             while tabs.GetPageCount() > 1: tabs.DeletePage(1)
             self.build()
@@ -557,6 +558,7 @@ class HeroPlugin(object):
             if index is not None: self.select_hero(index, status=False)
             self._panel.Layout()
         finally:
+            self._ignore_paging = False
             self._panel.Thaw()
 
 
