@@ -327,6 +327,11 @@ class HeroPlugin(object):
             "visible":   [],       # List of heroes visible
             "toggles":   collections.OrderedDict(),  # {category: toggled state}
         }
+        self._dialog_export = wx.FileDialog(panel, "Export heroes to file",
+            wildcard="CSV spreadsheet (*.csv)|*.csv|HTML document (*.html)|*.html",
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT | wx.FD_CHANGE_DIR | wx.RESIZE_BORDER
+        )
+        self._dialog_export.FilterIndex = 1
         self.parse(detect_version=True)
         self.prebuild()
         panel.Bind(gui.EVT_PLUGIN, self.on_plugin_event)
@@ -355,6 +360,7 @@ class HeroPlugin(object):
         export = wx.Button(indexpanel, label="Expo&rt")
         export.SetBitmap(bmpx)
         export.SetBitmapMargins(0, 0)
+        export.ToolTip = "Export heroes to HTML or CSV"
         export.Bind(wx.EVT_BUTTON, self.on_export_heroes)
 
         for category in self.INDEX_CATEGORIES:
@@ -741,22 +747,35 @@ class HeroPlugin(object):
 
 
     def on_export_heroes(self, event):
-        """Handler for exporting heroes to file, opens file dialog and exports template."""
+        """Handler for exporting heroes to file, opens file dialog and exports data."""
         if not self._index["visible"]: return
-        dlg = wx.FileDialog(self._panel, wildcard="HTML document (*.html)|*.html",
-            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT | wx.FD_CHANGE_DIR | wx.RESIZE_BORDER
-        )
-        if wx.ID_OK != dlg.ShowModal(): return
+        basename = os.path.splitext(os.path.basename(self.savefile.filename))[0]
+        self._dialog_export.Filename = "Heroes from %s" % basename
+        if wx.ID_OK != self._dialog_export.ShowModal(): return
 
         wx.YieldIfNeeded() # Allow dialog to disappear
-        path = controls.get_dialog_path(dlg)
-        tpl = step.Template(templates.HERO_EXPORT_HTML, strip=False, escape=True)
+        path = controls.get_dialog_path(self._dialog_export)
+        guibase.status("Exporting %s..", path, flash=True)
         plugins = {p["name"]: p["instance"] for p in self._plugins}
-        tplargs = dict(heroes=self._index["visible"], categories=self._index["toggles"],
-                       pluginmap={p["name"]: p["instance"] for p in self._plugins},
-                       savefile=self.savefile, count=len(self._heroes))
-        with open(path, "wb") as f:
-            tpl.stream(f, **tplargs)
+        if self._dialog_export.FilterIndex:
+            tpl = step.Template(templates.HERO_EXPORT_HTML, strip=False, escape=True)
+            tplargs = dict(heroes=self._index["visible"], categories=self._index["toggles"],
+                           pluginmap=plugins, savefile=self.savefile, count=len(self._heroes))
+            with open(path, "wb") as f:
+                tpl.stream(f, **tplargs)
+        else:
+            COLS = ["name"]
+            for k in (k for k, v in self._index["toggles"].items() if v):
+                COLS.extend((["level"] + list(metadata.PrimaryAttributes)) if "stats" == k else [k])
+            tpl = step.Template(templates.HERO_EXPORT_CSV, strip=False)
+            with util.csv_writer(path) as f:
+                f.writerow([c.capitalize() for c in COLS])
+                for hero in self._index["visible"]:
+                    vv = [tpl.expand(hero=hero, column=c, pluginmap=plugins).strip() for c in COLS]
+                    f.writerow(vv)
+        guibase.status("Exported %s (%s).", path, util.format_bytes(os.path.getsize(path)),
+                       flash=True)
+        util.start_file(path)
 
 
     def on_toggle_category(self, event):
@@ -791,7 +810,7 @@ class HeroPlugin(object):
         hero2.ensure_basestats()
         combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
-        if status: guibase.status("Loading %s." % hero2.name, flash=True)
+        if status: guibase.status("Loading %s.", hero2.name, flash=True)
 
         self._panel.Freeze()
         combo.SetSelection(index)

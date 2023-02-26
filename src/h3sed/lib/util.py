@@ -7,10 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    24.02.2023
+@modified    26.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
+import codecs
+import csv
 import ctypes
 import datetime
 import locale
@@ -31,6 +33,49 @@ try: text_types = (str, unicode)        # Py2
 except Exception: text_types = (str, )  # Py3
 try: string_type = unicode              # Py2
 except Exception: string_type = str     # Py3
+
+
+class csv_writer(object):
+    """Convenience wrapper for csv.Writer, with Python2/3 compatbility."""
+
+    def __init__(self, file_or_name):
+        if isinstance(file_or_name, text_types):
+            self._name = file_or_name
+            self._file = open(self._name, "wb") if sys.version_info < (3, ) else \
+                         codecs.open(self._name, "w", "utf-8")
+        else:
+            self._name = None
+            self._file = file_or_name
+        # csv.excel.delimiter default "," is not actually used by Excel.
+        self._writer = csv.writer(self._file, csv.excel, delimiter=";")
+
+    def __enter__(self):
+        """Context manager entry, does nothing, returns self."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Context manager exit, closes file."""
+        self.close()
+
+    def writerow(self, sequence=()):
+        """Writes a CSV record from a sequence of fields."""
+        REPLS = {"\r\n": "\r\n", "\r": "\r\n", "\n": "\r\n", "\x00": "\\x00", '"': '""', "'": "''"}
+        RGX = re.compile("|".join(map(re.escape, REPLS)))
+        QRGX = re.compile("|".join(map(re.escape, '",')))
+        values = []
+        for v in sequence:
+            if sys.version_info < (3, ):
+                v = to_unicode(v).encode("utf-8", "backslashreplace")
+            if isinstance(v, text_types) and RGX.search(v):
+                v = RGX.sub(lambda m: REPLS[m.group()], v)
+            if isinstance(v, text_types) and QRGX.search(v):
+                v = '"%s"' % v
+            values.append(v)
+        self._writer.writerow(values)
+
+    def close(self):
+        """Closes CSV file writer."""
+        if self._name: self._file.close()
 
 
 def m(o, name, case_insensitive=True):
@@ -159,6 +204,30 @@ def select_file(filepath):
         return start_file(os.path.split(filepath)[0])
     try: subprocess.Popen('explorer /select, "%s"' % shortpath(filepath))
     except Exception: start_file(os.path.split(filepath)[0])
+
+
+def start_file(filepath):
+    """
+    Tries to open the specified file or directory in the operating system.
+
+    @return  (success, error message)
+    """
+    success, error = True, ""
+    try:
+        if "nt" == os.name:
+            try: os.startfile(filepath)
+            except WindowsError as e:
+                if 1155 == e.winerror: # ERROR_NO_ASSOCIATION
+                    cmd = "Rundll32.exe SHELL32.dll, OpenAs_RunDLL %s"
+                    os.popen(cmd % filepath)
+                else: raise
+        elif "mac" == os.name:
+            subprocess.call(("open", filepath))
+        elif "posix" == os.name:
+            subprocess.call(("xdg-open", filepath))
+    except Exception as e:
+        success, error = False, format_exc(e)
+    return success, error
 
 
 def add_unique(lst, item, direction=1, maxlen=sys.maxsize):

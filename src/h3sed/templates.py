@@ -185,9 +185,9 @@ category = category if isdef("category") else None
 %endif
 %if category is None or "devices" == category:
     %for prop in deviceprops:
-    %if hero.stats.get(prop["name"]):
+        %if hero.stats.get(prop["name"]):
 {{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}
-    %endif
+        %endif
     %endfor
 %endif
 %if category is None or "skills" == category:
@@ -328,6 +328,51 @@ categories = categories if isdef("categories") else None
 </table>
 %endif
 </font>
+"""
+
+
+"""
+Text to provide for hero columns in CSV export.
+
+@param   hero       Hero instance
+@param   column     column to provide like "level" or "devices"
+@param   pluginmap  {name: plugin instance}
+"""
+HERO_EXPORT_CSV = """<%
+deviceprops = pluginmap["stats"].props()
+deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+%>
+%if "name" == column:
+{{ hero.name }}
+%elif column in hero.stats:
+{{ hero.stats[column] }}
+%elif "devices" == column:
+    %for prop in deviceprops:
+        %if hero.stats.get(prop["name"]):
+{{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}
+        %endif
+    %endfor
+%elif "skills" == column:
+    %for skill in hero.skills:
+{{ skill["name"] }}: {{ skill["level"] }}
+    %endfor
+%elif "army" == column:
+    %for army in filter(bool, hero.army):
+{{ army["name"] }}: {{ army["count"] }}
+    %endfor
+%elif "spells" == column:
+    %for item in hero.spells:
+{{ item }}
+    %endfor
+%elif "artifacts" == column:
+    %for slot, item in ((k, v) for k, v in hero.artifacts.items() if v):
+{{ slot }}: {{ item }}
+    %endfor
+%elif "inventory" == column:
+    %for item in filter(bool, hero.inventory):
+{{ item }}
+    %endfor
+%endif
 """
 
 
