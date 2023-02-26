@@ -250,7 +250,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             wx.ID_ANY, "Re&load", "Reload savefile, losing any current changes"
         )
         menu_save = self.menu_save = menu_file.Append(
-            wx.ID_ANY, "&Save", "Save changes to the active file"
+            wx.ID_ANY, "&Save", "Save the active file"
         )
         menu_save_as = self.menu_save_as = menu_file.Append(
             wx.ID_ANY, "Save &as...", "Save the active file under a new name"
@@ -271,6 +271,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu_confirm = self.menu_confirm = menu_options.Append(
             wx.ID_ANY, "&Confirm unsaved changes", "Ask for confirmation on closing files with unsaved changes",
             kind=wx.ITEM_CHECK
+        )
+        menu_options.AppendSeparator()
+        menu_clear = self.menu_clear = menu_options.Append(
+            wx.ID_ANY, "Clear &recent items", "Clear recent files and heroes list",
         )
         menu_confirm.Check(conf.ConfirmUnsaved)
         menu_file.AppendSeparator()
@@ -331,6 +335,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_save_savefile_as, menu_save_as)
         self.Bind(wx.EVT_MENU, self.on_menu_backup,      menu_backup)
         self.Bind(wx.EVT_MENU, self.on_menu_confirm,     menu_confirm)
+        self.Bind(wx.EVT_MENU, self.on_clear_recent,     menu_clear)
         self.Bind(wx.EVT_MENU, self.on_exit,             menu_exit)
         self.Bind(wx.EVT_MENU, self.on_undo_savefile,    menu_undo)
         self.Bind(wx.EVT_MENU, self.on_redo_savefile,    menu_redo)
@@ -352,7 +357,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                  (),
                  ("Reload",  wx.ID_REFRESH, "ToolbarRefresh",    self.on_reload_savefile)]
         TOOL_HELPS = {wx.ID_OPEN:    "Choose a savefile to open",
-                      wx.ID_SAVE:    "Save changes to the active file",
+                      wx.ID_SAVE:    "Save the active file",
                       wx.ID_SAVEAS:  "Save the active file under a new name",
                       wx.ID_UNDO:    "Undo the last action",
                       wx.ID_REDO:    "Redo the previously undone action",
@@ -772,6 +777,14 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         conf.save()
 
 
+    def on_clear_recent(self, event):
+        """Handler for clearing recent files and heroes list."""
+        while self.history_file.Count: self.history_file.RemoveFileFromHistory(0)
+        self.history_hero.Clear()
+        conf.RecentFiles, conf.RecentHeroes = [], []
+        conf.save()
+
+
     def on_show_changes(self, event=None):
         """Handler for clicking to show unsaved changes, pops up info dialog."""        
         page = self.notebook.GetCurrentPage()
@@ -784,6 +797,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if not isinstance(page, SavefilePage): return
         dlg = controls.CommandHistoryDialog(self, page.undoredo)
         if dlg.ShowModal() != wx.ID_OK: return
+
         count, cando, do = dlg.GetSelection(), page.undoredo.CanUndo, page.undoredo.Undo
         if count >= 0: cando, do = page.undoredo.CanRedo, page.undoredo.Redo
         verb = "Undo" if count < 0 else "Redo"

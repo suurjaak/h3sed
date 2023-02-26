@@ -22,7 +22,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    24.02.2023
+@modified    26.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -483,6 +483,12 @@ class ItemHistory(wx.Object):
         if item in self._items:
             self._items.remove(item)
             self.Populate()
+
+
+    def Clear(self):
+        """Removes all items from history and menu."""
+        self._items.clear()
+        self.Populate()
 
 
     def GetCount(self):
