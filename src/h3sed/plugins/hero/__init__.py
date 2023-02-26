@@ -803,7 +803,7 @@ class HeroPlugin(object):
         if not self._panel: return
         hero2 = self._heroes[index] if index < len(self._heroes) else None
         if not hero2: return
-        if hero2 is self._hero:
+        if hero2 is self._hero and index in self._pages.values():
             self.select_hero_tab(index)
             return
 
@@ -817,7 +817,9 @@ class HeroPlugin(object):
         if index not in self._pages.values():
             page = wx.Window(tabs)
             self._pages[page] = index
-            tabs.AddPage(page, hero2.name, select=True)
+            changed = hero2.yamls2 and hero2.yamls1 != hero2.yamls2
+            title = "%s%s" % (hero2.name, "*" if changed else "")
+            tabs.AddPage(page, title, select=True)
         else:
             self.select_hero_tab(index)
 
@@ -1087,6 +1089,11 @@ class HeroPlugin(object):
                 self._hero.bytes = p["instance"].serialize()
         self.savefile.patch(self._hero.bytes, self._hero.span)
         self.serialize_yaml(self._hero, changes=True)
+        changed = self._hero.yamls2 and self._hero.yamls1 != self._hero.yamls2
+        title = "%s%s" % (self._hero.name, "*" if changed else "")
+        index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
+        page = next(p for p, i in self._pages.items() if i == index)
+        self._ctrls["tabs"].SetPageText(self._ctrls["tabs"].GetPageIndex(page), title)
         wx.PostEvent(self._panel, gui.SavefilePageEvent(self._panel.Id))
 
 
