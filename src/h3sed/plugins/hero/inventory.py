@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  19.02.2023
+@modified  26.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -71,8 +71,7 @@ class InventoryPlugin(object):
     def props(self):
         """Returns props for inventory-tab, as [{type: "itemlist", ..}]."""
         result = []
-        ver = self._savefile.version
-        cc = sorted(metadata.Store.get("artifacts", version=ver, category="inventory"))
+        cc = sorted(metadata.Store.get("artifacts", self._savefile.version, category="inventory"))
         for prop in UIPROPS:
             myprop = dict(prop, item=[])
             for item in prop["item"]:
@@ -95,7 +94,7 @@ class InventoryPlugin(object):
     def load(self, hero, panel=None):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = self.parse(hero)
+        self._state[:] = self.parse([hero])[0]
         self._state0 = copy.deepcopy(self._state)
         hero.inventory = self._state
         if panel: self._panel = panel
@@ -105,9 +104,9 @@ class InventoryPlugin(object):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
         state0 = type(self._state)(self._state)
         state = state + [None] * (self.props()[0]["max"] - len(state))
-        ver = self._savefile.version
+        version = self._savefile.version
         cmap = {x.lower(): x
-                for x in metadata.Store.get("artifacts", version=ver, category="inventory")}
+                for x in metadata.Store.get("artifacts", version, category="inventory")}
         for i, v in enumerate(state):
             if v and hasattr(v, "lower") and v.lower() in cmap:
                 self._state[i] = cmap[v.lower()]
@@ -127,24 +126,26 @@ class InventoryPlugin(object):
             self._ctrls = gui.build(self, self._panel)[0]
 
 
-    def parse(self, hero):
-        """Returns inventory state parsed from hero bytearray, as [item or None, ..]."""
+    def parse(self, heroes):
+        """Returns inventory states parsed from hero bytearrays, as [[item or None, ..], ]."""
         result = []
-
-        IDS   = metadata.Store.get("ids")
-        NAMES = {x[y]: y for x in [IDS]
-                 for y in metadata.Store.get("artifacts", category="inventory")}
+        IDS   = metadata.Store.get("ids", self._savefile.version)
+        NAMES = {x[y]: y for x in [IDS] for y in
+                 metadata.Store.get("artifacts", self._savefile.version, category="inventory")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        def parse_item(pos):
+        def parse_item(hero, pos):
             b, v = hero.bytes[pos:pos + 4], util.bytoi(hero.bytes[pos:pos + 4])
             if all(x == metadata.Blank for x in b): return None # Blank
             return util.bytoi(hero.bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
 
-        for prop in self.props():
-            for i in range(prop["max"]):
-                v = parse_item(MYPOS["inventory"] + i*8)
-                result.append(NAMES.get(v))
+        for hero in heroes:
+            values = []
+            for prop in self.props():
+                for i in range(prop["max"]):
+                    v = parse_item(hero, MYPOS["inventory"] + i*8)
+                    values.append(NAMES.get(v))
+            result.append(values)
         return result
 
 
@@ -153,8 +154,8 @@ class InventoryPlugin(object):
         result = self._hero.bytes[:]
         bytes0 = self._hero.get_bytes(original=True)
 
-        IDS = metadata.Store.get("ids")
-        SCROLL_ARTIFACTS = metadata.Store.get("artifacts", category="scroll")
+        IDS = metadata.Store.get("ids", self._savefile.version)
+        SCROLL_ARTIFACTS = metadata.Store.get("artifacts", self._savefile.version, category="scroll")
         MYPOS = plugins.adapt(self, "pos", POS)
         pos = MYPOS["inventory"]
 

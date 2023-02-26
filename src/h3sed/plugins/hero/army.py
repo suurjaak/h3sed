@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  19.02.2023
+@modified  26.02.2023
 ------------------------------------------------------------------------------
 """
 import copy
@@ -80,8 +80,7 @@ class ArmyPlugin(object):
     def props(self):
         """Returns props for army-tab, as [{type: "itemlist", ..}]."""
         result = []
-        ver = self._savefile.version
-        cc = sorted(metadata.Store.get("creatures", version=ver))
+        cc = sorted(metadata.Store.get("creatures", self._savefile.version))
         for prop in UIPROPS:
             myprop = dict(prop, item=[])
             for item in prop["item"]:
@@ -104,7 +103,7 @@ class ArmyPlugin(object):
     def load(self, hero, panel=None):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = self.parse(hero)
+        self._state[:] = self.parse([hero])[0]
         self._state0 = copy.deepcopy(self._state)
         hero.army = self._state
         if panel:
@@ -116,8 +115,7 @@ class ArmyPlugin(object):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
         MYPROPS = self.props()
         state0 = type(self._state)(self._state)
-        ver = self._savefile.version
-        cmap = {x.lower(): x for x in metadata.Store.get("creatures", version=ver)}
+        cmap = {x.lower(): x for x in metadata.Store.get("creatures", self._savefile.version)}
         countitem = next(x for x in MYPROPS[0]["item"] if "count" == x.get("name"))
         MIN, MAX = countitem["min"], countitem["max"]
         state = state + [{}] * (MYPROPS[0]["max"] - len(state))
@@ -139,8 +137,7 @@ class ArmyPlugin(object):
         """Populates controls from state, using existing if already built."""
         MYPROPS = self.props()
         if self._ctrls and all(all(x.values()) for x in self._ctrls):
-            ver = self._savefile.version
-            cc = [""] + sorted(metadata.Store.get("creatures", version=ver))
+            cc = [""] + sorted(metadata.Store.get("creatures", self._savefile.version))
             for i, row in enumerate(self._state):
                 creature = None
                 for prop in MYPROPS[0]["item"]:
@@ -195,21 +192,23 @@ class ArmyPlugin(object):
         wx.CallLater(100, after)  # Hidden SpinCtrl arrows can become visible on colour change
 
 
-    def parse(self, hero):
-        """Returns army state parsed from hero bytearray, as [{name, count} or {}, ]."""
+    def parse(self, heroes):
+        """Returns army states parsed from hero bytearrays, as [[{name, count} or {}, ], ]."""
         result = []
-
-        NAMES = {x[y]: y for x in [metadata.Store.get("ids")]
-                 for y in metadata.Store.get("creatures")}
+        NAMES = {x[y]: y for x in [metadata.Store.get("ids", self._savefile.version)]
+                 for y in metadata.Store.get("creatures", self._savefile.version)}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        for prop in self.props():
-            for i in range(prop["max"]):
-                unit, count = (util.bytoi(hero.bytes[MYPOS[k]  + i * 4:MYPOS[k]  + i * 4 + 4])
-                               for k in ("army_types", "army_counts"))
-                name = NAMES.get(unit)
-                if not unit or not count or not name: result.append({})
-                else: result.append({"name": name, "count": count})
+        for hero in heroes:
+            values = []
+            for prop in self.props():
+                for i in range(prop["max"]):
+                    unit, count = (util.bytoi(hero.bytes[MYPOS[k]  + i * 4:MYPOS[k]  + i * 4 + 4])
+                                   for k in ("army_types", "army_counts"))
+                    name = NAMES.get(unit)
+                    if not unit or not count or not name: values.append({})
+                    else: values.append({"name": name, "count": count})
+            result.append(values)
         return result
 
 
@@ -218,8 +217,8 @@ class ArmyPlugin(object):
         result = self._hero.bytes[:]
         bytes0 = self._hero.get_bytes(original=True)
 
-        IDS = {y: x[y] for x in [metadata.Store.get("ids")]
-               for y in metadata.Store.get("creatures")}
+        IDS = {y: x[y] for x in [metadata.Store.get("ids", self._savefile.version)]
+               for y in metadata.Store.get("creatures", self._savefile.version)}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         for prop in self.props():

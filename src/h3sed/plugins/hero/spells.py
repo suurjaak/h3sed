@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  19.02.2023
+@modified  26.02.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -64,9 +64,8 @@ class SpellsPlugin(object):
     def props(self):
         """Returns props for spells-tab, as [{type: "number", ..}]."""
         result = []
-        ver = self._savefile.version
         for prop in UIPROPS:
-            cc = metadata.Store.get("spells", version=ver)
+            cc = metadata.Store.get("spells", self._savefile.version)
             result.append(dict(prop, choices=sorted(cc)))
         return result
 
@@ -84,7 +83,7 @@ class SpellsPlugin(object):
     def load(self, hero, panel=None):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = self.parse(hero)
+        self._state[:] = self.parse([hero])[0]
         hero.spells = self._state
         if panel: self._panel = panel
 
@@ -93,8 +92,7 @@ class SpellsPlugin(object):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
         state0 = type(self._state)(self._state)
         self._state = []
-        ver = self._savefile.version
-        cmap = {x.lower(): x for x in metadata.Store.get("spells", version=ver)}
+        cmap = {x.lower(): x for x in metadata.Store.get("spells", self._savefile.version)}
         for i, v in enumerate(state):
             if v and hasattr(v, "lower") and v.lower() in cmap:
                 self._state += [cmap[v.lower()]]
@@ -119,30 +117,33 @@ class SpellsPlugin(object):
         return True
 
 
-    def parse(self, hero):
-        """Returns spells state parsed from hero bytearray, as [name, ]."""
-        result = [] # List of values like ["Haste", ..]
-        IDS = {y: x[y] for x in [metadata.Store.get("ids")]
-               for y in metadata.Store.get("spells")}
+    def parse(self, heroes):
+        """Returns spells states parsed from hero bytearrays, as [[name, ], ]."""
+        result = [] # Lists of values like ["Haste", ..]
+        IDS = {y: x[y] for x in [metadata.Store.get("ids", self._savefile.version)]
+               for y in metadata.Store.get("spells", self._savefile.version)}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        for name, pos in IDS.items():
-            if hero.bytes[MYPOS["spells_book"] + pos]: result.append(name)
-        return sorted(result)
+        for hero in heroes:
+            values = []
+            for name, pos in IDS.items():
+                if hero.bytes[MYPOS["spells_book"] + pos]: values.append(name)
+            result.append(sorted(values))
+        return result
 
 
     def serialize(self):
         """Returns new hero bytearray, with edited spells sections."""
         result = self._hero.bytes[:]
 
-        IDS = {y: x[y] for x in [metadata.Store.get("ids")]
-               for y in metadata.Store.get("spells")}
+        IDS = {y: x[y] for x in [metadata.Store.get("ids", self._savefile.version)]
+               for y in metadata.Store.get("spells", self._savefile.version)}
         MYPOS = plugins.adapt(self, "pos", POS)
         state = self._state
 
         artispells = set()
         if getattr(self._hero, "artifacts", None):
-            SPELL_ARTIFACTS = metadata.Store.get("artifact_spells")
+            SPELL_ARTIFACTS = metadata.Store.get("artifact_spells", self._savefile.version)
             artispells = set(y for x in self._hero.artifacts.values()
                              for y in SPELL_ARTIFACTS.get(x, []))
         for name, pos in IDS.items():

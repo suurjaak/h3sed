@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  19.02.2023
+@modified  26.02.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -145,7 +145,7 @@ class StatsPlugin(object):
     def props(self):
         """Returns props for stats-tab, as [{type: "number", ..}]."""
         result = []
-        IDS = metadata.Store.get("ids")
+        IDS = metadata.Store.get("ids", self._savefile.version)
         for prop in UIPROPS:
             if "value" in prop: prop = dict(prop, value=IDS[prop["label"]])
             result.append(prop)
@@ -169,7 +169,7 @@ class StatsPlugin(object):
         if panel: self._panel = panel
         if hero:
             self._state.clear()
-            self._state.update(self.parse(hero))
+            self._state.update(self.parse([hero])[0])
             hero.stats = self._state
             hero.ensure_basestats()
 
@@ -208,27 +208,29 @@ class StatsPlugin(object):
         return True
 
 
-    def parse(self, hero):
-        """Returns stats state parsed from hero bytearray, as {attack, defense, ..}."""
-        result = {}
-
-        NAMES = {x[y]: y for x in [metadata.Store.get("ids")]
-                 for y in metadata.Store.get("special_artifacts")}
+    def parse(self, heroes):
+        """Returns stats states parsed from hero bytearrays, as [{attack, defense, ..}, ]."""
+        result = []
+        NAMES = {x[y]: y for x in [metadata.Store.get("ids", self._savefile.version)]
+                 for y in metadata.Store.get("special_artifacts", self._savefile.version)}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        def parse_special(pos):
+        def parse_special(hero, pos):
             b, v = hero.bytes[pos:pos + 4], util.bytoi(hero.bytes[pos:pos + 4])
             return None if all(x == ord(metadata.Blank) for x in b) else v
 
-        for prop in self.props():
-            pos = MYPOS[prop["name"]]
-            if "check" == prop["type"]:
-                v = parse_special(pos) is not None
-            elif "number" == prop["type"]:
-                v = util.bytoi(hero.bytes[pos:pos + prop["len"]])
-            elif "combo" == prop["type"]:
-                v = NAMES.get(parse_special(pos), "")
-            result[prop["name"]] = v
+        for hero in heroes:
+            values = {}
+            for prop in self.props():
+                pos = MYPOS[prop["name"]]
+                if "check" == prop["type"]:
+                    v = parse_special(hero, pos) is not None
+                elif "number" == prop["type"]:
+                    v = util.bytoi(hero.bytes[pos:pos + prop["len"]])
+                elif "combo" == prop["type"]:
+                    v = NAMES.get(parse_special(hero, pos), "")
+                values[prop["name"]] = v
+            result.append(values)
         return result
 
 
@@ -236,7 +238,7 @@ class StatsPlugin(object):
         """Returns new hero bytearray, with edited stats sections."""
         result = self._hero.bytes[:]
 
-        IDS = metadata.Store.get("ids")
+        IDS = metadata.Store.get("ids", self._savefile.version)
         MYPOS = plugins.adapt(self, "pos", POS)
 
         for prop in self.props():

@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  25.02.2023
+@modified  26.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -277,7 +277,8 @@ class Hero(object):
         """Populates internal hero stats without artifacts, if not already populated."""
         if clear: self.basestats.clear()
         if self.basestats or not hasattr(self, "artifacts"): return
-        STATS, diff = metadata.Store.get("artifact_stats"), [0] * len(metadata.PrimaryAttributes)
+        STATS = metadata.Store.get("artifact_stats", self.savefile.version)
+        diff = [0] * len(metadata.PrimaryAttributes)
         for item in filter(STATS.get, self.artifacts.values()):
             diff = [a + b for a, b in zip(diff, STATS[item])]
         for k, v in zip(metadata.PrimaryAttributes, diff):
@@ -519,7 +520,7 @@ class HeroPlugin(object):
     def reparse(self):
         """Reparses state from savefile and refreshes UI."""
         tabs = self._ctrls["tabs"]
-        hero0 = self._hero
+        hero0 = self._hero if self._pages_visited[-1:] not in ([], [None]) else None
         pages0 = [self._pages[p] for i in range(tabs.GetPageCount())
                   for p in [tabs.GetPage(i)] if p in self._pages]  # [hero index, ]
         heroes0  = self._heroes[:]
@@ -553,7 +554,7 @@ class HeroPlugin(object):
 
             visited0 = [v for i, v in enumerate(visited0) if not i or v != visited0[i - 1]]
             self._pages_visited[:] = visited0
-            if not hero and visited0: hero = self._heroes[visited0[-1]]
+            if not hero and visited0[-1:] not in ([], [None]): hero = self._heroes[visited0[-1]]
             index = next(i for i, x in enumerate(self._heroes) if x is hero) if hero else None
             if index is not None: self.select_hero(index, status=False)
             self._panel.Layout()
@@ -575,8 +576,10 @@ class HeroPlugin(object):
         maketexts = lambda h: {c: tpl.expand(hero=h, category=c, **tplargs).lower()
                                for c in ([""] + self.INDEX_CATEGORIES)}
         if not self._index["herotexts"]:
+            for p in self._plugins:
+                for hero, state in zip(heroes, p["instance"].parse(heroes)):
+                    setattr(hero, p["name"], state)
             for hero in heroes:
-                for p in self._plugins: setattr(hero, p["name"], p["instance"].parse(hero))
                 hero.ensure_basestats()
                 self.serialize_yaml(hero)
             self._index["herotexts"] = [maketexts(h) for h in heroes]
@@ -950,6 +953,7 @@ class HeroPlugin(object):
                 state0 = plugin.state()
                 if state is None: state = type(state0)()
                 if plugin.load_state(state): changeds.append(category)
+                setattr(self._hero, category, plugin.state())
             self.serialize_yaml(self._hero, changes=True)
             self._hero.ensure_basestats(clear=True)
             if changeds:
@@ -996,7 +1000,8 @@ class HeroPlugin(object):
                         next((x[1:-1] if isinstance(v, util.text_types)
                               and re.match(r"[\x20-\x7e]+$", x) else x for x in [json.dumps(v)]))
         props = plugin.props()
-        state = copy.copy(plugin.state()) if plugin.item() == hero else plugin.parse(hero)
+        state = copy.copy(plugin.state()) if plugin.item() == hero else \
+                getattr(hero, plugin.name) if hasattr(hero, plugin.name) else plugin.parse([hero])[0]
         for prop in props if isinstance(props, (list, tuple)) else [props]:
             if "itemlist" == prop["type"]:
                 while state and not state[-1]: state.pop()  # Strip empty trailing values
@@ -1025,7 +1030,7 @@ class HeroPlugin(object):
 
     def set_data(self, hero):
         """Sets current hero object."""
-        tabs = self._ctrls["tabs"]
+        combo, tabs = self._ctrls["hero"], self._ctrls["tabs"]
         index = next(i for i, h in enumerate(self._heroes) if h == hero)
         if index in self._pages.values():
             page = next(p for p, i in self._pages.items() if i == index)
@@ -1040,6 +1045,7 @@ class HeroPlugin(object):
         if not self._hero:
             self._hero = next(h for h in self._heroes if h == hero)
         self._hero.update(hero)
+        combo.SetSelection(index)
 
 
     def get_changes(self):

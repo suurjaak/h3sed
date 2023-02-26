@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  19.02.2023
+@modified  26.02.2023
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -26,11 +26,11 @@ from h3sed.plugins.hero import POS
 logger = logging.getLogger(__package__)
 
 
-def format_stats(prop, state, artifact_stats=None):
+def format_stats(plugin, prop, state, artifact_stats=None):
     """Return item primaty stats modifer text like "+1 Attack, +1 Defense", or "" if no effect."""
     value = state.get(prop.get("name"))
     if not value: return ""
-    STATS = artifact_stats or metadata.Store.get("artifact_stats")
+    STATS = artifact_stats or metadata.Store.get("artifact_stats", plugin._savefile.version)
     if value not in STATS: return ""
     return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
                      for k, v in zip(metadata.PrimaryAttributes.values(), STATS[value]) if v)
@@ -174,10 +174,10 @@ class ArtifactsPlugin(object):
     def props(self):
         """Returns props for artifacts-tab, as [{type: "combo", ..}]."""
         result = []
-        ver = self._savefile.version
+        version = self._savefile.version
         for prop in UIPROPS:
             slot = prop.get("slot", prop["name"])
-            cc = [""] + sorted(metadata.Store.get("artifacts", version=ver, category=slot))
+            cc = [""] + sorted(metadata.Store.get("artifacts", version, category=slot))
             result.append(dict(prop, choices=cc))
         return result
 
@@ -196,7 +196,7 @@ class ArtifactsPlugin(object):
         """Loads hero to plugin."""
         self._hero = hero
         self._state.clear()
-        self._state.update(self.parse(hero))
+        self._state.update(self.parse([hero])[0])
         hero.artifacts = self._state
         hero.ensure_basestats()
         if panel: self._panel = panel
@@ -205,14 +205,14 @@ class ArtifactsPlugin(object):
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values."""
         state0 = type(self._state)(self._state)
-        ver = self._savefile.version
+        version = self._savefile.version
 
         for prop in self.props():  # First pass: don items
             name, slot = prop["name"], prop.get("slot", prop["name"])
             if name not in state:
                 continue  # for
             v = state[name]
-            cmap = {x.lower(): x for x in metadata.Store.get("artifacts", version=ver, category=slot)}
+            cmap = {x.lower(): x for x in metadata.Store.get("artifacts", version, category=slot)}
 
             if not v or hasattr(v, "lower") and v.lower() in cmap:
                 self._state[name] = v
@@ -240,18 +240,18 @@ class ArtifactsPlugin(object):
 
     def render(self):
         """Populates controls from state, using existing if already built."""
-        ver = self._savefile.version
+        version = self._savefile.version
         if self._ctrls and all(self._ctrls.values()):
-            STATS = metadata.Store.get("artifact_stats")
+            STATS = metadata.Store.get("artifact_stats", version)
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
-                cc = [""] + sorted(metadata.Store.get("artifacts", version=ver, category=slot))
+                cc = [""] + sorted(metadata.Store.get("artifacts", version, category=slot))
 
                 ctrl, value, choices = self._ctrls[name], self._state.get(name), cc
                 if value and value not in choices: choices = [value] + cc
                 if choices != ctrl.GetItems(): ctrl.SetItems(choices)
                 ctrl.Value = value or ""
-                self._ctrls["%s-info" % name].Label = format_stats(prop, self._state, STATS)
+                self._ctrls["%s-info" % name].Label = format_stats(self, prop, self._state, STATS)
         else:
             self._ctrls = gui.build(self, self._panel)
         self.update_slots()
@@ -259,14 +259,14 @@ class ArtifactsPlugin(object):
 
     def update_slots(self):
         """Updates slots availability."""
-        ver = self._savefile.version
+        version = self._savefile.version
         slots_free, slots_owner = self._slots()
-        SLOTS = metadata.Store.get("artifact_slots")
+        SLOTS = metadata.Store.get("artifact_slots", version)
         self._panel.Freeze()
         try:
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
-                cc = [""] + sorted(metadata.Store.get("artifacts", version=ver, category=slot))
+                cc = [""] + sorted(metadata.Store.get("artifacts", version, category=slot))
 
                 ctrl, value = self._ctrls[name], self._state.get(name)
 
@@ -328,7 +328,8 @@ class ArtifactsPlugin(object):
         result = False
         if not all(getattr(self._hero, k, None) for k in ("stats", "basestats")): return result
 
-        STATS, diff = metadata.Store.get("artifact_stats"), [0] * len(metadata.PrimaryAttributes)
+        STATS = metadata.Store.get("artifact_stats", self._savefile.version)
+        diff = [0] * len(metadata.PrimaryAttributes)
         for prop in self.props():
             item = self._state[prop["name"]]
             if item in STATS: diff = [a + b for a, b in zip(diff, STATS[item])]
@@ -340,7 +341,7 @@ class ArtifactsPlugin(object):
 
     def _slots(self, prop=None, value=None):
         """Returns free and taken slots as {"side": 4, }, {"helm": "Skull Helmet", }."""
-        MYPROPS, SLOTS = self.props(), metadata.Store.get("artifact_slots")
+        MYPROPS, SLOTS = self.props(), metadata.Store.get("artifact_slots", self._savefile.version)
 
         # Check whether combination artifacts leave sufficient slots free
         slots_free, slots_owner = defaultdict(int), defaultdict(list)
@@ -359,32 +360,37 @@ class ArtifactsPlugin(object):
         return slots_free, slots_owner
 
 
-    def parse(self, hero):
-        """Returns artifacts state parsed from hero bytearray, as {helm, ..}."""
-        result = {}
-        IDS   = metadata.Store.get("ids")
+    def parse(self, heroes):
+        """Returns artifacts states parsed from hero bytearrays, as [{helm, ..}, ]."""
+        result = []
+        IDS   = metadata.Store.get("ids", self._savefile.version)
         NAMES = {x[y]: y for x in [IDS]
-                 for y in metadata.Store.get("artifacts", category="inventory")}
+                 for y in metadata.Store.get("artifacts", self._savefile.version,
+                                             category="inventory")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        def parse_item(pos):
+        def parse_item(hero, pos):
             b, v = hero.bytes[pos:pos + 4], util.bytoi(hero.bytes[pos:pos + 4])
             if all(x == ord(metadata.Blank) for x in b): return None # Blank
             return util.bytoi(hero.bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
 
-        for prop in self.props():
-            result[prop["name"]] = NAMES.get(parse_item(MYPOS[prop["name"]]))
+        for hero in heroes:
+            values = {}
+            for prop in self.props():
+                values[prop["name"]] = NAMES.get(parse_item(hero, MYPOS[prop["name"]]))
+            result.append(values)
         return result
 
 
     def serialize(self):
         """Returns new hero bytearray, with edited artifacts section."""
         result = self._hero.bytes[:]
+        version = self._savefile.version
 
-        IDS = {y: x[y] for x in [metadata.Store.get("ids")]
-               for y in metadata.Store.get("artifacts", category="inventory")}
+        IDS = {y: x[y] for x in [metadata.Store.get("ids", version)]
+               for y in metadata.Store.get("artifacts", version, category="inventory")}
         MYPOS = plugins.adapt(self, "pos", POS)
-        SLOTS = metadata.Store.get("artifact_slots")
+        SLOTS = metadata.Store.get("artifact_slots", version)
 
         pos_reserved, len_reserved = min(MYPOS["reserved"].values()), len(MYPOS["reserved"])
         result[pos_reserved:pos_reserved + len_reserved] = [0] * len_reserved

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.02.2023
+@modified    26.02.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1342,7 +1342,7 @@ def build(plugin, panel):
         return handler
 
     def make_info(prop, sizer, pos):
-        value = prop["info"](prop, state) if callable(prop["info"]) else prop["info"]
+        value = prop["info"](plugin, prop, state) if callable(prop["info"]) else prop["info"]
         c = wx.StaticText(panel, label=value)
         ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         sizer.Add(c, pos=pos)

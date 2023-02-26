@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  19.02.2023
+@modified  26.02.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -74,9 +74,9 @@ class SkillsPlugin(object):
     def props(self):
         """Returns props for skills-tab, as {type: "itemlist", ..}."""
         result = []
-        ver = self._savefile.version
-        ss = sorted(metadata.Store.get("skills", version=ver))
-        ll = metadata.Store.get("skill_levels", version=ver)
+        version = self._savefile.version
+        ss = sorted(metadata.Store.get("skills", version))
+        ll = metadata.Store.get("skill_levels", version)
         for prop in UIPROPS:
             myprop = dict(prop)
             if "itemlist" == prop["type"]:
@@ -101,7 +101,7 @@ class SkillsPlugin(object):
     def load(self, hero, panel=None):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = self.parse(hero)
+        self._state[:] = self.parse([hero])[0]
         hero.skills = self._state
         if panel: self._panel = panel
 
@@ -110,9 +110,9 @@ class SkillsPlugin(object):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
         state0 = type(self._state)(self._state)
         state = state[:self.props()[0]["max"]]
-        ver = self._savefile.version
-        smap = {x.lower(): x for x in metadata.Store.get("skills", version=ver)}
-        lmap = {x.lower(): x for x in metadata.Store.get("skill_levels", version=ver)}
+        version = self._savefile.version
+        smap = {x.lower(): x for x in metadata.Store.get("skills", version)}
+        lmap = {x.lower(): x for x in metadata.Store.get("skill_levels", version)}
         self._state = type(self._state)()
         for i, v in enumerate(state):
             if not isinstance(v, dict):
@@ -130,37 +130,42 @@ class SkillsPlugin(object):
         """Adds skill at first level."""
         if any(value == x["name"] for x in self._state):
             return False
-        level = next(iter(metadata.Store.get("skill_levels")))
+        level = next(iter(metadata.Store.get("skill_levels", self._savefile.version)))
         self._state.append({"name": value, "level": level})
         return True
 
 
-    def parse(self, hero):
-        """Returns skills state parsed from hero bytearray, as [{name, level, slot}]."""
+    def parse(self, heroes):
+        """Returns skills states parsed from hero bytearrays, as [{name, level, slot}]."""
         result = []
-        IDS    = {y: x[y] for x in [metadata.Store.get("ids")]
-                  for y in metadata.Store.get("skills")}
-        LEVELNAMES = {x[y]: y for x in [metadata.Store.get("ids")]
-                      for y in metadata.Store.get("skill_levels")}
+        version = self._savefile.version
+        IDS = {y: x[y] for x in [metadata.Store.get("ids", version)]
+               for y in metadata.Store.get("skills", version)}
+        LEVELNAMES = {x[y]: y for x in [metadata.Store.get("ids", version)]
+                      for y in metadata.Store.get("skill_levels", version)}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        count = hero.bytes[MYPOS["skills_count"]]
-        for name in metadata.Store.get("skills", version=hero.savefile.version):
-            pos = IDS.get(name)
-            level, slot = (hero.bytes[MYPOS[k] + pos] for k in ("skills_level", "skills_slot"))
-            if not level or not slot or slot > count:
-                continue # for i
-            result.append({"name": name, "level": LEVELNAMES[level], "slot": slot})
-        return sorted(result, key=lambda x: x.pop("slot"))
+        for hero in heroes:
+            values = []
+            count = hero.bytes[MYPOS["skills_count"]]
+            for name in metadata.Store.get("skills", version):
+                pos = IDS.get(name)
+                level, slot = (hero.bytes[MYPOS[k] + pos] for k in ("skills_level", "skills_slot"))
+                if not level or not slot or slot > count:
+                    continue # for i
+                values.append({"name": name, "level": LEVELNAMES[level], "slot": slot})
+            result.append(sorted(values, key=lambda x: x.pop("slot")))
+        return result
 
 
     def serialize(self):
         """Returns new hero bytearray, with edited skills sections."""
         result = self._hero.bytes[:]
-        IDS    = {y: x[y] for x in [metadata.Store.get("ids")]
-                  for y in metadata.Store.get("skills", version=self._savefile.version)}
-        LEVELS = {y: x[y] for x in [metadata.Store.get("ids")]
-                  for y in metadata.Store.get("skill_levels")}
+        version = self._savefile.version
+        IDS    = {y: x[y] for x in [metadata.Store.get("ids", version)]
+                  for y in metadata.Store.get("skills", version)}
+        LEVELS = {y: x[y] for x in [metadata.Store.get("ids", version)]
+                  for y in metadata.Store.get("skill_levels", version)}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         levels, count = bytearray(len(IDS)), 0
