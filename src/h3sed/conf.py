@@ -115,7 +115,7 @@ ConsoleSize = (600, 300)
 MaxConsoleHistory = 1000
 
 """Maximum length of a tab title, overflow will be cut on the left."""
-MaxTabTitleLength = 60
+MaxTabTitleLength = 30
 
 """Name of font used in HTML content."""
 HtmlFontName = "Tahoma"
