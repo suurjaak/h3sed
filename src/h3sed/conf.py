@@ -48,7 +48,7 @@ FileDirectives = [
 ]
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
-    "FileExtensions", "MaxConsoleHistory", "MaxRecentFiles",
+    "FileExtensions", "HeroToggles", "MaxConsoleHistory", "MaxRecentFiles",
     "PopupUnexpectedErrors", "StatusFlashLength",
 ]
 Defaults = {}
@@ -76,6 +76,9 @@ ConsoleHistoryCommands = []
 """Default game version for savefiles."""
 GameVersion = ""
 
+"""Hero index categories toggle state, as {name: false}."""
+HeroToggles = {}
+
 """Contents of Recent Files menu."""
 RecentFiles = []
 
@@ -86,7 +89,7 @@ RecentHeroes = []
 WindowPosition = None
 
 """Main window size in pixels, [w, h] or [-1, -1] for maximized."""
-WindowSize = (600, 700)
+WindowSize = (650, 700)
 
 """---------------------------- /FileDirectives ----------------------------"""
 

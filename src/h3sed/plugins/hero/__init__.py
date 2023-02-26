@@ -361,10 +361,10 @@ class HeroPlugin(object):
             b = tb_index.AddCheckTool(wx.ID_ANY, category.capitalize(), wx.NullBitmap,
                                       shortHelp="Show or hide %s column%s" %
                                                 (category, "s" if "stats" == category else ""))
-            tb_index.ToggleTool(b.Id, True)
+            tb_index.ToggleTool(b.Id, conf.HeroToggles.get(category, True))
             tb_index.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
             self._index["ids"][category] = b.Id
-            self._index["toggles"][category] = True
+            self._index["toggles"][category] = conf.HeroToggles.get(category, True)
         tb_index.Realize()
 
         html = wx.html.HtmlWindow(self._indexpanel)
@@ -762,8 +762,10 @@ class HeroPlugin(object):
     def on_toggle_category(self, event):
         """Handler for toggling a category in index toolbar, refreshes heroes index."""
         category = next(k for k, v in self._index["ids"].items() if v == event.Id)
-        self._index["toggles"][category] = not self._index["toggles"][category]
+        on = not self._index["toggles"][category]
+        self._index["toggles"][category] = on
         self.populate_index(force=True)
+        conf.HeroToggles.pop(category, None) if on else conf.HeroToggles.update({category: False})
 
 
     def on_sys_colour_change(self, event):
