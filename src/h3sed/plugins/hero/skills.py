@@ -7,11 +7,15 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  26.02.2023
+@modified  27.02.2023
 ------------------------------------------------------------------------------
 """
 import logging
 
+import wx
+
+from h3sed.lib import controls
+from h3sed import gui
 from h3sed import metadata
 from h3sed import plugins
 from h3sed.plugins.hero import POS
@@ -38,12 +42,10 @@ UIPROPS = [{
         "type":     "combo",
         "choices":  None
     }],
-}, {
-    "type":     "label",
-    "label":    "More than 8 skills can be added.\n"
-                "Game will not show them on the hero screen,\n"
-                "but they will be in effect.",
 }]
+HINT = ("More than 8 skills can be added.\n"
+        "Game will not show them on the hero screen,\n"
+        "but they will be in effect.")
 
 
 
@@ -133,6 +135,15 @@ class SkillsPlugin(object):
         level = next(iter(metadata.Store.get("skill_levels", self._savefile.version)))
         self._state.append({"name": value, "level": level})
         return True
+
+
+    def render(self):
+        """Builds plugin controls into panel."""
+        gui.build(self, self._panel)
+        label = wx.StaticText(self._panel, label=HINT)
+        controls.ColourManager.Manage(label, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
+        self._panel.Sizer.Add(label, border=10, flag=wx.TOP, proportion=1)
+        self._panel.Layout()
 
 
     def parse(self, heroes):
