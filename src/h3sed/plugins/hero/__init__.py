@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  26.02.2023
+@modified  27.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -317,7 +317,7 @@ class HeroPlugin(object):
         self._hero       = None    # Currently selected Hero instance
         self._heropanel  = None    # Container for hero components
         self._pages_visited = []   # Visited tabs, as [hero index in self._heroes or None if index page]
-        self._ignore_paging = False  # Workaround for disallowing index page reordering
+        self._ignore_events = False  # For ignoring change events from programmatic selections
         self._index = {
             "herotexts": [],       # [hero contents to search in, as [{category: plaintext}] ]
             "html":      "",       # Current hero search results HTML
@@ -539,7 +539,7 @@ class HeroPlugin(object):
 
         self.parse()
         self._panel.Freeze()
-        self._ignore_paging = True
+        self._ignore_events = True
         try:
             while tabs.GetPageCount() > 1: tabs.DeletePage(1)
             self.build()
@@ -565,7 +565,7 @@ class HeroPlugin(object):
             if index is not None: self.select_hero(index, status=False)
             self._panel.Layout()
         finally:
-            self._ignore_paging = False
+            self._ignore_events = False
             self._panel.Thaw()
 
 
@@ -674,7 +674,7 @@ class HeroPlugin(object):
 
     def on_change_page(self, event):
         """Handler for changing a page in the heroes notebook, loads hero data."""
-        if self._ignore_paging or event.GetOldSelection() < 0: return
+        if self._ignore_events or event.GetOldSelection() < 0: return
         page = self._ctrls["tabs"].GetCurrentPage()
         if page not in self._pages: self.select_index()
         else: self.select_hero(self._pages[page], status=False)
@@ -682,7 +682,7 @@ class HeroPlugin(object):
 
     def on_close_page(self, event):
         """Handler for closing a hero page, selects a previous hero page, if any."""
-        if self._ignore_paging: return
+        if self._ignore_events: return
         tabs = self._ctrls["tabs"]
         page = tabs.GetPage(event.GetSelection())
         if page not in self._pages:
@@ -703,7 +703,7 @@ class HeroPlugin(object):
         """Handler for dragging a page, keeps index-page first."""
         tabs = self._ctrls["tabs"]
         tabs.Freeze()
-        self._ignore_paging = True
+        self._ignore_events = True
         try:
             cur_page = tabs.GetCurrentPage()
             idx_index, idx_page = next((i, p) for i in range(tabs.GetPageCount())
@@ -715,7 +715,7 @@ class HeroPlugin(object):
             if tabs.GetCurrentPage() != cur_page:
                 tabs.SetSelection(tabs.GetPageIndex(cur_page))
         finally:
-            self._ignore_paging = False
+            self._ignore_events = False
             tabs.Thaw()
 
 
@@ -812,6 +812,7 @@ class HeroPlugin(object):
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
         if status: guibase.status("Loading %s.", hero2.name, flash=True)
 
+        self._ignore_events = True
         self._panel.Freeze()
         combo.SetSelection(index)
         if index not in self._pages.values():
@@ -837,6 +838,7 @@ class HeroPlugin(object):
             if self._pages_visited[-1:] != [index]: self._pages_visited.append(index)
             self._panel.Layout()
             self._panel.Thaw()
+            self._ignore_events = False
             if status: busy.Close(), wx.CallLater(500, guibase.status, "")
             evt = gui.SavefilePageEvent(self._panel.Id)
             evt.SetClientData(dict(plugin=self.name, load=hero2.name))
