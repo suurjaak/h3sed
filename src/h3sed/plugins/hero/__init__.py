@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.02.2023
+@modified  28.02.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -414,6 +414,7 @@ class HeroPlugin(object):
         tb.Disable()
         tb.Hide()
 
+        tabs.MinSize = -1, tabs.GetTabArea().MinSize[1]
         tabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_page, tabs)
         tabs.Bind(wx.lib.agw.flatnotebook.EVT_FLATNOTEBOOK_PAGE_CLOSING,
                   self.on_close_page, tabs)
@@ -858,6 +859,7 @@ class HeroPlugin(object):
             tb.Show()
             self._indexpanel.Hide()
             self._heropanel.Show()
+            self._panel.Layout()
         if combo.Selection != index: combo.SetSelection(index)
 
 
@@ -875,6 +877,7 @@ class HeroPlugin(object):
             tb.Disable()
             self._heropanel.Hide()
             self._indexpanel.Show()
+            self._panel.Layout()
         if combo.Selection >= 0: combo.SetSelection(-1)
         if self._pages_visited[-1:] != [None]: self._pages_visited.append(None)
         if focusctrl is search and not search.HasFocus():
