@@ -6,7 +6,7 @@ depending on current environment.
 Pyinstaller-provided names and variables: Analysis, EXE, PYZ, SPEC, TOC.
 
 @created   12.04.2020
-@modified  09.01.2022
+@modified  28.02.2023
 """
 import atexit
 import os
@@ -38,15 +38,16 @@ for root, _, files in os.walk(APPPATH):
 hiddenimports.sort()
 
 def cleanup():
-    try: os.unlink(LAUNCHFILE)
+    try: os.unlink(entrypoint)
     except Exception: pass
 
-LAUNCHFILE = os.path.join(ROOTPATH, "launch.py")
-shutil.copyfile(os.path.join(BUILDPATH, "launch.py"), LAUNCHFILE)
+entrypoint = os.path.join(ROOTPATH, "launch.py")
+with open(entrypoint, "w") as f:
+    f.write("from %s import main; main.run()" % NAME)
 atexit.register(cleanup)
 
 a = Analysis(
-    [LAUNCHFILE],
+    [entrypoint],
     excludes=["FixTk", "numpy", "tcl", "tk", "_tkinter", "tkinter", "Tkinter"],
     hiddenimports=hiddenimports,
 )
