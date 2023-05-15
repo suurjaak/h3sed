@@ -40,9 +40,9 @@
           <a href="https://github.com/suurjaak/h3sed">View the Project on GitHub <small>suurjaak/h3sed</small></a>
 
           <ul>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.0_setup.exe">Download <strong>Setup</strong></a></li>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.0_x64_setup.exe">Download <strong>64bit Setup</strong></a></li>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.0-src.zip">Download <strong>Source</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.6_setup.exe">Download <strong>Setup</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.6_x64_setup.exe">Download <strong>64bit Setup</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.6-src.zip">Download <strong>Source</strong></a></li>
           </ul>
         </p>
 
@@ -53,7 +53,7 @@
 
 <p>h3sed is a Heroes3 Savegame Editor, written in Python.</p>
 
-<p>It opens savegame files from Heroes of Might and Magic III, allowing to edit any and all hero attributes:</p>
+<p>It opens savegame files from Heroes of Might and Magic III, allowing to see an overview of all heroes, and edit any and all hero attributes:</p>
 
 <ul>
   <li>primary skills, like Attack</li>
@@ -63,15 +63,18 @@
   <li>artifacts, like Boots of Speed, both worn and inventory items</li>
   <li>spells, like Slow</li>
   <li>army creatures, like Golden Dragons</li>
-  <li>Attributes can be copied from one hero and pasted to another.</li>
 </ul>
+
+<p>Attributes can be copied from one hero and pasted to another.</p>
 
 <p>Supports savegames from Shadow of Death and Horn of the Abyss.</p>
 
 
 <h2 id="using-the-program">Using The Program</h2>
 
-<p>Navigate the file view to Heroes3 games-folder, and open a savegame file to edit.<p>
+<p>Navigate the file view to Heroes3 games-folder, and open a savegame file to edit,
+or drag and drop a savegame file onto the program window.
+.<p>
 
 <p>Choose a hero to modify, change attributes to your liking, and save the file. Changes will be available in Heroes3 after loading the changed savegame.</p>
 
@@ -83,7 +86,8 @@
 
 <p><b>Warning:</b> as Heroes3 savefile format is not publicly known, loaded data and saved results may be invalid and cause problems in game. This program is based on unofficial information gathered from observation and online forums.</p>
 
-<p>Always choose the correct game version. A wrong choice will result in file data being misinterpreted, and saving later version items or creatures to an earlier version savefile may cause the game to crash.</p>
+<p>
+The savegames of Shadow of Death and Horn of the Abyss are not mutually compatible. The program tries to auto-detect the version heuristically, but this detection does not guarantee a correct result. Always choose the correct game version. A wrong choice will result in file data being misinterpreted, and saving later version items or creatures to an earlier version savefile may cause the game to crash.</p>
 
 
 <h2 id="installation">Installation</h2>
