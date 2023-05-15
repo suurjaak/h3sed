@@ -1,10 +1,10 @@
-:: Creates NSIS setup file for executable in current directory named
-:: h3sed_%conf.Version%[_x64].exe, or filename given in argument.
+:: Creates NSIS setup file for executable in current directory named 
+:: %parentdirname%_%conf.Version%[_x64].exe, or filename given in argument.
 :: Processor architecture is determined from OS environment.
 ::
 :: @author    Erki Suurjaak
-:: @created   21.08.2019
-:: @modified  19.01.2022
+:: @created   13.01.2013
+:: @modified  02.04.2022
 @echo off
 :: Expand variables at execution time rather than at parse time
 setlocal EnableDelayedExpansion
@@ -12,18 +12,21 @@ set INITIAL_DIR=%CD%
 cd %0\..
 set SETUPDIR=%CD%
 
-cd ..\src
+cd ..
+for %%f in ("%CD%") do set NAME=%%~nxf
 
-set SUFFIX64=
-for /f %%i in ('python -c "import struct; print struct.calcsize(""P"") * 8"') do set ADDRSIZE=%%i
-if "%ADDRSIZE%" equ "64" set SUFFIX64=_x64
+if exist src cd src
+if exist "%NAME%\" cd %NAME%
 
+for /f %%I in ('python -c "import struct; print(struct.calcsize(chr(80)) * 8 == 64)"') do set IS_64=%%I
+if [%IS_64%] == [True] (
+    set SUFFIX64=_x64
+)
 if [%1] == [] (
-    for /f %%I in ('python -c "from h3sed import conf; print conf.Version"') do set VERSION=%%I
-    set EXEFILE=%INITIAL_DIR%\h3sed_!VERSION!%SUFFIX64%.exe
+    for /f %%I in ('python -c "import conf; print(conf.Version)"') do set VERSION=%%I
+    set EXEFILE=%INITIAL_DIR%\%NAME%_!VERSION!%SUFFIX64%.exe
 ) else (
     for /f "tokens=2 delims=_ " %%a in ("%~n1") do set VERSION=%%a
-    echo "VERSION2 = %VERSION%."
     set EXEFILE=%INITIAL_DIR%\%1
 )
 
@@ -34,15 +37,15 @@ if not exist "%NSISDIR%" set NSISDIR=C:\Program Files (x86)\NSIS
 if not exist "%NSISDIR%" set NSISDIR=C:\Program Files\NSIS
 if not exist "%NSISDIR%\makensis.exe" echo NSIS not found. && goto :END
 
-echo Creating installer for h3sed %VERSION%%SUFFIX64%.
+echo Creating installer for %NAME% %VERSION%%SUFFIX64%.
 cd %SETUPDIR%
-set DESTFILE=h3sed_%VERSION%%SUFFIX64%_setup.exe
+set DESTFILE=%NAME%_%VERSION%%SUFFIX64%_setup.exe
 if exist "%DESTFILE%" echo Removing previous %DESTFILE%. & del "%DESTFILE%"
-if exist h3sed.exe del h3sed.exe
-copy /V "%EXEFILE%" h3sed.exe > NUL 2>&1
+if exist %NAME%.exe del %NAME%.exe
+copy /V "%EXEFILE%" %NAME%.exe > NUL 2>&1
 "%NSISDIR%\makensis.exe" /DVERSION=%VERSION% /DSUFFIX64=%SUFFIX64% "%SETUPDIR%\exe_setup.nsi"
-del h3sed.exe > NUL 2>&1
-if exist "%DESTFILE%" echo. & echo Successfully created h3sed source distribution %DESTFILE%.
+del %NAME%.exe > NUL 2>&1
+if exist "%DESTFILE%" echo. & echo Successfully created %NAME% distribution %DESTFILE%.
 move "%DESTFILE%" "%INITIAL_DIR%" > NUL 2>&1
 
 :END
