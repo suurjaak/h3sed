@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  09.02.2023
+@modified  16.05.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -290,7 +290,7 @@ RGX_HERO = re.compile(b"""
     ){19}
 
                              # 512 bytes: 64 8-byte artifacts in backpack      503-1014
-    ( ((.\x00{3}) | \xFF{4}) (\x00{4} | \xFF{4}) ){64}
+    ( ((.\x00{3}) | \xFF{4}){2} ){64}
 
                              # 10 bytes: slots taken by combination artifacts 1015-1024
     .[\x00-\x01]{6}[\x00-\x02][\x00-\x01][\x00-\x05]

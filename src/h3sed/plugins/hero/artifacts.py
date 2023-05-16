@@ -7,10 +7,11 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  26.02.2023
+@modified  16.05.2023
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
+import copy
 import logging
 
 import wx
@@ -168,6 +169,7 @@ class ArtifactsPlugin(object):
         self._hero     = None
         self._panel    = panel  # Plugin contents panel
         self._state    = {}     # {"helm": "Skull Helmet", ..}
+        self._state0   = []     # Original state ["Skull Helmet", None, ..]
         self._ctrls    = {}     # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
 
 
@@ -195,6 +197,7 @@ class ArtifactsPlugin(object):
     def load(self, hero, panel):
         """Loads hero to plugin."""
         self._hero = hero
+        self._state0 = copy.deepcopy(self._state)
         self._state.clear()
         self._state.update(self.parse([hero])[0])
         hero.artifacts = self._state
@@ -385,10 +388,12 @@ class ArtifactsPlugin(object):
     def serialize(self):
         """Returns new hero bytearray, with edited artifacts section."""
         result = self._hero.bytes[:]
+        bytes0 = self._hero.get_bytes(original=True)
         version = self._savefile.version
 
         IDS = {y: x[y] for x in [metadata.Store.get("ids", version)]
                for y in metadata.Store.get("artifacts", version, category="inventory")}
+        SCROLL_ARTIFACTS = metadata.Store.get("artifacts", version, category="scroll")
         MYPOS = plugins.adapt(self, "pos", POS)
         SLOTS = metadata.Store.get("artifact_slots", version)
 
@@ -398,7 +403,15 @@ class ArtifactsPlugin(object):
         for prop in self.props():
             name = self._state[prop["name"]]
             v, pos = IDS.get(name), MYPOS[prop["name"]]
-            b = metadata.Blank * 8 if v is None else util.itoby(v, 4) + metadata.Blank * 4
+            if name in SCROLL_ARTIFACTS:
+                b = util.itoby(v, 8)
+            elif v:
+                b = util.itoby(v, 4) + metadata.Blank * 4
+            elif not self._state0.get(prop["name"]):
+                # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
+                b = bytes0[pos:pos + 8]
+            else:
+                b = metadata.Blank * 8
             result[pos:pos + len(b)] = b
             for slot in SLOTS.get(name, [])[1:]:
                 result[MYPOS["reserved"][slot]] += 1
