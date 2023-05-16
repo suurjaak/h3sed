@@ -7,10 +7,9 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  26.02.2023
+@modified  16.05.2023
 ------------------------------------------------------------------------------
 """
-import copy
 import logging
 
 import wx
@@ -73,7 +72,6 @@ class ArmyPlugin(object):
         self._hero     = None
         self._panel    = panel  # Plugin contents panel
         self._state    = []     # [{"name": "Roc", "count": 6}, {}, ]
-        self._state0   = []     # Original state [{"name": "Roc", "count": 6}, {}, ]
         self._ctrls    = []     # [{"name": wx.ComboBox, "count": wx.SpinCtrl}, ]
 
 
@@ -104,7 +102,6 @@ class ArmyPlugin(object):
         """Loads hero to plugin."""
         self._hero = hero
         self._state[:] = self.parse([hero])[0]
-        self._state0 = copy.deepcopy(self._state)
         hero.army = self._state
         if panel:
             panel.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_colour_change)
@@ -221,10 +218,11 @@ class ArmyPlugin(object):
                for y in metadata.Store.get("creatures", self._savefile.version)}
         MYPOS = plugins.adapt(self, "pos", POS)
 
+        state0 = self._hero.state0.get("army") or []
         for prop in self.props():
             for i in range(prop["max"]):
                 name, count = (self._state[i].get(x) for x in ("name", "count"))
-                if (not name or not count) and not self._state0[i].get("name"):
+                if (not name or not count) and i < len(state0) and not state0[i].get("name"):
                     # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
                     b1 = bytes0[MYPOS["army_types"]  + i * 4:MYPOS["army_types"]  + i * 4 + 4]
                     b2 = bytes0[MYPOS["army_counts"] + i * 4:MYPOS["army_counts"] + i * 4 + 4]

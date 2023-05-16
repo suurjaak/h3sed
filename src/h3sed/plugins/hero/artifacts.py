@@ -11,7 +11,6 @@ Released under the MIT License.
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
-import copy
 import logging
 
 import wx
@@ -169,7 +168,6 @@ class ArtifactsPlugin(object):
         self._hero     = None
         self._panel    = panel  # Plugin contents panel
         self._state    = {}     # {"helm": "Skull Helmet", ..}
-        self._state0   = []     # Original state ["Skull Helmet", None, ..]
         self._ctrls    = {}     # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
 
 
@@ -197,7 +195,6 @@ class ArtifactsPlugin(object):
     def load(self, hero, panel):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state0 = copy.deepcopy(self._state)
         self._state.clear()
         self._state.update(self.parse([hero])[0])
         hero.artifacts = self._state
@@ -320,7 +317,7 @@ class ArtifactsPlugin(object):
             evt = gui.PluginEvent(self._panel.Id, action="render", name="stats")
             wx.PostEvent(self._panel, evt)
         self.update_slots()
-        self._ctrls["%s-info" % prop["name"]].Label = format_stats(prop, self._state)
+        self._ctrls["%s-info" % prop["name"]].Label = format_stats(self, prop, self._state)
         return True
 
 
@@ -400,6 +397,7 @@ class ArtifactsPlugin(object):
         pos_reserved, len_reserved = min(MYPOS["reserved"].values()), len(MYPOS["reserved"])
         result[pos_reserved:pos_reserved + len_reserved] = [0] * len_reserved
 
+        state0 = self._hero.state0.get("artifacts") or {}
         for prop in self.props():
             name = self._state[prop["name"]]
             v, pos = IDS.get(name), MYPOS[prop["name"]]
@@ -407,7 +405,7 @@ class ArtifactsPlugin(object):
                 b = util.itoby(v, 8)
             elif v:
                 b = util.itoby(v, 4) + metadata.Blank * 4
-            elif not self._state0.get(prop["name"]):
+            elif not state0.get(prop["name"]):
                 # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
                 b = bytes0[pos:pos + 8]
             else:

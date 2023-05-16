@@ -231,16 +231,16 @@ ArtifactSlots = {
 
 """Primary skill modifiers that artifacts give to hero."""
 ArtifactStats = {
-  "Angelic Alliance":                    (21, 21, 21, 21),
-  "Armageddon's Blade":                  (+3, +3, +3, +6),
-  "Armor of the Damned":                 (+3, +3, +2, +2),
-  "Crown of the Five Seas":              ( 0,  0,  0, +6),
-  "Ironfist of the Ogre":                (+5, +5, +4, +4),
-  "Power of the Dragon Father":          (16, 16, 16, 16),
-  "Royal Armor of Nix":                  ( 0,  0, +6,  0),
-  "Shield of Naval Glory":               ( 0, +7,  0,  0),
-  "Titan's Thunder":                     (+9, +9, +8, +8),
-  "Trident of Dominion":                 (+7,  0,  0,  0),
+    "Angelic Alliance":                  (21, 21, 21, 21),
+    "Armageddon's Blade":                (+3, +3, +3, +6),
+    "Armor of the Damned":               (+3, +3, +2, +2),
+    "Crown of the Five Seas":            ( 0,  0,  0, +6),
+    "Ironfist of the Ogre":              (+5, +5, +4, +4),
+    "Power of the Dragon Father":        (16, 16, 16, 16),
+    "Royal Armor of Nix":                ( 0,  0, +6,  0),
+    "Shield of Naval Glory":             ( 0, +7,  0,  0),
+    "Titan's Thunder":                   (+9, +9, +8, +8),
+    "Trident of Dominion":               (+7,  0,  0,  0),
 }
 
 
@@ -249,6 +249,14 @@ ArtifactSpells = {
     "Armageddon's Blade":                ["Armageddon"],
     "Titan's Thunder":                   ["Titan's Lightning Bolt"],
 }
+
+
+"""Spells that may be banned on certain maps, like boat spells on maps with no water."""
+BannableSpells = [
+    "Scuttle Boat",
+    "Summon Boat",
+    "Water Walk",
+]
 
 
 
@@ -316,6 +324,7 @@ def init():
     Store.add("ids",               IDs,              version=PROPS["name"])
     Store.add("skills",            Skills,           version=PROPS["name"])
     Store.add("special_artifacts", SpecialArtifacts, version=PROPS["name"])
+    Store.add("bannable_spells",   BannableSpells,   version=PROPS["name"])
     for artifact, spells in ArtifactSpells.items():
         Store.add("spells", spells, version=PROPS["name"], category=artifact)
 

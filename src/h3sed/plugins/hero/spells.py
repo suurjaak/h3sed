@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  26.02.2023
+@modified  16.05.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -135,20 +135,32 @@ class SpellsPlugin(object):
     def serialize(self):
         """Returns new hero bytearray, with edited spells sections."""
         result = self._hero.bytes[:]
+        version = self._savefile.version
 
-        IDS = {y: x[y] for x in [metadata.Store.get("ids", self._savefile.version)]
-               for y in metadata.Store.get("spells", self._savefile.version)}
+        IDS = {y: x[y] for x in [metadata.Store.get("ids", version)]
+               for y in metadata.Store.get("spells", version)}
         MYPOS = plugins.adapt(self, "pos", POS)
         state = self._state
 
-        artispells = set()
+        artispells, condspells = set(), set()
         if getattr(self._hero, "artifacts", None):
-            SPELL_ARTIFACTS = metadata.Store.get("artifact_spells", self._savefile.version)
-            artispells = set(y for x in self._hero.artifacts.values()
-                             for y in SPELL_ARTIFACTS.get(x, []))
+            SPELL_ARTIFACTS = metadata.Store.get("artifact_spells", version)
+            artispells0 = set(y for x in self._hero.state0.get("artifacts", {}).values()
+                              for y in SPELL_ARTIFACTS.get(x, []))
+            artispells  = set(y for x in self._hero.artifacts.values()
+                              for y in SPELL_ARTIFACTS.get(x, []))
+            condspells  = set(metadata.Store.get("bannable_spells", version))
+            condspells &= artispells0 & artispells
         for name, pos in IDS.items():
             in_book   = name in state
             available = in_book or name in artispells
+
+            # Some maps may have certain spells banned, e.g. Summon Boat on maps with no water
+            # in Horn of the Abyss; savefiles will not have these spell bits set.
+            # At least try to avoid a needless file change if we can detect the ban being in effect.
+            if available and not in_book and not result[MYPOS["spells_available"] + pos] \
+            and name in condspells: available = False
+
             result[MYPOS["spells_book"] + pos]      = in_book
             result[MYPOS["spells_available"] + pos] = available
 

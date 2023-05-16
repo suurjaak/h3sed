@@ -7,10 +7,9 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  26.02.2023
+@modified  16.05.2023
 ------------------------------------------------------------------------------
 """
-import copy
 import logging
 
 from h3sed import gui
@@ -64,7 +63,6 @@ class InventoryPlugin(object):
         self._hero     = None
         self._panel    = panel  # Plugin contents panel
         self._state    = []     # ["Skull Helmet", None, ..]
-        self._state0   = []     # Original state ["Skull Helmet", None, ..]
         self._ctrls    = []     # [wx.ComboBox, ]
 
 
@@ -95,7 +93,6 @@ class InventoryPlugin(object):
         """Loads hero to plugin."""
         self._hero = hero
         self._state[:] = self.parse([hero])[0]
-        self._state0 = copy.deepcopy(self._state)
         hero.inventory = self._state
         if panel: self._panel = panel
 
@@ -159,6 +156,7 @@ class InventoryPlugin(object):
         MYPOS = plugins.adapt(self, "pos", POS)
         pos = MYPOS["inventory"]
 
+        state0 = self._hero.state0.get("inventory") or []
         for prop in self.props():
             for i, name in enumerate(self._state) if "itemlist" == prop["type"] else ():
                 v = IDS.get(name)
@@ -166,7 +164,7 @@ class InventoryPlugin(object):
                     b = util.itoby(v, 8)
                 elif v:
                     b = util.itoby(v, 4) + metadata.Blank * 4
-                elif not self._state0[i]:
+                elif i < len(state0) and not state0[i]:
                     # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
                     b = bytes0[pos + i * 8:pos + (i + 1) * 8]
                 else:

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    31.01.2023
+@modified    16.05.2023
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -1085,5 +1085,6 @@ Store.add("skills",            Skills)
 Store.add("skill_levels",      SkillLevels)
 Store.add("special_artifacts", SpecialArtifacts)
 Store.add("spells",            Spells)
+Store.add("bannable_spells",   [])
 for artifact, spells in ArtifactSpells.items():
     Store.add("spells", spells, category=artifact)

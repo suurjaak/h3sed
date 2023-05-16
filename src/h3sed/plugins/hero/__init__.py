@@ -33,10 +33,10 @@ Subplugin modules are expected to have the following API (all methods optional):
 Subplugin instances are expected to have the following API:
 
     def props(self):
-        '''Optional. Returns props for subplugin, if using gui.build().'''
+        '''Mandatory. Returns props for subplugin, if using gui.build().'''
 
     def state(self):
-        '''Optional. Returns subplugin state for gui.build().'''
+        '''Mandatory. Returns subplugin state for gui.build().'''
 
     def item(self):
         '''Mandatory. Returns current hero.'''
@@ -252,8 +252,9 @@ class Hero(object):
         self.span      = span
         self.savefile  = savefile
         self.basestats = {}  # Primary attributes without artifact bonuses
+        self.state0    = {}  # Data after first load, as {category: {..} or [..]}
         self.yaml      = ""  # Data after first load or last change, as full hero charsheet YAML
-        self.yamls1    = []  # Data after first load, as [category YAML, ]
+        self.yamls1    = []  # Data after first load or last save, as [category YAML, ]
         self.yamls2    = []  # Data after last change, as [category YAML, ]
 
     def copy(self):
@@ -515,13 +516,19 @@ class HeroPlugin(object):
 
 
     def action(self, **kwargs):
-        """Handler for action (load=hero name or index)"""
+        """Handler for action (load=hero name or index) or (save=True)."""
         if kwargs.get("load") is not None:
             value = kwargs["load"]
             if isinstance(value, int):
                 index = max(0, min(value, len(self._heroes) - 1))
             else: index = next((i for i, x in enumerate(self._heroes) if x.name == value), -1)
             if index >= 0 and self._heroes: self.select_hero(index)
+        if kwargs.get("save"):
+            tabs = self._ctrls["tabs"]
+            for index, hero in enumerate(self._heroes):
+                hero.yamls1[:], hero.yamls2[:] = (hero.yamls2 or hero.yamls1), []
+                page = next((p for p, i in self._pages.items() if i == index), None)
+                if page is not None: tabs.SetPageText(tabs.GetPageIndex(page), hero.name)
 
 
     def reparse(self):
@@ -823,6 +830,8 @@ class HeroPlugin(object):
             changed = hero2.yamls2 and hero2.yamls1 != hero2.yamls2
             title = "%s%s" % (hero2.name, "*" if changed else "")
             tabs.AddPage(page, title, select=True)
+            style = tabs.GetAGWWindowStyleFlag() | wx.lib.agw.flatnotebook.FNB_X_ON_TAB
+            if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
         else:
             self.select_hero_tab(index)
 
@@ -835,7 +844,11 @@ class HeroPlugin(object):
             logger.info("Loading hero %s (bytes %s-%s in savefile).",
                         hero2.name, hero2.span[0], hero2.span[1] - 1)
             self._hero = hero2
-            for p in self._plugins: self.render_plugin(p["name"], reload=True)
+            do_state0 = not self._hero.state0
+            for p in self._plugins:
+                self.render_plugin(p["name"], reload=True)
+                if do_state0: self._hero.state0[p["name"]] = copy.deepcopy(p["instance"].state())
+
         finally:
             if self._pages_visited[-1:] != [index]: self._pages_visited.append(index)
             self._panel.Layout()

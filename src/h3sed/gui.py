@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    26.02.2023
+@modified    16.05.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1198,6 +1198,7 @@ class SavefilePage(wx.Panel):
         else:
             evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
+        for p in self.plugins: p.action(save=True)
         guibase.status("Saved %s." % filename2, flash=True)
         return True
 

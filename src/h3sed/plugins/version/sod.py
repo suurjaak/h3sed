@@ -142,11 +142,11 @@ ArtifactSlots = {
 
 """Primary skill modifiers that artifacts give to hero."""
 ArtifactStats = {
-  "Angelic Alliance":                    (21, 21, 21, 21),
-  "Armageddon's Blade":                  (+3, +3, +3, +6),
-  "Armor of the Damned":                 (+3, +3, +2, +2),
-  "Power of the Dragon Father":          (16, 16, 16, 16),
-  "Titan's Thunder":                     (+9, +9, +8, +8),
+    "Angelic Alliance":                  (21, 21, 21, 21),
+    "Armageddon's Blade":                (+3, +3, +3, +6),
+    "Armor of the Damned":               (+3, +3, +2, +2),
+    "Power of the Dragon Father":        (16, 16, 16, 16),
+    "Titan's Thunder":                   (+9, +9, +8, +8),
 }
 
 
