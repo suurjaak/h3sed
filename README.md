@@ -16,6 +16,8 @@ allowing to see an overview of all heroes, and edit any and all hero attributes:
 
 Attributes can be copied from one hero and pasted to another.
 
+Hero data can be exported as HTML or spreadsheet.
+
 Supports savegames from Shadow of Death and Horn of the Abyss.
 
 Downloads at https://suurjaak.github.io/h3sed.
