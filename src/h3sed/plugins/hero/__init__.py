@@ -738,6 +738,7 @@ class HeroPlugin(object):
 
     def on_select_hero(self, event):
         """Handler for selecting a hero in combobox, populates tabs with hero data."""
+        if self._ignore_events: return
         index = event.EventObject.Selection
         hero2 = self._heroes[index] if index < len(self._heroes) else None
         if not hero2:
