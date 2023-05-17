@@ -1,11 +1,12 @@
 CHANGELOG
 =========
 
-1.7, 2023-05-16
+1.7, 2023-05-17
 ---------------
 - improve hero parsing regex for spell scrolls in inventory (issue #1)
 - avoid needless serialization on opening first hero
 - skip saving artifact spells as available if detectably banned by map
+- fix not showing index on changing game version if no heroes parsed
 
 
 1.6, 2023-03-28

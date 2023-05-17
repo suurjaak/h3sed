@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  16.05.2023
+@modified  17.05.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -570,7 +570,7 @@ class HeroPlugin(object):
             self._pages_visited[:] = visited0
             if not hero and visited0[-1:] not in ([], [None]): hero = self._heroes[visited0[-1]]
             index = next(i for i, x in enumerate(self._heroes) if x is hero) if hero else None
-            if index is not None: self.select_hero(index, status=False)
+            self.select_index() if index is None else self.select_hero(index, status=False)
             self._panel.Layout()
         finally:
             self._ignore_events = False
