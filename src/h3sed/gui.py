@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    16.05.2023
+@modified    22.05.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1456,6 +1456,7 @@ def build(plugin, panel):
             if "max" in prop: rng[1] = min(prop["max"], 2**30)
             c2.SetRange(*rng)
             c2.Value = state[prop["name"]]
+            if prop.get("readonly"): c2.Enable(False)
             c2.Bind(wx.EVT_TEXT,     make_value_handler(c2, prop))
             c2.Bind(wx.EVT_SPINCTRL, make_value_handler(c2, prop))
 
@@ -1480,6 +1481,7 @@ def build(plugin, panel):
             if v and v not in choices: choices = [v] + choices
             c2.SetItems(choices)
             if v is not None: c2.Value = v
+            if prop.get("readonly"): c2.Enable(False)
             c2.Bind(wx.EVT_COMBOBOX, make_value_handler(c2, prop))
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
@@ -1495,6 +1497,7 @@ def build(plugin, panel):
             c2 = wx.CheckBox(panel, name=prop["name"])
 
             c2.Value = bool(state[prop["name"]])
+            if prop.get("readonly"): c2.Enable(False)
             c2.Bind(wx.EVT_CHECKBOX, make_value_handler(c2, prop))
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)

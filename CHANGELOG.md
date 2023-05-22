@@ -27,12 +27,13 @@ CHANGELOG
 - add hero index page
 
 
-1.3, 2023-02-17
+1.3, 2023-02-22
 ---------------
 - add hero charsheet view
 - add recent heroes menu
 - add separate toolbar for selected hero
 - improve hero parsing regex
+- make "movement points in total" read-only, as the game overwrites it on each turn
 - save backup only if not already saved for current date
 - fix not saving backup before overwriting
 

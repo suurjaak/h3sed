@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  26.02.2023
+@modified  22.05.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -74,12 +74,13 @@ UIPROPS = [{
     "min":    0,
     "max":    2**8 - 1,
 }, {
-    "name":   "movement_total",
-    "label":  "Movement points in total",
-    "type":   "number",
-    "len":    4,
-    "min":    0,
-    "max":    2**32 - 1,
+    "name":     "movement_total",
+    "label":    "Movement points in total",
+    "type":     "number",
+    "len":      4,
+    "min":      0,
+    "max":      2**32 - 1,
+    "readonly": True,
 }, {
     "name":   "movement_left",
     "label":  "Movement points remaining",
