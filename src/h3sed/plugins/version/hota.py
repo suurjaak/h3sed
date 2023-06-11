@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  16.05.2023
+@modified  11.06.2023
 ------------------------------------------------------------------------------
 """
 import logging
@@ -301,7 +301,8 @@ RGX_HERO = re.compile(b"""
     ( ((.\x00{3}) | \xFF{4}){2} ){64}
 
                              # 10 bytes: slots taken by combination artifacts 1015-1024
-    .[\x00-\x01]{6}[\x00-\x02][\x00-\x01][\x00-\x05]
+                             # Values should only be [\x00-\x05] as the count reserved,
+    .{10}                    # but HotA appears to encode additional information here.
 
     .{36}                    #  36 bytes: unknown                             1025-1060
     [\x00-\x1C]{29}          #  29 bytes: skill slots                         1061-1089

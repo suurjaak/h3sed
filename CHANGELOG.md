@@ -1,9 +1,10 @@
 CHANGELOG
 =========
 
-1.7, 2023-05-17
+1.7, 2023-06-11
 ---------------
 - improve hero parsing regex for spell scrolls in inventory (issue #1)
+- improve hero parsing regex for combination artifacts in Horn of the Abyss (issue #1)
 - avoid needless serialization on opening first hero
 - skip saving artifact spells as available if detectably banned by map
 - fix not showing index on changing game version if no heroes parsed
