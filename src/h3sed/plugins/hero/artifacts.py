@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  16.05.2023
+@modified  11.06.2023
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -396,6 +396,7 @@ class ArtifactsPlugin(object):
 
         pos_reserved, len_reserved = min(MYPOS["reserved"].values()), len(MYPOS["reserved"])
         result[pos_reserved:pos_reserved + len_reserved] = [0] * len_reserved
+        reserved_sets = set()  # [pos updated in combination artifact flags, ]
 
         state0 = self._hero.state0.get("artifacts") or {}
         for prop in self.props():
@@ -413,5 +414,11 @@ class ArtifactsPlugin(object):
             result[pos:pos + len(b)] = b
             for slot in SLOTS.get(name, [])[1:]:
                 result[MYPOS["reserved"][slot]] += 1
+                reserved_sets.add(MYPOS["reserved"][slot])
+
+        for pos in range(pos_reserved, pos_reserved + len_reserved):
+            if pos not in reserved_sets and bytes0[pos] > 5:
+                # Retain original bytes unchanged, Horn of the Abyss uses them for unknown purpose.
+                result[pos] = bytes0[pos]
 
         return result
