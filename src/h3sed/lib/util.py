@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    26.02.2023
+@modified    22.07.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -26,6 +26,8 @@ import time
 import urllib
 import warnings
 
+try: import collections.abc as collections_abc             # Py3
+except ImportError: import collections as collections_abc  # Py3
 
 try: int_types = (int, long)            # Py2
 except Exception: int_types = (int, )   # Py3
@@ -274,12 +276,12 @@ def get(collection, *path, **kwargs):
     result = collection if path else default
     if len(path) == 1 and isinstance(path[0], list): path = path[0]
     for p in path:
-        if isinstance(result, collections.Sequence):  # Iterable with index
+        if isinstance(result, collections_abc.Sequence):  # Iterable with index
             if isinstance(p, int_types) and p < len(result):
                 result = result[p]
             else:
                 result = default
-        elif isinstance(result, collections.Mapping): # Container with lookup
+        elif isinstance(result, collections_abc.Mapping): # Container with lookup
             result = result.get(p, default)
 
         else:
