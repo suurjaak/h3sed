@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    25.02.2023
+@modified    04.08.2023
 ------------------------------------------------------------------------------
 """
 
@@ -597,7 +597,7 @@ colptr += state
 
   /** Returns string with special characters escaped for RegExp. */
   var escapeRegExp = function(string) {
-    return string.replace(/[-[\]{}()*+!<=:?.\/\^$|#\s,]/g, "\$&");
+    return string.replace(/[\\\^$.|?*+()[{]/g, "\\\$&");
   };
 
 
