@@ -384,7 +384,7 @@ class HeroPlugin(object):
                          ("Cmd" if "darwin" == sys.platform else "Ctrl")
         search.Bind(wx.EVT_CHAR, self.on_search)
         search.Bind(wx.EVT_TEXT, self.on_search)
-        search.Bind(wx.EVT_SEARCH, self.on_search)
+        search.Bind(wx.EVT_SEARCH, self.on_search) if hasattr(wx, "EVT_SEARCH") else None
         controls.ColourManager.Manage(html, "ForegroundColour", wx.SYS_COLOUR_BTNTEXT)
         controls.ColourManager.Manage(html, "BackgroundColour", wx.SYS_COLOUR_WINDOW)
         html.Bind(wx.html.EVT_HTML_LINK_CLICKED,

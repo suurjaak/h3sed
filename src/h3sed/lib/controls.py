@@ -22,12 +22,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    26.02.2023
+@modified    06.08.2023
 ------------------------------------------------------------------------------
 """
 import collections
 import datetime
 import os
+import sys
 import time
 import webbrowser
 
@@ -40,6 +41,12 @@ import wx.lib.wordwrap
 
 try: text_types = (str, unicode)        # Py2
 except Exception: text_types = (str, )  # Py3
+
+PY3 = sys.version_info > (3, )
+
+# wx.NewId() deprecated from around wxPython 4
+NewId = (lambda: wx.NewIdRef().Id) if hasattr(wx, "NewIdRef") else wx.NewId
+
 
 
 class BusyPanel(wx.Window):
@@ -394,9 +401,10 @@ class HtmlDialog(wx.Dialog):
         html.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OnLink)
         self.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.OnSysColourChange)
 
+        disparg = self if PY3 else 0
         BARWH = [wx.SystemSettings.GetMetric(x, self) for x in (wx.SYS_HSCROLL_Y, wx.SYS_VSCROLL_X)]
-        MAXW = wx.Display(self).ClientArea.Size[0]
-        MAXH = (parent.TopLevelParent if parent else wx.Display(self).ClientArea).Size[1]
+        MAXW = wx.Display(disparg).ClientArea.Size[0]
+        MAXH = (parent.TopLevelParent if parent else wx.Display(disparg).ClientArea).Size[1]
         FRAMEH = 2 * wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_Y, self) + \
                  wx.SystemSettings.GetMetric(wx.SYS_CAPTION_Y, self)
         width = contentwidth + 2*BARWH[0]
@@ -440,7 +448,7 @@ class ItemHistory(wx.Object):
         """
         super(ItemHistory, self).__init__()
         self._max       = max(0, maxItems)
-        self._baseId    = wx.NewIdRef().Id if baseId is None else baseId
+        self._baseId    = NewId() if baseId is None else baseId
         self._formatter = lambda x: u"%s" % (x, )
         self._items     = []
         self._menus     = []  # [wx.Menu, ]
@@ -487,7 +495,7 @@ class ItemHistory(wx.Object):
 
     def Clear(self):
         """Removes all items from history and menu."""
-        self._items.clear()
+        del self._items[:]
         self.Populate()
 
 
@@ -514,7 +522,7 @@ class ItemHistory(wx.Object):
         return self._baseId
     def SetBaseId(self, baseId):
         """Sets the base identifier for menu items, repopulates menus if needed."""
-        if baseId is None: baseId = wx.NewIdRef().Id
+        if baseId is None: baseId = NewId()
         if baseId != self._baseId:
             self._baseId = baseId
             self.Populate()

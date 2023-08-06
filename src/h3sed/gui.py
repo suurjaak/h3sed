@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.05.2023
+@modified    06.08.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -132,10 +132,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 notebook.SetSelection(number)
                 self.on_change_page()
 
-        id_close = wx.NewIdRef().Id
+        id_close = controls.NewId()
         accelerators = [(wx.ACCEL_CMD, k, id_close) for k in [wx.WXK_F4, ord("W")]]
         for i in range(9):
-            id_tab = wx.NewIdRef().Id
+            id_tab = controls.NewId()
             accelerators += [(wx.ACCEL_CMD, ord(str(i + 1)), id_tab)]
             notebook.Bind(wx.EVT_MENU, functools.partial(on_tab_hotkey, i), id=id_tab)
 
@@ -312,8 +312,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             wx.ID_ANY, "&About %s" % conf.Title,
             "Show program information and copyright")
 
-        menu_close.Enabled = menu_reload.Enabled = False
-        menu_save.Enabled = menu_save_as.Enabled = False
+        for x in (menu_close, menu_reload, menu_save, menu_save_as): x.Enable(False)
         for x in menu_edit.MenuItems: x.Enable(False)
 
         self.history_file = wx.FileHistory(conf.MaxRecentFiles)
@@ -515,7 +514,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 label = next((x["label"] for x in plugins.version.PLUGINS
                               if x["name"] == conf.GameVersion), None)
                 if label: combo_game.Value = label
-            if items: combo_game.Size = combo_game.GetSizeFromText(items[0])
+            if items and hasattr(combo_game, "GetSizeFromText"):
+                combo_game.Size = combo_game.GetSizeFromText(items[0])
         else:
             combo_game.Show(False)
 
@@ -592,18 +592,17 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if not self.pages_visited or self.pages_visited[-1] != page:
             self.pages_visited.append(page)
 
-        self.menu_close.Enabled = self.menu_reload.Enabled = False
-        self.menu_save.Enabled = self.menu_save_as.Enabled = False
-        self.menu_undo.Enabled = self.menu_redo.Enabled = False
-        self.menu_changes.Enabled = self.menu_history.Enabled = False
+        for x in (self.menu_close, self.menu_reload, self.menu_save, self.menu_save_as,
+                  self.menu_undo, self.menu_redo, self.menu_changes, self.menu_history):
+            x.Enable(False)
         self.Title, subtitle = conf.Title, ""
 
         if isinstance(page, SavefilePage):
             self.page_file_latest = page
-            self.menu_save_as.Enabled = self.menu_close.Enabled = True
-            self.menu_reload.Enabled = self.menu_save.Enabled = True
-            self.menu_changes.Enabled = page.get_unsaved()
-            self.menu_history.Enabled = bool(page.undoredo.Commands)
+            for x in (self.menu_close, self.menu_reload, self.menu_save, self.menu_save_as):
+                x.Enable(True)
+            self.menu_changes.Enable(page.get_unsaved())
+            self.menu_history.Enable(bool(page.undoredo.Commands))
             page.undoredo.SetEditMenu(self.menu_edit)
             page.undoredo.SetMenuStrings()
         self.update_toolbar(page)
@@ -729,8 +728,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if ready or rename: self.update_notebook_header()
 
         self.update_fileinfo()
-        self.menu_changes.Enabled = page.get_unsaved()
-        self.menu_history.Enabled = bool(page.undoredo.Commands)
+        self.menu_changes.Enable(page.get_unsaved())
+        self.menu_history.Enable(bool(page.undoredo.Commands))
 
         if modified is not None or rename:
             suffix = "*" if modified else ""

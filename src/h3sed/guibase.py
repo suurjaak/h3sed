@@ -12,7 +12,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    09.01.2022
+@modified    06.08.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -26,7 +26,7 @@ import wx.lib.inspection
 import wx.lib.newevent
 import wx.py
 
-from . lib.controls import ColourManager
+from . lib.controls import ColourManager, NewId
 from . lib import util, wx_accel
 from . import conf
 
@@ -137,14 +137,14 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
         menu_file = wx.Menu()
         menu.Insert(0, menu_file, "&File")
         menu_recent = self.menu_recent = wx.Menu()
-        menu_file.AppendMenu(id=wx.NewIdRef().Id, text="&Recent files",
+        menu_file.AppendMenu(id=NewId(), text="&Recent files",
             submenu=menu_recent, help="Recently opened files.")
         menu_file.AppendSeparator()
         menu_console = self.menu_console = menu_file.Append(
-            id=wx.NewIdRef().Id, kind=wx.ITEM_CHECK, text="Show &console\tCtrl-E",
+            id=NewId(), kind=wx.ITEM_CHECK, text="Show &console\tCtrl-E",
             help="Show/hide a Python shell environment window")
         menu_inspect = self.menu_inspect = menu_file.Append(
-            id=wx.NewIdRef().Id, kind=wx.ITEM_CHECK, text="Show &widget inspector",
+            id=NewId(), kind=wx.ITEM_CHECK, text="Show &widget inspector",
             help="Show/hide the widget inspector")
 
         self.file_history = wx.FileHistory(conf.MaxRecentFiles)
