@@ -9,11 +9,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.08.2023
+@modified    12.09.2023
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
 except ImportError: from configparser import RawConfigParser  # Py3
+import copy
 import datetime
 import io
 import json
@@ -25,8 +26,8 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "1.7"
-VersionDate = "06.08.2023"
+Version = "1.8.dev0"
+VersionDate = "12.09.2023"
 
 if getattr(sys, "frozen", False):
     # Running as a pyinstaller executable
@@ -158,10 +159,16 @@ def load():
     try: VARTYPES = (basestring, bool, int, long, list, tuple, dict, type(None))         # Py2
     except Exception: VARTYPES = (bytes, str, bool, int, list, tuple, dict, type(None))  # Py3
 
+    def safecopy(v):
+        """Tries to return a deep copy, or a shallow copy, or given value if copy fails."""
+        for f in (copy.deepcopy, copy.copy, lambda x: x):
+            try: return f(v)
+            except Exception: pass
+
     section = "*"
     module = sys.modules[__name__]
-    Defaults = {k: v for k, v in vars(module).items() if not k.startswith("_")
-                and isinstance(v, VARTYPES)}
+    Defaults = {k: safecopy(v) for k, v in vars(module).items()
+                if not k.startswith("_") and isinstance(v, VARTYPES)}
 
     parser = RawConfigParser()
     parser.optionxform = str # Force case-sensitivity on names
