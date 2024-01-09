@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  17.05.2023
+@modified  09.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -636,7 +636,7 @@ class HeroPlugin(object):
 
 
     def on_paste_hero(self, event=None):
-        """Handler for copying a hero, adds hero data to clipboard."""
+        """Handler for pasting a hero, sets data from clipboard to hero."""
         value = None
         if self._hero and wx.TheClipboard.Open():
             if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
