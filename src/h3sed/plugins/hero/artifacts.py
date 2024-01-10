@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  11.06.2023
+@modified  10.01.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -329,12 +329,13 @@ class ArtifactsPlugin(object):
         if not all(getattr(self._hero, k, None) for k in ("stats", "basestats")): return result
 
         STATS = metadata.Store.get("artifact_stats", self._savefile.version)
+        MIN, MAX = metadata.PrimaryAttributeRange
         diff = [0] * len(metadata.PrimaryAttributes)
         for prop in self.props():
             item = self._state[prop["name"]]
             if item in STATS: diff = [a + b for a, b in zip(diff, STATS[item])]
         for k, v in zip(metadata.PrimaryAttributes, diff):
-            v1, v2 = self._hero.stats[k], min(max(0, self._hero.basestats[k] + v), 127)
+            v1, v2 = self._hero.stats[k], min(max(MIN, self._hero.basestats[k] + v), MAX)
             if v1 != v2: result, self._hero.stats[k] = True, v2
         return result
 

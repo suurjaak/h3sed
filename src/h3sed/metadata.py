@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    16.05.2023
+@modified    10.01.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -49,6 +49,10 @@ Skills = [
 
 """Hero skill levels, in ascending order."""
 SkillLevels = ["Basic", "Advanced", "Expert"]
+
+
+"""Hero primary attribute value range, as (min, max)."""
+PrimaryAttributeRange = (0, 127)
 
 
 """Hero artifacts, for wearing and side slots, excluding spell scrolls."""

@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  22.05.2023
+@modified  10.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -36,29 +36,29 @@ UIPROPS = [{
     "label":  "Attack",
     "type":   "number",
     "len":    1,
-    "min":    0,
-    "max":    127,
+    "min":    metadata.PrimaryAttributeRange[0],
+    "max":    metadata.PrimaryAttributeRange[1],
 }, {
     "name":   "defense",
     "label":  "Defense",
     "type":   "number",
     "len":    1,
-    "min":    0,
-    "max":    127,
+    "min":    metadata.PrimaryAttributeRange[0],
+    "max":    metadata.PrimaryAttributeRange[1],
 }, {
     "name":   "power",
     "label":  "Spell Power",
     "type":   "number",
     "len":    1,
-    "min":    0,
-    "max":    127,
+    "min":    metadata.PrimaryAttributeRange[0],
+    "max":    metadata.PrimaryAttributeRange[1],
 }, {
     "name":   "knowledge",
     "label":  "Knowledge",
     "type":   "number",
     "len":    1,
-    "min":    0,
-    "max":    127,
+    "min":    metadata.PrimaryAttributeRange[0],
+    "max":    metadata.PrimaryAttributeRange[1],
 }, {
     "name":   "exp",
     "label":  "Experience",
