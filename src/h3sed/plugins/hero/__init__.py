@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  09.01.2024
+@modified  10.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -247,10 +247,10 @@ class Hero(object):
 
     def __init__(self, name, bytes, place, span, savefile):
         self.name      = name
-        self.bytes     = bytes
-        self.place     = place
-        self.span      = span
-        self.savefile  = savefile
+        self.bytes     = bytes     # Hero bytearray
+        self.place     = place     # Hero index in savefile
+        self.span      = span      # Hero byte span in uncompressed savefile
+        self.savefile  = savefile  # metadata.SaveFile instance
         self.basestats = {}  # Primary attributes without artifact bonuses
         self.state0    = {}  # Data after first load, as {category: {..} or [..]}
         self.yaml      = ""  # Data after first load or last change, as full hero charsheet YAML
