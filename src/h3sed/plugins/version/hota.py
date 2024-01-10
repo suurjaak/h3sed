@@ -61,7 +61,7 @@ Artifacts = [
     "Statue of Legion",
     "Titan's Thunder",
     "Trident of Dominion",
-    "Vial of Dragonblood",
+    "Vial of Dragon Blood",
     "Wayfarer's Boots",
     "Wizard's Well",
 ]
@@ -149,7 +149,7 @@ IDs = {
     "Statue of Legion":                  0x85,
     "Titan's Thunder":                   0x87,
     "Trident of Dominion":               0x93,
-    "Vial of Dragonblood":               0x7F,
+    "Vial of Dragon Blood":              0x7F,
     "Wayfarer's Boots":                  0x97,
     "Wizard's Well":                     0x8A,
 
@@ -259,7 +259,7 @@ ArtifactSlots = {
     "Statue of Legion":                  ["side", "side", "side", "side", "side"],
     "Titan's Thunder":                   ["weapon", "helm", "armor", "shield"],
     "Trident of Dominion":               ["weapon"],
-    "Vial of Dragonblood":               ["side"],
+    "Vial of Dragon Blood":              ["side"],
     "Wayfarer's Boots":                  ["feet"],
 }
 
