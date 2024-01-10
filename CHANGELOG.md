@@ -6,6 +6,7 @@ CHANGELOG
 - add support for Factory creatures in Horn of the Abyss (issue #2)
 - add support for Sleepkeeper artifact in Horn of the Abyss
 - fix name of Vial of Dragon Blood artifact in Horn of the Abyss
+- fix error on closing last active hero page from hero index page
 
 
 1.7, 2023-08-06

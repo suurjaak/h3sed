@@ -705,6 +705,8 @@ class HeroPlugin(object):
             self._hero = None
             if self._pages_visited[-1:] in ([], [None]): self.select_index()
             else: self.select_hero(self._pages_visited[-1], status=False)
+        elif self._hero == self._heroes[index]:  # Closed last active page from index
+            self._hero = None
 
 
     def on_dragdrop_page(self, event=None):
