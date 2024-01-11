@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.8, 2024-01-10
+1.8, 2024-01-11
 ---------------
 - add support for Factory creatures in Horn of the Abyss (issue #2)
 - add support for Sleepkeeper artifact in Horn of the Abyss
