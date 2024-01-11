@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Heroes3 Savegame Editor | Changelog</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="Heroes3 Savegame Editor" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://suurjaak.github.io/h3sed/" />
+<meta property="og:url" content="https://suurjaak.github.io/h3sed/" />
+<meta property="og:site_name" content="h3sed" />
+
+
+    <link rel="stylesheet" href="css/style.css">
+    <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="https://suurjaak.github.io/h3sed/">h3sed</a></h1>
+
+        <p></p>
+
+        <p class="view">
+
+          <a href="index.html">Index</a><br />
+          <a href="changelog.html">Changelog</a><br />
+          <a href="downloads.html">Downloads</a><br />
+          <a href="https://github.com/suurjaak/h3sed">View the Project on GitHub <small>suurjaak/h3sed</small></a>
+
+          <ul>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.8_setup.exe">Download <strong>Setup</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.8_x64_setup.exe">Download <strong>64bit Setup</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_1.8-src.zip">Download <strong>Source</strong></a></li>
+          </ul>
+        </p>
+
+      </header>
+      <section>
+
+        <h2>Changelog</h2>
+
+        <h4>v1.8, 2024-01-11:</h4>
+        <ul>
+          <li>add support for Factory creatures in Horn of the Abyss (issue #2)</li>
+          <li>add support for Sleepkeeper artifact in Horn of the Abyss</li>
+          <li>fix name of Vial of Dragon Blood artifact in Horn of the Abyss</li>
+          <li>fix error on closing last active hero page from hero index page</li>
+        </ul>
+        <br />
+
+        <h4>v1.7, 2023-08-06:</h4>
+        <ul>
+          <li>improve hero parsing regex for spell scrolls in inventory (issue #1)</li>
+          <li>improve hero parsing regex for combination artifacts in Horn of the Abyss (issue #1)</li>
+          <li>avoid needless serialization on opening first hero</li>
+          <li>skip saving artifact spells as available if detectably banned by map</li>
+          <li>fix not showing index on changing game version if no heroes parsed</li>
+          <li>fix escaping special characters in exported HTML search bar</li>
+          <li>improve compatibility between different Python major and minor versions</li>
+        </ul>
+        <br />
+
+        <h4>v1.6, 2023-03-28:</h4>
+        <ul>
+          <li>add hero CSV/HTML export</li>
+          <li>show donned artifact stats</li>
+          <li>improve hero parsing regex</li>
+        </ul>
+        <br />
+
+        <h4>v1.5, 2023-02-24:</h4>
+        <ul>
+          <li>add category toggles to hero index</li>
+          <li>drop obsolete auto-load option</li>
+        </ul>
+        <br />
+
+        <h4>v1.4, 2023-02-21:</h4>
+        <ul>
+          <li>add hero index page</li>
+        </ul>
+        <br />
+
+        <h4>v1.3, 2023-02-17:</h4>
+        <ul>
+          <li>add hero charsheet view</li>
+          <li>add recent heroes menu</li>
+          <li>add separate toolbar for selected hero</li>
+          <li>improve hero parsing regex</li>
+          <li>make "movement points in total" read-only, as the game overwrites it on each turn</li>
+          <li>save backup only if not already saved for current date</li>
+          <li>fix not saving backup before overwriting</li>
+        </ul>
+        <br />
+
+        <h4>v1.2, 2023-02-07:</h4>
+        <ul>
+          <li>add undo-redo command history dialog</li>
+          <li>add toolbar button to open savefile folder</li>
+          <li>add "Show unsaved changes" to edit-menu</li>
+          <li>improve hero parsing regex</li>
+          <li>improve tracking updates in hero primary attributes from artifact change</li>
+          <li>fix army paste retaining previous values in new blank slots</li>
+          <li>fix army SpinCtrl hidden arrows becoming visible on system colour change</li>
+        </ul>
+        <br />
+
+        <h4>v1.1, 2023-01-29:</h4>
+        <ul>
+          <li>support multiple hero tabs</li>
+          <li>show donned artifact stats</li>
+          <li>fix using wx locale in Py2</li>
+        </ul>
+        <br />
+
+        <h4>v1.0, 2022-01-20:</h4>
+        <ul>
+          <li>first public release</li>
+        </ul>
+        <br />
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/suurjaak">suurjaak</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="js/scale.fix.js"></script>
+    
+  </body>
+</html>
