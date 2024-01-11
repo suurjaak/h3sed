@@ -38,7 +38,7 @@ CHANGELOG
 - add hero index page
 
 
-1.3, 2023-02-22
+1.3, 2023-02-17
 ---------------
 - add hero charsheet view
 - add recent heroes menu
