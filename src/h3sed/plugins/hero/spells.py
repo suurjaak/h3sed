@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  16.05.2023
+@modified  21.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -110,7 +110,7 @@ class SpellsPlugin(object):
 
 
     def on_add(self, prop, value):
-        """Adds skill at first level."""
+        """Adds spell to current hero spells, returns whether state changed."""
         if value in self._state: return False
         self._state.append(value)
         self._state.sort()
