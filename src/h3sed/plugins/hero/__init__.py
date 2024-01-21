@@ -633,7 +633,7 @@ class HeroPlugin(object):
             d = wx.TextDataObject(self._hero.yaml)
             wx.TheClipboard.SetData(d), wx.TheClipboard.Close()
             guibase.status("Copied hero %s data to clipboard.",
-                           self._hero.name, flash=True, log=True)
+                           self._hero.name, flash=conf.StatusShortFlashLength, log=True)
 
 
     def on_paste_hero(self, event=None):
@@ -647,7 +647,7 @@ class HeroPlugin(object):
             wx.TheClipboard.Close()
         if value:
             guibase.status("Pasting data to hero %s from clipboard.",
-                           self._hero.name, flash=True, log=True)
+                           self._hero.name, flash=conf.StatusShortFlashLength, log=True)
             self.parse_yaml(value)
 
 
@@ -970,7 +970,7 @@ class HeroPlugin(object):
             assert isinstance(states, dict)
         except Exception as e:
             logger.warning("Error loading hero data from clipboard: %s", e)
-            guibase.status("No valid hero data in clipboard.", flash=True)
+            guibase.status("No valid hero data in clipboard.", flash=conf.StatusShortFlashLength)
             return
         pluginmap = {p["name"]: p["instance"] for p in self._plugins}
         usables = {}  # {plugin name: state}

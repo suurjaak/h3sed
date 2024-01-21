@@ -747,7 +747,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
             page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage) and page.undoredo.CanUndo():
-            guibase.status("Undoing %s" % page.undoredo.CurrentCommand.Name, flash=True, log=True)
+            guibase.status("Undoing %s" % page.undoredo.CurrentCommand.Name,
+                           flash=conf.StatusShortFlashLength, log=True)
             page.undoredo.Undo()
 
 
@@ -758,7 +759,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage) and page.undoredo.CanRedo():
             cmd = page.undoredo.CurrentCommand or page.undoredo.Commands[0]
-            guibase.status("Redoing %s" % cmd.Name, flash=True, log=True)
+            guibase.status("Redoing %s" % cmd.Name,
+                           flash=conf.StatusShortFlashLength, log=True)
             page.undoredo.Redo()
 
 
@@ -798,11 +800,12 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         count, cando, do = dlg.GetSelection(), page.undoredo.CanUndo, page.undoredo.Undo
         if count >= 0: cando, do = page.undoredo.CanRedo, page.undoredo.Redo
         verb = "Undo" if count < 0 else "Redo"
-        guibase.status("%sing %s", verb, util.plural("action", abs(count)), flash=True, log=True)
+        guibase.status("%sing %s", verb, util.plural("action", abs(count)),
+                       flash=conf.StatusShortFlashLength, log=True)
         for _ in range(abs(count)):
             if not cando(): break  # for
             cmd = page.undoredo.CurrentCommand or page.undoredo.Commands[0]
-            guibase.status("%sing %s", verb, cmd.Name, flash=True, log=True)
+            guibase.status("%sing %s", verb, cmd.Name, flash=conf.StatusShortFlashLength, log=True)
             do()
 
 
@@ -1196,7 +1199,7 @@ class SavefilePage(wx.Panel):
             evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
         for p in self.plugins: p.action(save=True)
-        guibase.status("Saved %s." % filename2, flash=True)
+        guibase.status("Saved %s." % filename2, flash=conf.StatusShortFlashLength)
         return True
 
 

@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "1.9.dev3"
+Version = "1.9.dev4"
 VersionDate = "21.01.2024"
 
 if getattr(sys, "frozen", False):
@@ -142,8 +142,11 @@ DiffOldColour = "#FFAAAA"
 """Colour for new value in savegame diff."""
 DiffNewColour = "#AAFFAA"
 
-"""Duration of "flashed" status message on StatusBar, in seconds."""
+"""Default duration of "flashed" status message on StatusBar, in seconds."""
 StatusFlashLength = 20
+
+"""Short duration of "flashed" status message on StatusBar, in seconds."""
+StatusShortFlashLength = 5
 
 """How many items in the Recent Files menu."""
 MaxRecentFiles = 20
