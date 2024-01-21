@@ -428,12 +428,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         return savefile
 
 
-    def load_savefile_page(self, filename):
+    def load_savefile_page(self, filename, savefile=None):
         """
         Tries to load the specified file, if not already open, create a
         subpage for it, if not already created, and focuses the subpage.
 
-        @return  savefile page instance
+        @param   savefile  opened Savefile instance, if any
+        @return            savefile page instance
         """
         opts = self.files.get(filename) or {}
         page = opts.get("page")
@@ -445,7 +446,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.on_change_page()
             return
 
-        savefile = self.load_savefile(filename)
+        savefile = savefile or self.load_savefile(filename)
         if not savefile: return
 
         guibase.status("Opening page for %s." % filename, flash=True)
@@ -472,21 +473,18 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         subpages for them, if not already created, and focus the subpages.
         Skips files that are not gzipped.
         """
-        save_filenames, notsave_filenames, files0 = [], [], set(self.files)
+        savefiles, notsave_filenames, files0 = {}, [], set(self.files)
         for f in filenames:
-            if f in self.files or self.load_savefile(f, silent=True):
-                save_filenames.append(f)
+            if f in self.files: savefile = self.files[f]["savefile"]
+            else: savefile = self.load_savefile(f, silent=True)
+            if savefile: savefiles[f] = savefile
             else:
                 notsave_filenames.append(f)
                 guibase.status("%s is not a valid gzipped file.", f,
                                log=True, flash=True)
 
-        if len(save_filenames) == 1:
-            self.load_savefile_page(save_filenames[0])
-        else:
-            for f in save_filenames:
-                if not self.load_savefile(f, silent=True): continue # for f
-                self.load_savefile_page(f)
+        for filename, savefile in savefiles.items():
+            self.load_savefile_page(filename, savefile)
         if notsave_filenames:
             t = "valid gzipped files"
             if len(notsave_filenames) == 1: t = "a " + t[:-1]
