@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  10.01.2024
+@modified  21.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -497,12 +497,13 @@ class HeroPlugin(object):
         wx.CallAfter(self.populate_index)
 
 
-    def render(self, reparse=False, reload=False):
+    def render(self, reparse=False, reload=False, log=True):
         """
         Renders hero selection and editing subtabs into our panel.
 
         @param   reparse  whether plugins should re-parse state from savefile
         @param   reload   whether plugins should reload state from hero
+        @param   log      whether plugin should log actions
         """
         if not self._plugins:
             if not PLUGINS: init()
@@ -511,7 +512,7 @@ class HeroPlugin(object):
                 p["instance"] = p["module"].factory(self.savefile, self, panel=None)
         if reparse: self.reparse()
         elif self._hero and self._heropanel.Children:
-            for p in self._plugins: self.render_plugin(p["name"], reload=reload)
+            for p in self._plugins: self.render_plugin(p["name"], reload=reload, log=log)
         else: self.build()
 
 
@@ -1118,21 +1119,31 @@ class HeroPlugin(object):
         wx.PostEvent(self._panel, gui.SavefilePageEvent(self._panel.Id))
 
 
-    def render_plugin(self, name, reload=False):
+    def render_plugin(self, name, reload=False, log=True):
         """
         Renders or re-renders panel for the specified plugin.
 
         @param   reload  whether plugins should re-parse state from hero bytes
+        @param   log     whether should log actions
         """
         p = next((x for x in self._plugins if x["name"] == name), None)
         if not p:
             logger.warning("Call to render unknown plugin %s.", name)
             return
 
+        def fmt(state):
+            if isinstance(state, dict): return {k: v for k, v in state.items() if v is not None}
+            if isinstance(state, list) and state[-2:] == [None, None]:
+                count = next((i for i, x in enumerate(state[::-1]) if x is not None), len(state))
+                return (("%s + " % state[:len(state) - count]) if count < len(state) else "") + \
+                       "%s * %s" % ([None], count)
+            return state
+
         obj, item0 = p["instance"], p["instance"].item()
         if reload or item0 is None:
             obj.load(self._hero, p["panel"])
-            logger.info("Loaded hero %s %s %s.", self._hero.name, p["name"], obj.state())
+            if log: logger.info("Loaded hero %s %s %s.",
+                                self._hero.name, p["name"], fmt(obj.state()))
         p["panel"].Freeze()
         try:
             if   callable(getattr(obj, "render", None)): obj.render()

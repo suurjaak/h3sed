@@ -37,12 +37,13 @@ Plugin modules are expected to have the following API (all methods optional):
 
 Plugin instances are expected to have the following API (all methods mandatory):
 
-    def render(self, reparse=False, reload=False):
+    def render(self, reparse=False, reload=False, log=True):
         '''
         Renders plugin into panel given in factory().
 
         @param   reparse  whether plugin should re-parse state from savefile
         @param   reload   whether plugin should reload state from current serialization
+        @param   log      whether plugin should log actions
         '''
 
     def get_data(self):
@@ -63,7 +64,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  20.02.2022
+@modified  21.01.2024
 ------------------------------------------------------------------------------
 """
 import os
@@ -166,7 +167,7 @@ class PluginCommand(wx.Command):
     def Do(self):
         if self._done:
             self._plugin.set_data(self._data2)
-            self._plugin.render(reload=True)
+            self._plugin.render(reload=True, log=False)
             self._plugin.patch()
         else:
             self._data1 = self._plugin.get_data()
@@ -176,7 +177,7 @@ class PluginCommand(wx.Command):
 
     def Undo(self):
         self._plugin.set_data(self._data1)
-        self._plugin.render(reload=True)
+        self._plugin.render(reload=True, log=False)
         self._plugin.patch()
         return True
 
