@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.9, 2024-01-21
+---------------
+- ignore swapping blank or otherwise identical slots in inventory and army
+
 1.8, 2024-01-11
 ---------------
 - add support for Factory creatures in Horn of the Abyss (issue #2)

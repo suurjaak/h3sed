@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.08.2023
+@modified    21.01.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1314,6 +1314,8 @@ def build(plugin, panel):
             return True
 
         def handler(event):
+            state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
+            if state[index] == state[index + direction]: return
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             cname = "swap %s: #%s and #%s" % (label, index + 1, index + direction + 1)
             logger.info("Swapping %s: #%s and #%s.", label, index + 1, index + direction + 1)
