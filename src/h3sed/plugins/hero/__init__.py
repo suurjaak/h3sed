@@ -827,7 +827,8 @@ class HeroPlugin(object):
         self._ignore_events = True
         self._panel.Freeze()
         combo.SetSelection(index)
-        if index not in self._pages.values():
+        page_existed = index in self._pages.values()
+        if not page_existed:
             page = wx.Window(tabs)
             self._pages[page] = index
             changed = hero2.yamls2 and hero2.yamls1 != hero2.yamls2
@@ -844,12 +845,13 @@ class HeroPlugin(object):
         tb.Show()
         try:
             if self._hero: self.patch()
-            logger.info("Loading hero %s (bytes %s-%s in savefile).",
-                        hero2.name, hero2.span[0], hero2.span[1] - 1)
+            if not page_existed:
+                logger.info("Loading hero %s (bytes %s-%s in savefile).",
+                            hero2.name, hero2.span[0], hero2.span[1] - 1)
             self._hero = hero2
             do_state0 = not self._hero.state0
             for p in self._plugins:
-                self.render_plugin(p["name"], reload=True)
+                self.render_plugin(p["name"], reload=True, log=not page_existed)
                 if do_state0: self._hero.state0[p["name"]] = copy.deepcopy(p["instance"].state())
 
         finally:

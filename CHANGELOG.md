@@ -4,7 +4,7 @@ CHANGELOG
 1.9, 2024-01-21
 ---------------
 - ignore swapping blank or otherwise identical slots in inventory and army
-- tweak status message durations
+- tweak logging and status messages
 
 1.8, 2024-01-11
 ---------------
