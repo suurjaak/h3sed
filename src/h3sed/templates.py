@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    04.08.2023
+@modified    22.01.2024
 ------------------------------------------------------------------------------
 """
 
@@ -80,7 +80,7 @@ HTML text shown for hero full character sheet, toggleable between unsaved change
 
 """
 HERO_CHARSHEET_HTML = """<%
-import difflib, wx
+import wx
 from h3sed.lib.vendor import step
 from h3sed import conf, templates
 COLOUR_DISABLED = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT).GetAsString(wx.C2S_HTML_SYNTAX)
