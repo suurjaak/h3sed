@@ -22,7 +22,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.08.2023
+@modified    24.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -361,10 +361,14 @@ class CommandHistoryDialog(wx.Dialog):
 class HtmlDialog(wx.Dialog):
     """Popup dialog showing a wx.HtmlWindow, with an OK-button."""
 
-    def __init__(self, parent, title, content, links=None, buttons=None, style=0):
+    def __init__(self, parent, title, content,
+                 links=None, buttons=None, autowidth_links=None, style=0):
         """
-        @param   links    {href: page text to show or function(href) to invoke, text result shown}
-        @param   buttons  {label: function() to invoke}
+        @param   links            {href: page text or function(href) to return page text to show}
+        @param   buttons          {label: function() to invoke}
+        @param   autowidth_links  whether to auto-size dialog width to links content;
+                                  None auto-sizes to links with texts only, False skips,
+                                  True autosizes all links including callable content
         """
         wx.Dialog.__init__(self, parent, title=title, style=wx.CAPTION | wx.CLOSE_BOX | style)
         self.html = None
@@ -390,9 +394,10 @@ class HtmlDialog(wx.Dialog):
         if callable(content): content = content()
         html.SetPage(content)
         contentwidth = html.VirtualSize[0]
-        if links:
-            for x in (x for x in links.values() if isinstance(x, str)):
-                html.SetPage(x)
+        for k, v in links.items() if links and autowidth_links is not False else ():
+            v = v(k) if callable(v) and autowidth_links else v
+            if isinstance(v, text_types):
+                html.SetPage(v)
                 contentwidth = max(contentwidth, html.VirtualSize[0])
             html.SetPage(content)
         html.BackgroundColour = ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
@@ -419,8 +424,8 @@ class HtmlDialog(wx.Dialog):
         href = event.GetLinkInfo().Href
         if href in self.links:
             page = self.links[href]
-            if callable(page): page = page(href) 
-            if isinstance(page, str):
+            if callable(page): page = page(href)
+            if isinstance(page, text_types):
                 bcol, fcol = event.EventObject.BackgroundColour, event.EventObject.ForegroundColour
                 event.EventObject.SetPage(page)
                 event.EventObject.BackgroundColour, event.EventObject.ForegroundColour = bcol, fcol

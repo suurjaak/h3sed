@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.01.2024
+@modified    24.01.2024
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
@@ -26,8 +26,8 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "1.9.dev6"
-VersionDate = "22.01.2024"
+Version = "1.9.dev7"
+VersionDate = "24.01.2024"
 
 if getattr(sys, "frozen", False):
     # Running as a pyinstaller executable
@@ -49,7 +49,7 @@ FileDirectives = [
 ]
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
-    "FileExtensions", "HeroToggles", "MaxConsoleHistory", "MaxRecentFiles",
+    "FileExtensions", "HeroToggles", "HeroCharsheetView", "MaxConsoleHistory", "MaxRecentFiles",
     "PopupUnexpectedErrors", "StatusFlashLength",
 ]
 Defaults = {}
@@ -79,6 +79,9 @@ GameVersion = ""
 
 """Hero index categories toggle state, as {name: false}."""
 HeroToggles = {}
+
+"""Default view mode in hero full character sheet, "normal" or "changes"."""
+HeroCharsheetView = "normal"
 
 """Contents of Recent Files menu."""
 RecentFiles = []

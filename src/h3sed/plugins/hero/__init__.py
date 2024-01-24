@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  21.01.2024
+@modified  24.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -662,11 +662,15 @@ class HeroPlugin(object):
         texts, texts0 = self._hero.yamls2 or self._hero.yamls1, None
         if self._hero.yamls2 and self._hero.yamls1 != self._hero.yamls2: texts0 = self._hero.yamls1 
         tplargs = dict(name=self._hero.name, texts=texts, texts0=texts0)
-        content, content2 = tpl.expand(**tplargs), tpl.expand(changes=True, **tplargs)
-        links = {"normal": content, "changes": content2}
+        normal, changes = tpl.expand(**tplargs), tpl.expand(changes=True, **tplargs)
+        content = changes if texts0 and "normal" != conf.HeroCharsheetView else normal
+        def on_link(mode):
+            conf.HeroCharsheetView = mode
+            return changes if "normal" != mode else normal
+        links = {k: on_link for k in (["normal", "changes"] if texts0 else ["normal"])}
         buttons = {"Copy data": self.on_copy_hero}
         dlg = controls.HtmlDialog(self._panel.TopLevelParent, "Hero character sheet", content,
-                                  links=links, buttons=buttons, style=wx.RESIZE_BORDER)
+                                  links, buttons, autowidth_links=True, style=wx.RESIZE_BORDER)
         wx.CallAfter(dlg.ShowModal)
 
 

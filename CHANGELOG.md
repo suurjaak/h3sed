@@ -1,9 +1,10 @@
 CHANGELOG
 =========
 
-1.9, 2024-01-21
+1.9, 2024-01-24
 ---------------
 - ignore swapping blank or otherwise identical slots in inventory and army
+- remember view mode in hero full character sheet dialog
 - tweak logging and status messages
 
 1.8, 2024-01-11
