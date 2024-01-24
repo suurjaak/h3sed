@@ -5,6 +5,7 @@ CHANGELOG
 ---------------
 - ignore swapping blank or otherwise identical slots in inventory and army
 - remember view mode in hero full character sheet dialog
+- tweak column titles in hero index table
 - tweak logging and status messages
 
 1.8, 2024-01-11

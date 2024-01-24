@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.01.2024
+@modified    24.01.2024
 ------------------------------------------------------------------------------
 """
 
@@ -241,8 +241,8 @@ categories = categories if isdef("categories") else None
     <th align="left" valign="bottom">Name</th>
 %if not categories or categories["stats"]:
     <th align="left" valign="bottom">Level</th>
-    %for label in metadata.PrimaryAttributes.values():
-    <th align="left" valign="bottom">{{ label.split()[-1] }}</th>
+    %for name, label in metadata.PrimaryAttributes.items():
+    <th align="left" valign="bottom">{{ next(x[:5] if len(x) > 7 else x for x in [label.split()[-1]]) }}</th>
     %endfor
 %endif
 %if not categories or categories["devices"]:
