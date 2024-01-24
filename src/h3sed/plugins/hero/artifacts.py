@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  10.01.2024
+@modified  24.01.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -36,7 +36,7 @@ def format_stats(plugin, prop, state, artifact_stats=None):
                      for k, v in zip(metadata.PrimaryAttributes.values(), STATS[value]) if v)
 
 
-PROPS = {"name": "artifacts", "label": "Artifacts", "index": 2}
+PROPS = {"name": "artifacts", "label": "Artifacts", "index": 3}
 UIPROPS = [{
     "name":     "helm",
     "label":    "Helm slot",

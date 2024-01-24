@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  21.01.2024
+@modified  24.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -22,7 +22,7 @@ from h3sed.plugins.hero import POS
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "spells", "label": "Spells", "index": 4}
+PROPS = {"name": "spells", "label": "Spells", "index": 5}
 UIPROPS = [{
     "type":       "itemlist",
     "addable":    True,

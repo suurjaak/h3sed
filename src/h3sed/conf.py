@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "1.9.dev9"
+Version = "1.9.dev10"
 VersionDate = "24.01.2024"
 
 if getattr(sys, "frozen", False):

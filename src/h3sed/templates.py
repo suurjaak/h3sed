@@ -254,14 +254,14 @@ categories = categories if isdef("categories") else None
 %if not categories or categories["army"]:
     <th align="left" valign="bottom">Army</th>
 %endif
-%if not categories or categories["spells"]:
-    <th align="left" valign="bottom">Spells</th>
-%endif
 %if not categories or categories["artifacts"]:
     <th align="left" valign="bottom">Artifacts</th>
 %endif
 %if not categories or categories["inventory"]:
     <th align="left" valign="bottom">Inventory</th>
+%endif
+%if not categories or categories["spells"]:
+    <th align="left" valign="bottom">Spells</th>
 %endif
   </tr>
 %elif count and isdef("text") and text.strip():
@@ -301,13 +301,6 @@ categories = categories if isdef("categories") else None
     %endfor
     </td>
 %endif
-%if not categories or categories["spells"]:
-    <td align="left" valign="top" nowrap>
-    %for item in hero.spells:
-    {{ item }}<br />
-    %endfor
-    </td>
-%endif
 %if not categories or categories["artifacts"]:
     <td align="left" valign="top" nowrap>
     %for item in filter(bool, hero.artifacts.values()):
@@ -322,6 +315,13 @@ categories = categories if isdef("categories") else None
     %endfor
     </td>
   </tr>
+%endif
+%if not categories or categories["spells"]:
+    <td align="left" valign="top" nowrap>
+    %for item in hero.spells:
+    {{ item }}<br />
+    %endfor
+    </td>
 %endif
 %endfor
 %if heroes:
@@ -661,14 +661,14 @@ colptr += state
 %if not categories or categories["army"]:
     <th><a class="sort" title="Sort by army" onclick="onSort(this)">Army</a></th>
 %endif
-%if not categories or categories["spells"]:
-    <th><a class="sort" title="Sort by spells" onclick="onSort(this)">Spells</a></th>
-%endif
 %if not categories or categories["artifacts"]:
     <th><a class="sort" title="Sort by artifacts" onclick="onSort(this)">Artifacts</a></th>
 %endif
 %if not categories or categories["inventory"]:
     <th><a class="sort" title="Sort by inventory" onclick="onSort(this)">Inventory</a></th>
+%endif
+%if not categories or categories["spells"]:
+    <th><a class="sort" title="Sort by spells" onclick="onSort(this)">Spells</a></th>
 %endif
   </tr>
 
@@ -705,13 +705,6 @@ colptr += state
     %endfor
     </td>
 %endif
-%if not categories or categories["spells"]:
-    <td>
-    %for item in hero.spells:
-    {{ item }}<br />
-    %endfor
-    </td>
-%endif
 %if not categories or categories["artifacts"]:
     <td>
     %for item in filter(bool, hero.artifacts.values()):
@@ -726,6 +719,13 @@ colptr += state
     %endfor
     </td>
   </tr>
+%endif
+%if not categories or categories["spells"]:
+    <td>
+    %for item in hero.spells:
+    {{ item }}<br />
+    %endfor
+    </td>
 %endif
 %endfor
 
