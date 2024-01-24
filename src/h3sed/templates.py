@@ -411,7 +411,7 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
     table { border-spacing: 2px; empty-cells: show; width: 100%; }
     td, th { border: 1px solid #C0C0C0; padding: 5px; }
     th { text-align: left; white-space: nowrap; }
-    td { vertical-align: top; }
+    td { vertical-align: top; white-space: nowrap; }
     td.index, th.index { color: gray; width: 10px; }
     td.index { color: gray; text-align: right; }
     a.sort { display: block; }
