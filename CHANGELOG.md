@@ -1,10 +1,11 @@
 CHANGELOG
 =========
 
-1.9, 2024-01-24
+1.9, 2024-01-25
 ---------------
 - ignore swapping blank or otherwise identical slots in inventory and army
 - remember view mode in hero full character sheet dialog
+- remember savefile extension filter
 - reorder hero attribute categories in UI and exports
 - tweak column titles in hero index table
 - tweak logging and status messages

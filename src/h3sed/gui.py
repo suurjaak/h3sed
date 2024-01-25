@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    21.01.2024
+@modified    25.01.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -172,6 +172,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.Center(wx.HORIZONTAL)
             self.Position.top = 50
         self.dir_ctrl.SetFocus()
+        if conf.SelectedIndex and conf.SelectedIndex < len(metadata.wildcard()):
+            self.dir_ctrl.UnselectAll()
+            self.dir_ctrl.SetFilterIndex(conf.SelectedIndex)
+            self.dir_ctrl.GetFilterListCtrl().Select(conf.SelectedIndex)
+            self.dir_ctrl.ReCreateTree()
         if conf.SelectedPath: self.dir_ctrl.ExpandPath(conf.SelectedPath)
 
         self.Show(True)
@@ -823,7 +828,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def on_choose_filter(self, event):
         """Handler for choosing extension filter in file control."""
+        if event.Selection == conf.SelectedIndex:
+            return
         if event: event.Skip() # Pass event along to next handler
+        conf.SelectedIndex = event.Selection
         path = self.dir_ctrl.Path
         # Workaround for DirCtrl raising error if any selection during populate
         self.dir_ctrl.UnselectAll()
