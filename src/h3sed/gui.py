@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    25.01.2024
+@modified    26.01.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1306,7 +1306,7 @@ def build(plugin, panel):
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             namelbl = "" if rowindex is None else "slot %s" % rowindex
             if name is not None: namelbl += (" " if namelbl else "") + name
-            valuelbl = "<blank>" if value is False or value in ("", None) else value
+            valuelbl = "<blank>" if value in ("", False, None) else value
             cname = "set %s: %s %s" % (label, namelbl, valuelbl)
             logger.info("Setting %s: %s to %s.", label, namelbl, valuelbl)
             action = functools.partial(on_do, ctrl, value)
@@ -1364,6 +1364,32 @@ def build(plugin, panel):
             cname = "remove %s: %s" % (label, v)
             logger.info("Removing %s: %s.", label, v)
             plugin.parent.command(on_do, cname)
+        return handler
+
+    def make_clear_handler(ctrl, myprops, rowindex=None):
+        name, key = myprops.get("name"), myprops.get("name", rowindex)
+
+        def on_do(ctrl):
+            target = plugin.state() if callable(getattr(plugin, "state", None)) else {}
+            value0 = util.get(target, key)
+            if not value0:
+                return False
+            value = {} if isinstance(value0, dict) else None
+            if callable(getattr(plugin, "on_change", None)):
+                plugin.on_change(myprops, target, ctrl, value)
+            else:
+                target[key] = value
+            wx.PostEvent(panel, PluginEvent(panel.Id, action="render", name=plugin.name))
+            plugin.parent.patch()
+            return True
+
+        def handler(event):
+            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
+            namelbl = "" if rowindex is None else "slot %s" % rowindex
+            if name is not None: namelbl += (" " if namelbl else "") + name
+            cname = "set %s: %s <blank>" % (label, namelbl)
+            logger.info("Setting %s: %s to <blank>.", label, namelbl)
+            plugin.parent.command(functools.partial(on_do, event.EventObject), cname)
         return handler
 
     def make_info(prop, sizer, pos):
@@ -1435,6 +1461,10 @@ def build(plugin, panel):
                     c = wx.Button(panel, label="remove", size=(50 + BTN_WPLUS, -1))
                     c.Bind(wx.EVT_BUTTON, make_remove_handler(c, i))
                     bsizer.Add(c)
+                if prop.get("nullable"):
+                    c = wx.Button(panel, label="remove", size=(50 + BTN_WPLUS, -1))
+                    c.Bind(wx.EVT_BUTTON, make_clear_handler(c, prop, rowindex=i))
+                    bsizer.Add(c)
                 if bsizer.Children: sizer.Add(bsizer, pos=(count, 1))
                 else: sizer.AddSpacer(10)
                 count += 1
@@ -1496,8 +1526,12 @@ def build(plugin, panel):
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
+            if prop.get("nullable"):
+                c3 = wx.Button(panel, label="remove", size=(50 + BTN_WPLUS, -1))
+                c3.Bind(wx.EVT_BUTTON, make_clear_handler(c3, prop))
+                sizer.Add(c3, pos=(count, 2))
             result[prop["name"]] = c2
-            if "info" in prop: make_info(prop, sizer, (count, 2))
+            if "info" in prop: make_info(prop, sizer, (count, 2 + bool(prop.get("nullable"))))
             count += 1
 
 

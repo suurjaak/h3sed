@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  24.01.2024
+@modified  26.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -169,12 +169,23 @@ class ArmyPlugin(object):
         Handler for army change, enables or disables creature count.
         Returns True.
         """
+        ctrls = [x.Window for x in ctrl.ContainingSizer.Children]
+        namectrl  = next(x for x in ctrls if isinstance(x, wx.ComboBox))
+        countctrl = namectrl.GetNextSibling()
+        placectrl = countctrl.GetNextSibling()
+        if prop.get("nullable") and ctrl and "remove" == ctrl.Label:  # Clearing army slot
+            idx = next(i for i, cc in enumerate(self._ctrls) if namectrl in cc.values())
+            row[idx] = value
+            namectrl.Value = ""
+            countctrl.Show(False)
+            placectrl.Show(True)
+            return True
         row[prop["name"]] = value
         if "name" == prop["name"]:
             if value and not row.get("count"):
-                row["count"] = ctrl.GetNextSibling().Value = 1
-            ctrl.GetNextSibling().Show(bool(value))
-            ctrl.GetNextSibling().GetNextSibling().Show(not value)
+                row["count"] = countctrl.Value = 1
+            countctrl.Show(bool(value))
+            placectrl.Show(not value)
         return True
 
 

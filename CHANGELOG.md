@@ -1,8 +1,9 @@
 CHANGELOG
 =========
 
-1.9, 2024-01-25
+1.9, 2024-01-26
 ---------------
+- add remove-buttons to hero army, artifacts and inventory sections
 - ignore swapping blank or otherwise identical slots in inventory and army
 - remember view mode in hero full character sheet dialog
 - remember savefile extension filter
