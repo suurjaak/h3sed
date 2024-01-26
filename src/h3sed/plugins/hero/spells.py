@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  24.01.2024
+@modified  26.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -24,17 +24,11 @@ logger = logging.getLogger(__package__)
 
 PROPS = {"name": "spells", "label": "Spells", "index": 5}
 UIPROPS = [{
-    "type":       "itemlist",
-    "addable":    True,
-    "removable":  True,
-    "exclusive":  True,
+    "type":       "checklist",
     "choices":    None, # Populated later
-    "item": [{
-        "name":   "name",
-        "type":   "label",
-    }],
+    "columns":    4,
+    "vertical":   True,
 }]
-
 
 
 def props():
@@ -62,7 +56,7 @@ class SpellsPlugin(object):
 
 
     def props(self):
-        """Returns props for spells-tab, as [{type: "number", ..}]."""
+        """Returns props for spells-tab, as [{type: "checklist", ..}]."""
         result = []
         for prop in UIPROPS:
             cc = metadata.Store.get("spells", self._savefile.version)
@@ -71,7 +65,7 @@ class SpellsPlugin(object):
 
 
     def state(self):
-        """Returns data state for spells-plugin, as {mana, exp, ..}."""
+        """Returns data state for spells-plugin, as [spell name, ..]."""
         return self._state
 
 

@@ -76,7 +76,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  24.01.2024
+@modified  26.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -1054,7 +1054,7 @@ class HeroPlugin(object):
         state = copy.copy(plugin.state()) if plugin.item() == hero else \
                 getattr(hero, plugin.name) if hasattr(hero, plugin.name) else plugin.parse([hero])[0]
         for prop in props if isinstance(props, (list, tuple)) else [props]:
-            if "itemlist" == prop["type"]:
+            if prop["type"] in ("itemlist", "checklist"):
                 while state and not state[-1]: state.pop()  # Strip empty trailing values
                 for v in state:
                     itempairs = []

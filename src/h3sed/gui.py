@@ -13,6 +13,7 @@ Released under the MIT License.
 import datetime
 import functools
 import logging
+import math
 import os
 import shutil
 import sys
@@ -1392,6 +1393,27 @@ def build(plugin, panel):
             plugin.parent.command(functools.partial(on_do, event.EventObject), cname)
         return handler
 
+    def make_check_handler(ctrl, myprops, value):
+        def on_do(checked):
+            state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
+            if callable(getattr(plugin, "on_add" if checked else "on_remove", None)):
+                (plugin.on_add if value else plugin.on_remove)(myprops, value)
+            else:
+                if isinstance(state, list):
+                    (state.append if checked else state.remove)(value)
+                else:
+                    state.update({value: True}) if checked else state.pop(value)
+            plugin.parent.patch()
+            return True
+
+        def handler(event):
+            action, doing = ("add", "Adding") if ctrl.Value else ("remove", "Removing")
+            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
+            cname = "%s %s: %s" % (action, label, value)
+            logger.info("%s %s: %s.", doing, label, value)
+            plugin.parent.command(functools.partial(on_do, ctrl.Value), cname)
+        return handler
+
     def make_info(prop, sizer, pos):
         value = prop["info"](plugin, prop, state) if callable(prop["info"]) else prop["info"]
         c = wx.StaticText(panel, label=value)
@@ -1484,6 +1506,22 @@ def build(plugin, panel):
                 count += 1
             if resultitems and isinstance(result, list):
                 result.append(resultitems)
+
+
+        elif "checklist" == prop.get("type"):
+            dx, dy = (1, 0) if prop.get("vertical") else (0, 1)
+            maxrows, maxcols = math.ceil(len(prop["choices"]) / prop["columns"]), prop["columns"]
+            row, column = row0, col0 = count, 0
+            for value in prop["choices"]:
+                c = wx.CheckBox(panel, label=value)
+                c.Value = bool(state.get(value)) if isinstance(state, dict) else value in state
+                c.Bind(wx.EVT_CHECKBOX, make_check_handler(c, prop, value))
+                sizer.Add(c, pos=(row, column), border=10, flag=wx.TOP if row == row0 else 0)
+                result.append(c)
+                row, column = row + dx, column + dy
+                if   dx and row    > maxrows:  row, column = row0,    column + 1
+                elif dy and column >= maxcols: row, column = row + 1, col0
+            count += maxrows
 
 
         elif "number" == prop.get("type"):
