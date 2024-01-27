@@ -1451,7 +1451,7 @@ def build(plugin, panel):
                         if v is not None: c.Value = v
                         elif "" in choices: c.Value = ""
                         c.Bind(wx.EVT_COMBOBOX, make_value_handler(c, itemprop, rowindex=i))
-                        bsizer.Add(c)
+                        bsizer.Add(c, flag=wx.GROW)
                     elif "number" == itemprop.get("type"):
                         c = wx.SpinCtrl(panel, name=itemprop["name"], size=(80 + SPIN_WPLUS, -1),
                                         style=wx.ALIGN_RIGHT)
@@ -1461,7 +1461,7 @@ def build(plugin, panel):
                         c.SetRange(*rng)
                         if itemprop["name"] in row: c.Value = row[itemprop["name"]]
                         c.Bind(wx.EVT_TEXT, make_value_handler(c, itemprop, rowindex=i))
-                        bsizer.Add(c)
+                        bsizer.Add(c, flag=wx.GROW)
                     elif "window" == itemprop.get("type"):
                         c = wx.Window(panel)
                         bsizer.Add(c)

@@ -10,6 +10,7 @@ CHANGELOG
 - remember savefile extension filter
 - reorder hero attribute categories in UI and exports
 - optimize loading hero
+- ensure uniform heights in hero component rows
 - tweak column titles in hero index table
 - tweak logging and status messages
 
