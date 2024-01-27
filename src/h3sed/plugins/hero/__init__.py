@@ -57,6 +57,7 @@ Subplugin instances are expected to have the following API:
         '''
         Optional. Renders subplugin into panel given in factory(),
         if subplugin not renderable with gui.build().
+        Returns whether new controls were created.
         '''
 
     def on_add(self, prop, value):
@@ -76,7 +77,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  26.01.2024
+@modified  27.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -1152,8 +1153,8 @@ class HeroPlugin(object):
                                 self._hero.name, p["name"], fmt(obj.state()))
         p["panel"].Freeze()
         try:
-            if   callable(getattr(obj, "render", None)): obj.render()
-            elif callable(getattr(obj, "props",  None)): gui.build(obj, p["panel"])
-            if reload or item0 is None: wx_accel.accelerate(p["panel"])
+            if   callable(getattr(obj, "render", None)): accel = obj.render()
+            elif callable(getattr(obj, "props",  None)): accel, _ = True, gui.build(obj, p["panel"])
+            if accel or item0 is None: wx_accel.accelerate(p["panel"])
         finally:
             p["panel"].Thaw()

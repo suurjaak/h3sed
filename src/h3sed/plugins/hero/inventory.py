@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  24.01.2024
+@modified  27.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -115,12 +115,18 @@ class InventoryPlugin(object):
 
 
     def render(self):
-        """Populates controls from state, using existing if already built."""
+        """
+        Populates controls from state, using existing if already built.
+
+        Returns whether new controls were created.
+        """
         if self._ctrls and all(self._ctrls):
             for i, value in enumerate(self._state):
                 self._ctrls[i].Value = value or ""
+            return False
         else:
             self._ctrls = gui.build(self, self._panel)[0]
+            return True
 
 
     def parse(self, heroes):

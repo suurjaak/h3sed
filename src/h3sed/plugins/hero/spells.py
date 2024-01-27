@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  26.01.2024
+@modified  27.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -97,10 +97,11 @@ class SpellsPlugin(object):
 
 
     def render(self):
-        """Creates controls from state, disabling all if no spellbook."""
+        """Creates controls from state, disabling all if no spellbook. Returns True."""
         gui.build(self, self._panel)
         if not util.get(self._hero, "stats", "spellbook"):
             for c in self._panel.Children: c.Disable()
+        return True
 
 
     def on_add(self, prop, value):

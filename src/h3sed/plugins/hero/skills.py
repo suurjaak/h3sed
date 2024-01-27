@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.02.2023
+@modified  27.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -138,12 +138,13 @@ class SkillsPlugin(object):
 
 
     def render(self):
-        """Builds plugin controls into panel."""
+        """Builds plugin controls into panel. Returns True."""
         gui.build(self, self._panel)
         label = wx.StaticText(self._panel, label=HINT)
         controls.ColourManager.Manage(label, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         self._panel.Sizer.Add(label, border=10, flag=wx.TOP, proportion=1)
         self._panel.Layout()
+        return True
 
 
     def parse(self, heroes):

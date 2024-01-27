@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  26.01.2024
+@modified  27.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -131,8 +131,12 @@ class ArmyPlugin(object):
 
 
     def render(self):
-        """Populates controls from state, using existing if already built."""
-        MYPROPS = self.props()
+        """
+        Populates controls from state, using existing if already built.
+
+        Returns whether new controls were created.
+        """
+        result, MYPROPS = False, self.props()
         if self._ctrls and all(all(x.values()) for x in self._ctrls):
             cc = [""] + sorted(metadata.Store.get("creatures", self._savefile.version))
             for i, row in enumerate(self._state):
@@ -143,12 +147,13 @@ class ArmyPlugin(object):
                     ctrl, value = self._ctrls[i][name], self._state[i].get(name)
                     if "choices" in prop:
                         choices = ([value] if value and value not in cc else []) + cc
-                        ctrl.SetItems(choices)
+                        if choices != ctrl.GetItems(): ctrl.SetItems(choices)
+                        else: ctrl.Value = ""
                         creature = value
                     else: ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
                     if value is not None and hasattr(ctrl, "Value"): ctrl.Value = value
         else:
-            self._ctrls = gui.build(self, self._panel)[0]
+            self._ctrls, result = gui.build(self, self._panel)[0], True
             # Hide count controls where no creature type selected
             for i, row in enumerate(self._state):
                 creature, size = None, None
@@ -162,6 +167,7 @@ class ArmyPlugin(object):
                         ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
                     size = ctrl.Size
         self._panel.Layout()
+        return result
 
 
     def on_change(self, prop, row, ctrl, value):

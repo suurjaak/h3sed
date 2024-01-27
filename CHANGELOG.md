@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.9, 2024-01-26
+1.9, 2024-01-27
 ---------------
 - arrange hero spells as a check box grid
 - add remove-buttons to hero army, artifacts and inventory sections
@@ -9,8 +9,10 @@ CHANGELOG
 - remember view mode in hero full character sheet dialog
 - remember savefile extension filter
 - reorder hero attribute categories in UI and exports
+- optimize loading hero
 - tweak column titles in hero index table
 - tweak logging and status messages
+
 
 1.8, 2024-01-11
 ---------------

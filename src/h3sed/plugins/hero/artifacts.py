@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  24.01.2024
+@modified  27.01.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -169,6 +169,7 @@ class ArtifactsPlugin(object):
         self._panel    = panel  # Plugin contents panel
         self._state    = {}     # {"helm": "Skull Helmet", ..}
         self._ctrls    = {}     # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
+        self._cache    = {}     # Cached {slot: [..all choices..], ..}
 
 
     def props(self):
@@ -177,8 +178,7 @@ class ArtifactsPlugin(object):
         version = self._savefile.version
         for prop in UIPROPS:
             slot = prop.get("slot", prop["name"])
-            cc = [""] + sorted(metadata.Store.get("artifacts", version, category=slot))
-            result.append(dict(prop, choices=cc))
+            result.append(dict(prop, choices=[""] + self._cache[slot]))
         return result
 
 
@@ -212,7 +212,7 @@ class ArtifactsPlugin(object):
             if name not in state:
                 continue  # for
             v = state[name]
-            cmap = {x.lower(): x for x in metadata.Store.get("artifacts", version, category=slot)}
+            cmap = {x.lower(): x for x in self._cache[slot]}
 
             if not v or hasattr(v, "lower") and v.lower() in cmap:
                 self._state[name] = v
@@ -239,13 +239,17 @@ class ArtifactsPlugin(object):
 
 
     def render(self):
-        """Populates controls from state, using existing if already built."""
-        version = self._savefile.version
+        """
+        Populates controls from state, using existing if already built.
+        
+        Returns whether new controls were created.
+        """
+        result, version = False, self._savefile.version
         if self._ctrls and all(self._ctrls.values()):
             STATS = metadata.Store.get("artifact_stats", version)
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
-                cc = [""] + sorted(metadata.Store.get("artifacts", version, category=slot))
+                cc = [""] + self._cache[slot]
 
                 ctrl, value, choices = self._ctrls[name], self._state.get(name), cc
                 if value and value not in choices: choices = [value] + cc
@@ -253,8 +257,9 @@ class ArtifactsPlugin(object):
                 ctrl.Value = value or ""
                 self._ctrls["%s-info" % name].Label = format_stats(self, prop, self._state, STATS)
         else:
-            self._ctrls = gui.build(self, self._panel)
+            self._ctrls, result = gui.build(self, self._panel), True
         self.update_slots()
+        return result
 
 
     def update_slots(self):
@@ -266,14 +271,14 @@ class ArtifactsPlugin(object):
         try:
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
-                cc = [""] + sorted(metadata.Store.get("artifacts", version, category=slot))
+                cc = [""] + self._cache[slot]
 
                 ctrl, value = self._ctrls[name], self._state.get(name)
 
                 if not ctrl.Enabled:
                     if value and value not in cc:
                         cc = [value] + cc
-                    ctrl.SetItems(cc)
+                    if cc != ctrl.GetItems(): ctrl.SetItems(cc)
                     ctrl.Value = value or ""
                     ctrl.Enable()
 
@@ -364,10 +369,12 @@ class ArtifactsPlugin(object):
     def parse(self, heroes):
         """Returns artifacts states parsed from hero bytearrays, as [{helm, ..}, ]."""
         result = []
-        IDS   = metadata.Store.get("ids", self._savefile.version)
-        NAMES = {x[y]: y for x in [IDS]
-                 for y in metadata.Store.get("artifacts", self._savefile.version,
-                                             category="inventory")}
+        version = self._savefile.version
+        slots = set(p.get("slot", p["name"]) for p in UIPROPS) | set(["inventory", "scroll"])
+        self._cache = {slot: sorted(metadata.Store.get("artifacts", version, category=slot))
+                       for slot in slots}
+        IDS   = metadata.Store.get("ids", version)
+        NAMES = {x[y]: y for x in [IDS] for y in self._cache["inventory"]}
         MYPOS = plugins.adapt(self, "pos", POS)
 
         def parse_item(hero, pos):
@@ -390,8 +397,8 @@ class ArtifactsPlugin(object):
         version = self._savefile.version
 
         IDS = {y: x[y] for x in [metadata.Store.get("ids", version)]
-               for y in metadata.Store.get("artifacts", version, category="inventory")}
-        SCROLL_ARTIFACTS = metadata.Store.get("artifacts", version, category="scroll")
+               for y in self._cache["inventory"]}
+        SCROLL_ARTIFACTS = self._cache["scroll"]
         MYPOS = plugins.adapt(self, "pos", POS)
         SLOTS = metadata.Store.get("artifact_slots", version)
 
