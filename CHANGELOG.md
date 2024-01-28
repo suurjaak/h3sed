@@ -13,6 +13,7 @@ CHANGELOG
 - reorder hero attribute categories in UI and exports
 - optimize loading hero
 - ensure uniform heights in hero component rows
+- move up-down button focus to new row after swap
 - tweak column titles in hero index table
 - tweak logging and status messages
 

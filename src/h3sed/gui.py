@@ -1291,11 +1291,20 @@ def build(plugin, panel):
             plugin.parent.command(action, cname)
         return handler
 
-    def make_move_handler(ctrl, index, direction):
+    def make_move_handler(ctrl, index, direction, labels=()):
         def on_do():
             state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             index2 = index + direction
             state[index], state[index2] = state[index2], state[index]
+
+            stepper = wx.Window.GetNextSibling if direction > 0 else wx.Window.GetPrevSibling
+            ctrl2, label2 = next(stepper(x) if x else x for x in [stepper(ctrl)]), ctrl.Label
+            if len(labels) > 1 and label2 in labels and index + direction in (0, len(state) - 1):
+                label2 = labels[labels.index(label2) - 1] # Reached edge: focus reverse button
+            while ctrl2 and (type(ctrl2), ctrl2.Label) != (type(ctrl), label2):
+                ctrl2 = stepper(ctrl2)
+            ctrl2 and ctrl2.SetFocus() # Move focus to button of new index row
+
             plugin.parent.patch()
             wx.PostEvent(panel, PluginEvent(panel.Id, action="render", name=plugin.name))
             return True
@@ -1453,8 +1462,8 @@ def build(plugin, panel):
                     c1, c2 = (wx.Button(panel, label=x, size=(40 + BTN_WPLUS, -1))
                               for x in ("down", "up"))
                     c1.Enabled, c2.Enabled = (i < len(state) - 1), bool(i)
-                    c1.Bind(wx.EVT_BUTTON, make_move_handler(c1, i, +1))
-                    c2.Bind(wx.EVT_BUTTON, make_move_handler(c2, i, -1))
+                    c1.Bind(wx.EVT_BUTTON, make_move_handler(c1, i, +1, ("down", "up")))
+                    c2.Bind(wx.EVT_BUTTON, make_move_handler(c2, i, -1, ("down", "up")))
                     bsizer.Add(c1, border=10, flag=wx.LEFT), bsizer.Add(c2)
                 if prop.get("removable"):
                     c = wx.Button(panel, label="remove", size=(50 + BTN_WPLUS, -1))
