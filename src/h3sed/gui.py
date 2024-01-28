@@ -185,7 +185,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         def after():
             if not self: return
             plugins.init()
-            self.populate_toolbar()
         wx.CallAfter(after)
 
 
@@ -379,14 +378,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             tb.EnableTool(toolid, False)
             tb.Bind(wx.EVT_TOOL, handler, id=toolid)
 
-        combo_game = self.combo_game = wx.ComboBox(tb, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        combo_game.ToolTip = "Select game version to interpret savegame as"
-        combo_game.Enable(False)
-        combo_game.Bind(wx.EVT_COMBOBOX, self.on_change_game_version)
-        tb.AddSeparator()
-        tb.AddControl(combo_game, "Game version")
-        tb.EnableTool(self.combo_game.Id, False)
-
         tb.EnableTool(wx.ID_OPEN, True)
         tb.Realize()
 
@@ -509,22 +500,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.StatusBar.SetStatusWidths([-2, extent1 + WPLUS, extent2 + WPLUS])
 
 
-    def populate_toolbar(self):
-        """Populates game version control in program toolbar."""
-        combo_game = self.combo_game
-        if getattr(plugins, "version", None):
-            items = [x["label"] for x in plugins.version.PLUGINS]
-            combo_game.SetItems(items)
-            if conf.GameVersion:
-                label = next((x["label"] for x in plugins.version.PLUGINS
-                              if x["name"] == conf.GameVersion), None)
-                if label: combo_game.Value = label
-            if items and hasattr(combo_game, "GetSizeFromText"):
-                combo_game.Size = combo_game.GetSizeFromText(items[0])
-        else:
-            combo_game.Show(False)
-
-
     def get_unique_tab_title(self, title):
         """
         Returns a title that is unique for the current notebook - if the
@@ -583,8 +558,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.ToolBar.EnableTool(wx.ID_REDO,    page.undoredo.CanRedo())
             self.ToolBar.EnableTool(wx.ID_SAVEAS,  True)
             self.ToolBar.EnableTool(wx.ID_REFRESH, True)
-            self.ToolBar.EnableTool(self.combo_game.Id, self.combo_game.Count > 1)
-        self.combo_game.Enable(isinstance(page, SavefilePage) and self.combo_game.Count > 1)
 
 
     def on_change_page(self, event=None):
@@ -678,38 +651,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.page_log.is_hidden = True
             self.notebook.RemovePage(self.notebook.GetPageIndex(self.page_log))
             self.menu_log.Check(False)
-
-
-    def on_change_game_version(self, event):
-        """Handler for selecting savegame version, updates plugin content and choices."""
-        page = self.notebook.GetCurrentPage()
-        p2 = next(x for x in plugins.version.PLUGINS
-                  if x["label"] == event.EventObject.Value)
-        p1 = next(x for x in plugins.version.PLUGINS
-                  if x["name"] == page.savefile.version)
-
-        if page.savefile.version == p2["name"]: return
-        if page.get_unsaved():
-            event.EventObject.Value = p1["label"]
-            wx.MessageBox("Cannot change game version: there are unsaved changes.",
-                          conf.Title, wx.OK | wx.ICON_WARNING)
-            return
-
-        def switch(opts):
-            self.combo_game.Value = opts["label"]
-            page.savefile.version = conf.GameVersion = opts["name"]
-            page.Freeze()
-            try:
-                for p in page.plugins: p.render(reparse=True)
-                page.SendSizeEvent()
-            finally: page.Thaw()
-            conf.save()
-            wx.CallAfter(self.update_toolbar, page)
-            return True
-
-        cname = "set version: %s" % p2["label"]
-        do, undo = (functools.partial(switch, x) for x in (p2, p1))
-        page.undoredo.Submit(GenericCommand(do, undo, cname))
 
 
     def on_savefile_page_event(self, event):
@@ -920,18 +861,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
 
     def update_fileinfo(self):
-        """Updates file data in toolbar and statusbar."""
+        """Updates file data in statusbar."""
         filename = self.dir_ctrl.GetPath()
-        page = self.notebook.GetCurrentPage()
-        if isinstance(page, SavefilePage) and self.combo_game.Count > 1:
-            filename = page.savefile.filename
-            ver = next((x for x in plugins.version.PLUGINS
-                        if x["name"] == page.savefile.version), None)
-            if ver: self.combo_game.Value = ver["label"]
-            if ver and page.savefile.version != conf.GameVersion:
-                conf.GameVersion = page.savefile.version
-                conf.save()
-
         sz, dt = "", ""
         if os.path.isfile(filename):
             sz = util.format_bytes(os.path.getsize(filename))
@@ -1170,7 +1101,7 @@ class SavefilePage(wx.Panel):
         if conf.Backup and os.path.exists(filename2):
             backupname = "%s.%s" % (filename2, datetime.datetime.now().strftime("%Y%m%d"))
             if os.path.exists(backupname):
-               logger.info("Skipping saving backup file, %s already exists.", backupname) 
+                logger.info("Skipping saving backup file, %s already exists.", backupname) 
             else:
                 logger.info("Saving backup file %s.", backupname)
                 try:

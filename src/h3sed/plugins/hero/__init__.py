@@ -4,9 +4,6 @@ Hero plugin, parses savefile for heroes.
 
 All hero specifics are handled by subplugins in file directory, auto-loaded.
 
-If version-plugin is available, tries to parse file as the latest version,
-working backwards to earliest, chooses version which yields more heroes.
-
 
 Subplugin modules are expected to have the following API (all methods optional):
 
@@ -77,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.01.2024
+@modified  28.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -334,7 +331,7 @@ class HeroPlugin(object):
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT | wx.FD_CHANGE_DIR | wx.RESIZE_BORDER
         )
         self._dialog_export.FilterIndex = 1
-        self.parse(detect_version=True)
+        self.parse()
         self.prebuild()
         panel.Bind(gui.EVT_PLUGIN, self.on_plugin_event)
 
@@ -909,65 +906,34 @@ class HeroPlugin(object):
             search.SetSelection(*searchsel)
 
 
-    def parse(self, detect_version=False):
+    def parse(self):
         """
         Populates the list of hero bytearrays parsed from savefile binary,
         as [{"name": hero name, "bytes": bytearray()}], sorted by name.
-
-        @param   detect_version  whether to try parsing with all version plugins
-                                 instead of savefile current
         """
         heroes = []
 
-        ver0 = self.savefile.version
-        versions, version_results = [], {}
-        if detect_version and getattr(plugins, "version", None):
-            versions = [x["name"] for x in plugins.version.PLUGINS]
-        if not versions: versions = [self.savefile.version]
-        all_versions = versions[:]
         rgx_strip = re.compile(br"^([^\x00-\x19,\xF0-\xFF]+)\x00+$")
         rgx_nulls = re.compile(br"^(\x00+)|(\x00{4}\xFF{4})+$")
+        RGX = plugins.adapt(self, "regex", RGX_HERO)
 
-        while versions:
-            ver = versions.pop()
-            self.savefile.version = ver
-            RGX = plugins.adapt(self, "regex", RGX_HERO)
-            vresult = version_results.setdefault(ver, [])
-
-            pos = 10000 # Hero structs are more to the end of the file
+        pos = 10000 # Hero structs are more to the end of the file
+        m = re.search(RGX, self.savefile.raw[pos:])
+        while m:
+            start, end = m.span()
+            if rgx_strip.match(m.group("name")) and not rgx_nulls.match(m.group("artifacts")):
+                blob = bytearray(self.savefile.raw[pos + start:pos + end])
+                name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
+                hero = Hero(name, blob, len(heroes), (start + pos, end + pos), self.savefile)
+                heroes.append(hero)
+                pos += end
+            else:
+                pos += start + 1
             m = re.search(RGX, self.savefile.raw[pos:])
-            while m:
-                start, end = m.span()
-                if rgx_strip.match(m.group("name")) and not rgx_nulls.match(m.group("artifacts")):
-                    blob = bytearray(self.savefile.raw[pos + start:pos + end])
-                    name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
-                    hero = Hero(name, blob, len(vresult), (start + pos, end + pos), self.savefile)
-                    vresult.append(hero)
-                    pos += end
-                else:
-                    pos += start + 1
-                m = re.search(RGX, self.savefile.raw[pos:])
-            if not vresult:
-                logger.warning("No heroes detected in %s as version '%s'.",
-                               self.savefile.filename, ver)
-                continue  # while versions
-            logger.info("Detected %s heroes in %s as version '%s'.",
-                        len(vresult), self.savefile.filename, ver)
 
-        vcounts = {k: len(v) for k, v in version_results.items()}
-        maxcount_vers = [k for k in all_versions if vcounts[k] == max(vcounts.values())]
-        ver = maxcount_vers[-1] if maxcount_vers else None
-        if ver:
-            self.savefile.version = ver
-            heroes = sorted(version_results[ver], key=lambda x: x.name.lower())
-            logger.info("Interpreting %s as version '%s' with %s heroes.",
-                        self.savefile.filename, ver, len(heroes))
-        else:
-            self.savefile.version = ver0
-            wx.CallAfter(guibase.status, "No heroes identified in %s.",
-                         self.savefile.filename, flash=True, log=True)
-
-        self._heroes[:] = heroes
+        logger.info("%s heroes detected in %s as version '%s'.",
+                    len(heroes) or "No ", self.savefile.filename, self.savefile.version)
+        self._heroes[:] = sorted(heroes, key=lambda x: x.name.lower())
 
 
     def parse_yaml(self, value):

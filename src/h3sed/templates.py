@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    24.01.2024
+@modified    28.01.2024
 ------------------------------------------------------------------------------
 """
 
@@ -38,12 +38,6 @@ Released as free open source software under the MIT License.<br /><br />
 <b>Warning:</b> as Heroes3 savefile format is not publicly known,
 loaded data and saved results may be invalid and cause problems in game.
 This program is based on unofficial information gathered from observation and online forums.
-<br /><br />
-Always choose the correct game version.
-A wrong choice will result in file data being misinterpreted,
-and saving later version items or creatures to an earlier version savefile
-may cause the game to crash.
-
 <hr />
 
 {{ conf.Title }} has been built using the following open source software:

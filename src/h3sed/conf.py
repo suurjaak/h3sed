@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "1.9.dev18"
+Version = "1.9.dev19"
 VersionDate = "28.01.2024"
 
 if getattr(sys, "frozen", False):
@@ -44,8 +44,8 @@ ConfigFile = "%s.ini" % os.path.join(EtcDirectory, Name.lower())
 
 """List of attribute names that can be saved to and loaded from ConfigFile."""
 FileDirectives = [
-    "Backup", "ConfirmUnsaved", "ConsoleHistoryCommands", "GameVersion", "RecentFiles",
-    "RecentHeroes", "SelectedIndex", "SelectedPath", "WindowPosition", "WindowSize",
+    "Backup", "ConfirmUnsaved", "ConsoleHistoryCommands", "RecentFiles", "RecentHeroes",
+    "SelectedIndex", "SelectedPath", "WindowPosition", "WindowSize",
 ]
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
@@ -76,9 +76,6 @@ FileExtensions = [("Heroes3 savefiles",               (".cgm", ".gm1", ".gm2", "
 
 """History of commands entered in console."""
 ConsoleHistoryCommands = []
-
-"""Default game version for savefiles."""
-GameVersion = ""
 
 """Hero index categories toggle state, as {name: false}."""
 HeroToggles = {}

@@ -35,7 +35,7 @@ Changes will be available in Heroes3 after loading the changed savegame.
 Attributes from one hero can be copied to clipboard as text,
 and pasted onto another hero, overwriting their data.
 
-A timestamped daily backup copy is automatically created of the savegame file.
+A timestamped daily backup copy is automatically created of the savegame file, one per day.
 
 ![Screenshot](https://raw.githubusercontent.com/suurjaak/h3sed/gh-pages/img/screen.png)
 
@@ -43,13 +43,6 @@ A timestamped daily backup copy is automatically created of the savegame file.
 loaded data and saved results may be invalid and cause problems in game.
 This program is based on unofficial information
 gathered from observation and online forums.
-
-The savegames of Shadow of Death and Horn of the Abyss are not mutually
-compatible. The program tries to auto-detect the version heuristically,
-but this detection does not guarantee a correct result.
-Always ensure the correct game version being selected. A wrong choice will result
-in file data being misinterpreted, and saving later version items
-or creatures to an earlier version savefile may cause the game to crash.
 
 
 Installation

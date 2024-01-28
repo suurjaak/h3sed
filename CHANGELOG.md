@@ -1,8 +1,9 @@
 CHANGELOG
 =========
 
-1.9, 2024-01-27
+1.9, 2024-01-28
 ---------------
+- detect game version from fixed bytes not heuristically from hero parsing
 - arrange hero spells as a check box grid
 - add remove-buttons to hero army, artifacts and inventory sections
 - ignore swapping blank or otherwise identical slots in inventory and army

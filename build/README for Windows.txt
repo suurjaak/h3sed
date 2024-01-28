@@ -30,16 +30,12 @@ Changes will be available in Heroes3 after loading the changed savegame.
 Attributes from one hero can be copied to clipboard as text,
 and pasted onto another hero, overwriting their data.
 
-A timestamped backup copy is automatically created of the savegame file.
+A timestamped backup copy is automatically created of the savegame file, one per day.
 
 **Warning:** as Heroes3 savefile format is not publicly known,
 loaded data and saved results may be invalid and cause problems in game.
 This program is based on unofficial information
 gathered from observation and online forums.
-
-Always choose the correct game version. A wrong choice will result
-in file data being misinterpreted, and saving later version items
-or creatures to an earlier version savefile may cause the game to crash.
 
 
 Attribution
