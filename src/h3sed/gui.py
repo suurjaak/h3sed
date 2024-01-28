@@ -1260,7 +1260,7 @@ def build(plugin, panel):
     sizer = wx.GridBagSizer(vgap=10, hgap=10)
     panel.SetScrollRate(0, 20)
     panel.Sizer = wx.BoxSizer(wx.HORIZONTAL)
-    panel.Sizer.Add(sizer, border=10, proportion=1, flag=wx.ALL | wx.GROW)
+    panel.Sizer.Add(sizer, border=10, proportion=1, flag=wx.ALL ^ wx.BOTTOM | wx.GROW)
 
     def make_value_handler(ctrl, myprops, rowindex=None):
         name, key = myprops.get("name"), myprops.get("name", rowindex)
