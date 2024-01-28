@@ -1113,7 +1113,7 @@ class SavefilePage(wx.Panel):
         except Exception as e:
             logger.exception("Error reloading %s.", self.filename)
             return wx.MessageBox("Error reloading %s:\n\n%s" %
-                                 (self.filename, util.format_exc(c)),
+                                 (self.filename, util.format_exc(e)),
                                  wx.OK | wx.ICON_ERROR)
         self.undoredo.ClearCommands()
         self.undoredo.SetMenuStrings()
@@ -1189,7 +1189,8 @@ class SavefilePage(wx.Panel):
             try:
                 shutil.copy(tempname, filename2)
             except Exception as e:
-                error = "Error saving %s as %s:\n\n%s" % (filename, filename2, util.format_exc(e))
+                error = "Error saving %s as %s:\n\n%s" % \
+                        (self.filename, filename2, util.format_exc(e))
                 logger.exception("Error saving temporary file %s as %s.", tempname, filename2)
 
         try: tempname and os.unlink(tempname)
