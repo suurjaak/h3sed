@@ -1016,6 +1016,7 @@ class SavefilePage(wx.Panel):
 
         for c in (nctrl, vctrl, dctrl): c.SetEditable(False), c.SetMargins(0)
         dctrl.MinSize = -1, nctrl.Size.Height
+        SASH_STARTPOS = 2 * nctrl.Size.Height + 10
 
         bookstyle = wx.lib.agw.fmresources.INB_LEFT
         if (wx.version().startswith("2.8") and sys.version_info.major == 2
@@ -1030,8 +1031,8 @@ class SavefilePage(wx.Panel):
 
         self.TopLevelParent.page_file_latest = self
         self.Bind(EVT_SAVEFILE_PAGE, self.on_page_event)
-        self.TopLevelParent.run_console(
-            "page = self.page_file_latest # Savefile tab")
+        splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda e: splitter.SetSashPosition(SASH_STARTPOS))
+        self.TopLevelParent.run_console("page = self.page_file_latest # Savefile tab")
 
         sizer = self.Sizer = wx.BoxSizer(wx.VERTICAL)
         filepanel.Sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1050,7 +1051,7 @@ class SavefilePage(wx.Panel):
         filepanel.Sizer.Add(isizer, border=5, flag=wx.GROW | wx.TOP, proportion=1)
         sizer.Add(splitter, proportion=1, border=5, flag=wx.GROW | wx.ALL)
         splitter.SetMinimumPaneSize(nctrl.Size.Height + 8)
-        splitter.SplitHorizontally(filepanel, notebook, sashPosition=2*nctrl.Size.Height + 10)
+        splitter.SplitHorizontally(filepanel, notebook, sashPosition=SASH_STARTPOS)
         self.Layout()
 
         wx_accel.accelerate(self)
