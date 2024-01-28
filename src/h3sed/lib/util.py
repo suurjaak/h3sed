@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    22.07.2023
+@modified    27.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -298,6 +298,7 @@ def to_unicode(value, encoding=None):
     result = value
     if not isinstance(value, string_type):
         encoding = encoding or locale.getpreferredencoding()
+        if isinstance(value, bytearray): value = bytes(value)
         if isinstance(value, bytes):
             try:
                 result = string_type(value, encoding)

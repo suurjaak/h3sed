@@ -998,6 +998,18 @@ class Savefile(object):
 
     RGX_MAGIC = re.compile(b"^H3SV[GC]")
 
+    RGX_HEADER = re.compile(b"""
+        H3SV[GC]            # file header
+        .{0,100}[^\x00]     # unknown content, unknown length
+        \x00{3}.            # unknown
+        (?P<name>..)        # map name length, unsigned 16-bit big-endian
+        [^\x00]+            # map name
+        ..                  # map description length, unsigned 16-bit big-endian
+        [^\x00]+            # map description
+    """, re.VERBOSE | re.DOTALL)
+
+    HEADER_TEXTS = OrderedDict([("name", 2), ("desc", 2)])  # {name in mapdata: byte length count}
+
 
     def __init__(self, filename):
         self.filename = filename
@@ -1005,6 +1017,7 @@ class Savefile(object):
         self.raw0     = None
         self.version  = None
         self.dt       = None
+        self.mapdata  = {}
         self.size     = 0
         self.usize    = 0
         self.read()
@@ -1022,6 +1035,7 @@ class Savefile(object):
         with gzip.GzipFile(self.filename, "rb") as f: raw = bytearray(f.read())
         self.raw0 = self.raw = raw
         self.detect_version()
+        self.parse_metadata()
         self.update_info()
         logger.info("Opened %s (%s, unzipped %s).", self.filename,
                     util.format_bytes(self.size), util.format_bytes(self.usize))
@@ -1050,6 +1064,25 @@ class Savefile(object):
             if self.version is None:
                 raise ValueError("Not recognized as Heroes3 savefile "
                                  "of any supported game version.")
+
+
+    def parse_metadata(self):
+        """Populates savefile map name and description."""
+        match = self.RGX_HEADER.match(self.raw[:2048])
+        if not match:
+            logger.warning("Failed to parse map name and description from %s.", self.filename)
+            return
+        cpos = match.start(next(iter(self.HEADER_TEXTS)))  # Start of field length count
+        for n, clen in self.HEADER_TEXTS.items():  # Parse consecutive length-value fields
+            try:
+                nlen = util.bytoi(self.raw[cpos:cpos + clen])
+                nraw = self.raw[cpos + clen:cpos + clen + nlen]
+                if not re.match(b"^[^\x00]+$", nraw):
+                    raise ValueError("Unexpected content in map %s: %r" % (n, nraw))
+                self.mapdata[n] = util.to_unicode(nraw)
+                cpos += clen + nlen
+            except Exception:
+                logger.exception("Failed to parse map name and description from %s.", self.filename)
 
 
     def update_info(self, filename=None):
