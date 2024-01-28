@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    26.01.2024
+@modified    28.01.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -404,21 +404,21 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def load_savefile(self, filename, silent=False):
         """
-        Tries to load the specified savefile, returns Savefile instance.
+        Tries to load the specified savefile, returns (Savefile instance, error).
 
         @param   silent  if true, no error popups on failing to open the file
         """
-        savefile = None
+        savefile, err = None, None
         if os.path.exists(filename):
             try:
                 savefile = metadata.Savefile(filename)
             except Exception as e:
+                err = e
                 logger.exception("Error opening %s.", filename)
                 if not silent:
                     wx.MessageBox("Error opening %s.\n\n%s" % (filename, e),
                                   conf.Title, wx.OK | wx.ICON_ERROR)
             if savefile:
-                savefile.version = conf.GameVersion
                 # Add filename to Recent Files menu and conf, if needed
                 if filename in conf.RecentFiles: # Remove earlier position
                     idx = conf.RecentFiles.index(filename)
@@ -429,9 +429,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                                 conf.MaxRecentFiles)
                 conf.save()
         elif not silent:
+            err = ValueError("No such file.")
             wx.MessageBox("Nonexistent file: %s." % filename,
                           conf.Title, wx.OK | wx.ICON_ERROR)
-        return savefile
+        return savefile, err
 
 
     def load_savefile_page(self, filename, savefile=None):
@@ -452,7 +453,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.on_change_page()
             return
 
-        savefile = savefile or self.load_savefile(filename)
+        savefile = savefile or self.load_savefile(filename)[0]
         if not savefile: return
 
         guibase.status("Opening page for %s." % filename, flash=True)
@@ -477,22 +478,22 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """
         Tries to load the specified savefiles, if not already open, create
         subpages for them, if not already created, and focus the subpages.
-        Skips files that are not gzipped.
+        Skips files that are not recognizable as savefiles.
         """
         savefiles, notsave_filenames, files0 = {}, [], set(self.files)
         for f in filenames:
-            if f in self.files: savefile = self.files[f]["savefile"]
-            else: savefile = self.load_savefile(f, silent=True)
+            if f in self.files: savefile, err = self.files[f]["savefile"], None
+            else: savefile, err = self.load_savefile(f, silent=True)
             if savefile: savefiles[f] = savefile
             else:
                 notsave_filenames.append(f)
-                guibase.status("%s is not a valid gzipped file.", f,
-                               log=True, flash=True)
+                err = err if isinstance(err, ValueError) else "Not a valid gzipped file?"
+                guibase.status("Failed to open %s. %s", f, err, log=True, flash=True)
 
         for filename, savefile in savefiles.items():
             self.load_savefile_page(filename, savefile)
         if notsave_filenames:
-            t = "valid gzipped files"
+            t = "valid savefiles"
             if len(notsave_filenames) == 1: t = "a " + t[:-1]
             wx.MessageBox("Not %s:\n\n%s" % (t, "\n".join(notsave_filenames)),
                           conf.Title, wx.OK | wx.ICON_ERROR)

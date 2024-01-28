@@ -16,9 +16,11 @@ import datetime
 import gzip
 import logging
 import os
+import re
 import sys
 
 from h3sed import conf
+from h3sed import plugins
 from h3sed.lib import util
 
 
@@ -994,6 +996,9 @@ def wildcard():
 class Savefile(object):
     """Game savefile."""
 
+    RGX_MAGIC = re.compile(b"^H3SV[GC]")
+
+
     def __init__(self, filename):
         self.filename = filename
         self.raw      = None
@@ -1014,8 +1019,9 @@ class Savefile(object):
 
     def read(self):
         """Reads in file contents and attributes."""
-        with gzip.GzipFile(self.filename, "rb") as f: self.raw = bytearray(f.read())
-        self.raw0 = self.raw
+        with gzip.GzipFile(self.filename, "rb") as f: raw = bytearray(f.read())
+        self.raw0 = self.raw = raw
+        self.detect_version()
         self.update_info()
         logger.info("Opened %s (%s, unzipped %s).", self.filename,
                     util.format_bytes(self.size), util.format_bytes(self.usize))
@@ -1029,6 +1035,21 @@ class Savefile(object):
         self.update_info(filename)
         logger.info("Saved %s (%s, unzipped %s).", filename,
                     util.format_bytes(self.size), util.format_bytes(self.usize))
+
+
+    def detect_version(self):
+        """Auto-detects game version, raises error if savefile not recognizable."""
+        if not self.RGX_MAGIC.match(self.raw):
+            raise ValueError("Not recognized as Heroes3 savefile.")
+        if getattr(plugins, "version", None):
+            for p in plugins.version.PLUGINS:
+                if p["module"].detect(self.raw):
+                    logger.info("Detected %s as version %r.", self.filename, p["name"])
+                    self.version = p["name"]
+                    break  # for p
+            if self.version is None:
+                raise ValueError("Not recognized as Heroes3 savefile "
+                                 "of any supported game version.")
 
 
     def update_info(self, filename=None):
