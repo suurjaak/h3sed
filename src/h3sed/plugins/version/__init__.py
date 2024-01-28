@@ -5,10 +5,13 @@ Version-plugin, provides support for different game versions.
 All versions specifics are handled by subplugins in file directory, auto-loaded.
 
 
-Subplugin modules are expected to have the following API (all methods optional):
+Subplugin modules are expected to have the following API (most methods optional):
 
     def init():
         '''Called at plugin load.'''
+
+    def detect(bytes):
+        '''Mandatory. Returns whether savefile uncompressed bytes match game version.'''
 
     def props():
         '''
@@ -31,7 +34,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  22.03.2020
+@modified  27.01.2024
 ------------------------------------------------------------------------------
 """
 import copy

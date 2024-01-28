@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    10.01.2024
+@modified    28.01.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -28,6 +28,13 @@ logger = logging.getLogger(__package__)
 """Blank value bytes."""
 Blank = b"\xFF"
 Null  = b"\x00"
+
+
+"""Index for various byte starts in savefile bytearray."""
+BytePositions = {
+    "version_major":    8,  # Game major version byte
+    "version_minor":   12,  # Game minor version byte
+}
 
 
 """Hero primary attributes, in file order, as {name: label}."""

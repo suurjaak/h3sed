@@ -7,14 +7,14 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  10.01.2024
+@modified  28.01.2024
 ------------------------------------------------------------------------------
 """
 import logging
 import re
 
 from h3sed.lib import util
-from h3sed.metadata import Store
+from h3sed.metadata import BytePositions, Store
 
 
 logger = logging.getLogger(__package__)
@@ -403,3 +403,9 @@ def adapt(source, category, value):
         # Update skill slots position
         result = dict(value, **POS)
     return result
+
+
+def detect(raw):
+    """Returns whether savefile uncompressed bytes match Horn of the Abyss."""
+    major, minor = raw[BytePositions["version_major"]], raw[BytePositions["version_minor"]]
+    return major >= 0x2C and minor >= 0x05
