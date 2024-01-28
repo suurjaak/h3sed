@@ -994,6 +994,9 @@ class SavefilePage(wx.Panel):
         self.savefile = savefile
         self.filename = savefile.filename
         self.plugins = [] # Instantiated plugins
+        self.edit_name = None
+        self.edit_desc = None
+        self.edit_vers = None
         self.undoredo = wx.CommandProcessor()
         self.undoredo.MarkAsSaved()
 
@@ -1001,13 +1004,26 @@ class SavefilePage(wx.Panel):
         busy = controls.BusyPanel(self, 'Loading "%s".' % self.filename)
         ColourManager.Manage(self, "BackgroundColour", "WidgetColour")
 
+        splitter = wx.SplitterWindow(self, style=wx.BORDER_NONE)
+        filepanel = wx.Panel(splitter)
+
+        nlabel = wx.StaticText(filepanel, label="Map:", name="label_name")
+        nctrl  = self.edit_name = wx.TextCtrl(filepanel, style=wx.BORDER_NONE, name="name")
+        vlabel = wx.StaticText(filepanel, label="Game version:", name="label_version")
+        vctrl = self.edit_vers = wx.TextCtrl(filepanel, style=wx.BORDER_NONE, name="version")
+        dlabel = wx.StaticText(filepanel, label="Description:", name="label_desc")
+        dctrl  = self.edit_desc = wx.TextCtrl(filepanel, style=wx.TE_MULTILINE | wx.BORDER_NONE, name="desc")
+
+        for c in (nctrl, vctrl, dctrl): c.SetEditable(False), c.SetMargins(0)
+        dctrl.MinSize = -1, nctrl.Size.Height
+
         bookstyle = wx.lib.agw.fmresources.INB_LEFT
         if (wx.version().startswith("2.8") and sys.version_info.major == 2
         and sys.version_info < (2, 7, 3)):
             # wx 2.8 + Python below 2.7.3: labelbook can partly cover tab area
             bookstyle |= wx.lib.agw.fmresources.INB_FIT_LABELTEXT
         notebook = self.notebook = wx.lib.agw.labelbook.FlatImageBook(
-            self, agwStyle=bookstyle, style=wx.BORDER_STATIC)
+            splitter, agwStyle=bookstyle, style=wx.BORDER_STATIC)
         il = wx.ImageList(32, 32)
         il.Add(images.Icon_32x32_32bit.Bitmap)
         notebook.AssignImageList(il)
@@ -1018,7 +1034,23 @@ class SavefilePage(wx.Panel):
             "page = self.page_file_latest # Savefile tab")
 
         sizer = self.Sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(notebook, proportion=1, border=5, flag=wx.GROW | wx.ALL)
+        filepanel.Sizer = wx.BoxSizer(wx.VERTICAL)
+        isizer = wx.GridBagSizer(hgap=5, vgap=2)
+        isizer.SetCols(4)
+        isizer.AddGrowableCol(1)
+        isizer.AddGrowableRow(1)
+
+        isizer.Add(nlabel, pos=(0, 0), border=5, flag=wx.LEFT)
+        isizer.Add(nctrl,  pos=(0, 1), flag=wx.GROW)
+        isizer.Add(vlabel, pos=(0, 2))
+        isizer.Add(vctrl,  pos=(0, 3))
+        isizer.Add(dlabel, pos=(1, 0), border=5, flag=wx.LEFT)
+        isizer.Add(dctrl,  pos=(1, 1), span=(1, 3), flag=wx.GROW)
+
+        filepanel.Sizer.Add(isizer, border=5, flag=wx.GROW | wx.TOP, proportion=1)
+        sizer.Add(splitter, proportion=1, border=5, flag=wx.GROW | wx.ALL)
+        splitter.SetMinimumPaneSize(nctrl.Size.Height + 8)
+        splitter.SplitHorizontally(filepanel, notebook, sashPosition=2*nctrl.Size.Height + 10)
         self.Layout()
 
         wx_accel.accelerate(self)
@@ -1053,6 +1085,7 @@ class SavefilePage(wx.Panel):
         busy = controls.BusyPanel(self.Parent, "Reloading file.")
         self.Freeze()
         try:
+            self.update_metadata()
             for p in self.plugins: p.render(reparse=True)
             self.SendSizeEvent()
         finally:
@@ -1153,11 +1186,22 @@ class SavefilePage(wx.Panel):
                 tabarea = next((x for x in self.notebook.Children
                                 if isinstance(x, wx.lib.agw.labelbook.ImageContainer)), None)
                 tabarea and (tabarea.Hide(), self.notebook.Layout())
+            self.update_metadata()
             self.Refresh()
             for p in self.plugins: p.render()
             wx_accel.accelerate(self.notebook)
         evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
+
+
+    def update_metadata(self):
+        """Populates savefile metadata controls."""
+        v = self.savefile.version
+        if getattr(plugins, "version", None):
+            v = next((x["label"] for x in plugins.version.PLUGINS if x["name"] == v), v)
+        self.edit_name.Value = self.savefile.mapdata.get("name", "")
+        self.edit_desc.Value = self.savefile.mapdata.get("desc", "")
+        self.edit_vers.Value = v or ""
 
 
     def plugin_action(self, name, **kwargs):

@@ -3,6 +3,7 @@ CHANGELOG
 
 1.9, 2024-01-28
 ---------------
+- show savefile map name and description
 - detect game version from fixed bytes not heuristically from hero parsing
 - arrange hero spells as a check box grid
 - add remove-buttons to hero army, artifacts and inventory sections
