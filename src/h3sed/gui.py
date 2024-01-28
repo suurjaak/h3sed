@@ -1265,7 +1265,7 @@ def build(plugin, panel):
     def make_value_handler(ctrl, myprops, rowindex=None):
         name, key = myprops.get("name"), myprops.get("name", rowindex)
 
-        def on_do(ctrl, value):
+        def on_do(value):
             result = False
             state  = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             row    = state[rowindex] if rowindex is not None and isinstance(state, list) else state
@@ -1280,15 +1280,14 @@ def build(plugin, panel):
             return result
 
         def handler(event):
-            ctrl, value = event.EventObject, event.EventObject.Value
+            value = event.EventObject.Value
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             namelbl = "" if rowindex is None else "slot %s" % rowindex
             if name is not None: namelbl += (" " if namelbl else "") + name
             valuelbl = "<blank>" if value in ("", False, None) else value
             cname = "set %s: %s %s" % (label, namelbl, valuelbl)
             logger.info("Setting %s: %s to %s.", label, namelbl, valuelbl)
-            action = functools.partial(on_do, ctrl, value)
-            plugin.parent.command(action, cname)
+            plugin.parent.command(functools.partial(on_do, value), cname)
         return handler
 
     def make_move_handler(ctrl, index, direction, labels=()):
@@ -1356,7 +1355,7 @@ def build(plugin, panel):
     def make_clear_handler(ctrl, myprops, rowindex=None):
         name, key = myprops.get("name"), myprops.get("name", rowindex)
 
-        def on_do(ctrl):
+        def on_do():
             target = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             value0 = util.get(target, key)
             if not value0:
@@ -1376,7 +1375,7 @@ def build(plugin, panel):
             if name is not None: namelbl += (" " if namelbl else "") + name
             cname = "set %s: %s <blank>" % (label, namelbl)
             logger.info("Setting %s: %s to <blank>.", label, namelbl)
-            plugin.parent.command(functools.partial(on_do, event.EventObject), cname)
+            plugin.parent.command(on_do, cname)
         return handler
 
     def make_check_handler(ctrl, myprops, value):
@@ -1449,7 +1448,7 @@ def build(plugin, panel):
                         c.Bind(wx.EVT_TEXT, make_value_handler(c, itemprop, rowindex=i))
                         bsizer.Add(c, flag=wx.GROW)
                     elif "window" == itemprop.get("type"):
-                        c = wx.Window(panel)
+                        c = wx.StaticText(panel)
                         bsizer.Add(c)
 
                     if c:
