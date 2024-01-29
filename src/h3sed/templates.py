@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    28.01.2024
+@modified    29.01.2024
 ------------------------------------------------------------------------------
 """
 
@@ -402,12 +402,17 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
       color: blue;
       text-decoration: none;
     }
-    table { border-spacing: 2px; empty-cells: show; width: 100%; }
-    td, th { border: 1px solid #C0C0C0; padding: 5px; }
-    th { text-align: left; white-space: nowrap; }
-    td { vertical-align: top; white-space: nowrap; }
+    table#heroes { border-spacing: 2px; empty-cells: show; width: 100%; }
+    table#heroes td, table#heroes th { border: 1px solid #C0C0C0; padding: 5px; }
+    table#heroes th { text-align: left; white-space: nowrap; }
+    table#heroes td { vertical-align: top; white-space: nowrap; }
     td.index, th.index { color: gray; width: 10px; }
     td.index { color: gray; text-align: right; }
+    .long { white-space: pre-wrap; }
+    a.toggle { font-weight: normal; }
+    a.toggle:hover { cursor: pointer; text-decoration: none; }
+    a.toggle::after { content: ".. \\25b6"; }
+    a.toggle.open::after { content: " \\25b2"; font-size: 0.7em; }
     a.sort { display: block; }
     a.sort:hover { cursor: pointer; text-decoration: none; }
     a.sort::after      { content: ""; display: inline-block; min-width: 6px; position: relative; left: 3px; top: -1px; }
@@ -422,9 +427,13 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
       overflow-x: auto;
       padding: 20px;
     }
-    #info {
+    table#info {
+      border-spacing: 0;
       margin-bottom: 10px;
     }
+    table#info td { padding: 0; vertical-align: top; }
+    table#info td:first-child { padding-right: 5px; }
+    table#info td:last-child { font-weight: bold; }
     #opts { display: flex; justify-content: space-between; margin-right: 2px; }
     #toggles { display: flex; }
     #toggles > label { display: flex; align-items: center; margin-right: 5px; }
@@ -551,8 +560,19 @@ colptr += state
   };
 
 
+  /** Toggles class "open" on link and given class on given elements; class defaults to "hidden". */
+  var onToggle = function(a, elem1, elem2, cls) {
+    cls = cls || "hidden";
+    elem1 = (elem1 instanceof Element) ? elem1 : document.querySelector(elem1);
+    elem2 = (elem2 instanceof Element) ? elem2 : document.querySelector(elem2);
+    a.classList.toggle("open");
+    elem1 && elem1.classList.toggle(cls);
+    elem2 && elem2.classList.toggle(cls);
+  };
+
+
   /** Shows or hides category columns. */
-  var onToggle = function(category, elem) {
+  var onToggleCategory = function(category, elem) {
     toggles[category] = elem.checked;
     CATEGORIES[category].forEach(function(col) {
       document.querySelectorAll("#heroes > tbody > tr > :nth-child(" + col + ")").forEach(function(elem) {
@@ -621,17 +641,32 @@ colptr += state
 </head>
 <body>
 <div id="content">
-  <div id="info">
-  Source: <b>{{ savefile.filename }}</b><br />
-  Size: <b>{{ util.format_bytes(savefile.size) }}</b><br />
-  Game version: <b>{{ next((x["label"] for x in plugins.version.PLUGINS if x["name"] == savefile.version), "unknown") }}</b><br />
-  Heroes: <b>{{ len(heroes) if len(heroes) == count else "%s exported (%s total)" % (len(heroes), count) }}</b><br />
-  </div>
+  <table id="info">
+    <tr><td>Source:</td><td>{{ savefile.filename }}</td></tr>
+    <tr><td>Size:</td><td title="{{ savefile.size }}">{{ util.format_bytes(savefile.size) }}</td></tr>
+    <tr><td>Heroes:</td><td>{{ len(heroes) if len(heroes) == count else "%s exported (%s total)" % (len(heroes), count) }}</td></tr>
+%if hasattr(plugins, "version"):
+    <tr><td>Game version:</td><td>{{ next((x["label"] for x in plugins.version.PLUGINS if x["name"] == savefile.version), "unknown") }}</td></tr>
+%endif
+%if savefile.mapdata.get("name"):
+    <tr><td>Map:</td><td>{{ savefile.mapdata["name"] }}</td></tr>
+%endif
+%if savefile.mapdata.get("desc"):
+  <tr>
+    <td>Description:</td>
+    <td>
+      <span class="short" title="{{ savefile.mapdata["desc"] }}">{{ savefile.mapdata["desc"].splitlines()[0].strip()[:100] }}</span>
+      <span class="hidden long">{{ savefile.mapdata["desc"] }}</span>
+      <a class="toggle" title="Toggle full description" onclick="onToggle(this, '.short', '.long')"> </a>
+    </td>
+  </tr>
+%endif
+  </table>
 
 <div id="opts">
   <div id="toggles">
 %for category in (k for k, v in categories.items() if v):
-    <label for="toggle-{{ category }}" title="Show or hide {{ category }} column{{ "s" if "stats" == category else "" }}"><input type="checkbox" id="toggle-{{ category }}" onclick="onToggle('{{ category }}', this)" checked />{{ category.capitalize() }}</label>
+    <label for="toggle-{{ category }}" title="Show or hide {{ category }} column{{ "s" if "stats" == category else "" }}"><input type="checkbox" id="toggle-{{ category }}" onclick="onToggleCategory('{{ category }}', this)" checked />{{ category.capitalize() }}</label>
 %endfor
   </div>
   <input type="search" placeholder="Filter heroes" title="Filter heroes on any matching text" onkeyup="onSearch(event)" onsearch="onSearch(event)">

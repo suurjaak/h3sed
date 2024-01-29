@@ -1,9 +1,9 @@
 CHANGELOG
 =========
 
-1.9, 2024-01-28
+1.9, 2024-01-29
 ---------------
-- show savefile map name and description
+- show savefile map name and description, in program and in HTML export
 - detect game version from fixed bytes not heuristically from hero parsing
 - arrange hero spells as a check box grid
 - add remove-buttons to hero army, artifacts and inventory sections
