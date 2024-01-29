@@ -10,6 +10,8 @@ CHANGELOG
 - ignore swapping blank or otherwise identical slots in inventory and army
 - remember view mode in hero full character sheet dialog
 - remember savefile extension filter
+- remember hero tab selection
+- remember savepage splitter position
 - reorder hero attribute categories in UI and exports
 - optimize loading hero
 - ensure uniform heights in hero component rows

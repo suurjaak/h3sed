@@ -173,10 +173,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.Center(wx.HORIZONTAL)
             self.Position.top = 50
         self.dir_ctrl.SetFocus()
-        if conf.SelectedIndex and conf.SelectedIndex < len(metadata.wildcard()):
+        if conf.Positions.get("filefilter_index") \
+        and conf.Positions["filefilter_index"] < len(metadata.wildcard()):
             self.dir_ctrl.UnselectAll()
-            self.dir_ctrl.SetFilterIndex(conf.SelectedIndex)
-            self.dir_ctrl.GetFilterListCtrl().Select(conf.SelectedIndex)
+            self.dir_ctrl.SetFilterIndex(conf.Positions["filefilter_index"])
+            self.dir_ctrl.GetFilterListCtrl().Select(conf.Positions["filefilter_index"])
             self.dir_ctrl.ReCreateTree()
         if conf.SelectedPath: self.dir_ctrl.ExpandPath(conf.SelectedPath)
 
@@ -771,10 +772,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def on_choose_filter(self, event):
         """Handler for choosing extension filter in file control."""
-        if event.Selection == conf.SelectedIndex:
+        if event.Selection == conf.Positions["filefilter_index"]:
             return
         if event: event.Skip() # Pass event along to next handler
-        conf.SelectedIndex = event.Selection
+        conf.Positions["filefilter_index"] = event.Selection
         path = self.dir_ctrl.Path
         # Workaround for DirCtrl raising error if any selection during populate
         self.dir_ctrl.UnselectAll()
@@ -1016,7 +1017,8 @@ class SavefilePage(wx.Panel):
 
         for c in (nctrl, vctrl, dctrl): c.SetEditable(False), c.SetMargins(0)
         dctrl.MinSize = -1, nctrl.Size.Height
-        SASH_STARTPOS = 2 * nctrl.Size.Height + 10
+        SASH_DEFAULTPOS = 2 * nctrl.Size.Height + 10
+        SASH_STARTPOS = conf.Positions.get("savepage_splitter") or SASH_DEFAULTPOS
 
         bookstyle = wx.lib.agw.fmresources.INB_LEFT
         if (wx.version().startswith("2.8") and sys.version_info.major == 2
@@ -1031,7 +1033,10 @@ class SavefilePage(wx.Panel):
 
         self.TopLevelParent.page_file_latest = self
         self.Bind(EVT_SAVEFILE_PAGE, self.on_page_event)
-        splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda e: splitter.SetSashPosition(SASH_STARTPOS))
+        splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda e: (splitter.SetSashPosition(SASH_DEFAULTPOS),
+                      conf.Positions.update(savepage_splitter=SASH_DEFAULTPOS)))
+        splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED,
+                      lambda e: conf.Positions.update(savepage_splitter=e.SashPosition))
         self.TopLevelParent.run_console("page = self.page_file_latest # Savefile tab")
 
         sizer = self.Sizer = wx.BoxSizer(wx.VERTICAL)

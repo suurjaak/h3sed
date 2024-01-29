@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "1.9.dev27"
+Version = "1.9.dev28"
 VersionDate = "29.01.2024"
 
 if getattr(sys, "frozen", False):
@@ -45,19 +45,16 @@ ConfigFile = "%s.ini" % os.path.join(EtcDirectory, Name.lower())
 """List of attribute names that can be saved to and loaded from ConfigFile."""
 FileDirectives = [
     "Backup", "ConfirmUnsaved", "ConsoleHistoryCommands", "RecentFiles", "RecentHeroes",
-    "SelectedIndex", "SelectedPath", "WindowPosition", "WindowSize",
+    "SelectedPath", "WindowPosition", "WindowSize",
 ]
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
-    "FileExtensions", "HeroToggles", "HeroCharsheetView", "MaxConsoleHistory", "MaxRecentFiles",
-    "PopupUnexpectedErrors", "StatusFlashLength",
+    "FileExtensions", "HeroToggles", "MaxConsoleHistory", "MaxRecentFiles",
+    "PopupUnexpectedErrors", "Positions", "StatusFlashLength",
 ]
 Defaults = {}
 
 """---------------------------- FileDirectives: ----------------------------"""
-
-"""Current selected index in directory list extension filter."""
-SelectedIndex = 0
 
 """Current selected path in directory list."""
 SelectedPath = None
@@ -80,8 +77,9 @@ ConsoleHistoryCommands = []
 """Hero index categories toggle state, as {name: false}."""
 HeroToggles = {}
 
-"""Default view mode in hero full character sheet, "normal" or "changes"."""
-HeroCharsheetView = "normal"
+"""Various index and location selection states."""
+Positions = {"filefilter_index": 0, "herotab_index": 0, "charsheet_view": "normal",
+             "savepage_splitter": 36}
 
 """Contents of Recent Files menu."""
 RecentFiles = []

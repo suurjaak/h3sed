@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  28.01.2024
+@modified  29.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -482,6 +482,12 @@ class HeroPlugin(object):
             nb.AddPage(subpanel, title)
         self._heropanel.Sizer.Add(nb, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW, proportion=1)
 
+        if conf.Positions.get("herotab_index") \
+        and conf.Positions["herotab_index"] < len(self._plugins):
+            nb.SetSelection(conf.Positions["herotab_index"])
+        nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
+                lambda e: conf.Positions.update(herotab_index=e.Selection))
+
         self._heropanel.Hide()
         self._panel.Thaw()
         with controls.BusyPanel(self._panel, "Loading heroes."):
@@ -661,9 +667,10 @@ class HeroPlugin(object):
         if self._hero.yamls2 and self._hero.yamls1 != self._hero.yamls2: texts0 = self._hero.yamls1 
         tplargs = dict(name=self._hero.name, texts=texts, texts0=texts0)
         normal, changes = tpl.expand(**tplargs), tpl.expand(changes=True, **tplargs)
-        content = changes if texts0 and "normal" != conf.HeroCharsheetView else normal
+        content = changes if texts0 and "normal" != conf.Positions.get("charsheet_view") else normal
+        dlg = None
         def on_link(mode):
-            conf.HeroCharsheetView = mode
+            if dlg: conf.Positions["charsheet_view"] = mode
             return changes if "normal" != mode else normal
         links = {k: on_link for k in (["normal", "changes"] if texts0 else ["normal"])}
         buttons = {"Copy data": self.on_copy_hero}
