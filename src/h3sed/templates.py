@@ -747,7 +747,6 @@ colptr += state
     {{ item }}<br />
     %endfor
     </td>
-  </tr>
 %endif
 %if not categories or categories["spells"]:
     <td>
@@ -756,6 +755,7 @@ colptr += state
     %endfor
     </td>
 %endif
+  </tr>
 %endfor
 
 </table>

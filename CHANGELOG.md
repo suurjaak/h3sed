@@ -14,6 +14,7 @@ CHANGELOG
 - optimize loading hero
 - ensure uniform heights in hero component rows
 - move up-down button focus to new row after swap
+- fix unfinished tag in HTML export if some categories omitted
 - tweak column titles in hero index table
 - tweak logging and status messages
 
