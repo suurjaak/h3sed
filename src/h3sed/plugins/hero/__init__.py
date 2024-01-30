@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  29.01.2024
+@modified  30.01.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -321,6 +321,7 @@ class HeroPlugin(object):
             "herotexts": [],       # [hero contents to search in, as [{category: plaintext}] ]
             "html":      "",       # Current hero search results HTML
             "text":      "",       # Current search text
+            "stale":     True,     # Whether should repopulate index before display
             "timer":     None,     # wx.Timer for filtering heroes index
             "ids":       {},       # {category: wx ID for toolbar toggle}
             "visible":   [],       # List of heroes visible
@@ -497,8 +498,8 @@ class HeroPlugin(object):
     def command(self, callable, name=None):
         """Submits callable to undo-redo command processor to be invoked."""
         if not self._panel: return
+        self._index["stale"] = True
         self._undoredo.Submit(plugins.PluginCommand(self, callable, name))
-        wx.CallAfter(self.populate_index)
 
 
     def render(self, reparse=False, reload=False, log=True):
@@ -514,6 +515,7 @@ class HeroPlugin(object):
             self._plugins = [x.copy() for x in PLUGINS]
             for p in self._plugins:
                 p["instance"] = p["module"].factory(self.savefile, self, panel=None)
+        if reparse or reload: self._index["stale"] = True
         if reparse: self.reparse()
         elif self._hero and self._heropanel.Children:
             for p in self._plugins: self.render_plugin(p["name"], reload=reload, log=log)
@@ -586,7 +588,9 @@ class HeroPlugin(object):
         """Populates heroes index page, filtered by current search if any."""
         if not self._panel: return
         html, searchtext = self._ctrls["html"], self._ctrls["search"].Value.strip()
-        if not force and self._index["text"] == searchtext and self._index["herotexts"]: return
+        if not self._index["stale"] and not force \
+        and self._index["text"] == searchtext and self._index["herotexts"]:
+            return
 
         heroes, links = self._heroes[:], list(range(len(self._heroes)))
         plugins = {p["name"]: p["instance"] for p in self._plugins}
@@ -627,6 +631,7 @@ class HeroPlugin(object):
             html.Scroll(html.GetScrollPos(wx.HORIZONTAL), 0)
             html.BackgroundColour = controls.ColourManager.GetColour(wx.SYS_COLOUR_WINDOW)
             html.ForegroundColour = controls.ColourManager.GetColour(wx.SYS_COLOUR_BTNTEXT)
+        self._index["stale"] = False
         if focus:
             self.select_index()
 
@@ -897,6 +902,7 @@ class HeroPlugin(object):
         searchsel = search.GetSelection()
         focusctrl = self._panel.FindFocus()
         combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
+        self.populate_index()
         if tabs.GetSelection(): tabs.SetSelection(0)
         style = tabs.GetAGWWindowStyleFlag() & (~wx.lib.agw.flatnotebook.FNB_X_ON_TAB)
         if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
@@ -941,6 +947,7 @@ class HeroPlugin(object):
         logger.info("%s heroes detected in %s as version '%s'.",
                     len(heroes) or "No ", self.savefile.filename, self.savefile.version)
         self._heroes[:] = sorted(heroes, key=lambda x: x.name.lower())
+        self._index["stale"] = True
 
 
     def parse_yaml(self, value):

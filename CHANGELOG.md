@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.9, 2024-01-29
+1.9, 2024-01-30
 ---------------
 - show savefile map name and description, in program and in HTML export
 - detect game version from fixed bytes not heuristically from hero parsing
@@ -14,6 +14,7 @@ CHANGELOG
 - remember savepage splitter position
 - reorder hero attribute categories in UI and exports
 - optimize loading hero
+- ensure hero index page refreshing from local changes
 - ensure uniform heights in hero component rows
 - move up-down button focus to new row after swap
 - fix unfinished tag in HTML export if some categories omitted
