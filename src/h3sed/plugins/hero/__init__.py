@@ -1066,9 +1066,7 @@ class HeroPlugin(object):
         combo, tabs = self._ctrls["hero"], self._ctrls["tabs"]
         index = next(i for i, h in enumerate(self._heroes) if h == hero)
         if index in self._pages.values():
-            page = next(p for p, i in self._pages.items() if i == index)
-            idx  = next(i for i in range(tabs.GetPageCount()) if page is tabs.GetPage(i))
-            tabs.SetSelection(idx)
+            self.select_hero_tab(index)
         else:
             page = wx.Window(tabs)
             self._pages[page] = index
