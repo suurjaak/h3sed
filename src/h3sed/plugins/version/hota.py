@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  28.01.2024
+@modified  29.02.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -321,7 +321,7 @@ RGX_HERO = re.compile(b"""
     .{27}                    #  27 bytes: skill slots (legacy, unused)         180-206
     .{4}                     #   4 bytes: primary stats                        207-210
 
-    [\x00-\x01]{70}          #  70 bytes: spells book                          211-280
+    [\x00-\x01]{70}          #  70 bytes: spells in book                       211-280
     [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
 
                              # 152 bytes: 19 8-byte equipments worn            351-502
