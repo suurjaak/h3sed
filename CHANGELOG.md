@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.9, 2024-01-30
+1.9, 2024-02-29
 ---------------
 - show savefile map name and description, in program and in HTML export
 - detect game version from fixed bytes not heuristically from hero parsing
@@ -18,6 +18,7 @@ CHANGELOG
 - ensure uniform heights in hero component rows
 - move up-down button focus to new row after swap
 - fix unfinished tag in HTML export if some categories omitted
+- fix redo action being logged with name of last action
 - tweak column titles in hero index table
 - tweak logging and status messages
 

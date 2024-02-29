@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    28.01.2024
+@modified    29.02.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -707,8 +707,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
             page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage) and page.undoredo.CanRedo():
-            cmd = page.undoredo.CurrentCommand or page.undoredo.Commands[0]
-            guibase.status("Redoing %s" % cmd.Name,
+            cmdpos = 0 if not page.undoredo.CurrentCommand else \
+                     page.undoredo.Commands.index(page.undoredo.CurrentCommand) + 1
+            guibase.status("Redoing %s" % page.undoredo.Commands[cmdpos].Name,
                            flash=conf.StatusShortFlashLength, log=True)
             page.undoredo.Redo()
 
@@ -754,6 +755,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         for _ in range(abs(count)):
             if not cando(): break  # for
             cmd = page.undoredo.CurrentCommand or page.undoredo.Commands[0]
+            if count >= 0 and page.undoredo.CurrentCommand:
+                cmd = page.undoredo.Commands[page.undoredo.Commands.index(cmd) + 1]
             guibase.status("%sing %s", verb, cmd.Name, flash=conf.StatusShortFlashLength, log=True)
             do()
 
