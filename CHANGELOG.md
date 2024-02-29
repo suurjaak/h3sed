@@ -8,12 +8,13 @@ CHANGELOG
 - arrange hero spells as a check box grid
 - add remove-buttons to hero army, artifacts and inventory sections
 - ignore swapping blank or otherwise identical slots in inventory and army
-- remember view mode in hero full character sheet dialog
-- remember savefile extension filter
 - remember hero tab selection
+- remember savefile extension filter
 - remember savepage splitter position
+- remember view mode in hero full character sheet dialog
 - reorder hero attribute categories in UI and exports
-- optimize loading hero
+- optimize parsing heroes
+- optimize creating hero page
 - ensure hero index page refreshing from local changes
 - ensure uniform heights in hero component rows
 - move up-down button focus to new row after swap

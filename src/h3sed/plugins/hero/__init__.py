@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  30.01.2024
+@modified  29.02.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -942,7 +942,8 @@ class HeroPlugin(object):
                 pos += end
             else:
                 pos += start + 1
-            m = re.search(RGX, self.savefile.raw[pos:])
+            # Continue in small chunks once heroes section reached, regex can get slow for remainder
+            m = re.search(RGX, self.savefile.raw[pos:pos+5000])
 
         logger.info("%s heroes detected in %s as version '%s'.",
                     len(heroes) or "No ", self.savefile.filename, self.savefile.version)
