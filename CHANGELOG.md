@@ -1,20 +1,21 @@
 CHANGELOG
 =========
 
-1.9, 2024-02-29
+1.9, 2024-03-02
 ---------------
 - show savefile map name and description, in program and in HTML export
 - detect game version from fixed bytes not heuristically from hero parsing
 - arrange hero spells as a check box grid
-- add remove-buttons to hero army, artifacts and inventory sections
+- optimize parsing heroes
+- optimize creating hero page
+- improve showing changes in hero charsheet
+- add remove-buttons to hero army, artifacts, and inventory sections
 - ignore swapping blank or otherwise identical slots in inventory and army
 - remember hero tab selection
 - remember savefile extension filter
 - remember savepage splitter position
 - remember view mode in hero full character sheet dialog
 - reorder hero attribute categories in UI and exports
-- optimize parsing heroes
-- optimize creating hero page
 - ensure hero index page refreshing from local changes
 - ensure uniform heights in hero component rows
 - move up-down button focus to new row after swap

@@ -7,15 +7,61 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    29.01.2024
+@modified    02.03.2024
 ------------------------------------------------------------------------------
 """
-
+import difflib, re
 # Modules imported inside templates:
-#import datetime, difflib, json, sys, wx
+#import datetime, json, sys, wx
 #from h3sed.lib.vendor import step
 #from h3sed.lib import util
 #from h3sed import conf, images, plugins, templates
+
+
+def make_category_diff(v1, v2):
+    """
+    Returns diff for hero charsheet category texts.
+
+    @param   v1  text with old values
+    @param   v2  text with new values
+    @return      [(old line, new line), ] with empty string standing for total change
+    """
+    LF, LFMARKER, ADDED, REMOVED, SAME = "\n", "\\n", "+ ", "- ", "  "
+
+    def make_entries(s1, s2):
+        """Produces line diff for texts, as [(old, new), ]."""
+        entries, pending = [], None
+        finalize = lambda a, b="": entries.append([a, b][::-1 if a.startswith(ADDED) else 1])
+        for line in difflib.Differ().compare(s1.splitlines(), s2.splitlines()):
+            if line.startswith(SAME):  # No change
+                if pending: finalize(pending)
+                entries.append((line, line))
+                pending = None
+            elif line.startswith((REMOVED, ADDED)):
+                if pending: finalize(pending, "" if line[:2] == pending[:2] else line)
+                pending = line if not pending or line[:2] == pending[:2] else None
+        if pending: finalize(pending)
+        return [[l[2:] for l in ll] for ll in entries]  # Strip difflib prefixes
+
+    # 1st pass: merge multi-line items to one line, to avoid difflib combining different items
+    ll1, ll2 = v1.splitlines(), v2.splitlines()
+    for ll in (ll1, ll2):
+        for i, l in enumerate(ll[::-1]):
+            ix = len(ll) - i - 1
+            if ix and not re.match(r"\s*-", ll[ix]) and re.match(r"\s*-\s.+", ll[ix-1]):
+                ll[ix-1] += LFMARKER + ll.pop(ix)
+    v1, v2 = LF.join(ll1), LF.join(ll2)
+
+    # 2nd pass: produce preliminary diff
+    diff = make_entries(v1, v2)
+
+    # 3rd pass: split merged items back to multi-line, produce line diff from within item
+    LEN = len(diff)
+    for i, (s1, s2) in enumerate(diff[::-1]):
+        if LFMARKER in s1 or LFMARKER in s2:
+            diff[LEN-i-1:LEN-i] = make_entries(*(s.replace(LFMARKER, LF) for s in (s1, s2)))
+
+    return diff
 
 
 """HTML text shown in Help -> About dialog."""
@@ -74,10 +120,8 @@ HTML text shown for hero full character sheet, toggleable between unsaved change
 
 """
 HERO_CHARSHEET_HTML = """<%
-import wx
 from h3sed.lib.vendor import step
 from h3sed import conf, templates
-COLOUR_DISABLED = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT).GetAsString(wx.C2S_HTML_SYNTAX)
 texts0 = isdef("texts0") and texts0 or []
 changes = isdef("changes") and changes
 %>
@@ -114,8 +158,7 @@ HTML text shown for hero unsaved changes diff.
 @param   changes  [(category content1, category content2), ]
 """
 HERO_DIFF_HTML = """<%
-import difflib
-from h3sed import conf
+from h3sed import conf, templates
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
 %if isdef("name") and name:
@@ -124,20 +167,8 @@ from h3sed import conf
 <font size="2"><table cellpadding="0" cellspacing="0">
 %for v1, v2 in changes:
 <%
-entries, entry = [], []
-for line in difflib.Differ().compare(v1.splitlines(), v2.splitlines()):
-    if line.startswith("  "):
-        if entry: entries.append(entry + [""])
-        entries.append((line, line))
-        entry = []
-    elif line.startswith("- "):
-        if entry: entries.append(entry + [""])
-        entry = [line]
-    elif line.startswith("+ "):
-        entries.append((entry or [""]) + [line])
-        entry = []
-if entry: entries.append(entry + [""])
-entries = [[escape(l[2:].rstrip()).replace(" ", "&nbsp;") for l in ll] for ll in entries]
+entries = templates.make_category_diff(v1, v2)
+entries = [[escape(l).replace(" ", "&nbsp;") for l in ll] for ll in entries]
 %>
     %for i, (l1, l2) in enumerate(entries):
         %if not i:
@@ -145,8 +176,8 @@ entries = [[escape(l[2:].rstrip()).replace(" ", "&nbsp;") for l in ll] for ll in
         %elif l1 == l2:
     <tr><td><code>{{! l1 }}</code></td><td><code>{{! l2 }}</code></td></tr>
         %else:
-    <tr><td bgcolor="{{ conf.DiffOldColour }}"><code>{{! l1 }}</code></td>
-        <td bgcolor="{{ conf.DiffNewColour }}"><code>{{! l2 }}</code></td></tr>
+    <tr><td bgcolor="{{ conf.DiffOldColour if l1 else "" }}"><code>{{! l1 }}</code></td>
+        <td bgcolor="{{ conf.DiffNewColour if l2 else "" }}"><code>{{! l2 }}</code></td></tr>
         %endif
     %endfor
 %endfor
