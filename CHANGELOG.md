@@ -20,6 +20,7 @@ CHANGELOG
 - ensure hero index page refreshing from local changes
 - ensure uniform heights in hero component rows
 - move up-down button focus to new row after swap
+- fix hero index page showing base stats without artifact bonuses
 - fix hero tab not selected properly on undo/redo from hero index page
 - fix unfinished tag in HTML export if some categories omitted
 - fix redo action being logged with name of last action

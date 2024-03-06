@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    02.03.2024
+@modified    06.03.2024
 ------------------------------------------------------------------------------
 """
 import difflib, re
@@ -205,7 +205,7 @@ category = category if isdef("category") else None
 %if category is None or "stats" == category:
 {{ hero.stats["level"] }}
     %for name in metadata.PrimaryAttributes:
-{{ hero.basestats[name] }}
+{{ hero.stats[name] }}
     %endfor
 %endif
 %if category is None or "devices" == category:
@@ -300,7 +300,7 @@ categories = categories if isdef("categories") else None
 %if not categories or categories["stats"]:
     <td align="left" valign="top" nowrap>{{ hero.stats["level"] }}</td>
     %for name in metadata.PrimaryAttributes:
-    <td align="left" valign="top" nowrap>{{ hero.basestats[name] }}</td>
+    <td align="left" valign="top" nowrap>{{ hero.stats[name] }}</td>
     %endfor
 %endif
 %if not categories or categories["devices"]:
@@ -739,7 +739,7 @@ colptr += state
 %if not categories or categories["stats"]:
     <td>{{ hero.stats["level"] }}</td>
     %for name in metadata.PrimaryAttributes:
-    <td>{{ hero.basestats[name] }}</td>
+    <td>{{ hero.stats[name] }}</td>
     %endfor
 %endif
 %if not categories or categories["devices"]:
