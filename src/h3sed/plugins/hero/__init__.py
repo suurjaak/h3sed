@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  29.02.2024
+@modified  06.03.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -342,7 +342,6 @@ class HeroPlugin(object):
         self._panel.Freeze()
         label  = wx.StaticText(self._panel, label="&Select hero:")
         combo  = wx.ComboBox(self._panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        tbtop  = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
         search = wx.SearchCtrl(self._panel)
         tabs = wx.lib.agw.flatnotebook.FlatNotebook(self._panel,
             agwStyle=wx.lib.agw.flatnotebook.FNB_DROPDOWN_TABS_LIST |
@@ -395,21 +394,17 @@ class HeroPlugin(object):
         combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
 
         CTRL = "Cmd" if "darwin" == sys.platform else "Ctrl"
-        bmp1 = wx.ArtProvider.GetBitmap(wx.ART_FOLDER,      wx.ART_TOOLBAR, (16, 16))
-        bmp2 = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR, (20, 20))
-        bmp3 = wx.ArtProvider.GetBitmap(wx.ART_COPY,        wx.ART_TOOLBAR, (20, 20))
-        bmp4 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,       wx.ART_TOOLBAR, (20, 20))
-        tbtop.AddTool(wx.ID_OPEN, "", bmp1, shortHelp="Show savefile in folder")
-        tb.AddTool(wx.ID_INFO,    "", bmp2, shortHelp="Show hero full character sheet\t%s-I" % CTRL)
+        bmp1 = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR, (20, 20))
+        bmp2 = wx.ArtProvider.GetBitmap(wx.ART_COPY,        wx.ART_TOOLBAR, (20, 20))
+        bmp3 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,       wx.ART_TOOLBAR, (20, 20))
+        tb.AddTool(wx.ID_INFO,    "", bmp1, shortHelp="Show hero full character sheet\t%s-I" % CTRL)
         tb.AddSeparator()
-        tb.AddTool(wx.ID_COPY,    "", bmp3, shortHelp="Copy current hero data to clipboard")
-        tb.AddTool(wx.ID_PASTE,   "", bmp4, shortHelp="Paste data from clipboard to current hero")
-        tbtop.Bind(wx.EVT_TOOL, self.on_open_folder, id=wx.ID_OPEN)
+        tb.AddTool(wx.ID_COPY,    "", bmp2, shortHelp="Copy current hero data to clipboard")
+        tb.AddTool(wx.ID_PASTE,   "", bmp3, shortHelp="Paste data from clipboard to current hero")
         tb.Bind(wx.EVT_TOOL,    self.on_charsheet,   id=wx.ID_INFO)
         tb.Bind(wx.EVT_TOOL,    self.on_copy_hero,   id=wx.ID_COPY)
         tb.Bind(wx.EVT_TOOL,    self.on_paste_hero,  id=wx.ID_PASTE)
         self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
-        tbtop.Realize()
         tb.Realize()
         tb.Disable()
         tb.Hide()
@@ -447,7 +442,6 @@ class HeroPlugin(object):
         sizer_top = wx.BoxSizer(wx.HORIZONTAL)
         sizer_top.Add(label,  border=10, flag=wx.RIGHT | wx.ALIGN_CENTER)
         sizer_top.Add(combo,  border=5,  flag=wx.TOP  | wx.BOTTOM | wx.GROW)
-        sizer_top.Add(tbtop,  border=5,  flag=wx.LEFT | wx.TOP | wx.BOTTOM)
         sizer_top.AddStretchSpacer()
         sizer_top.Add(search, border=5, flag=wx.ALL, proportion=1)
         sizer_top.AddSpacer(5)
@@ -658,11 +652,6 @@ class HeroPlugin(object):
             guibase.status("Pasting data to hero %s from clipboard.",
                            self._hero.name, flash=conf.StatusShortFlashLength, log=True)
             self.parse_yaml(value)
-
-
-    def on_open_folder(self, event=None):
-        """Opens folder to savefile location."""
-        util.select_file(self.savefile.filename)
 
 
     def on_charsheet(self, event=None):

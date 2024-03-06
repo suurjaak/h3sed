@@ -353,20 +353,23 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def create_toolbar(self):
         """Creates the program toolbar."""
-        TOOLS = [("Open",    wx.ID_OPEN,    wx.ART_FILE_OPEN,    self.on_open_savefile),
-                 ("Save",    wx.ID_SAVE,    wx.ART_FILE_SAVE,    self.on_save_savefile),
-                 ("Save as", wx.ID_SAVEAS,  wx.ART_FILE_SAVE_AS, self.on_save_savefile_as),
+        TOOLS = [("Open",    wx.ID_OPEN,     wx.ART_FILE_OPEN,    self.on_open_savefile),
+                 ("Save",    wx.ID_SAVE,     wx.ART_FILE_SAVE,    self.on_save_savefile),
+                 ("Save as", wx.ID_SAVEAS,   wx.ART_FILE_SAVE_AS, self.on_save_savefile_as),
                  (),
-                 ("Undo",    wx.ID_UNDO,    wx.ART_UNDO,         self.on_undo_savefile),
-                 ("Redo",    wx.ID_REDO,    wx.ART_REDO,         self.on_redo_savefile),
+                 ("Undo",    wx.ID_UNDO,     wx.ART_UNDO,         self.on_undo_savefile),
+                 ("Redo",    wx.ID_REDO,     wx.ART_REDO,         self.on_redo_savefile),
                  (),
-                 ("Reload",  wx.ID_REFRESH, "ToolbarRefresh",    self.on_reload_savefile)]
-        TOOL_HELPS = {wx.ID_OPEN:    "Choose a savefile to open",
-                      wx.ID_SAVE:    "Save the active file",
-                      wx.ID_SAVEAS:  "Save the active file under a new name",
-                      wx.ID_UNDO:    "Undo the last action",
-                      wx.ID_REDO:    "Redo the previously undone action",
-                      wx.ID_REFRESH: "Reload savefile, losing any current changes"}
+                 ("Reload",  wx.ID_REFRESH,  "ToolbarRefresh",    self.on_reload_savefile),
+                 (),
+                 ("Folder",  wx.ID_HARDDISK, wx.ART_FOLDER,       self.on_open_folder)]
+        TOOL_HELPS = {wx.ID_OPEN:     "Choose a savefile to open",
+                      wx.ID_SAVE:     "Save the active file",
+                      wx.ID_SAVEAS:   "Save the active file under a new name",
+                      wx.ID_UNDO:     "Undo the last action",
+                      wx.ID_REDO:     "Redo the previously undone action",
+                      wx.ID_REFRESH:  "Reload savefile, losing any current changes",
+                      wx.ID_HARDDISK: "Open file directory in file manager program"}
         tb = self.CreateToolBar(wx.TB_FLAT | wx.TB_HORIZONTAL | wx.TB_TEXT)
         tb.SetToolBitmapSize((16, 16))
         for tool in TOOLS:
@@ -380,6 +383,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             tb.Bind(wx.EVT_TOOL, handler, id=toolid)
 
         tb.EnableTool(wx.ID_OPEN, True)
+        tb.EnableTool(wx.ID_HARDDISK, True)
         tb.Realize()
 
 
@@ -551,7 +555,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if not page: return
         for i in range(self.ToolBar.ToolsCount):
             self.ToolBar.EnableTool(self.ToolBar.GetToolByPos(i).Id, False)
-        self.ToolBar.EnableTool(wx.ID_OPEN, True)
+        self.ToolBar.EnableTool(wx.ID_OPEN,     True)
+        self.ToolBar.EnableTool(wx.ID_HARDDISK, True)
         if isinstance(page, SavefilePage):
             self.ToolBar.EnableTool(wx.ID_SAVE,    True)
             self.ToolBar.EnableTool(wx.ID_SAVEAS,  True)
@@ -840,6 +845,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def on_open_savefile_event(self, event):
         """Handler for OpenSavefileEvent, loads the event savefile."""
         self.load_savefile_pages([os.path.realpath(event.filename)])
+
+
+    def on_open_folder(self, event=None):
+        """Opens folder to savefile location."""
+        page = self.notebook.GetCurrentPage()
+        filename = page.filename if isinstance(page, SavefilePage) else self.dir_ctrl.GetPath()
+        util.select_file(filename)
 
 
     def on_recent_file(self, event):

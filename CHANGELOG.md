@@ -10,6 +10,7 @@ CHANGELOG
 - optimize creating hero page
 - improve showing changes in hero charsheet
 - add remove-buttons to hero army, artifacts, and inventory sections
+- move folder-button to program main toolbar
 - ignore swapping blank or otherwise identical slots in inventory and army
 - remember hero tab selection
 - remember savefile extension filter
