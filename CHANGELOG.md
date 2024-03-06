@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.9, 2024-03-02
+1.9, 2024-03-06
 ---------------
 - show savefile map name and description, in program and in HTML export
 - detect game version from fixed bytes not heuristically from hero parsing
@@ -22,6 +22,7 @@ CHANGELOG
 - fix hero tab not selected properly on undo/redo from hero index page
 - fix unfinished tag in HTML export if some categories omitted
 - fix redo action being logged with name of last action
+- fix statusbar not showing stats for currently open file but directory control selection only
 - tweak column titles in hero index table
 - tweak logging and status messages
 

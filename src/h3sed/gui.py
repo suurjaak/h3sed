@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    29.02.2024
+@modified    06.03.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -866,9 +866,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def update_fileinfo(self):
         """Updates file data in statusbar."""
-        filename = self.dir_ctrl.GetPath()
-        sz, dt = "", ""
-        if os.path.isfile(filename):
+        sz, dt, page, filename = "", "", self.notebook.GetCurrentPage(), None
+        if self.notebook.GetCurrentPage() is self.page_main: filename = self.dir_ctrl.GetPath()
+        elif isinstance(page, SavefilePage): filename = page.filename
+        if filename and os.path.isfile(filename):
             sz = util.format_bytes(os.path.getsize(filename))
             stamp = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
             dt = stamp.strftime("%Y-%m-%d %H:%M:%S")
