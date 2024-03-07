@@ -35,7 +35,7 @@ Plugin modules are expected to have the following API (all methods optional):
         '''
 
 
-Plugin instances are expected to have the following API (all methods mandatory):
+Plugin instances are expected to have the following API (all methods mandatory except get_changes):
 
     def render(self, reparse=False, reload=False, log=True):
         '''
@@ -58,13 +58,16 @@ Plugin instances are expected to have the following API (all methods mandatory):
     def action(self, **kwargs):
         '''Invokes plugin action, like (load='Adela').'''
 
+    def get_changes(self, html=True):
+        '''Optional. Returns unsaved changes, as HTML diff content or plain text brief.'''
+
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  21.01.2024
+@modified  06.03.2024
 ------------------------------------------------------------------------------
 """
 import os

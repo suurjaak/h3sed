@@ -1068,9 +1068,10 @@ class HeroPlugin(object):
         combo.SetSelection(index)
 
 
-    def get_changes(self):
-        """Returns changes to current heroes, as HTML diff content."""
-        changes, tpl = [], step.Template(templates.HERO_DIFF_HTML, escape=True)
+    def get_changes(self, html=True):
+        """Returns changes to current heroes, as HTML diff content or plain text brief."""
+        TEMPLATE = templates.HERO_DIFF_HTML if html else templates.HERO_DIFF_TEXT
+        changes, tpl = [], step.Template(TEMPLATE, escape=html, strip=html)
         for hero in self._heroes:
             if hero.yamls1 and hero.yamls2 and hero.yamls1 != hero.yamls2:
                 changes.append(tpl.expand(name=hero.name, changes=[

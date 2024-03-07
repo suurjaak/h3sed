@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.03.2024
+@modified    07.03.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1136,6 +1136,9 @@ class SavefilePage(wx.Panel):
             )
         rename = (filename1 != filename2)
         logger.info("Saving %s%s.", filename1, " as %s" % filename2 if rename else "")
+        changes = "\n\n".join(p.get_changes(html=False) for p in self.plugins
+                              if hasattr(p, "get_changes"))
+        if changes: logger.info("Saving changes:\n\n%s", changes)
 
         if rename:
             # Use a tertiary file in case something fails

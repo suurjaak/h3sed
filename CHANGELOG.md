@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.9, 2024-03-06
+1.9, 2024-03-07
 ---------------
 - show savefile map name and description, in program and in HTML export
 - detect game version from fixed bytes not heuristically from hero parsing
@@ -20,6 +20,7 @@ CHANGELOG
 - ensure hero index page refreshing from local changes
 - ensure uniform heights in hero component rows
 - move up-down button focus to new row after swap
+- log changes on save
 - fix hero index page showing base stats without artifact bonuses
 - fix hero tab not selected properly on undo/redo from hero index page
 - fix unfinished tag in HTML export if some categories omitted

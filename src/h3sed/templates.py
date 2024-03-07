@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.03.2024
+@modified    07.03.2024
 ------------------------------------------------------------------------------
 """
 import difflib, re
@@ -48,7 +48,7 @@ def make_category_diff(v1, v2):
     for ll in (ll1, ll2):
         for i, l in enumerate(ll[::-1]):
             ix = len(ll) - i - 1
-            if ix and not re.match(r"\s*-", ll[ix]) and re.match(r"\s*-\s.+", ll[ix-1]):
+            if l and ix and not re.match(r"(\s*-)|^$", ll[ix]) and re.match(r"\s*-\s.+", ll[ix-1]):
                 ll[ix-1] += LFMARKER + ll.pop(ix)
     v1, v2 = LF.join(ll1), LF.join(ll2)
 
@@ -175,6 +175,11 @@ entries = [[escape(l).replace(" ", "&nbsp;") for l in ll] for ll in entries]
     <tr><td colspan="2"><code>{{! l1 }}</code></td></tr>
         %elif l1 == l2:
     <tr><td><code>{{! l1 }}</code></td><td><code>{{! l2 }}</code></td></tr>
+        %elif l1 != l2 and ":" not in l1 + l2:
+    <tr><td bgcolor="{{ conf.DiffOldColour }}"><code>{{! l1 }}</code></td>
+        <td><code></code></td></tr>
+    <tr><td><code></code></td>
+        <td bgcolor="{{ conf.DiffNewColour }}"><code>{{! l2 }}</code></td></tr>
         %else:
     <tr><td bgcolor="{{ conf.DiffOldColour if l1 else "" }}"><code>{{! l1 }}</code></td>
         <td bgcolor="{{ conf.DiffNewColour if l2 else "" }}"><code>{{! l2 }}</code></td></tr>
@@ -183,6 +188,60 @@ entries = [[escape(l).replace(" ", "&nbsp;") for l in ll] for ll in entries]
 %endfor
 </table></font>
 </font>
+"""
+
+
+"""
+Text shown for hero unsaved changes diff for logging.
+
+@param  ?name     hero name, if any
+@param   changes  [(category content1, category content2), ]
+"""
+HERO_DIFF_TEXT = """<%
+import re
+from h3sed import conf, templates
+%>
+%if isdef("name") and name:
+{{ name }}:
+%endif
+%for v1, v2 in ((a, b) for a, b in changes if a != b):
+<%
+entries = templates.make_category_diff(v1, v2)
+# Merge multi-line items to one line
+ll1, ll2 = map(list, zip(*entries))
+for i, (l1, l2) in enumerate(entries[::-1]):
+    ix = len(entries) - i - 1
+    if ix and (not re.match(r"(\s*-)|^$", ll1[ix]) and re.match(r"\s*-\s.+", ll1[ix-1])
+    or not re.match(r"(\s*-)|^$", ll2[ix]) and re.match(r"\s*-\s.+", ll2[ix-1])):
+        ll1[ix-1] += " " + ll1.pop(ix)
+        ll2[ix-1] += " " + ll2.pop(ix)
+entries = list(zip(ll1, ll2))
+shift_pending = shift = False
+%>
+    %for i, (l1, l2) in enumerate(entries):
+<%
+shift_pending = shift_pending or (l1.strip() + l2.strip() == "-")
+l1, l2 = (re.sub("(^\s*-\s*)|(\s{2,})", " ", x).strip() for x in (l1, l2))
+l1, l2 = ("" if i and l.endswith(":") else l for l in (l1, l2))
+shift = shift_pending and bool(l1 or l2)
+if shift: shift_pending = False
+%>
+        %if not i:
+  {{ l1 }}
+        %elif l1 and not l2:
+    removed  {{ l1 }}
+        %elif l2 and not l1:
+    added  {{ l2 }}
+        %elif l1 != l2 and ":" in l1 + l2:
+    changed  {{ l1 }}  to  {{ l2 }}
+        %elif l1 != l2:
+    removed  {{ l1 }}
+    added  {{ l2 }}
+        %elif shift:
+    shifted  {{ l2 }}
+        %endif
+    %endfor
+%endfor
 """
 
 
