@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  06.03.2024
+@modified  08.03.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -1062,8 +1062,8 @@ class HeroPlugin(object):
             tabs.AddPage(page, hero.name, select=True)
             self._indexpanel.Hide()
             self._heropanel.Show()
-        if not self._hero:
-            self._hero = next(h for h in self._heroes if h == hero)
+        if self._hero != hero:
+            self._hero = self._heroes[index]
         self._hero.update(hero)
         combo.SetSelection(index)
 
