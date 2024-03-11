@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.9, 2024-03-11
+2.0, 2024-03-11
 ---------------
 - show savefile map name and description, in program and in HTML export
 - detect game version from fixed bytes not heuristically from hero parsing
