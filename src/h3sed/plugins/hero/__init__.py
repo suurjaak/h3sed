@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  08.03.2024
+@modified  11.03.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -193,7 +193,7 @@ RGX_HERO = re.compile(b"""
     .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
 
                              #  13 bytes: hero name, null-padded               138-150
-    (?P<name>[^\x00-\x20,\xF0-\xFF].{11}\x00)
+    (?P<name>[^\x00-\x20].{11}\x00)
     [\x00-\x03]{28}          #  28 bytes: skill levels                         151-178
     [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
     .{4}                     #   4 bytes: primary stats                        207-210
@@ -915,7 +915,7 @@ class HeroPlugin(object):
         """
         heroes = []
 
-        rgx_strip = re.compile(br"^([^\x00-\x19,\xF0-\xFF]+)\x00+$")
+        rgx_strip = re.compile(br"^(?!\xFF+\x00+$)([^\x00-\x19]+)\x00+$")
         rgx_nulls = re.compile(br"^(\x00+)|(\x00{4}\xFF{4})+$")
         RGX = plugins.adapt(self, "regex", RGX_HERO)
 
