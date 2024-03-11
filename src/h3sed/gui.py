@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    07.03.2024
+@modified    11.03.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1307,7 +1307,7 @@ def build(plugin, panel):
         def handler(event):
             value = event.EventObject.Value
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            namelbl = "" if rowindex is None else "slot %s" % rowindex
+            namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
             if name is not None: namelbl += (" " if namelbl else "") + name
             valuelbl = "<blank>" if value in ("", False, None) else value
             cname = "set %s: %s %s" % (label, namelbl, valuelbl)
@@ -1396,7 +1396,7 @@ def build(plugin, panel):
 
         def handler(event):
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            namelbl = "" if rowindex is None else "slot %s" % rowindex
+            namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
             if name is not None: namelbl += (" " if namelbl else "") + name
             cname = "set %s: %s <blank>" % (label, namelbl)
             logger.info("Setting %s: %s to <blank>.", label, namelbl)
