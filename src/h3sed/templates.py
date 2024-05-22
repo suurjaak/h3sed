@@ -478,7 +478,8 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
 %><!DOCTYPE HTML><html lang="en">
 <head>
   <meta http-equiv='Content-Type' content='text/html;charset=utf-8'>
-  <meta name="Author" content="{{ conf.Title }}">
+  <meta name="author" content="{{ conf.Title }}">
+  <meta name="generator" content="{{ conf.Name }} v{{ conf.Version }} ({{ conf.VersionDate }})">
   <title>Heroes of Might & Magic III - Savegame export - Heroes</title>
   <link rel="shortcut icon" type="image/png" href="data:image/png;base64,{{! images.Icon_16x16_16bit.data }}">
   <style>
