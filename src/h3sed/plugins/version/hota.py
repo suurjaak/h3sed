@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  11.03.2024
+@modified  22.05.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -21,6 +21,13 @@ logger = logging.getLogger(__package__)
 
 
 PROPS = {"name": "hota", "label": "Horn of the Abyss", "index": 1}
+
+
+"""Game major and minor version byte ranges, as (min, max)."""
+VersionByteRanges = {
+    "version_major":  (44, -1),
+    "version_minor":  ( 5, -1),
+}
 
 
 """Hero skills, in file order, added to default skills."""
@@ -405,7 +412,6 @@ def adapt(source, category, value):
     return result
 
 
-def detect(raw):
-    """Returns whether savefile uncompressed bytes match Horn of the Abyss."""
-    major, minor = raw[BytePositions["version_major"]], raw[BytePositions["version_minor"]]
-    return major >= 0x2C and minor >= 0x05
+def detect(savefile):
+    """Returns whether savefile bytes match Horn of the Abyss."""
+    return savefile.match_byte_ranges(BytePositions, VersionByteRanges)

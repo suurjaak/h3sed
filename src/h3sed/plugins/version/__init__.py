@@ -10,8 +10,8 @@ Subplugin modules are expected to have the following API (most methods optional)
     def init():
         '''Called at plugin load.'''
 
-    def detect(bytes):
-        '''Mandatory. Returns whether savefile uncompressed bytes match game version.'''
+    def detect(savefile):
+        '''Mandatory. Returns whether savefile matches game version.'''
 
     def props():
         '''
@@ -34,7 +34,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  27.01.2024
+@modified  22.05.2024
 ------------------------------------------------------------------------------
 """
 import copy

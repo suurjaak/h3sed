@@ -21,6 +21,13 @@ logger = logging.getLogger(__package__)
 PROPS = {"name": "sod", "label": "Shadow of Death", "index": 0}
 
 
+"""Game major and minor version byte ranges, as (min, max)."""
+VersionByteRanges = {
+    "version_major":  (42, 43),
+    "version_minor":  ( 2,  4),
+}
+
+
 """Hero artifacts, for wearing and side slots, excluding spell scrolls."""
 Artifacts = [
     "Admiral's Hat",
@@ -181,7 +188,6 @@ def props():
     return PROPS
 
 
-def detect(raw):
-    """Returns whether savefile uncompressed bytes match Shadow of Death."""
-    major, minor = raw[BytePositions["version_major"]], raw[BytePositions["version_minor"]]
-    return 0x2A <= major < 0x2C and minor >= 0x02
+def detect(savefile):
+    """Returns whether savefile bytes match Shadow of Death."""
+    return savefile.match_byte_ranges(BytePositions, VersionByteRanges)

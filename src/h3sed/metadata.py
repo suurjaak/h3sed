@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    28.01.2024
+@modified    22.05.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -1057,7 +1057,7 @@ class Savefile(object):
             raise ValueError("Not recognized as Heroes3 savefile.")
         if getattr(plugins, "version", None):
             for p in plugins.version.PLUGINS:
-                if p["module"].detect(self.raw):
+                if p["module"].detect(self):
                     logger.info("Detected %s as version %r.", self.filename, p["name"])
                     self.version = p["name"]
                     break  # for p
@@ -1096,6 +1096,21 @@ class Savefile(object):
     def is_changed(self):
         """Returns whether loaded contents have changed."""
         return self.raw != self.raw0
+
+
+    def match_byte_ranges(self, positions, ranges):
+        """
+        Returns whether byte values in savefile uncompressed bytes match given ranges.
+
+        @param   positions  {key: byte index in savefile uncompressed bytes}
+        @param   ranges     {key in positions: (min, max)}, with negative values skipped
+        """
+        if not positions or not ranges or not all(k in positions for k in ranges): return False
+        for k, (minv, maxv) in ranges.items():
+            v = self.raw[positions[k]] if positions[k] < len(self.raw) else None
+            if v is None or (minv >= 0 and v < minv) or (maxv >= 0 and v > maxv):
+                return False
+        return True
 
 
 
