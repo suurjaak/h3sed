@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  28.01.2024
+@modified  22.05.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -35,7 +35,7 @@ Artifacts = [
     "Ring of the Magi",
     "Statue of Legion",
     "Titan's Thunder",
-    "Vial of Dragonblood",
+    "Vial of Dragon Blood",
     "Wizard's Well",
 ]
 
@@ -89,7 +89,7 @@ IDs = {
     "Ring of the Magi":                  0x8B,
     "Statue of Legion":                  0x85,
     "Titan's Thunder":                   0x87,
-    "Vial of Dragonblood":               0x7F,
+    "Vial of Dragon Blood":              0x7F,
     "Wizard's Well":                     0x8A,
 
     # Creatures
@@ -136,7 +136,7 @@ ArtifactSlots = {
     "Ring of the Magi":                  ["hand", "neck", "cloak"],
     "Statue of Legion":                  ["side", "side", "side", "side", "side"],
     "Titan's Thunder":                   ["weapon", "helm", "armor", "shield"],
-    "Vial of Dragonblood":               ["side"],
+    "Vial of Dragon Blood":              ["side"],
 }
 
 
