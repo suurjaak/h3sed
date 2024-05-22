@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    07.03.2024
+@modified    22.05.2024
 ------------------------------------------------------------------------------
 """
 import difflib, re
@@ -498,7 +498,7 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
     table#heroes td { vertical-align: top; white-space: nowrap; }
     td.index, th.index { color: gray; width: 10px; }
     td.index { color: gray; text-align: right; }
-    .long { white-space: pre-wrap; }
+    .long { display: inline-block; max-width: 600px; white-space: pre-wrap; }
     a.toggle { font-weight: normal; }
     a.toggle:hover { cursor: pointer; text-decoration: none; }
     a.toggle::after { content: ".. \\25b6"; }

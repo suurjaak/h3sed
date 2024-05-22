@@ -4,6 +4,7 @@ CHANGELOG
 2.1, 2024-05-22
 ---------------
 - fix Vial of Dragon Blood being labelled as Vial of Dragonblood in Shadow of Death savefiles
+- tweak game description layout in HTML export
 
 
 2.0, 2024-03-11
