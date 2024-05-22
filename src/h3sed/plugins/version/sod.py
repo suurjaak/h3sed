@@ -18,7 +18,7 @@ from h3sed.metadata import BytePositions, Store
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "sod", "label": "Shadow of Death", "index": 0}
+PROPS = {"name": "sod", "label": "Shadow of Death", "index": 1}
 
 
 """Game major and minor version byte ranges, as (min, max)."""

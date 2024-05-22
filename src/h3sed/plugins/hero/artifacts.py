@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  27.01.2024
+@modified  23.05.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -178,8 +178,8 @@ class ArtifactsPlugin(object):
         version = self._savefile.version
         for prop in UIPROPS:
             slot = prop.get("slot", prop["name"])
-            result.append(dict(prop, choices=[""] + self._cache[slot]))
-        return result
+            result.append(dict(prop, choices=[""] + self._cache.get(slot, [])))
+        return plugins.adapt(self, "props", result)
 
 
     def state(self):
@@ -370,7 +370,7 @@ class ArtifactsPlugin(object):
         """Returns artifacts states parsed from hero bytearrays, as [{helm, ..}, ]."""
         result = []
         version = self._savefile.version
-        slots = set(p.get("slot", p["name"]) for p in UIPROPS) | set(["inventory", "scroll"])
+        slots = set(p.get("slot", p["name"]) for p in self.props()) | set(["inventory", "scroll"])
         self._cache = {slot: sorted(metadata.Store.get("artifacts", version, category=slot))
                        for slot in slots}
         IDS   = metadata.Store.get("ids", version)
@@ -401,10 +401,12 @@ class ArtifactsPlugin(object):
         SCROLL_ARTIFACTS = self._cache["scroll"]
         MYPOS = plugins.adapt(self, "pos", POS)
         SLOTS = metadata.Store.get("artifact_slots", version)
+        HAS_COMBOS = bool(MYPOS.get("reserved"))
 
-        pos_reserved, len_reserved = min(MYPOS["reserved"].values()), len(MYPOS["reserved"])
-        result[pos_reserved:pos_reserved + len_reserved] = [0] * len_reserved
-        reserved_sets = set()  # [pos updated in combination artifact flags, ]
+        if HAS_COMBOS:
+            pos_reserved, len_reserved = min(MYPOS["reserved"].values()), len(MYPOS["reserved"])
+            result[pos_reserved:pos_reserved + len_reserved] = [0] * len_reserved
+            reserved_sets = set()  # [pos updated in combination artifact flags, ]
 
         state0 = self._hero.state0.get("artifacts") or {}
         for prop in self.props():
@@ -420,11 +422,11 @@ class ArtifactsPlugin(object):
             else:
                 b = metadata.Blank * 8
             result[pos:pos + len(b)] = b
-            for slot in SLOTS.get(name, [])[1:]:
+            for slot in SLOTS.get(name, [])[1:] if HAS_COMBOS else ():
                 result[MYPOS["reserved"][slot]] += 1
                 reserved_sets.add(MYPOS["reserved"][slot])
 
-        for pos in range(pos_reserved, pos_reserved + len_reserved):
+        for pos in range(pos_reserved, pos_reserved + len_reserved) if HAS_COMBOS else ():
             if pos not in reserved_sets and bytes0[pos] > 5:
                 # Retain original bytes unchanged, Horn of the Abyss uses them for unknown purpose.
                 result[pos] = bytes0[pos]

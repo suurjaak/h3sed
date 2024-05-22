@@ -20,7 +20,7 @@ from h3sed.metadata import BytePositions, Store
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "hota", "label": "Horn of the Abyss", "index": 1}
+PROPS = {"name": "hota", "label": "Horn of the Abyss", "index": 2}
 
 
 """Game major and minor version byte ranges, as (min, max)."""
