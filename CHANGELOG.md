@@ -5,6 +5,7 @@ CHANGELOG
 ---------------
 - add support for Armageddon's Blade savefiles (issue #5)
 - add support for Restoration of Erathia savefiles
+- add item compacting option to hero inventory
 - fix Vial of Dragon Blood being labelled as Vial of Dragonblood in Shadow of Death savefiles
 - tweak game description layout in HTML export
 

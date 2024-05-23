@@ -7,16 +7,22 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  27.01.2024
+@modified  23.05.2024
 ------------------------------------------------------------------------------
 """
+import functools
 import logging
 
+import wx
+
+from h3sed import conf
 from h3sed import gui
+from h3sed import guibase
 from h3sed import metadata
 from h3sed import plugins
 from h3sed.lib import util
 from h3sed.plugins.hero import POS
+from h3sed.plugins.hero.artifacts import UIPROPS as ARTIFACT_PROPS
 
 
 logger = logging.getLogger(__package__)
@@ -114,6 +120,57 @@ class InventoryPlugin(object):
         return state0 != self._state
 
 
+    def on_compact_menu(self, event):
+        """Handler for clicking the Compact button, opens popup menu."""
+        menu = wx.Menu()
+        item_current   = wx.MenuItem(menu, -1, "In &current order")
+        item_name      = wx.MenuItem(menu, -1, "In &name order")
+        item_slot_name = wx.MenuItem(menu, -1, "In &slot and name order")
+        item_reverse   = wx.MenuItem(menu, -1, "In &reverse order")
+        menu.Append(item_current)
+        menu.Append(item_name)
+        menu.Append(item_slot_name)
+        menu.Append(item_reverse)
+        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(),                 item_current)
+        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(reverse=True),     item_reverse)
+        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(["name"]),         item_name)
+        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(["slot", "name"]), item_slot_name)
+        event.EventObject.PopupMenu(menu, (0, event.EventObject.Size.Height))
+
+
+    def compact_items(self, order=(), reverse=False):
+        """Compacts inventory items to top, in specified order if any."""
+        items, sortkeys = [x for x in self._state[:] if x], []
+        if order:
+            SLOTS = metadata.Store.get("artifact_slots", self._savefile.version)
+            slot_order = [x.get("slot", x["name"]) for x in ARTIFACT_PROPS]
+            slot_order += [x for x in set(sum(SLOTS.values(), [])) if x not in slot_order]
+            slot_order += ["unknown"]  # Just in case
+        for name in order:
+            if "name" == name:
+                sortkeys.append(lambda x: x.lower())
+            if "slot" == name:
+                sortkeys.append(lambda x: slot_order.index(SLOTS.get(x, slot_order[-1:])[0]))
+        if sortkeys: items.sort(key=lambda x: tuple(f(x) for f in sortkeys))
+        if reverse:  items = items[::-1]
+        items += [None] * (len(self._state) - len(items))
+        if items == self._state:
+            guibase.status("No change from compacting inventory",
+                           flash=conf.StatusShortFlashLength)
+            return
+
+        def on_do(self, items):
+            self._state[:] = items
+            self.parent.patch()
+            self.render()
+            return True
+        label = " and ".join(order) if order else "reverse" if reverse else "current"
+        guibase.status("Compacting inventory in %s order", label,
+                       flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, items)
+        self.parent.command(callable, name="compact inventory in %s order" % label)
+
+
     def render(self):
         """
         Populates controls from state, using existing if already built.
@@ -126,6 +183,12 @@ class InventoryPlugin(object):
             return False
         else:
             self._ctrls = gui.build(self, self._panel)[0]
+            button = wx.Button(self._panel, label="Compact ..")
+            button.Bind(wx.EVT_BUTTON, self.on_compact_menu)
+            button.ToolTip = "Pack inventory artifacts to top"
+            self._panel.Sizer.Add(button, border=20, flag=wx.TOP | wx.LEFT)
+            self._panel.Sizer.AddStretchSpacer()
+            self._panel.Layout()
             return True
 
 
