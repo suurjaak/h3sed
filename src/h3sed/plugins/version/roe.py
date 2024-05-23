@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Subplugin for HOMM3 version "Armageddon's Blade".
+Subplugin for HOMM3 version "Restoration of Erathia".
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
@@ -14,88 +14,20 @@ import logging
 import re
 
 from h3sed.lib import util
-from h3sed.metadata import BytePositions, Store
+from h3sed.metadata import BytePositions
 
 
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "ab", "label": "Armageddon's Blade", "index": 1}
+PROPS = {"name": "roe", "label": "Restoration of Erathia", "index": 0}
 
 
 """Game major and minor version byte ranges, as (min, max)."""
 VersionByteRanges = {
-    "version_major":  (42, 42),
-    "version_minor":  ( 1,  1),
+    "version_major":  (16, 16),
+    "version_minor":  ( 0,  0),
 }
-
-
-"""Hero artifacts, for wearing and side slots, excluding spell scrolls."""
-Artifacts = [
-    "Armageddon's Blade",
-    "Vial of Dragon Blood",
-]
-
-
-"""Creatures for hero army slots."""
-Creatures = [
-    "Azure Dragon",
-    "Boar",
-    "Crystal Dragon",
-    "Enchanter",
-    "Faerie Dragon",
-    "Halfling",
-    "Mummy",
-    "Nomad",
-    "Peasant",
-    "Rogue",
-    "Rust Dragon",
-    "Sharpshooter",
-    "Troll",
-]
-
-
-"""IDs of artifacts, creatures and spells in savefile."""
-IDs = {
-    # Artifacts
-    "Armageddon's Blade":                0x80,
-    "Vial of Dragon Blood":              0x7F,
-
-    # Creatures
-    "Azure Dragon":                      0x84,
-    "Boar":                              0x8C,
-    "Crystal Dragon":                    0x85,
-    "Enchanter":                         0x88,
-    "Faerie Dragon":                     0x86,
-    "Halfling":                          0x8A,
-    "Mummy":                             0x8D,
-    "Nomad":                             0x8E,
-    "Peasant":                           0x8B,
-    "Rogue":                             0x8F,
-    "Rust Dragon":                       0x87,
-    "Sharpshooter":                      0x89,
-    "Troll":                             0x90,
-}
-
-
-"""Artifact slots, with first being primary slot."""
-ArtifactSlots = {
-    "Armageddon's Blade":                ["weapon"],
-    "Vial of Dragon Blood":              ["side"],
-}
-
-
-"""Primary skill modifiers that artifacts give to hero."""
-ArtifactStats = {
-    "Armageddon's Blade":                (+3, +3, +3, +6),
-}
-
-
-"""Spells that artifacts make available to hero."""
-ArtifactSpells = {
-    "Armageddon's Blade":                ["Armageddon"],
-}
-
 
 
 # Since savefile format is unknown, hero structs are identified heuristically,
@@ -135,22 +67,6 @@ RGX_HERO = re.compile(b"""
 """, re.VERBOSE | re.DOTALL)
 
 
-def init():
-    """Initializes artifacts and creatures for Armageddon's Blade."""
-    Store.add("artifacts", Artifacts, version=PROPS["name"])
-    Store.add("artifacts", Artifacts, version=PROPS["name"], category="inventory")
-    for slot in set(sum(ArtifactSlots.values(), [])):
-        Store.add("artifacts", [k for k, v in ArtifactSlots.items() if v[0] == slot],
-                  version=PROPS["name"], category=slot)
-
-    Store.add("artifact_slots",  ArtifactSlots,  version=PROPS["name"])
-    Store.add("artifact_spells", ArtifactSpells, version=PROPS["name"])
-    Store.add("artifact_stats",  ArtifactStats,  version=PROPS["name"])
-    Store.add("creatures",       Creatures,      version=PROPS["name"])
-    Store.add("ids",             IDs,            version=PROPS["name"])
-    for artifact, spells in ArtifactSpells.items():
-        Store.add("spells", spells, version=PROPS["name"], category=artifact)
-
 
 def props():
     """Returns props as {label, index}."""
@@ -183,5 +99,5 @@ def adapt(source, category, value):
 
 
 def detect(savefile):
-    """Returns whether savefile bytes match Armageddon's Blade."""
+    """Returns whether savefile bytes match Restoration of Erathia."""
     return savefile.match_byte_ranges(BytePositions, VersionByteRanges)

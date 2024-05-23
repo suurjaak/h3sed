@@ -18,7 +18,7 @@ Attributes can be copied from one hero and pasted to another.
 
 Hero data can be exported as HTML or spreadsheet.
 
-Supports savegames from Armageddon's Blade, Shadow of Death, and Horn of the Abyss.
+Supports savegames from: Restoration of Erathia, Armageddon's Blade, Shadow of Death, and Horn of the Abyss.
 
 Downloads at https://suurjaak.github.io/h3sed.
 

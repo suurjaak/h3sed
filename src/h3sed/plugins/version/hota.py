@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  22.05.2024
+@modified  23.05.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -20,7 +20,7 @@ from h3sed.metadata import BytePositions, Store
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "hota", "label": "Horn of the Abyss", "index": 2}
+PROPS = {"name": "hota", "label": "Horn of the Abyss", "index": 3}
 
 
 """Game major and minor version byte ranges, as (min, max)."""
