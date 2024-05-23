@@ -8,7 +8,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    20.03.2022
+@modified    23.05.2024
 ------------------------------------------------------------------------------
 """
 import argparse
@@ -152,7 +152,7 @@ def run_gui(filename):
 def run():
     """Parses command-line arguments and runs GUI."""
     conf.load()
-    argparser = argparse.ArgumentParser(description=ARGUMENTS["description"])
+    argparser = argparse.ArgumentParser(description=ARGUMENTS["description"], prog=conf.Name)
     for arg in ARGUMENTS["arguments"]:
         argparser.add_argument(*arg.pop("args"), **arg)
 
