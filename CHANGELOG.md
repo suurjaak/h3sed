@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-2.1, 2024-05-23
+2.1, 2024-05-24
 ---------------
 - add support for Armageddon's Blade savefiles (issue #5)
 - add support for Restoration of Erathia savefiles
