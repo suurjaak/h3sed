@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+2.2, 2024-05-27
+---------------
+- fix opening savefiles in newer versions of Python (issue #6)
+
+
 2.1, 2024-05-24
 ---------------
 - add support for Armageddon's Blade savefiles (issue #5)

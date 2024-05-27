@@ -8,7 +8,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    23.05.2024
+@modified    27.05.2024
 ------------------------------------------------------------------------------
 """
 import argparse
@@ -86,31 +86,21 @@ def install_thread_excepthook():
 
 def patch_gzip_for_partial():
     """
-    Replaces gzip.GzipFile._read_eof with a version not throwing CRC error.
-    for decompressing partial files.
+    Replaces gzip.GzipFile._read_eof() with a version not throwing CRC error.
+    For decompressing partial files.
     """
 
     def read_eof_py3(self):
-        self._read_exact(8)
-
-        # Gzip files can be padded with zeroes and still have archives.
-        # Consume all zero bytes and set the file position to the first
-        # non-zero byte. See http://www.gzip.org/#faq8
+        if not all(self._fp.read(1) for _ in range(8)): # Consume and require 8 bytes of CRC
+            raise EOFError("Compressed file ended before the end-of-stream marker was reached")
         c = b"\x00"
-        while c == b"\x00":
-            c = self._fp.read(1)
-        if c:
-            self._fp.prepend(c)
+        while c == b"\x00": c = self._fp.read(1) # Consume stream until first non-zero byte
+        if c: self._fp.prepend(c)
 
     def read_eof_py2(self):
-        # Gzip files can be padded with zeroes and still have archives.
-        # Consume all zero bytes and set the file position to the first
-        # non-zero byte. See http://www.gzip.org/#faq8
         c = "\x00"
-        while c == "\x00":
-            c = self.fileobj.read(1)
-        if c:
-            self.fileobj.seek(-1, 1)
+        while c == "\x00": c = self.fileobj.read(1) # Consume stream until first non-zero byte
+        if c: self.fileobj.seek(-1, 1)
 
     readercls = getattr(gzip, "_GzipReader", gzip.GzipFile)  # Py3/Py2
     readercls._read_eof = read_eof_py2 if readercls is gzip.GzipFile else read_eof_py3
