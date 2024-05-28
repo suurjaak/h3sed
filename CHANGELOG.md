@@ -1,9 +1,10 @@
 CHANGELOG
 =========
 
-2.2, 2024-05-27
+2.2, 2024-05-28
 ---------------
 - fix opening savefiles in newer versions of Python (issue #6)
+- use latest custom-built PyInstaller 6.7 for producing binaries (issue #7)
 
 
 2.1, 2024-05-24
