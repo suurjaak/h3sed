@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    27.01.2024
+@modified    11.06.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -23,11 +23,14 @@ import subprocess
 import sys
 import struct
 import time
-import urllib
 import warnings
 
 try: import collections.abc as collections_abc             # Py3
-except ImportError: import collections as collections_abc  # Py3
+except ImportError: import collections as collections_abc  # Py2
+try: from urllib.parse import urljoin                      # Py3
+except ImportError: from urlparse import urljoin           # Py2
+try: from urllib.request import pathname2url               # Py3
+except ImportError: from urllib import pathname2url        # Py2
 
 try: int_types = (int, long)            # Py2
 except Exception: int_types = (int, )   # Py3
@@ -340,6 +343,11 @@ def shortpath(path):
     buf = ctypes.create_unicode_buffer(4 * len(path))
     ctypes.windll.kernel32.GetShortPathNameW(path, buf, len(buf))
     return buf.value
+
+
+def path_to_url(path):
+    """Returns path as file URL, e.g. "/my file" as "file:///my%20file"."""
+    return urljoin('file:', pathname2url(path))
 
 
 def win32_unicode_argv():

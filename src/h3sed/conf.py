@@ -26,17 +26,20 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "2.3.dev2"
+Version = "2.3.dev3"
 VersionDate = "11.06.2024"
 
-if getattr(sys, "frozen", False):
+Frozen = getattr(sys, "frozen", False)
+if Frozen:
     # Running as a pyinstaller executable
     ApplicationDirectory = os.path.dirname(sys.executable)
     PluginDirectory = os.path.join(getattr(sys, "_MEIPASS", ""), "h3sed", "plugins")
+    ResourceDirectory = os.path.join(getattr(sys, "_MEIPASS", ""), "res")
     EtcDirectory = ApplicationDirectory
 else:
     ApplicationDirectory = os.path.realpath(os.path.dirname(__file__))
     PluginDirectory = os.path.join(ApplicationDirectory, "plugins")
+    ResourceDirectory = os.path.join(ApplicationDirectory, "res")
     EtcDirectory = os.path.join(ApplicationDirectory, "etc")
 
 """Name of file where FileDirectives are kept."""
@@ -154,6 +157,9 @@ MaxRecentFiles = 20
 
 """How many items in the Recent Heroes menu."""
 MaxRecentHeroes = 20
+
+"""Path for licences of bundled open-source software."""
+LicenseFile = os.path.join(ResourceDirectory, "3rd-party licenses.txt") if Frozen else None
 
 
 def load():

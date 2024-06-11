@@ -7,12 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.05.2024
+@modified    11.06.2024
 ------------------------------------------------------------------------------
 """
 import difflib, re
 # Modules imported inside templates:
-#import datetime, json, sys, wx
+#import datetime, json, os, sys, wx
 #from h3sed.lib.vendor import step
 #from h3sed.lib import util
 #from h3sed import conf, images, plugins, templates
@@ -66,7 +66,8 @@ def make_category_diff(v1, v2):
 
 """HTML text shown in Help -> About dialog."""
 ABOUT_HTML = """<%
-import sys, wx
+import os, sys, wx
+from h3sed.lib import util
 from h3sed import conf
 %>
 <font size="2" face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
@@ -106,6 +107,11 @@ Installer and binary executable created with:
 </ul>
 %endif
 
+%if conf.LicenseFile and os.path.isfile(conf.LicenseFile):
+<br /><br />
+Licensing for bundled software:
+<a href="{{ util.path_to_url(conf.LicenseFile) }}"><font color="{{ conf.LinkColour }}">{{ os.path.basename(conf.LicenseFile) }}</font></a>
+%endif
 </font>
 """
 
