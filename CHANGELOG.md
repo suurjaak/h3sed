@@ -4,6 +4,7 @@ CHANGELOG
 2.3, 2024-06-11
 ---------------
 - fix recognizing Restoration of Erathia savefiles from GOG Heroes 3 Complete (issue #8)
+- upgrade wxPython from 4.1.1 to 4.2.1 in compiled binaries
 
 
 2.2, 2024-05-28

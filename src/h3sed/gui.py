@@ -52,6 +52,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     """Program main window."""
 
     def __init__(self):
+        # Override default wx images with ones from 4.1.1 for better looks
+        art_imgs = {wx.ART_COPY:  images.ToolbarCopy,  wx.ART_FILE_OPEN: images.ToolbarFileOpen,
+                    wx.ART_PASTE: images.ToolbarPaste, wx.ART_FILE_SAVE: images.ToolbarFileSave,
+                    wx.ART_UNDO:  images.ToolbarUndo,  wx.ART_FOLDER:    images.ToolbarFolder,
+                    wx.ART_FILE_SAVE_AS: images.ToolbarFileSaveAs,
+                    wx.ART_REDO:  images.ToolbarRedo} if "win32" == sys.platform else {}
+        controls.Patch.patch_wx(art={k: v.Bitmap for k, v in art_imgs.items()})
         wx.Frame.__init__(self, parent=None, title=conf.Title, size=conf.WindowSize)
         guibase.TemplateFrameMixIn.__init__(self)
 
@@ -371,7 +378,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                       wx.ID_REFRESH:  "Reload savefile, losing any current changes",
                       wx.ID_HARDDISK: "Open file directory in file manager program"}
         tb = self.CreateToolBar(wx.TB_FLAT | wx.TB_HORIZONTAL | wx.TB_TEXT)
-        tb.SetToolBitmapSize((16, 16))
+        tb.SetToolBitmapSize((20, 20))
         for tool in TOOLS:
             if not tool: tb.AddSeparator()
             if not tool: continue  # for tool
