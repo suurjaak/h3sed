@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+2.3, 2024-06-11
+---------------
+- fix recognizing Restoration of Erathia savefiles from GOG Heroes 3 Complete (issue #8)
+
+
 2.2, 2024-05-28
 ---------------
 - fix opening savefiles in newer versions of Python (issue #6)

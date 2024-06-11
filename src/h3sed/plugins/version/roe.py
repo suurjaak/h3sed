@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  23.05.2024
+@modified  11.06.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -25,7 +25,7 @@ PROPS = {"name": "roe", "label": "Restoration of Erathia", "index": 0}
 
 """Game major and minor version byte ranges, as (min, max)."""
 VersionByteRanges = {
-    "version_major":  (16, 16),
+    "version_major":  (16, 42),
     "version_minor":  ( 0,  0),
 }
 
