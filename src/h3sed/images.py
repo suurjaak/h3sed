@@ -6,7 +6,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     21.03.2020
-@modified    24.02.2023
+@modified    11.06.2024
 ------------------------------------------------------------------------------
 """
 try:
@@ -566,6 +566,126 @@ PageHero = PyEmbeddedImage(
 )
 
 
+"""Toolbar icon for clipboard copy buttons."""
+ToolbarCopy = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABHNCSVQICAgIfAhkiAAAAhpJ"
+    "REFUOI2tlE9rE0EYh5+ZycYQsMFLv4Chu/F7CIonT4JHwVsvwRL/3AJCiZQqVpGC4NmrFz+A"
+    "mhYNaqFtQvBaDyrYtLahu9l5PWwz7ZpukoMDC/POO/Ps7/fuvgP/eSiApceNG4gE059SnYXq"
+    "3ddnpXIAUTjw79UeTM178nTZz8rlALROgl7v90RYqXQBPSafG3dYRFQYhmYYWwued4gFmRrY"
+    "7X5zsNbXTzcP9vfLWutjgEIpEBEeLS2maqS1VkrxNlNhFEfmz97exdrCfdXr7apxTgBmZkos"
+    "LTeujADn5soA9PtHNJvvJnGGbtw8w7IlDMPUxna7nQkLgko2sFweKuzTXP/g1oNg9DcVEfec"
+    "CbQWut0uwIjCTqdzBgxAqFQuZQEt1lo3Pz2UUik1w3cFQYV8Pj8KjOMYsM7y0VGfj601t9H3"
+    "/X+AiULP84iiyAlwwESdizgtUETY3m4DJzZFoFgsUiqVmJ2dJY5jROQEOBgMUla1TgN9fy5V"
+    "N60NxrgmSiu0NgEWCgWX8DwvBUwuJnE5pTQigjEGEaG59h5rLWM7YLHxcHCnWjO93i4ioLV2"
+    "qrTWPF9d4erla/z89YPPX1qIlttjLwfguDaJyqFqrTVKKYwx7HzfYXNrg3PF4kp1vvpyIjCK"
+    "IgqFgvu6xhhnM44tm1sboNSt6nz1lath1vDyuTcvVp9dh3S/AkhST9s/iM7X6/XD4fpfCgkm"
+    "xF/LsWcAAAAASUVORK5CYII="
+)
+
+
+"""Toolbar icon for open-file buttons."""
+ToolbarFileOpen = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAa1J"
+    "REFUOI2VkDFMU1EUhr+XPtE+2kDRpQndcMCNSU2MDgzuhFSCAzEMEqsyOArRwcGFxY3ERiQh"
+    "EIgzEBgIm4OJCQQ2gyYmSmOpBN99XN69x6HlleJrwC93uCfnnv//73H6830vstnsS06htQbg"
+    "UB+OTBWnJ0/3j3GejBbkwdBwbDMIFMV3b9mv7A8uLHyYjRV49HhE8v332NreAsC9kCCdTjUz"
+    "jChXfr0qPBwdd40xJJMe7W2ZqmLCMpC/f6bA3PzMGDDuaq1Ryqfyew+ATEcbAL7/p+mw57VG"
+    "dzcMw4YEYKPmdu1bJ+nuvtZQu0BsgrjHcZw7QSqVJpfLxQso5bOyecBGyQNgYnWmid+nhqq3"
+    "UBQXIJn02Ch5vHl2l0CbM2MDXGpJ8HRiub4DgB97AV92m2//GGMsuSvVtFECAAFEBMdxEBFE"
+    "wIpgrBAa4chYdGgJjXA5fbEuoJRPV0ZRPtB8LysQB4tQO4iAIIjUhIHgyNYFfpZ26bl5i887"
+    "ldpQ1V0ELILggEiU6vrVDpYXl2gPvk05t4der/ktnXfOtbkTePrrx/X3z2/879w//AU2KMqJ"
+    "njkj5wAAAABJRU5ErkJggg=="
+)
+
+
+"""Toolbar icon for save-file buttons."""
+ToolbarFileSave = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAopJ"
+    "REFUOI2NkkFIFGEUx38zjW5qk7uBo2tbrplp2KHCcC0o6lAdkig8hFBYBBWW5alDRXUohArE"
+    "QIoOiV2CLQqKuhZ0UIoQou1QZomZISm6M6y7M/O9DsLaZkH/y/vg8X68//992skrZ89/scv1"
+    "iUl3WkOtAG03UGdoKm0uTv0sXpzpvd959Rz/kLb9dPeh6JraaEWpNbx+lXUmGirY6Hg+ie9J"
+    "3gy8VB9Hxqk2EytvX+379ldA28XOHndm4oQnOuN+kFSghEVGHi27NlNVvoyuh6/wR98SzZ9c"
+    "MCzCZdo62mVkbEhERIa+JmQgMSTtt59J7Ng1ib8eke7n76T5wh15P/xNfpdt29J+pk2MgOGz"
+    "vDTK1NQUwSWl6No0BZIB4O2ncawlBj8mk3wY+kzZ0gLQAIT8/HwADM8FUYKvFE3n7i5Yc2B4"
+    "CtfzuR7v53q8H4CnVw6DzPV1ACUK5Su6jzcC0HpgH42xemZnHcKmzpbYJg41NwFwcMdqlK8Q"
+    "kXmAiBAKBSkviXLjaD299x9RE12BjoaORmxtBX0PntCyrZK9WzZRWFSYCwCwbRvLsqgIV2ch"
+    "jeuqqI5G6Lr3mJZtlezfGsOyLDKZTNaiAaCUwnEcACzLwrIsek4V0HErTtr1ObJrLa17dqLr"
+    "OjMzMziOg2ma84BAIEAkEskJb0NdAy9uNgDgOA6ZTIZUKrUgZANgcHAQ13VzGp7nYRhG9v2n"
+    "QqFQbgae55FIJBgbGyOZTCIiiAiBQIDR0VFM08xW27axbTv3CkopiooKycvLy34SANd1ETUH"
+    "EzV3PuX7uRaCwSDFxcWEw2EA0uk0QDbtmtoalFLU1NailKIsHM5a1k6dbrukaVxcYPI/JMLl"
+    "XzXUOEhXykcYAAAAAElFTkSuQmCC"
+)
+
+
+"""Toolbar icon for save-file-as buttons."""
+ToolbarFileSaveAs = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAlxJ"
+    "REFUOI2dkk9IVFEYxX/39VLHnHrj4DMtc0ytpBYRGmOClos0SKJwEUJiEVRM/lu1sDAXipCB"
+    "uJCkRWIbwaKgqF0ktNAUN5Et1CzJMiTFcQZ1xve+FmOmWIGd1b338P043+Gq6403bn4KJGvT"
+    "M+E5hZ0Cqhg4qCt7yRmz8GNHTKizu7mpjr9InahuK/fsO+BJTTTHD+81azwux5HgssXwt3kG"
+    "+3vtkYkpMp3Dezqauib/CPDVN7eH/dPXlkVjyjJYiE5gi76VsqJjpCfH0/r4DdaXITxRMxuG"
+    "RWjAV1slE1/HRERk7POw9A+PSVXHC/FeuSM9AxPS9vKdlN66L+/HJ2WtAoGAVNX4RI/WLXYl"
+    "epidncWIS0RTczgkBMDQ6BRmnM73mXk+jH1k53YHKAAhKioKAH05DGILlm1TUvdgQ8z+8VnC"
+    "yxYtPX209PQB8LzxIkjE1wBssbEtm7aruQBUnD9LrjebxcUgSU6NPG8O5aUlAFwozMC2bETk"
+    "N0BEcLkMkhM83L2cTWf3E/Z7UtBQaCi8Wal0PXpGWUEaZ/JyiN0Wux4AEAgEME2T1KTMVUju"
+    "oXQyPbtpffiUsoI0zuV7MU2TUCi0uqIOYNs2wWAQANM0MU2T9koHtfd6WApbXCrKouL0STRN"
+    "w+/3EwwGcTqdkX9QVeOTnOyjCCsFb0IDg28jCXK9eSCyQlCRhpWAqJVrBJ+ZkcHo6AiCQq0F"
+    "uN1uXve+WjUE2ZDmeH4hAPFuN4ha9XUAwzCIiXH8M67hMgBwGa517/qvQ3HRqU02EJGqrPbd"
+    "Vor6/xkWoeEnOFf5pyJyIZEAAAAASUVORK5CYII="
+)
+
+
+"""Toolbar icon for folder buttons."""
+ToolbarFolder = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAflJ"
+    "REFUOI1tkj1rVFEQhp+7uwkBC0FIIQbxE+wUK2sDYqWV/gELsbSwFGsJWIlpra0EQRQUC7FS"
+    "CxELNZpCBcElH7vZvfeeO/OOxd277k0cOHAY5n3OOzMnAxj/uvdUmS6grCszQgGRITkhR9Nj"
+    "6yGtHjx9d4VJZBGPuuPfP2x+/wk6c+fINx9TjjbY3Bhw+NQy3bn5phZLO/z58mp96ezKsSbX"
+    "ybKrXqO6yN6yb/EaB47coqctvn54TbnTJ8KRl2RkEH6UmeiwK6x4BnRxr7BUsvnzI6oKVI3x"
+    "aoRCrfoeALEb47hVhAy51UIvkZeE/gNQ+DQhGaECtwopIe9gaUBYDZitnbbQUCVDlpDv4G6E"
+    "J8ITXg6wcoAVA7rdHt/eXH/QAshtKvaqJOXf69zEthUDrNzGym16PRHoRhsgn4qtKhhvvasB"
+    "lpCliXiIpSHzS3dac+g1DhqxpRxLOXIjvESeYWlIeEJe1TOPaAPcrSW2Mq9deSK8g6cgVG+l"
+    "BvxzULdg1hJbypGEfLJKy5EVhIyb77f3AupP80/sVQEREEbIpi8D9PvjVgudaQszYq8KZtc7"
+    "G/eXbhPSWnsGqXpZjNaX3QWRNVzEAs4CZSxARP1yaI2M1QaQNZfPL64cylNxsarKS5LO9/uj"
+    "T+NhPDx5fPH5mctP1vdYmcRfFHLMM/uOqXsAAAAASUVORK5CYII="
+)
+
+
+"""Toolbar icon for clipboard paste buttons."""
+ToolbarPaste = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABHNCSVQICAgIfAhkiAAAAmpJ"
+    "REFUOI2tlMtPE1EUxr8zU1CUR0tpKxKMsQkoO4MuMMYgAUl34GOH/gMGE3YQFlAjS4FoQqI7"
+    "Y3duNDFpNCStLhoXsGBjfKQJwQbKQ+hMp2DLzD0u2mk6mUHEeJKTyX2c7/zul8kB/nPQYReG"
+    "hoZiALortuKRSOT6XwtOTEBajqO64B+4KB87+QYgX2dnO4gIzIzFxa8AeNPI525Wb7xeONuN"
+    "QjgM4Sg43CvdBfFToaP2l7dLCrR1UWtrwEaRSm0i/S3Bx7cSgmRowqDhuZh4CQCuSrJMgmcG"
+    "rwUb1vf9eJdqh9frQzDYVu5NRCAC8nkgnW6nmpYLcm99rOFtIjkNwCq4HEd1vQx3VZWEhe0O"
+    "jI+PYXr6MZaWPtsI6+pqMTo6Bk+jB1+eXwGYmgCGRbDsARO0POD1NmJqauog78HMcLs9ILbu"
+    "2wQBsxcQjUYPEAP6+284njkKmhEKhWxUxRQQQjjWOAuyM6EQAswMgNHX1/fvhCaVYRhlSlVV"
+    "4PefstVIdjgu0xiGAV3fL6VeyuI6mUxWPuZwwuLzhMW31dUUNC2H3d1dMB/FQ5tg8buy8gMD"
+    "A7fKdxQlcxRBwyLGzBAlKkXJQFVVaFrWVmfzsJLQTEVVsLa2Ci79KqqqYn09jdkns38mNA0+"
+    "71rC5MNJx0bv5+cBALdbPuHemcLBgi8+IP+gB9vanu67dFrBZf5oa+QUmZwOCN4w15bxdb8H"
+    "gyRJczDYJyrOJMk+N4Uo9mHQDp8IPKppu/psZubVnuPEHhm5U5PNyueIqImZfUTkFwJNRCwD"
+    "2GHGFhFtCsE/XS7je3NzRzYcDgsA+A1A10wi+21ylAAAAABJRU5ErkJggg=="
+)
+
+
+"""Toolbar icon for undo buttons."""
+ToolbarRedo = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAg5J"
+    "REFUOI2dkr1PU2EUxn/n9vb21howgVohfvCxoCwQq/EDIUBMCAFkMFXjoIvV0UQ3E/8F4yS2"
+    "CxujBINhIBIJOoEhaFycxEFMjdjecktve+/rYCnQoiGe8XnP88s5z3tgHzWSMNRo0n96rzdt"
+    "PwAAT8ni0Fig/78Bt2/E0TQ1O/I80LtTl8rGgacEdDPQI6jrQKcIHVsAgPGJBCjpm7qbn6sC"
+    "jCb1s66SR30YdQ39lxqM+pYWRPD7TCznJ0tfp7nYHNsFKQOuJI1BT/H4Vnf3GV+kVcs431GZ"
+    "j7um+5DLAJQh7SmnSwCGE/52UTy52dN72YycwFqfw1IGQc8BoLZos1AobgcnGuebrjI+kUAH"
+    "QMmDkbaTHWa4keyvN4TyNiFsGvLrvCBEUduddbj2aHkNHcA0/F3htmg4aL2ncSPNshbC0IXM"
+    "gSCnSqZzOiSyFpFDx1mYWSlnoAMUXS8iPqHOtni7mFWzznrV77RfOFJlhtIduJ5bc9BeZXH5"
+    "C7NOwVKKh4LqnIo7MhV3BOB1zeEqM1DKANiw0950VjTlybWX9/IzlRMszKygiYpOxp2lnXo5"
+    "Hb/u20Sh9jL/SV5FJ+8Ulip1HUDBfC615u/TPVONBQYqIVtr7FU+gLZhzfucK2aHoq0/6lfX"
+    "jpkDvPv0Cudvpp21fYnPAk2u5g5qImnRffP3mze/pVKoWAz3X4DfyqHWCugH9+YAAAAASUVO"
+    "RK5CYII="
+)
+
+
 """Toolbar icon for refresh button."""
 ToolbarRefresh = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAABnUlEQVQ4y9XUPWtUQRTG8d/c"
@@ -577,4 +697,21 @@ ToolbarRefresh = PyEmbeddedImage(
     "rZS/MguC0cLGd7jUt/bCQcF0Vv9qzXK5D2PB6FFHUB+AVczhTLbywL3dl678RakfuKKpLahk"
     "Y07nYK8lnuxt7H5vBcFFPO/dO/R1vBLd0LBVbuzdxo+imuhh0WNZfMF9m65q+D78+2q6LVrU"
     "sJ77dSYwii3Bim/aec3+v/gDVpZ0g1sFQpUAAAAASUVORK5CYII="
+)
+
+
+"""Toolbar icon for undo buttons."""
+ToolbarUndo = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAhlJ"
+    "REFUOI2Vk1FIU1Ecxn/37l6vM5dtmYkVZRLUHooiWJBBQRBFPsQeeohiQVC99iB7E6NoCEb0"
+    "EoGBBT0Ejh4yw5dsaZTakzgRjUzQNVjtatPJrp5zehBrUxf2vZ3v8H38/9/5DhRBXzuq2F0+"
+    "jNVEz2MqTYvURsQAev4hHMZrWqQCwehG9X8nCIfxnt9POhCMwmwYWF4jp/mSUuhJ5SqJdw8l"
+    "rre2Mp9voK0WL6bvYOg2uIOglhBCoRC5D90vvpgaWs/w/JnmloWpFQNXUxNlZ/fxKxCMsvjz"
+    "Npquk8sBYhInO4b9YxBU1qjzn66y3K5Kr56+uPvA0rtYr/wO4Lp7FWdFrOuuZVfDRCmFlAIp"
+    "JVLMkcuOYZVZ2qaKnZs9MnOk9lD2eSzGot45iq8/GsT0nANACIeJr0NMfoszPT1eEFjGjuOr"
+    "9lPqNg+e2LMttjaDhkYmRu5T67+FFJkCscy0kUyZ5BzB1pobDH/smD91ebrcAIhEsAnjg5Z0"
+    "oKERgMGuR4Xv5dbwH7vJbPIpVqmDhjQgrweRCHbnKL7+Vy1/NPUhtPoQGorDczPqQvztw4Gq"
+    "XVcQ0oMGVtFy9LWj1qtyXxs1nzp0NZu4J98/86qCCfJRH1rOZg1/jYQuytVCZgRp+GaKGhQz"
+    "6X3C3i07jko7lQDUA1jnM/0LSud4xfa6rtGBjqWTl+zm/zagpLp8/PPrN9KxX65QvwG5L9sQ"
+    "XyS9uAAAAABJRU5ErkJggg=="
 )

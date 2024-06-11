@@ -17,16 +17,20 @@ Stand-alone GUI components for wx:
 - ItemHistory(wx.Object):
   Like wx.HileHistory but for any kind of items.
 
+- Patch(object):
+  Monkey-patches wx API for general compatibility over different versions.
+
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    24.01.2024
+@modified    11.06.2024
 ------------------------------------------------------------------------------
 """
 import collections
 import datetime
+import functools
 import os
 import sys
 import time
@@ -582,6 +586,61 @@ class ItemHistory(wx.Object):
         wx.PostEvent(menu.Window, evt)
 
 
+class Patch(object):
+    """Monkey-patches wx API for general compatibility over different versions."""
+
+    _PATCHED = False
+
+    @staticmethod
+    def patch_wx(art=None):
+        """
+        Patches wx object methods to smooth over version and setup differences.
+
+        @param   art  image overrides for wx.ArtProvider, as {image ID: wx.Bitmap}
+        """
+        if Patch._PATCHED: return
+
+        if wx.VERSION >= (4, 2):
+            # Previously, ToolBitmapSize was set to largest, and smaller bitmaps were padded
+            ToolBar__Realize = wx.ToolBar.Realize
+            def Realize__Patched(self):
+                sz = tuple(self.GetToolBitmapSize())
+                for i in range(self.GetToolsCount()):
+                    t = self.GetToolByPos(i)
+                    for b in filter(bool, (t.NormalBitmap, t.DisabledBitmap)):
+                        sz = max(sz[0], b.Width), max(sz[1], b.Height)
+                self.SetToolBitmapSize(sz)
+                for i in range(self.GetToolsCount()):
+                    t = self.GetToolByPos(i)
+                    if t.NormalBitmap:   t.NormalBitmap   = resize_img(t.NormalBitmap,   sz)
+                    if t.DisabledBitmap: t.DisabledBitmap = resize_img(t.DisabledBitmap, sz)
+                return ToolBar__Realize(self)
+            wx.ToolBar.Realize = Realize__Patched
+
+            def resize_bitmaps(func):
+                """Returns function pass-through wrapper, resizing any Bitmap arguments."""
+                def inner(self, *args, **kwargs):
+                    sz = self.GetToolBitmapSize()
+                    args = [resize_img(v, sz) if v and isinstance(v, wx.Bitmap) else v for v in args]
+                    kwargs = {k: resize_img(v, sz) if v and isinstance(v, wx.Bitmap) else v
+                              for k, v in kwargs.items()}
+                    return func(self, *args, **kwargs)
+                return functools.update_wrapper(inner, func)
+            wx.ToolBar.SetToolNormalBitmap   = resize_bitmaps(wx.ToolBar.SetToolNormalBitmap)
+            wx.ToolBar.SetToolDisabledBitmap = resize_bitmaps(wx.ToolBar.SetToolDisabledBitmap)
+
+        if wx.VERSION >= (4, 2) and art:
+            # Patch wx.ArtProvider.GetBitmap to return given bitmaps for overridden images instead
+            ArtProvider__GetBitmap = wx.ArtProvider.GetBitmap
+            def GetBitmap__Patched(id, client=wx.ART_OTHER, size=wx.DefaultSize):
+                if id in art and size == art[id].Size:
+                    return art[id]
+                return ArtProvider__GetBitmap(id, client, size)
+            wx.ArtProvider.GetBitmap = GetBitmap__Patched
+
+        Patch._PATCHED = True
+
+
 
 def get_dialog_path(dialog):
     """
@@ -603,3 +662,26 @@ def get_dialog_path(dialog):
         if ext: result += ext
 
     return result
+
+
+def resize_img(img, size, aspect_ratio=True, bg=(-1, -1, -1)):
+    """Returns a resized wx.Image or wx.Bitmap, centered in free space if any."""
+    if not img or not size or list(size) == list(img.GetSize()): return img
+
+    result = img if isinstance(img, wx.Image) else img.ConvertToImage()
+    size1, size2 = list(result.GetSize()), list(size)
+    align_pos = None
+    if size1[0] < size[0] and size1[1] < size[1]:
+        size2 = tuple(size1)
+        align_pos = [(a - b) // 2 for a, b in zip(size, size2)]
+    elif aspect_ratio:
+        ratio = size1[0] / float(size1[1]) if size1[1] else 0.0
+        size2[ratio > 1] = int(size2[ratio > 1] * (ratio if ratio < 1 else 1 / ratio))
+        align_pos = [(a - b) // 2 for a, b in zip(size, size2)]
+    if size1[0] > size[0] or size1[1] > size[1]:
+        if result is img: result = result.Copy()
+        result.Rescale(*size2)
+    if align_pos:
+        if result is img: result = result.Copy()
+        result.Resize(size, align_pos, *bg)
+    return result.ConvertToBitmap() if isinstance(img, wx.Bitmap) else result

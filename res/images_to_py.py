@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     21.03.2020
-@modified    24.02.2023
+@modified    11.06.2023
 ------------------------------------------------------------------------------
 """
 import base64
@@ -32,8 +32,24 @@ IMAGES = {
         "Background pattern image for export HTML.",
     "PageHero.png":
         "Icon for the Hero page in a savefile tab.",
+    "ToolbarCopy.png":
+        "Toolbar icon for clipboard copy buttons.",
+    "ToolbarFileOpen.png":
+        "Toolbar icon for open-file buttons.",
+    "ToolbarFileSave.png":
+        "Toolbar icon for save-file buttons.",
+    "ToolbarFileSaveAs.png":
+        "Toolbar icon for save-file-as buttons.",
+    "ToolbarFolder.png":
+        "Toolbar icon for folder buttons.",
+    "ToolbarPaste.png":
+        "Toolbar icon for clipboard paste buttons.",
+    "ToolbarRedo.png":
+        "Toolbar icon for undo buttons.",
     "ToolbarRefresh.png":
         "Toolbar icon for refresh button.",
+    "ToolbarUndo.png":
+        "Toolbar icon for undo buttons.",
 }
 HEADER = """%s
 Contains embedded image and icon resources. Auto-generated.
