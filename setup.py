@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     12.04.2020
-@modified    15.01.2022
+@modified    11.06.2024
 ------------------------------------------------------------------------------
 """
 import os
@@ -52,7 +52,7 @@ setuptools.setup(
     platforms            = ["any"],
     keywords             = "homm homm3 heroes3 savegame",
 
-    install_requires     = ["pyyaml", "wxPython"],
+    install_requires     = ["pyyaml", "step-template>=0.0.4", "wxPython>=4.0"],
     entry_points         = {"gui_scripts": ["{0} = {0}.main:run".format(PACKAGE)]},
 
     package_dir          = {"": "src"},

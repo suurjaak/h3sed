@@ -6,6 +6,7 @@ CHANGELOG
 - fix recognizing Restoration of Erathia savefiles from GOG Heroes 3 Complete (issue #8)
 - upgrade wxPython from 4.1.1 to 4.2.1 in compiled binaries
 - include third-party license texts in stand-alone exes
+- drop step as a vendored library, use from public package index instead
 
 
 2.2, 2024-05-28

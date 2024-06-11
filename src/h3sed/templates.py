@@ -12,8 +12,7 @@ Released under the MIT License.
 """
 import difflib, re
 # Modules imported inside templates:
-#import datetime, json, os, sys, wx
-#from h3sed.lib.vendor import step
+#import datetime, json, os, sys, step, wx
 #from h3sed.lib import util
 #from h3sed import conf, images, plugins, templates
 
@@ -126,7 +125,7 @@ HTML text shown for hero full character sheet, toggleable between unsaved change
 
 """
 HERO_CHARSHEET_HTML = """<%
-from h3sed.lib.vendor import step
+import step
 from h3sed import conf, templates
 texts0 = isdef("texts0") and texts0 or []
 changes = isdef("changes") and changes

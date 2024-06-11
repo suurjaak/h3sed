@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  11.03.2024
+@modified  11.06.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -88,6 +88,7 @@ import os
 import re
 import sys
 
+import step
 import yaml
 import wx
 import wx.html
@@ -100,7 +101,6 @@ from h3sed import images
 from h3sed import metadata
 from h3sed import plugins
 from h3sed import templates
-from h3sed.lib.vendor import step
 from h3sed.lib import controls
 from h3sed.lib import util
 from h3sed.lib import wx_accel

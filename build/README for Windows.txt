@@ -44,9 +44,6 @@ Attribution
 Knowledge on Heroes3 savegames gathered mostly from Heroes Community forum,
 http://heroescommunity.com/viewthread.php3?TID=18817.
 
-Includes a modified version of step, Simple Template Engine for Python,
-(c) 2012, Daniele Mazzocchio, https://github.com/dotpy/step.
-
 Contains several icons from Heroes of Might and Magic III, (c) 1999 3DO.
 
 Binaries compiled with PyInstaller, https://www.pyinstaller.org.

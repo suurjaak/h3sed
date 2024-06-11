@@ -1,2 +1,3 @@
 pyyaml
+step-template>=0.0.4
 wxPython>=4.0

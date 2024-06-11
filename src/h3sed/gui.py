@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    11.03.2024
+@modified    11.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -20,6 +20,7 @@ import sys
 import tempfile
 import time
 
+import step
 import wx
 import wx.adv
 import wx.html
@@ -31,7 +32,6 @@ from h3sed.lib import controls
 from h3sed.lib.controls import ColourManager
 from h3sed.lib import util
 from h3sed.lib import wx_accel
-from h3sed.lib.vendor import step
 from h3sed import conf
 from h3sed import guibase
 from h3sed import images

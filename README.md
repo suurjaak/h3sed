@@ -71,6 +71,7 @@ Source Dependencies
 If running from source code, h3sed needs Python 2.7 or Python 3.6 or higher,
 and the following 3rd-party Python packages:
 * pyyaml (https://pyyaml.org)
+* step (https://pypi.org/project/step-template)
 * wxPython 4.0+ (https://wxpython.org)
 
 
@@ -79,9 +80,6 @@ Attribution
 
 Knowledge on Heroes3 savegames gathered mostly from Heroes Community forum,
 http://heroescommunity.com/viewthread.php3?TID=18817.
-
-Includes a modified version of step, Simple Template Engine for Python,
-(c) 2012, Daniele Mazzocchio, https://github.com/dotpy/step.
 
 Contains several icons from Heroes of Might and Magic III, (c) 1999 3DO.
 

@@ -4,7 +4,7 @@ h3sed\. Sets execute flag permission on .sh files.
 
 @author    Erki Suurjaak
 @created   12.04.2020
-@modified  27.05.2024
+@modified  11.06.2024
 """
 import glob
 import importlib
@@ -94,7 +94,6 @@ if "__main__" == __name__:
     CODEPATH  = pathjoin("src", PACKAGE)
     WILDCARDS = [("build", "*"), ("res", "*"),
         (CODEPATH, "*.py"), (pathjoin(CODEPATH, "lib"), "*.py"), 
-        (pathjoin(CODEPATH, "lib", "vendor"), "*.py"),
         (pathjoin(CODEPATH, "plugins"), "*"), 
         (pathjoin(CODEPATH, "plugins", "hero"), "*"),
         (pathjoin(CODEPATH, "plugins", "version"), "*"), 
