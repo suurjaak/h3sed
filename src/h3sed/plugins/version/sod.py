@@ -75,12 +75,6 @@ Creatures = [
 ]
 
 
-"""Spells for hero to cast."""
-Spells = [
-    "Titan's Lightning Bolt",
-]
-
-
 """IDs of artifacts, creatures and spells in savefile."""
 IDs = {
     # Artifacts
