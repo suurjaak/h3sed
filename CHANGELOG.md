@@ -7,6 +7,7 @@ CHANGELOG
 - fix Pendant of Negativity being named Pendant of Agitation (issue #9)
 - fix a number of other errors in artifact names
 - fix Shield of the Damned not having artifact slot
+- fix Quicksand spell being named Quick Sand
 
 
 2.3, 2024-06-11
