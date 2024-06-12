@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  23.05.2024
+@modified  12.06.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -144,6 +144,7 @@ ArtifactSlots = {
     "Statue of Legion":                  ["side", "side", "side", "side", "side"],
     "Titan's Thunder":                   ["weapon", "helm", "armor", "shield"],
     "Vial of Dragon Blood":              ["side"],
+    "Wizard's Well":                     ["side", "side", "side"],
 }
 
 

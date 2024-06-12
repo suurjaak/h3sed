@@ -8,6 +8,7 @@ CHANGELOG
 - fix a number of other errors in artifact names
 - fix Shield of the Damned not having artifact slot
 - fix Quicksand spell being named Quick Sand
+- fix Wizard's Well not having artifact slot
 
 
 2.3, 2024-06-11

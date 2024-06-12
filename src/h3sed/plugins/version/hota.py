@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  23.05.2024
+@modified  12.06.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -268,6 +268,7 @@ ArtifactSlots = {
     "Trident of Dominion":               ["weapon"],
     "Vial of Dragon Blood":              ["side"],
     "Wayfarer's Boots":                  ["feet"],
+    "Wizard's Well":                     ["side", "side", "side"],
 }
 
 
