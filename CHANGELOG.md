@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+2.3.1, 2024-06-12
+-----------------
+- fix Statesman's Medal having wrong artifact slot (issue #9)
+
+
 2.3, 2024-06-11
 ---------------
 - fix recognizing Restoration of Erathia savefiles from GOG Heroes 3 Complete (issue #8)

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    22.05.2024
+@modified    12.06.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -859,7 +859,7 @@ ArtifactSlots = {
     "Sphere of Permanence":              ["side"],
     "Spirit of Oppression":              ["side"],
     "Spyglass":                          ["side"],
-    "Statesman's Medal":                 ["side"],
+    "Statesman's Medal":                 ["neck"],
     "Still Eye of the Dragon":           ["hand"],
     "Stoic Watchman":                    ["side"],
     "Surcoat of Counterpoise":           ["cloak"],
