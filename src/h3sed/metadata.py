@@ -851,6 +851,7 @@ ArtifactSlots = {
     "Sea Captain's Hat":                 ["helm"],
     "Sentinel's Shield":                 ["shield"],
     "Shackles of War":                   ["side"],
+    "Shield of the Damned":              ["shield"],
     "Shield of the Dwarven Lords":       ["shield"],
     "Shield of the Yawning Dead":        ["shield"],
     "Skull Helmet":                      ["helm"],

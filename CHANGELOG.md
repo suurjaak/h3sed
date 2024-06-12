@@ -6,6 +6,7 @@ CHANGELOG
 - fix Statesman's Medal having wrong artifact slot (issue #9)
 - fix Pendant of Negativity being named Pendant of Agitation (issue #9)
 - fix a number of other errors in artifact names
+- fix Shield of the Damned not having artifact slot
 
 
 2.3, 2024-06-11
