@@ -4,6 +4,7 @@ CHANGELOG
 2.3.1, 2024-06-12
 -----------------
 - fix Statesman's Medal having wrong artifact slot (issue #9)
+- fix Pendant of Negativity being named Pendant of Agitation (issue #9)
 
 
 2.3, 2024-06-11
