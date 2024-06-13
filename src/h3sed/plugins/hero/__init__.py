@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  11.06.2024
+@modified  13.06.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -919,7 +919,9 @@ class HeroPlugin(object):
         rgx_nulls = re.compile(br"^(\x00+)|(\x00{4}\xFF{4})+$")
         RGX = plugins.adapt(self, "regex", RGX_HERO)
 
-        pos = 10000 # Hero structs are more to the end of the file
+        # Jump over potential campaign carry-over heroes, stored in savefile with their
+        # original armies+artifacts; the structs used by game come later.
+        pos = 30000
         m = re.search(RGX, self.savefile.raw[pos:])
         while m:
             start, end = m.span()

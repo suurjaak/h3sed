@@ -1,8 +1,9 @@
 CHANGELOG
 =========
 
-2.3.1, 2024-06-12
+2.3.1, 2024-06-13
 -----------------
+- fix parsing campaign savefiles with carry-over heroes (issue #10)
 - fix Statesman's Medal having wrong artifact slot (issue #9)
 - fix Pendant of Negativity being named Pendant of Agitation (issue #9)
 - fix a number of other errors in artifact names
