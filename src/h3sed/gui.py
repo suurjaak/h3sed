@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    11.06.2024
+@modified    13.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -285,11 +285,17 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             wx.ID_ANY, "&Confirm unsaved changes", "Ask for confirmation on closing files with unsaved changes",
             kind=wx.ITEM_CHECK
         )
+        menu_confirm.Check(conf.ConfirmUnsaved)
+        menu_newformat = self.menu_newformat = menu_options.Append(
+            wx.ID_ANY, "&New format in Armageddon's Blade", 
+            "Parse Armageddon's Blade savegames from newer game version",
+            kind=wx.ITEM_CHECK
+        )
+        menu_newformat.Check(conf.SavegameNewFormat)
         menu_options.AppendSeparator()
         menu_clear = self.menu_clear = menu_options.Append(
             wx.ID_ANY, "Clear &recent items", "Clear recent files and heroes list",
         )
-        menu_confirm.Check(conf.ConfirmUnsaved)
         menu_file.AppendSeparator()
         menu_exit = self.menu_exit = \
             menu_file.Append(wx.ID_ANY, "E&xit\tAlt-X", "Exit")
@@ -347,6 +353,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_save_savefile_as, menu_save_as)
         self.Bind(wx.EVT_MENU, self.on_menu_backup,      menu_backup)
         self.Bind(wx.EVT_MENU, self.on_menu_confirm,     menu_confirm)
+        self.Bind(wx.EVT_MENU, self.on_menu_newformat,   menu_newformat)
         self.Bind(wx.EVT_MENU, self.on_clear_recent,     menu_clear)
         self.Bind(wx.EVT_MENU, self.on_exit,             menu_exit)
         self.Bind(wx.EVT_MENU, self.on_undo_savefile,    menu_undo)
@@ -735,6 +742,12 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def on_menu_confirm(self, event):
         """Handler for clicking to toggle confirm-option."""
         conf.ConfirmUnsaved = event.IsChecked()
+        conf.save()
+
+
+    def on_menu_newformat(self, event):
+        """Handler for clicking to toggle newformat-option."""
+        conf.SavegameNewFormat = event.IsChecked()
         conf.save()
 
 

@@ -135,6 +135,44 @@ RGX_HERO = re.compile(b"""
 """, re.VERBOSE | re.DOTALL)
 
 
+"""Hero pattern for RoE in newer releases like GOG Complete."""
+RGX_HERO_NEWFORMAT = re.compile(b"""
+    .{4}                     #   4 bytes: movement points in total             000-003
+    .{4}                     #   4 bytes: movement points remaining            004-007
+    .{4}                     #   4 bytes: experience                           008-011
+    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     012-015
+    .{2}                     #   2 bytes: spell points remaining               016-017
+    .{1}                     #   1 byte:  hero level                           018-018
+
+    .{63}                    #  63 bytes: unknown                              019-081
+
+    .{28}                    #  28 bytes: 7 4-byte creature IDs                082-109
+    .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
+
+                             #  13 bytes: hero name, null-padded               138-150
+    (?P<name>[^\x00-\x20].{11}\x00)
+    [\x00-\x03]{28}          #  28 bytes: skill levels                         151-178
+    [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
+    .{4}                     #   4 bytes: primary stats                        207-210
+
+    [\x00-\x01]{70}          #  70 bytes: spells in book                       211-280
+    [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
+
+                             # 144 bytes: 18 8-byte equipments worn            351-494
+                             # Blank spots:   FF FF FF FF XY XY XY XY
+                             # Artifacts:     XY 00 00 00 FF FF FF FF
+                             # Scrolls:       XY 00 00 00 00 00 00 00
+    (?P<artifacts>(          # Catapult etc:  XY 00 00 00 XY XY 00 00
+      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
+    ){18})
+    .{8}                     # 8 bytes: side5 slot unused in RoE               494-502
+
+                             # 512 bytes: 64 8-byte artifacts in backpack      503-1014
+    ( ((.\x00{3}) | \xFF{4}){2} ){64}
+""", re.VERBOSE | re.DOTALL)
+
+
+
 def init():
     """Initializes artifacts and creatures for Armageddon's Blade."""
     Store.add("artifacts", Artifacts, version=PROPS["name"])
@@ -161,23 +199,26 @@ def adapt(source, category, value):
     """
     Adapts certain categories:
 
-    - "pos"   for hero sub-plugins: dropping slot "side5", shifting slot "inventory"
+    - "pos"   for hero sub-plugins: dropping slot "side5", shifting slot "inventory" if older format
     - "props" for artifacts-plugin: dropping slot "side5", dropping "reserved"
     - "regex" for hero-plugin:      dropping one slot from artifacts
     """
     root = util.get(source, "parent", default=source)
-    if util.get(root, "savefile", "version") != PROPS["name"]: return value
+    savefile = getattr(root, "savefile")
+    if not savefile or getattr(savefile, "version", None) != PROPS["name"]: return value
+    is_new_format = getattr(savefile, "assume_newformat", False)
 
     result = value
     if "props" == category and "artifacts" == util.get(source, "name"):
         result = [x for x in value if x.get("name") != "side5"]
     elif "regex" == category and "hero" == util.get(source, "name"):
         # Replace hero regex with one expecting 18 artifact slots
-        result = RGX_HERO
+        result = RGX_HERO_NEWFORMAT if is_new_format else RGX_HERO
     elif "pos" == category and "hero" == util.get(root, "name"):
-        # Move inventory start to side5 position, drop side5
+        # Move inventory start to side5 position, drop side5 unless new format
         result = value.copy()
-        result["inventory"] = result.pop("side5")
+        if is_new_format: result.pop("side5")
+        else: result["inventory"] = result.pop("side5")
         result.pop("reserved", None)
     return result
 

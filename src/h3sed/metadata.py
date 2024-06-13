@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    12.06.2024
+@modified    13.06.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -1021,6 +1021,7 @@ class Savefile(object):
         self.mapdata  = {}
         self.size     = 0
         self.usize    = 0
+        self.assume_newformat = conf.SavegameNewFormat  # Persist current config setting
         self.read()
 
 

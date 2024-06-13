@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "2.3.1.dev13"
+Version = "2.4.dev14"
 VersionDate = "13.06.2024"
 
 Frozen = getattr(sys, "frozen", False)
@@ -53,7 +53,7 @@ FileDirectives = [
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
     "FileExtensions", "HeroToggles", "MaxConsoleHistory", "MaxRecentFiles",
-    "PopupUnexpectedErrors", "Positions", "StatusFlashLength",
+    "PopupUnexpectedErrors", "Positions", "SavegameNewFormat", "StatusFlashLength",
 ]
 Defaults = {}
 
@@ -89,6 +89,9 @@ RecentFiles = []
 
 """Contents of Recent Heroes menu, as [[hero name, file path]]."""
 RecentHeroes = []
+
+"""Whether to assume new savegame format when ambiguous e.g. updated Armageddon's Blade."""
+SavegameNewFormat = True
 
 """Main window position, (x, y)."""
 WindowPosition = None

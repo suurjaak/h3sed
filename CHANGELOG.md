@@ -1,10 +1,11 @@
 CHANGELOG
 =========
 
-2.3.1, 2024-06-13
------------------
+2.4, 2024-06-13
+---------------
 - fix parsing campaign savefiles with carry-over heroes (issue #10)
 - fix parsing Restoration of Erathia savegames from newer versions (issue #9)
+- add menu option for Armageddon's Blade savegames from newer versions (issue #9)
 - fix Statesman's Medal having wrong artifact slot (issue #9)
 - fix Pendant of Negativity being named Pendant of Agitation (issue #9)
 - fix a number of other errors in artifact names
