@@ -72,7 +72,7 @@ from h3sed import conf
 <font size="2" face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
 <table cellpadding="0" cellspacing="0"><tr><td valign="middle">
 <img src="memory:{{ conf.Title.lower() }}.png" /></td><td width="10"></td><td valign="center">
-<b>{{ conf.Title }} version {{ conf.Version }}</b>, {{ conf.VersionDate }}.<br /><br />
+<b>{{ conf.Title }}</b> version {{ conf.Version }}, {{ conf.VersionDate }}.<br /><br />
 
 &copy; 2020, Erki Suurjaak.
 <a href="{{ conf.HomeUrl }}"><font color="{{ conf.LinkColour }}">{{ conf.HomeUrl.replace("https://", "").replace("http://", "") }}</font></a>
