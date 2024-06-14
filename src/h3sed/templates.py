@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    11.06.2024
+@modified    14.06.2024
 ------------------------------------------------------------------------------
 """
 import difflib, re
@@ -255,7 +255,7 @@ Text to search for filtering heroes index.
 
 @param   hero       Hero instance
 @param   pluginmap  {name: plugin instance}
-@param  ?category   category to produce if not all, or empty string for hero name only
+@param  ?category   category to produce if not all
 """
 HERO_SEARCH_TEXT = """<%
 from h3sed import conf, metadata
@@ -263,7 +263,7 @@ deviceprops = pluginmap["stats"].props()
 deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
 category = category if isdef("category") else None
 %>
-%if category is None or not category:
+%if category is None or "name" == category:
 {{ hero.name }}
 %endif
 %if category is None or "stats" == category:
@@ -315,52 +315,73 @@ HTML text shown in heroes index.
 @param   count       total number of heroes
 @param   pluginmap   {name: plugin instance}
 @param  ?categories  {category: whether to show category columns} if not showing all
+@param  ?herotexts   [{category: text for hero, }] for sorting
+@param  ?sort_col    field to sort heroes by
+@param  ?sort_asc    whether sort is ascending or descending
 @param  ?text        current search text if any
 """
 HERO_INDEX_HTML = """<%
 from h3sed import conf, metadata
 deviceprops = pluginmap["stats"].props()
 deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
-categories = categories if isdef("categories") else None
+categories = get("categories")
+categories, herotexts, sort_col, sort_asc = (get(k) for k in ("categories", "herotexts", "sort_col", "sort_asc"))
+heroes_sorted = list(heroes)
+if sort_col:
+    if "index" == sort_col:
+        if not sort_asc: heroes_sorted.reverse()
+    elif "level" == sort_col or sort_col in list(metadata.PrimaryAttributes):
+        heroes_sorted.sort(key=lambda h: h.stats[sort_col], reverse=not sort_asc)
+    elif herotexts:
+        indexlist = list(range(len(heroes)))
+        indexlist.sort(key=lambda i: herotexts[i][sort_col], reverse=not sort_asc)
+        heroes_sorted = [heroes[i] for i in indexlist]
+def sortarrow(col):
+    if col != sort_col: return ""
+    return '<font size="1">&nbsp;%s</font>' % ("↓" if sort_asc else "↑")
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
-%if heroes:
+%if heroes_sorted:
 <table>
   <tr>
-    <th align="left" valign="bottom">Name</th>
+    <th align="right" valign="bottom" nowrap><a href="sort:index"><font color="{{ conf.FgColour }}">#</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:name"><font color="{{ conf.FgColour }}">Name{{! sortarrow("name") }}</font></a></th>
 %if not categories or categories["stats"]:
-    <th align="left" valign="bottom">Level</th>
+    <th align="left" valign="bottom" nowrap><a href="sort:level"><font color="{{ conf.FgColour }}">Level{{! sortarrow("level") }}</font></a></th>
     %for name, label in metadata.PrimaryAttributes.items():
-    <th align="left" valign="bottom">{{ next(x[:5] if len(x) > 7 else x for x in [label.split()[-1]]) }}</th>
+    <th align="left" valign="bottom" nowrap><a href="sort:{{ name }}"><font color="{{ conf.FgColour }}">{{ next(x[:5] if len(x) > 7 else x for x in [label.split()[-1]]) }}{{! sortarrow(name) }}</font></a></th>
     %endfor
 %endif
 %if not categories or categories["devices"]:
-    <th align="left" valign="bottom">Devices</th>
+    <th align="left" valign="bottom" nowrap><a href="sort:devices"><font color="{{ conf.FgColour }}">Devices{{! sortarrow("devices") }}</font></a></th>
 %endif
 %if not categories or categories["skills"]:
-    <th align="left" valign="bottom">Skills</th>
+    <th align="left" valign="bottom" nowrap><a href="sort:skills"><font color="{{ conf.FgColour }}">Skills{{! sortarrow("skills") }}</font></a></th>
 %endif
 %if not categories or categories["army"]:
-    <th align="left" valign="bottom">Army</th>
+    <th align="left" valign="bottom" nowrap><a href="sort:army"><font color="{{ conf.FgColour }}">Army{{! sortarrow("army") }}</font></a></th>
 %endif
 %if not categories or categories["artifacts"]:
-    <th align="left" valign="bottom">Artifacts</th>
+    <th align="left" valign="bottom" nowrap><a href="sort:artifacts"><font color="{{ conf.FgColour }}">Artifacts{{! sortarrow("artifacts") }}</font></a></th>
 %endif
 %if not categories or categories["inventory"]:
-    <th align="left" valign="bottom">Inventory</th>
+    <th align="left" valign="bottom" nowrap><a href="sort:inventory"><font color="{{ conf.FgColour }}">Inventory{{! sortarrow("inventory") }}</font></a></th>
 %endif
 %if not categories or categories["spells"]:
-    <th align="left" valign="bottom">Spells</th>
+    <th align="left" valign="bottom" nowrap><a href="sort:spells"><font color="{{ conf.FgColour }}">Spells{{! sortarrow("spells") }}</font></a></th>
 %endif
   </tr>
 %elif count and isdef("text") and text.strip():
+<br /><br />&nbsp;&nbsp;
    <i>No heroes to display for "{{ text }}"</i>
 %else:
+<br /><br />&nbsp;&nbsp;
    <i>No heroes to display.</i>
 %endif
-%for i, hero in enumerate(heroes):
+%for hero in heroes_sorted:
   <tr>
-    <td align="left" valign="top" nowrap><a href="{{ links[i] }}"><font color="{{ conf.LinkColour }}">{{ hero.name }}</font></a></td>
+    <td align="right" valign="top" nowrap>{{ heroes.index(hero) + 1 }}</td>
+    <td align="left" valign="top" nowrap><a href="{{ links[heroes.index(hero)] }}"><font color="{{ conf.LinkColour }}">{{ hero.name }}</font></a></td>
 %if not categories or categories["stats"]:
     <td align="left" valign="top" nowrap>{{ hero.stats["level"] }}</td>
     %for name in metadata.PrimaryAttributes:

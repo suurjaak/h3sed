@@ -12,6 +12,7 @@ CHANGELOG
 - fix Shield of the Damned not having artifact slot
 - fix Quicksand spell being named Quick Sand
 - fix Wizard's Well not having artifact slot
+- add sorting to hero index page
 - add Refresh-button to files list
 
 

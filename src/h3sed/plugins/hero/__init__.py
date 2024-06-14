@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  13.06.2024
+@modified  14.06.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -325,6 +325,8 @@ class HeroPlugin(object):
             "timer":     None,     # wx.Timer for filtering heroes index
             "ids":       {},       # {category: wx ID for toolbar toggle}
             "visible":   [],       # List of heroes visible
+            "sort_col":  "index",  # Field being sorted by
+            "sort_asc":  True,     # Sort ascending or descending
             "toggles":   collections.OrderedDict(),  # {category: toggled state}
         }
         self._dialog_export = wx.FileDialog(panel, "Export heroes to file",
@@ -385,8 +387,8 @@ class HeroPlugin(object):
         search.Bind(wx.EVT_SEARCH, self.on_search) if hasattr(wx, "EVT_SEARCH") else None
         controls.ColourManager.Manage(html, "ForegroundColour", wx.SYS_COLOUR_BTNTEXT)
         controls.ColourManager.Manage(html, "BackgroundColour", wx.SYS_COLOUR_WINDOW)
-        html.Bind(wx.html.EVT_HTML_LINK_CLICKED,
-                  lambda e: self.select_hero(int(e.GetLinkInfo().Href)))
+        html.SetBorders(0)
+        html.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.on_index_link)
         html.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_sys_colour_change)
 
         tb = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
@@ -589,9 +591,10 @@ class HeroPlugin(object):
         heroes, links = self._heroes[:], list(range(len(self._heroes)))
         plugins = {p["name"]: p["instance"] for p in self._plugins}
         tpl = step.Template(templates.HERO_SEARCH_TEXT)
-        tplargs = dict(pluginmap=plugins, categories=self._index["toggles"])
+        tplargs = dict(pluginmap=plugins, categories=self._index["toggles"],
+                       sort_col=self._index["sort_col"], sort_asc=self._index["sort_asc"])
         maketexts = lambda h: {c: tpl.expand(hero=h, category=c, **tplargs).lower()
-                               for c in ([""] + self.INDEX_CATEGORIES)}
+                               for c in (["name"] + self.INDEX_CATEGORIES)}
         if not self._index["herotexts"]:
             for p in self._plugins:
                 for hero, state in zip(heroes, p["instance"].parse(heroes)):
@@ -607,14 +610,15 @@ class HeroPlugin(object):
 
         if searchtext:
             words, herotexts = searchtext.strip().lower().split(), self._index["herotexts"]
-            texts = ["\n".join(t for c, t in tt.items() if not c or self._index["toggles"][c])
+            texts = ["\n".join(t for c, t in tt.items() if "name" == c or self._index["toggles"][c])
                      for tt in herotexts]
             matches = [(i, h) for i, (h, t) in enumerate(zip(heroes, texts))
                        if all(w in t for w in words)]
             links, heroes = zip(*matches) if matches else ([], [])
         self._index["text"] = searchtext
         self._index["visible"] = heroes
-        tplargs.update(dict(heroes=heroes, count=len(self._heroes), links=links, text=searchtext))
+        tplargs.update(dict(heroes=heroes, count=len(self._heroes), links=links, text=searchtext,
+                            herotexts=self._index["herotexts"]))
         page = step.Template(templates.HERO_INDEX_HTML, escape=True).expand(**tplargs)
         if page != self._index["html"]:
             info = util.plural("hero", heroes) if len(heroes) == len(self._heroes) else \
@@ -731,6 +735,19 @@ class HeroPlugin(object):
         finally:
             self._ignore_events = False
             tabs.Thaw()
+
+
+    def on_index_link(self, event):
+        """Handler for clicking a link in index page, opens hero or sorts index."""
+        href = event.GetLinkInfo().Href
+        if href.isnumeric(): self.select_hero(int(href))
+        elif href.startswith("sort:"):
+            col = href[len("sort:"):]
+            if self._index["sort_col"] == col:
+                self._index["sort_asc"] = not self._index["sort_asc"]
+            else:
+                self._index["sort_col"], self._index["sort_asc"] = col, True
+            self.populate_index(force=True)
 
 
     def on_key(self, event):
