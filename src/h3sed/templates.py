@@ -127,8 +127,8 @@ HTML text shown for hero full character sheet, toggleable between unsaved change
 HERO_CHARSHEET_HTML = """<%
 import step
 from h3sed import conf, templates
-texts0 = isdef("texts0") and texts0 or []
-changes = isdef("changes") and changes
+texts0 = get("texts0") or []
+changes = get("changes")
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
 <table cellpadding="0" cellspacing="0" width="100%"><tr>
@@ -166,7 +166,7 @@ HERO_DIFF_HTML = """<%
 from h3sed import conf, templates
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
-%if isdef("name") and name:
+%if get("name"):
 <b>{{ name }}</b>
 %endif
 <font size="2"><table cellpadding="0" cellspacing="0">
@@ -206,7 +206,7 @@ HERO_DIFF_TEXT = """<%
 import re
 from h3sed import conf, templates
 %>
-%if isdef("name") and name:
+%if get("name"):
 {{ name }}:
 %endif
 %for v1, v2 in ((a, b) for a, b in changes if a != b):
@@ -261,7 +261,7 @@ HERO_SEARCH_TEXT = """<%
 from h3sed import conf, metadata
 deviceprops = pluginmap["stats"].props()
 deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
-category = category if isdef("category") else None
+category = get("category")
 %>
 %if category is None or "name" == category:
 {{ hero.name }}
@@ -371,7 +371,7 @@ def sortarrow(col):
     <th align="left" valign="bottom" nowrap><a href="sort:spells"><font color="{{ conf.FgColour }}">Spells{{! sortarrow("spells") }}</font></a></th>
 %endif
   </tr>
-%elif count and isdef("text") and text.strip():
+%elif count and (get("text") or "").strip():
 <br /><br />&nbsp;&nbsp;
    <i>No heroes to display for "{{ text }}"</i>
 %else:
