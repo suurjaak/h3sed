@@ -929,6 +929,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         event and event.Skip()
         if isinstance(event, wx.KeyEvent) and wx.WXK_F5 != event.KeyCode: return
         path = self.dir_ctrl.Path
+        pos1 = self.dir_ctrl.TreeCtrl.GetScrollPos(wx.VERTICAL)
         self.page_main.Freeze()
         try:
             # Workaround for DirCtrl raising error if any selection during populate
@@ -937,6 +938,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.dir_ctrl.ExpandPath(path)
         finally:
             self.page_main.Thaw()
+            pos2 = self.dir_ctrl.TreeCtrl.GetScrollPos(wx.VERTICAL)
+            self.dir_ctrl.TreeCtrl.ScrollLines(pos1 - pos2)
 
 
     def on_exit(self, event=None):
