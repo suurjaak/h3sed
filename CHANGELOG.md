@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-2.4, 2024-06-13
+2.4, 2024-06-14
 ---------------
 - fix parsing campaign savefiles with carry-over heroes (issue #10)
 - fix parsing Restoration of Erathia savegames from newer versions (issue #9)
@@ -12,6 +12,7 @@ CHANGELOG
 - fix Shield of the Damned not having artifact slot
 - fix Quicksand spell being named Quick Sand
 - fix Wizard's Well not having artifact slot
+- add Refresh-button to files list
 
 
 2.3, 2024-06-11
