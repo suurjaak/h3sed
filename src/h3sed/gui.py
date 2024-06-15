@@ -1231,6 +1231,9 @@ class SavefilePage(wx.Panel):
             return False
 
         self.filename = self.savefile.filename = filename2
+        if rename:
+            conf.FilesOpen.discard(filename1)
+            conf.FilesOpen.add(filename2)
         if not spans:
             try: self.savefile.read()
             except Exception: logger.warning("Error re-reading %s.", filename2, exc_info=True)
