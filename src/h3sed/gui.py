@@ -1366,7 +1366,7 @@ def build(plugin, panel):
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
             if name is not None: namelbl += (" " if namelbl else "") + name
-            valuelbl = "<blank>" if value in ("", False, None) else value
+            valuelbl = "<blank>" if value in ("", None) else value
             cname = "set %s: %s %s" % (label, namelbl, valuelbl)
             logger.info("Setting %s: %s to %s.", label, namelbl, valuelbl)
             plugin.parent.command(functools.partial(on_do, value), cname)
