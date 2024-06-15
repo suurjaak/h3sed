@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.06.2024
+@modified    15.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1254,6 +1254,8 @@ class SavefilePage(wx.Panel):
         self.edit_name.Value = self.savefile.mapdata.get("name", "")
         self.edit_desc.Value = self.savefile.mapdata.get("desc", "")
         self.edit_vers.Value = v or ""
+        self.edit_vers.MinSize = (self.edit_vers.GetTextExtent(self.edit_vers.Value).Width, -1)
+        self.edit_vers.ContainingSizer.Layout()
 
 
     def plugin_action(self, name, **kwargs):

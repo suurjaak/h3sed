@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+2.5, 2024-06-15
+---------------
+- fix game version name not being fully visible (issue #11)
+
+
 2.4, 2024-06-14
 ---------------
 - fix parsing campaign savefiles with carry-over heroes (issue #10)
