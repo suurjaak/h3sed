@@ -7,14 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    11.06.2024
+@modified    15.06.2024
 ------------------------------------------------------------------------------
 """
-import collections
 import codecs
 import csv
 import ctypes
-import datetime
 import locale
 import math
 import os
@@ -22,7 +20,6 @@ import re
 import subprocess
 import sys
 import struct
-import time
 import warnings
 
 try: import collections.abc as collections_abc             # Py3
@@ -83,27 +80,27 @@ class csv_writer(object):
         if self._name: self._file.close()
 
 
-def m(o, name, case_insensitive=True):
-    """Returns the members of the object or dict, filtered by name."""
-    members = o.keys() if isinstance(o, dict) else dir(o)
-    if case_insensitive:
-        return [i for i in members if name.lower() in i.lower()]
-    else:
-        return [i for i in members if name in i]
+def add_unique(lst, item, direction=1, maxlen=sys.maxsize):
+    """
+    Adds the item to the list from start or end. If item is already in list,
+    removes it first. If list is longer than maxlen, shortens it.
+
+    @param   direction  side from which item is added, -1/1 for start/end
+    @param   maxlen     maximum length list is allowed to grow to before
+                        shortened from the other direction
+    """
+    if item in lst:
+        lst.remove(item)
+    lst.insert(0, item) if direction < 0 else lst.append(item)
+    if len(lst) > maxlen:
+        lst[:] = lst[:maxlen] if direction < 0 else lst[-maxlen:]
+    return lst
 
 
 def bytoi(blob):
     """Converts a string of bytes or a bytearray to unsigned integer."""
     fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[len(blob)]
     return struct.unpack(fmt, blob)[0]
-
-
-def itoby(v, length):
-    """
-    Converts an unsigned integer to a bytearray of specified length.
-    """
-    fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[length]
-    return bytearray(struct.pack(fmt, v))
 
 
 def format_bytes(size, precision=2, max_units=True, with_units=True):
@@ -142,6 +139,85 @@ def format_exc(e):
     return result
 
 
+def get(collection, *path, **kwargs):
+    """
+    Returns the value at specified collection path. If path not available,
+    returns the first keyword argument if any given, or None.
+    Collection can be a nested structure of dicts, lists, tuples or strings.
+    E.g. util.get({"root": {"first": [{"k": "v"}]}}, "root", "first", 0, "k").
+    Also supports named object attributes.
+    """
+    default = (list(kwargs.values()) + [None])[0]
+    result = collection if path else default
+    if len(path) == 1 and isinstance(path[0], list): path = path[0]
+    for p in path:
+        if isinstance(result, collections_abc.Sequence):  # Iterable with index
+            if isinstance(p, int_types) and p < len(result):
+                result = result[p]
+            else:
+                result = default
+        elif isinstance(result, collections_abc.Mapping): # Container with lookup
+            result = result.get(p, default)
+
+        else:
+            result = getattr(result, p, default)
+        if result == default: break  # for p
+    return result
+
+
+def itoby(v, length):
+    """
+    Converts an unsigned integer to a bytearray of specified length.
+    """
+    fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[length]
+    return bytearray(struct.pack(fmt, v))
+
+
+def longpath(path):
+    """Returns the path in long Windows form ("Program Files" not PROGRA~1)."""
+    result = path
+    try:
+        buf = ctypes.create_unicode_buffer(65536)
+        GetLongPathNameW = ctypes.windll.kernel32.GetLongPathNameW
+        if GetLongPathNameW(string_type(path), buf, 65536):
+            result = buf.value
+        else:
+            head, tail = os.path.split(path)
+            if GetLongPathNameW(string_type(head), buf, 65536):
+                result = os.path.join(buf.value, tail)
+    except Exception: pass
+    return result
+
+
+def m(o, name, case_insensitive=True):
+    """Returns the members of the object or dict, filtered by name."""
+    members = o.keys() if isinstance(o, dict) else dir(o)
+    if case_insensitive:
+        return [i for i in members if name.lower() in i.lower()]
+    else:
+        return [i for i in members if name in i]
+
+
+def make_unique(value, existing, suffix="_%s", counter=2, case=False):
+    """
+    Returns a unique string, appending suffix % counter as necessary.
+
+    @param   existing  collection of existing strings to check
+    @oaram   case      whether uniqueness should be case-sensitive
+    """
+    result, is_present = value, (lambda: result in existing)
+    if not case:
+        existing = [x.lower() for x in existing]
+        is_present = lambda: result.lower() in existing
+    while is_present(): result, counter = value + suffix % counter, counter + 1
+    return result
+
+
+def path_to_url(path):
+    """Returns path as file URL, e.g. "/my file" as "file:///my%20file"."""
+    return urljoin('file:', pathname2url(path))
+
+
 def plural(word, items=None, numbers=True, single="1", sep="", pref="", suf=""):
     """
     Returns the word as 'count words', or '1 word' if count is 1,
@@ -172,43 +248,30 @@ def plural(word, items=None, numbers=True, single="1", sep="", pref="", suf=""):
     return result.strip()
 
 
-def unique_path(pathname, suffix="%(ext)s_%(counter)s"):
-    """
-    Returns a unique version of the path. If a file or directory with the
-    same name already exists, returns a unique version
-    (e.g. "C:\config.sys_2" if ""C:\config.sys" already exists).
-
-    @param   suffix  string to append, formatted with variables counter, ext
-    """
-    result = pathname
-    if "linux" in sys.platform and isinstance(result, string_type) \
-    and "utf-8" != sys.getfilesystemencoding():
-        result = result.encode("utf-8") # Linux has trouble if locale not UTF-8
-    path, name = os.path.split(result)
-    base, ext = os.path.splitext(name)
-    if len(name) > 255: # Filesystem limitation
-        name = base[:255 - len(ext) - 2] + ".." + ext
-        result = os.path.join(path, name)
-    counter = 2
-    while os.path.exists(result):
-        mysuffix = suffix % {"ext": ext, "counter": counter}
-        name = base + mysuffix
-        if len(name) > 255:
-            name = base[:255 - len(mysuffix) - 2] + ".." + mysuffix
-        result = os.path.join(path, name)
-        counter += 1
-    return result
-
-
 def select_file(filepath):
     """
     Tries to open the file directory and select file.
     Falls back to opening directory only (select is Windows-only).
     """
     if not os.path.exists(filepath):
-        return start_file(os.path.split(filepath)[0])
+        start_file(os.path.split(filepath)[0]); return
     try: subprocess.Popen('explorer /select, "%s"' % shortpath(filepath))
     except Exception: start_file(os.path.split(filepath)[0])
+
+
+def shortpath(path):
+    """Returns the path in short Windows form (PROGRA~1 not "Program Files")."""
+    if isinstance(path, str): return path
+    from ctypes import wintypes
+
+    ctypes.windll.kernel32.GetShortPathNameW.argtypes = [
+        # lpszLongPath, lpszShortPath, cchBuffer
+        wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD
+    ]
+    ctypes.windll.kernel32.GetShortPathNameW.restype = wintypes.DWORD
+    buf = ctypes.create_unicode_buffer(4 * len(path))
+    ctypes.windll.kernel32.GetShortPathNameW(path, buf, len(buf))
+    return buf.value
 
 
 def start_file(filepath):
@@ -235,64 +298,6 @@ def start_file(filepath):
     return success, error
 
 
-def add_unique(lst, item, direction=1, maxlen=sys.maxsize):
-    """
-    Adds the item to the list from start or end. If item is already in list,
-    removes it first. If list is longer than maxlen, shortens it.
-
-    @param   direction  side from which item is added, -1/1 for start/end
-    @param   maxlen     maximum length list is allowed to grow to before
-                        shortened from the other direction
-    """
-    if item in lst:
-        lst.remove(item)
-    lst.insert(0, item) if direction < 0 else lst.append(item)
-    if len(lst) > maxlen:
-        lst[:] = lst[:maxlen] if direction < 0 else lst[-maxlen:]
-    return lst
-
-
-def make_unique(value, existing, suffix="_%s", counter=2, case=False):
-    """
-    Returns a unique string, appending suffix % counter as necessary.
-
-    @param   existing  collection of existing strings to check
-    @oaram   case      whether uniqueness should be case-sensitive
-    """
-    result, is_present = value, (lambda: result in existing)
-    if not case:
-        existing = [x.lower() for x in existing]
-        is_present = lambda: result.lower() in existing
-    while is_present(): result, counter = value + suffix % counter, counter + 1
-    return result
-
-
-def get(collection, *path, **kwargs):
-    """
-    Returns the value at specified collection path. If path not available,
-    returns the first keyword argument if any given, or None.
-    Collection can be a nested structure of dicts, lists, tuples or strings.
-    E.g. util.get({"root": {"first": [{"k": "v"}]}}, "root", "first", 0, "k").
-    Also supports named object attributes.
-    """
-    default = (list(kwargs.values()) + [None])[0]
-    result = collection if path else default
-    if len(path) == 1 and isinstance(path[0], list): path = path[0]
-    for p in path:
-        if isinstance(result, collections_abc.Sequence):  # Iterable with index
-            if isinstance(p, int_types) and p < len(result):
-                result = result[p]
-            else:
-                result = default
-        elif isinstance(result, collections_abc.Mapping): # Container with lookup
-            result = result.get(p, default)
-
-        else:
-            result = getattr(result, p, default)
-        if result == default: break  # for p
-    return result
-
-
 def to_unicode(value, encoding=None):
     """
     Returns the value as a Unicode string. Tries decoding as UTF-8 if
@@ -314,40 +319,32 @@ def to_unicode(value, encoding=None):
     return result
 
 
-def longpath(path):
-    """Returns the path in long Windows form ("Program Files" not PROGRA~1)."""
-    result = path
-    try:
-        buf = ctypes.create_unicode_buffer(65536)
-        GetLongPathNameW = ctypes.windll.kernel32.GetLongPathNameW
-        if GetLongPathNameW(string_type(path), buf, 65536):
-            result = buf.value
-        else:
-            head, tail = os.path.split(path)
-            if GetLongPathNameW(string_type(head), buf, 65536):
-                result = os.path.join(buf.value, tail)
-    except Exception: pass
+def unique_path(pathname, suffix="%(ext)s_%(counter)s"):
+    """
+    Returns a unique version of the path. If a file or directory with the
+    same name already exists, returns a unique version
+    (e.g. "C:\config.sys_2" if ""C:\config.sys" already exists).
+
+    @param   suffix  string to append, formatted with variables counter, ext
+    """
+    result = pathname
+    if "linux" in sys.platform and isinstance(result, string_type) \
+    and "utf-8" != sys.getfilesystemencoding():
+        result = result.encode("utf-8") # Linux has trouble if locale not UTF-8
+    path, name = os.path.split(result)
+    base, ext = os.path.splitext(name)
+    if len(name) > 255: # Filesystem limitation
+        name = base[:255 - len(ext) - 2] + ".." + ext
+        result = os.path.join(path, name)
+    counter = 2
+    while os.path.exists(result):
+        mysuffix = suffix % {"ext": ext, "counter": counter}
+        name = base + mysuffix
+        if len(name) > 255:
+            name = base[:255 - len(mysuffix) - 2] + ".." + mysuffix
+        result = os.path.join(path, name)
+        counter += 1
     return result
-
-
-def shortpath(path):
-    """Returns the path in short Windows form (PROGRA~1 not "Program Files")."""
-    if isinstance(path, str): return path
-    from ctypes import wintypes
-
-    ctypes.windll.kernel32.GetShortPathNameW.argtypes = [
-        # lpszLongPath, lpszShortPath, cchBuffer
-        wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD
-    ]
-    ctypes.windll.kernel32.GetShortPathNameW.restype = wintypes.DWORD
-    buf = ctypes.create_unicode_buffer(4 * len(path))
-    ctypes.windll.kernel32.GetShortPathNameW(path, buf, len(buf))
-    return buf.value
-
-
-def path_to_url(path):
-    """Returns path as file URL, e.g. "/my file" as "file:///my%20file"."""
-    return urljoin('file:', pathname2url(path))
 
 
 def win32_unicode_argv():
