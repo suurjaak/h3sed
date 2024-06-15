@@ -1356,6 +1356,13 @@ def build(plugin, panel):
 
         def handler(event):
             value = event.EventObject.Value
+            state  = plugin.state() if callable(getattr(plugin, "state", None)) else {}
+            row    = state[rowindex] if rowindex is not None and isinstance(state, list) else state
+            target = next((x for x in (row, state) if isinstance(x, (list, dict))), None)
+            value0 = util.get(target, key)
+            if value == value0:
+                return  # Avoid double events from SpinCtrl
+
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
             if name is not None: namelbl += (" " if namelbl else "") + name
