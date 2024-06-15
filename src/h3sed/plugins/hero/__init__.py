@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  14.06.2024
+@modified  15.06.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -907,7 +907,6 @@ class HeroPlugin(object):
         combo, tabs, tb, search = (self._ctrls[k] for k in ("hero", "tabs", "toolbar", "search"))
         searchsel = search.GetSelection()
         focusctrl = self._panel.FindFocus()
-        combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
         self.populate_index()
         if tabs.GetSelection(): tabs.SetSelection(0)
         style = tabs.GetAGWWindowStyleFlag() & (~wx.lib.agw.flatnotebook.FNB_X_ON_TAB)
