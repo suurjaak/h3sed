@@ -596,9 +596,9 @@ class HeroPlugin(object):
             return
 
         heroes, links = self._heroes[:], list(range(len(self._heroes)))
-        plugins = {p["name"]: p["instance"] for p in self._plugins}
+        pluginmap = {p["name"]: p["instance"] for p in self._plugins}
         tpl = step.Template(templates.HERO_SEARCH_TEXT)
-        tplargs = dict(pluginmap=plugins, categories=self._index["toggles"],
+        tplargs = dict(pluginmap=pluginmap, categories=self._index["toggles"],
                        sort_col=self._index["sort_col"], sort_asc=self._index["sort_asc"])
         maketexts = lambda h: {c: tpl.expand(hero=h, category=c, **tplargs).lower()
                                for c in (["name"] + self.INDEX_CATEGORIES)}
@@ -1030,7 +1030,7 @@ class HeroPlugin(object):
         @param   changes   whether to populate `yamls2` instead of `yamls1`
         """
         LF, INDENT = os.linesep, "  "
-        states, maxlen = [], 0, # [(category, [(prefix, value), ])]
+        states, maxlen = [], 0  # [(category, [(prefix, value), ])]
         for p in self._plugins:  # Assemble YAML by hand for more readable indentation
             pairs, prefixlen = self.serialize_plugin_yaml(hero, p["instance"], INDENT)
             states.append((p["name"], pairs))

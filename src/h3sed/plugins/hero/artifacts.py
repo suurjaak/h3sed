@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  23.05.2024
+@modified  15.06.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -175,7 +175,6 @@ class ArtifactsPlugin(object):
     def props(self):
         """Returns props for artifacts-tab, as [{type: "combo", ..}]."""
         result = []
-        version = self._savefile.version
         for prop in UIPROPS:
             slot = prop.get("slot", prop["name"])
             result.append(dict(prop, choices=[""] + self._cache.get(slot, [])))
@@ -205,7 +204,6 @@ class ArtifactsPlugin(object):
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values."""
         state0 = type(self._state)(self._state)
-        version = self._savefile.version
 
         for prop in self.props():  # First pass: don items
             name, slot = prop["name"], prop.get("slot", prop["name"])

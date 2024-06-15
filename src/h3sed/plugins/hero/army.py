@@ -139,7 +139,7 @@ class ArmyPlugin(object):
         result, MYPROPS = False, self.props()
         if self._ctrls and all(all(x.values()) for x in self._ctrls):
             cc = [""] + sorted(metadata.Store.get("creatures", self._savefile.version))
-            for i, row in enumerate(self._state):
+            for i in range(len(self._state)):
                 creature = None
                 for prop in MYPROPS[0]["item"]:
                     if "name" not in prop: continue # for prop
@@ -155,7 +155,7 @@ class ArmyPlugin(object):
         else:
             self._ctrls, result = gui.build(self, self._panel)[0], True
             # Hide count controls where no creature type selected
-            for i, row in enumerate(self._state):
+            for i in range(len(self._state)):
                 creature, size = None, None
                 for prop in MYPROPS[0]["item"]:
                     if "name" not in prop: continue # for prop
