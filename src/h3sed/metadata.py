@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    13.06.2024
+@modified    15.06.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -1050,6 +1050,20 @@ class Savefile(object):
         self.raw0 = self.raw
         self.update_info(filename)
         logger.info("Saved %s (%s, unzipped %s).", filename,
+                    util.format_bytes(self.size), util.format_bytes(self.usize))
+
+
+    def write_ranges(self, spans, filename=None):
+        """Writes out gzipped file with specified byte ranges only."""
+        filename = filename or self.filename
+        raw = self.raw0
+        for start, end in spans: raw = raw[0:start] + self.raw[start:end] + raw[end:]
+        with gzip.GzipFile(filename, "wb") as f: f.write(bytes(raw))
+        self.raw0 = raw
+        self.update_info(filename)
+        logger.info("Saved %s byte %s %s (%s, unzipped %s).", filename,
+                    util.plural("range", spans, numbers=False),
+                    " and ".join("..".join(map(str, x)) for x in spans),
                     util.format_bytes(self.size), util.format_bytes(self.usize))
 
 

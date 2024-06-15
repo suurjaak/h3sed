@@ -1144,7 +1144,7 @@ class SavefilePage(wx.Panel):
 
     def save_file(self, rename=False):
         """Saves the file, under a new name if specified, returns success."""
-        filename1, filename2, tempname, error = self.filename, self.filename, None, None
+        filename1 = filename2 = self.filename
 
         if rename:
             title = "Save %s as.." % os.path.split(self.filename)[-1]
@@ -1162,9 +1162,23 @@ class SavefilePage(wx.Panel):
                 conf.Title, wx.OK | wx.ICON_WARNING
             )
         rename = (filename1 != filename2)
-        logger.info("Saving %s%s.", filename1, " as %s" % filename2 if rename else "")
         changes = "\n\n".join(p.get_changes(html=False) for p in self.plugins
                               if hasattr(p, "get_changes"))
+        return self.save_file_real(filename2, changes)
+
+
+    def save_file_real(self, filename=None, changes=None, spans=None):
+        """
+        Saves the file, returns success.
+
+        @param   filename  filename to save under if not current
+        @param   changes   text to log with all changes
+        @param   spans     specific byte ranges to save if not all, as [(from, exclusive to)]
+        """
+        filename1, filename2, tempname, error = self.filename, filename or self.filename, None, None
+
+        rename = (filename1 != filename2)
+        logger.info("Saving %s%s.", filename1, " as %s" % filename2 if rename else "")
         if changes: logger.info("Saving changes:\n\n%s", changes)
 
         if rename:
@@ -1181,7 +1195,7 @@ class SavefilePage(wx.Panel):
             wx.MessageBox("Error saving %s as %s:\n\n%s" %
                           (filename1, filename2, util.format_exc(e)),
                           conf.Title, wx.OK | wx.ICON_ERROR)
-            return
+            return False
 
         if conf.Backup and os.path.exists(filename2):
             backupname = "%s.%s" % (filename2, datetime.datetime.now().strftime("%Y%m%d"))
@@ -1196,9 +1210,9 @@ class SavefilePage(wx.Panel):
                                    filename2, backupname, exc_info=True)
 
         try:
-            self.savefile.write(tempname)
+            self.savefile.write_ranges(spans, tempname) if spans else self.savefile.write(tempname)
         except Exception as e:
-            logger.exception("Error saving changes in %s.", self.filename)
+            logger.exception("Error saving changes in %s.", filename2)
             error = "Error saving changes:\n\n%s" % util.format_exc(e)
 
         if not error and rename:
@@ -1214,18 +1228,19 @@ class SavefilePage(wx.Panel):
 
         if error:
             wx.MessageBox(error, conf.Title, wx.OK | wx.ICON_ERROR)
-            return
+            return False
 
         self.filename = self.savefile.filename = filename2
-        try: self.savefile.read()
-        except Exception: logger.warning("Error re-reading %s.", filename2, exc_info=True)
-        if rename:
-            evt = SavefilePageEvent(self.Id, source=self, rename=True,
-                                    filename1=filename1, filename2=filename2)
-        else:
-            evt = SavefilePageEvent(self.Id, source=self, modified=False)
-        wx.PostEvent(self.Parent, evt)
-        for p in self.plugins: p.action(save=True)
+        if not spans:
+            try: self.savefile.read()
+            except Exception: logger.warning("Error re-reading %s.", filename2, exc_info=True)
+            if rename:
+                evt = SavefilePageEvent(self.Id, source=self, rename=True,
+                                        filename1=filename1, filename2=filename2)
+            else:
+                evt = SavefilePageEvent(self.Id, source=self, modified=False)
+            wx.PostEvent(self.Parent, evt)
+        for p in self.plugins: p.action(save=True, **{"spans": spans} if spans else {})
         guibase.status("Saved %s." % filename2, flash=conf.StatusShortFlashLength)
         return True
 
@@ -1273,8 +1288,14 @@ class SavefilePage(wx.Panel):
 
     def on_page_event(self, event):
         """Handler for notification from subtabs, updates UI if modified."""
-        changed = self.savefile.is_changed()
         args = event.ClientData if isinstance(event.ClientData, dict) else {}
+        if args.get("save") and args.get("spans"):
+            if self.save_file_real(spans=args["spans"], changes=args.get("changes")):
+                args = dict(source=self, modified=self.savefile.is_changed())
+                wx.PostEvent(self.Parent, SavefilePageEvent(self.Id, **args))
+            return
+
+        changed = self.savefile.is_changed()
         evt = SavefilePageEvent(self.Id, **dict(args, source=self, modified=changed))
         wx.PostEvent(self.Parent, evt)
 

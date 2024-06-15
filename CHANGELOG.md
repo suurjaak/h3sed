@@ -3,6 +3,7 @@ CHANGELOG
 
 2.5, 2024-06-15
 ---------------
+- add save-button to individual heroes
 - fix game version name not being fully visible (issue #11)
 
 

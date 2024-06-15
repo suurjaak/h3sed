@@ -399,13 +399,17 @@ class HeroPlugin(object):
         bmp1 = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR, (20, 20))
         bmp2 = wx.ArtProvider.GetBitmap(wx.ART_COPY,        wx.ART_TOOLBAR, (20, 20))
         bmp3 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,       wx.ART_TOOLBAR, (20, 20))
+        bmp4 = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE,   wx.ART_TOOLBAR, (16, 16))
         tb.AddTool(wx.ID_INFO,    "", bmp1, shortHelp="Show hero full character sheet\t%s-I" % CTRL)
         tb.AddSeparator()
         tb.AddTool(wx.ID_COPY,    "", bmp2, shortHelp="Copy current hero data to clipboard")
         tb.AddTool(wx.ID_PASTE,   "", bmp3, shortHelp="Paste data from clipboard to current hero")
+        tb.AddSeparator()
+        tb.AddTool(wx.ID_SAVE,    "", bmp4, shortHelp="Save current hero to file")
         tb.Bind(wx.EVT_TOOL,    self.on_charsheet,   id=wx.ID_INFO)
         tb.Bind(wx.EVT_TOOL,    self.on_copy_hero,   id=wx.ID_COPY)
         tb.Bind(wx.EVT_TOOL,    self.on_paste_hero,  id=wx.ID_PASTE)
+        tb.Bind(wx.EVT_TOOL,    self.on_save_hero,  id=wx.ID_SAVE)
         self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
         tb.Realize()
         tb.Disable()
@@ -519,7 +523,7 @@ class HeroPlugin(object):
 
 
     def action(self, **kwargs):
-        """Handler for action (load=hero name or index) or (save=True)."""
+        """Handler for action (load=hero name or index) or (save=True, ?spans=[..])."""
         if kwargs.get("load") is not None:
             value = kwargs["load"]
             if isinstance(value, int):
@@ -529,6 +533,9 @@ class HeroPlugin(object):
         if kwargs.get("save"):
             tabs = self._ctrls["tabs"]
             for index, hero in enumerate(self._heroes):
+                if kwargs.get("spans") \
+                and not any(a <= hero.span[0] and hero.span[1] <= b for a, b in kwargs["spans"]):
+                    continue  # for index, hero
                 hero.yamls1[:], hero.yamls2[:] = (hero.yamls2 or hero.yamls1), []
                 page = next((p for p, i in self._pages.items() if i == index), None)
                 if page is not None: tabs.SetPageText(tabs.GetPageIndex(page), hero.name)
@@ -656,6 +663,18 @@ class HeroPlugin(object):
             guibase.status("Pasting data to hero %s from clipboard.",
                            self._hero.name, flash=conf.StatusShortFlashLength, log=True)
             self.parse_yaml(value)
+
+
+    def on_save_hero(self, event=None):
+        """Handler for saving a hero, sends event to save current hero span."""
+        changes = step.Template(templates.HERO_DIFF_TEXT).expand(name=self._hero.name, changes=[
+            (v1, v2) for v1, v2 in zip(self._hero.yamls1, self._hero.yamls2) if v1 != v2
+        ]) if self._hero.yamls1 and self._hero.yamls2 and self._hero.yamls1 != self._hero.yamls2 \
+        else ""
+        logger.info("Saving hero %s to file.", self._hero.name)
+        evt = gui.SavefilePageEvent(self._panel.Id)
+        evt.SetClientData(dict(save=True, spans=[self._hero.span], changes=changes))
+        wx.PostEvent(self._panel, evt)
 
 
     def on_charsheet(self, event=None):
