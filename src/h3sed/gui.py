@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    15.06.2024
+@modified    16.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1491,6 +1491,16 @@ def build(plugin, panel):
         sizer.Add(c, pos=pos)
         result["%s-info" % prop["name"]] = c
 
+    def make_extra(prop, sizer, pos):
+        opts = prop["extra"]
+        if "button" == opts["type"]:
+            c = wx.Button(panel, label=opts["label"])
+            c.Bind(wx.EVT_BUTTON, functools.partial(opts["handler"], plugin, prop, state))
+        if c:
+            if opts.get("tooltip"): c.ToolTip = opts["tooltip"]
+            sizer.Add(c, pos=pos, flag=wx.GROW)
+            result["%s-extra" % prop["name"]] = c
+
 
     count = 0
     BTN_WPLUS  = 0 if "nt" == os.name else 20
@@ -1611,7 +1621,9 @@ def build(plugin, panel):
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1))
             result[prop["name"]] = c2
-            if "info" in prop: make_info(prop, sizer, (count, 2))
+            col = 2
+            if "extra" in prop: col, _ = col + 1, make_extra(prop, sizer, (count, col))
+            if "info"  in prop: col, _ = col + 1, make_info (prop, sizer, (count, col))
             count += 1
 
 
@@ -1634,12 +1646,15 @@ def build(plugin, panel):
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
+            col = 2
             if prop.get("nullable"):
                 c3 = wx.Button(panel, label="remove", size=(50 + BTN_WPLUS, -1))
                 c3.Bind(wx.EVT_BUTTON, make_clear_handler(c3, prop))
-                sizer.Add(c3, pos=(count, 2))
+                sizer.Add(c3, pos=(count, col))
+                col += 1
             result[prop["name"]] = c2
-            if "info" in prop: make_info(prop, sizer, (count, 2 + bool(prop.get("nullable"))))
+            if "extra" in prop: col, _ = col + 1, make_extra(prop, sizer, (count, col))
+            if "info"  in prop: col, _ = col + 1, make_info (prop, sizer, (count, col))
             count += 1
 
 
@@ -1655,7 +1670,9 @@ def build(plugin, panel):
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1))
             result[prop["name"]] = c2
-            if "info" in prop: make_info(prop, sizer, (count, 2))
+            col = 2
+            if "extra" in prop: col, _ = col + 1, make_extra(prop, sizer, (count, col))
+            if "info"  in prop: col, _ = col + 1, make_info (prop, sizer, (count, col))
             count += 1
 
 

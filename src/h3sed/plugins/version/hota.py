@@ -385,10 +385,11 @@ def adapt(source, category, value):
     """
     Adapts certain categories:
 
-    - "pos"   for hero sub-plugins: adding Interference-skill support
-    - "props" for skills-plugin:    adding Interference-skill support
-    - "props" for stats-plugin:     adding cannon support, capping level at 74
-    - "regex" for hero-plugin:      adding Interference-skill support
+    - "pos"        for hero sub-plugins: adding Interference-skill support
+    - "props"      for skills-plugin:    adding Interference-skill support
+    - "props"      for stats-plugin:     adding cannon support, capping level at 74
+    - "regex"      for hero-plugin:      adding Interference-skill support
+    - "exp_levels" for stats-plugin:     capping level at 74
     """
     root = util.get(source, "parent", default=source)
     if util.get(root, "savefile", "version") != PROPS["name"]: return value
@@ -404,6 +405,8 @@ def adapt(source, category, value):
             elif "level" == prop["name"]:
                 prop = dict(prop, max=HeroLevelMax)
             result.append(prop)
+    if "experience_levels" == category and "stats" == util.get(source, "name"):
+        result = {k: v for k, v in value.items() if k <= HeroLevelMax}
     elif "props" == category and "skills" == util.get(source, "name"):
         result = []
         for prop in value:

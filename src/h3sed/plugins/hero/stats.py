@@ -12,11 +12,15 @@ Released under the MIT License.
 @modified  16.06.2024
 ------------------------------------------------------------------------------
 """
+import functools
 import logging
+import sys
 
 import wx
 
+from h3sed import conf
 from h3sed import gui
+from h3sed import guibase
 from h3sed import metadata
 from h3sed import plugins
 from h3sed.lib import util
@@ -66,13 +70,25 @@ UIPROPS = [{
     "len":    4,
     "min":    0,
     "max":    2**32 - 1,
+    "extra":  {
+        "type":     "button",
+        "label":    "Set from level",
+        "tooltip":  "Recalculate experience points from hero level",
+        "handler":  None,  # Populated later
+    },
 }, {
     "name":   "level",
     "label":  "Level",
     "type":   "number",
     "len":    1,
     "min":    0,
-    "max":    75,
+    "max":    max(metadata.ExperienceLevels),
+    "extra":  {
+        "type":     "button",
+        "label":    "Set from experience",
+        "tooltip":  "Recalculate level from hero experience points",
+        "handler":  None,  # Populated later
+    },
 }, {
     "name":     "movement_total",
     "label":    "Movement points in total",
@@ -149,6 +165,8 @@ class StatsPlugin(object):
         IDS = metadata.Store.get("ids", self._savefile.version)
         for prop in UIPROPS:
             if "value" in prop: prop = dict(prop, value=IDS[prop["label"]])
+            if prop["name"] in ("exp", "level") and "extra" in prop:
+                prop = dict(prop, extra=dict(prop["extra"], handler=self.on_experience_level))
             result.append(prop)
         return plugins.adapt(self, "props", result)
 
@@ -207,6 +225,42 @@ class StatsPlugin(object):
             evt = gui.PluginEvent(self._panel.Id, action="render", name="spells")
             wx.PostEvent(self._panel, evt)
         return True
+
+
+    def on_experience_level(self, plugin, prop, state, event=None):
+        """Handler for "Set from level|experience" buttons, updates hero attribute."""
+        EXP_LEVELS = plugins.adapt(self, "exp_levels", metadata.ExperienceLevels)
+        SOURCE, TARGET = ("level", "exp") if "exp" == prop["name"] else ("exp", "level")
+        source_prop = next(x for x in self.props() if x["name"] == SOURCE)
+        exp, level = self._state["exp"], self._state["level"]
+        value = None
+        if "level" == TARGET:
+            orderlist = sorted(EXP_LEVELS.items(), reverse=True)
+            value = next((k for k, v in orderlist if v <= exp), None)
+        elif "exp" == TARGET:
+            value = EXP_LEVELS.get(level)
+            if value is not None and value <= exp < EXP_LEVELS.get(level + 1, sys.maxsize):
+                value = exp  # Do not reset experience if already at level
+            elif value is None and level == 0:
+                value = 0
+        if value == self._state[TARGET]:
+            guibase.status("%s already matching %s %s", prop["label"].capitalize(),
+                           source_prop["label"].lower(), self._state[source_prop["name"]])
+            value = None
+        if value is None:
+            return
+
+        def on_do(self, state):
+            self._state.update(state)
+            self.parent.patch()
+            evt = gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+        label = "%s stats: %s %s" % (self._hero.name, TARGET, value)
+        guibase.status("Setting %s from %s", label, source_prop["label"].lower(),
+                       flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, {TARGET: value})
+        self.parent.command(callable, name="set %s" % label)
 
 
     def parse(self, heroes):

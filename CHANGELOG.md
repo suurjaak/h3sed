@@ -1,10 +1,12 @@
 CHANGELOG
 =========
 
-2.5, 2024-06-16
+2.5, 2024-06-17
 ---------------
 - add save-button to individual heroes
+- add buttons to set hero level from experience and vice versa
 - fix game version name not being fully visible (issue #11)
+- fix not being able to modify experience points over 1 billion (2**30)
 - cap hero level at 75 (74 in Horn of the Abyss)
 
 
