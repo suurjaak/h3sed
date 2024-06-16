@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  12.06.2024
+@modified  16.06.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -29,6 +29,9 @@ VersionByteRanges = {
     "version_minor":  ( 5, -1),
 }
 
+
+"""Maximum possible level for heroes."""
+HeroLevelMax = 74
 
 """Hero skills, in file order, added to default skills."""
 Skills = ["Interference"]
@@ -384,7 +387,7 @@ def adapt(source, category, value):
 
     - "pos"   for hero sub-plugins: adding Interference-skill support
     - "props" for skills-plugin:    adding Interference-skill support
-    - "props" for stats-plugin:     adding cannon support
+    - "props" for stats-plugin:     adding cannon support, capping level at 74
     - "regex" for hero-plugin:      adding Interference-skill support
     """
     root = util.get(source, "parent", default=source)
@@ -398,6 +401,8 @@ def adapt(source, category, value):
             if "ballista" == prop["name"]:
                 cc = ["", "Ballista", "Cannon"]
                 prop = dict(prop, type="combo", choices=cc)
+            elif "level" == prop["name"]:
+                prop = dict(prop, max=HeroLevelMax)
             result.append(prop)
     elif "props" == category and "skills" == util.get(source, "name"):
         result = []

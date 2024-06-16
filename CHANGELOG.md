@@ -1,10 +1,11 @@
 CHANGELOG
 =========
 
-2.5, 2024-06-15
+2.5, 2024-06-16
 ---------------
 - add save-button to individual heroes
 - fix game version name not being fully visible (issue #11)
+- cap hero level at 75 (74 in Horn of the Abyss)
 
 
 2.4, 2024-06-14
