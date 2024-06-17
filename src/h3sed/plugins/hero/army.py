@@ -221,7 +221,7 @@ class ArmyPlugin(object):
                     unit, count = (util.bytoi(hero.bytes[MYPOS[k]  + i * 4:MYPOS[k]  + i * 4 + 4])
                                    for k in ("army_types", "army_counts"))
                     name = NAMES.get(unit)
-                    if not unit or not count or not name: values.append({})
+                    if not count or not name: values.append({})
                     else: values.append({"name": name, "count": count})
             result.append(values)
         return result

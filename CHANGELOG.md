@@ -7,6 +7,7 @@ CHANGELOG
 - add buttons to set hero level from experience and vice versa
 - add info texts on artifact bonuses to hero main attributes
 - fix game version name not being fully visible (issue #11)
+- fix not showing Pikeman units in hero army (issue #12)
 - fix not being able to modify experience points over 2^30
 - cap hero level at 75 (74 in Horn of the Abyss)
 - cap hero level at 2^31 - 1 instead of 2^32 - 1
