@@ -45,8 +45,9 @@ class MainApp(wx.App):
 
     def InitLocale(self):
         self.ResetLocale()
-        if "win32" == sys.platform:  # Avoid dialog buttons in native language
-            mylocale = wx.Locale(wx.LANGUAGE_ENGLISH_US, wx.LOCALE_LOAD_DEFAULT)
+        if "win32" == sys.platform \
+        and wx.VERSION < (4, 2):  # Avoid dialog buttons in native language
+            mylocale = wx.Locale(wx.LANGUAGE_ENGLISH, wx.LOCALE_LOAD_DEFAULT)
             mylocale.AddCatalog("wxstd")
             self._initial_locale = mylocale  # Override wx.App._initial_locale
             # Workaround for MSW giving locale as "en-US"; standard format is "en_US".

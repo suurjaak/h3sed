@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    16.06.2024
+@modified    17.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1359,12 +1359,13 @@ def build(plugin, panel):
 
         def handler(event):
             value = event.EventObject.Value
+            if isinstance(ctrl, wx.SpinCtrlDouble): value = int(value)
             state  = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             row    = state[rowindex] if rowindex is not None and isinstance(state, list) else state
             target = next((x for x in (row, state) if isinstance(x, (list, dict))), None)
             value0 = util.get(target, key)
             if value == value0:
-                return  # Avoid double events from SpinCtrl
+                return  # Avoid double events like EVT_TEXT vs EVT_SPIN
 
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
@@ -1533,14 +1534,16 @@ def build(plugin, panel):
                         c.Bind(wx.EVT_COMBOBOX, make_value_handler(c, itemprop, rowindex=i))
                         bsizer.Add(c, flag=wx.GROW)
                     elif "number" == itemprop.get("type"):
-                        c = wx.SpinCtrl(panel, name=itemprop["name"], size=(80 + SPIN_WPLUS, -1),
-                                        style=wx.ALIGN_RIGHT)
+                        c = wx.SpinCtrlDouble(panel, name=itemprop["name"],
+                                              size=(80 + SPIN_WPLUS, -1), style=wx.ALIGN_RIGHT)
                         rng = list(c.Range)
-                        if "min" in itemprop: rng[0] = min(itemprop["min"], 2**30) # SpinCtrl limit
-                        if "max" in itemprop: rng[1] = min(itemprop["max"], 2**30)
+                        if "min" in itemprop: rng[0] = itemprop["min"]
+                        if "max" in itemprop: rng[1] = itemprop["max"]
                         c.SetRange(*rng)
+                        c.SetDigits(0)
                         if itemprop["name"] in row: c.Value = row[itemprop["name"]]
-                        c.Bind(wx.EVT_TEXT, make_value_handler(c, itemprop, rowindex=i))
+                        c.Bind(wx.EVT_TEXT,           make_value_handler(c, itemprop, rowindex=i))
+                        c.Bind(wx.EVT_SPINCTRLDOUBLE, make_value_handler(c, itemprop, rowindex=i))
                         bsizer.Add(c, flag=wx.GROW)
                     elif "window" == itemprop.get("type"):
                         c = wx.StaticText(panel)
@@ -1607,16 +1610,17 @@ def build(plugin, panel):
         elif "number" == prop.get("type"):
             c1 = wx.StaticText(panel, label=prop.get("label", prop["name"]),
                                name="%s_label" % prop["name"])
-            c2 = wx.SpinCtrl(panel, name=prop["name"], size=(80 + SPIN_WPLUS, -1),
-                             style=wx.ALIGN_RIGHT)
+            c2 = wx.SpinCtrlDouble(panel, name=prop["name"], size=(100 + SPIN_WPLUS, -1),
+                                   style=wx.ALIGN_RIGHT)
             rng = list(c2.Range)
-            if "min" in prop: rng[0] = min(prop["min"], 2**30) # SpinCtrl limit
-            if "max" in prop: rng[1] = min(prop["max"], 2**30)
+            if "min" in prop: rng[0] = prop["min"]
+            if "max" in prop: rng[1] = prop["max"]
             c2.SetRange(*rng)
+            c2.SetDigits(0)
             c2.Value = state[prop["name"]]
             if prop.get("readonly"): c2.Enable(False)
-            c2.Bind(wx.EVT_TEXT,     make_value_handler(c2, prop))
-            c2.Bind(wx.EVT_SPINCTRL, make_value_handler(c2, prop))
+            c2.Bind(wx.EVT_TEXT,           make_value_handler(c2, prop))
+            c2.Bind(wx.EVT_SPINCTRLDOUBLE, make_value_handler(c2, prop))
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1))

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  27.01.2024
+@modified  17.06.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -72,7 +72,7 @@ class ArmyPlugin(object):
         self._hero     = None
         self._panel    = panel  # Plugin contents panel
         self._state    = []     # [{"name": "Roc", "count": 6}, {}, ]
-        self._ctrls    = []     # [{"name": wx.ComboBox, "count": wx.SpinCtrl}, ]
+        self._ctrls    = []     # [{"name": wx.ComboBox, "count": wx.SpinCtrlDouble}, ]
 
 
     def props(self):
@@ -201,7 +201,8 @@ class ArmyPlugin(object):
         def after():
             if not self._panel: return
             for c in self._panel.Children:
-                if isinstance(c, wx.SpinCtrl) and not c.Shown: c.Show(), c.Hide()
+                if isinstance(c, (wx.SpinCtrl, wx.SpinCtrlDouble)) and not c.Shown:
+                    c.Show(), c.Hide()
             wx.CallAfter(lambda: self._panel and self._panel.Refresh())
         wx.CallLater(100, after)  # Hidden SpinCtrl arrows can become visible on colour change
 
