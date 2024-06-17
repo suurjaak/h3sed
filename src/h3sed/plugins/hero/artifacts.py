@@ -253,7 +253,8 @@ class ArtifactsPlugin(object):
                 if value and value not in choices: choices = [value] + cc
                 if choices != ctrl.GetItems(): ctrl.SetItems(choices)
                 ctrl.Value = value or ""
-                self._ctrls["%s-info" % name].Label = format_stats(self, prop, self._state, STATS)
+                infoctrl = self._ctrls["%s-info" % name]
+                infoctrl.Label = infoctrl.ToolTip = format_stats(self, prop, self._state, STATS)
         else:
             self._ctrls, result = gui.build(self, self._panel), True
         self.update_slots()
