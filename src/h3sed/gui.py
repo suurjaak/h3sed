@@ -1491,7 +1491,7 @@ def build(plugin, panel):
         c = wx.StaticText(panel, label=value)
         ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         c.ToolTip = tooltip
-        sizer.Add(c, pos=pos)
+        sizer.Add(c, pos=pos, flag=wx.ALIGN_CENTER_VERTICAL)
         result["%s-info" % prop["name"]] = c
 
     def make_extra(prop, sizer, pos):
