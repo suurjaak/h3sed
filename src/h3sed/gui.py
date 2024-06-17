@@ -1487,8 +1487,10 @@ def build(plugin, panel):
 
     def make_info(prop, sizer, pos):
         value = prop["info"](plugin, prop, state) if callable(prop["info"]) else prop["info"]
+        value, tooltip = (value * 2)[:2] if isinstance(value, (list, tuple)) else (value, value)
         c = wx.StaticText(panel, label=value)
         ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
+        c.ToolTip = tooltip
         sizer.Add(c, pos=pos)
         result["%s-info" % prop["name"]] = c
 
@@ -1499,7 +1501,7 @@ def build(plugin, panel):
             c.Bind(wx.EVT_BUTTON, functools.partial(opts["handler"], plugin, prop, state))
         if c:
             if opts.get("tooltip"): c.ToolTip = opts["tooltip"]
-            sizer.Add(c, pos=pos, flag=wx.GROW)
+            sizer.Add(c, pos=pos)
             result["%s-extra" % prop["name"]] = c
 
 

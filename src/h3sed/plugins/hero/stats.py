@@ -25,6 +25,7 @@ from h3sed import metadata
 from h3sed import plugins
 from h3sed.lib import util
 from h3sed.plugins.hero import POS
+from h3sed.plugins.hero.artifacts import UIPROPS as ARTIFACT_PROPS
 
 
 logger = logging.getLogger(__package__)
@@ -42,6 +43,7 @@ UIPROPS = [{
     "len":    1,
     "min":    metadata.PrimaryAttributeRange[0],
     "max":    metadata.PrimaryAttributeRange[1],
+    "info":   None,  # Populated later
 }, {
     "name":   "defense",
     "label":  "Defense",
@@ -49,6 +51,7 @@ UIPROPS = [{
     "len":    1,
     "min":    metadata.PrimaryAttributeRange[0],
     "max":    metadata.PrimaryAttributeRange[1],
+    "info":   None,  # Populated later
 }, {
     "name":   "power",
     "label":  "Spell Power",
@@ -56,6 +59,7 @@ UIPROPS = [{
     "len":    1,
     "min":    metadata.PrimaryAttributeRange[0],
     "max":    metadata.PrimaryAttributeRange[1],
+    "info":   None,  # Populated later
 }, {
     "name":   "knowledge",
     "label":  "Knowledge",
@@ -63,6 +67,7 @@ UIPROPS = [{
     "len":    1,
     "min":    metadata.PrimaryAttributeRange[0],
     "max":    metadata.PrimaryAttributeRange[1],
+    "info":   None,  # Populated later
 }, {
     "name":   "exp",
     "label":  "Experience",
@@ -165,6 +170,8 @@ class StatsPlugin(object):
         IDS = metadata.Store.get("ids", self._savefile.version)
         for prop in UIPROPS:
             if "value" in prop: prop = dict(prop, value=IDS[prop["label"]])
+            if prop["name"] in metadata.PrimaryAttributes and prop.get("info", prop) is None:
+                prop = dict(prop, info=self.format_stat_bonus)
             if prop["name"] in ("exp", "level") and "extra" in prop:
                 prop = dict(prop, extra=dict(prop["extra"], handler=self.on_experience_level))
             result.append(prop)
@@ -261,6 +268,31 @@ class StatsPlugin(object):
                        flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, {TARGET: value})
         self.parent.command(callable, name="set %s" % label)
+
+
+    def format_stat_bonus(self, plugin, prop, state, artifact_stats=None):
+        """
+        Return (text, tooltip) for primaty attribute bonuses or "" if no bonus,
+        like ("base 3 +1 Armo.. +2 Cent..", "base 3\n+1 Armor of Wonder\n+2 Centaur's Axe").
+        """
+        if not getattr(self._hero, "artifacts", None): return
+        MAXLEN = 65
+        STATS = artifact_stats or metadata.Store.get("artifact_stats", plugin._savefile.version)
+        IDX = list(metadata.PrimaryAttributes).index(prop["name"])
+        base = self._hero.basestats[prop["name"]]
+        artifacts = [self._hero.artifacts[x["name"]] for x in ARTIFACT_PROPS
+                     if self._hero.artifacts.get(x["name"])]
+        artifacts = [n for n in artifacts if n in STATS and STATS[n][IDX]]
+        if not artifacts:
+            return ""
+
+        pairs = [(("%s" if v < 0 else "+%s") % v, k) for k in artifacts for v in [STATS[k][IDX]]]
+        textpairs, toolpairs = ([(v, k[:i] + ".." if i else k) for v, k in pairs] for i in (4, 0))
+        text    = "base %s %s"  % (base, " " .join(map(" ".join, textpairs)))
+        tooltip = "base %s\n%s" % (base, "\n".join(map(" ".join, toolpairs)))
+        if len(tooltip) <= MAXLEN: text = tooltip.replace("\n", " ")  # Show full text if fits
+        if len(text) > MAXLEN + 4: text = text[:MAXLEN] + " ..."  # Shorten further if too long
+        return text, tooltip
 
 
     def parse(self, heroes):
