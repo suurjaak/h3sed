@@ -694,6 +694,19 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if filename1 and filename2 and filename1 in self.files:
             self.files[filename2] = self.files.pop(filename1)
             self.files[filename2]["filename"] = filename2
+        if filename1 and filename2 and filename1 != filename2:
+            # Add filename to Recent Files menu and conf, if needed
+            if filename2 in conf.RecentFiles: # Remove earlier position
+                idx = conf.RecentFiles.index(filename2)
+                try: self.history_file.RemoveFileFromHistory(idx)
+                except Exception: pass
+            self.history_file.AddFileToHistory(filename2)
+            util.add_unique(conf.RecentFiles, filename2, -1,
+                            conf.MaxRecentFiles)
+            conf.SelectedPath = filename2
+            self.on_refresh_dir_ctrl()
+            self.dir_ctrl.ExpandPath(conf.SelectedPath)
+            conf.save()
 
         if ready or rename: self.update_notebook_header()
 
@@ -924,7 +937,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.load_savefile_pages([event.EventObject.GetPath()])
 
 
-    def on_refresh_dir_ctrl(self, event):
+    def on_refresh_dir_ctrl(self, event=None):
         """Handler for pressing F5 on directory tab, refreshes contents."""
         event and event.Skip()
         if isinstance(event, wx.KeyEvent) and wx.WXK_F5 != event.KeyCode: return
