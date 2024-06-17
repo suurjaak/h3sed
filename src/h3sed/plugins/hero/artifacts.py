@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  15.06.2024
+@modified  17.06.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -27,7 +27,7 @@ logger = logging.getLogger(__package__)
 
 
 def format_stats(plugin, prop, state, artifact_stats=None):
-    """Return item primaty stats modifer text like "+1 Attack, +1 Defense", or "" if no effect."""
+    """Return item primaty stats modifier text like "+1 Attack, +1 Defense", or "" if no effect."""
     value = state.get(prop.get("name"))
     if not value: return ""
     STATS = artifact_stats or metadata.Store.get("artifact_stats", plugin._savefile.version)
