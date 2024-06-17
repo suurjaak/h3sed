@@ -8,6 +8,7 @@ CHANGELOG
 - fix game version name not being fully visible (issue #11)
 - fix not being able to modify experience points over 2^30
 - cap hero level at 75 (74 in Horn of the Abyss)
+- cap hero level at 2^31 - 1 instead of 2^32 - 1
 
 
 2.4, 2024-06-14

@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  16.06.2024
+@modified  17.06.2024
 ------------------------------------------------------------------------------
 """
 import functools
@@ -69,7 +69,7 @@ UIPROPS = [{
     "type":   "number",
     "len":    4,
     "min":    0,
-    "max":    2**32 - 1,
+    "max":    2**31 - 1,
     "extra":  {
         "type":     "button",
         "label":    "Set from level",
