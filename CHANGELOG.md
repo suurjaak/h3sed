@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-2.5, 2024-06-17
+2.5, 2024-06-18
 ---------------
 - add save-button to individual heroes
 - add buttons to set hero level from experience and vice versa
@@ -10,6 +10,7 @@ CHANGELOG
 - fix not showing Pikeman units in hero army (issue #12)
 - fix renamed file not being added to recent files
 - fix not being able to modify experience points over 2^30
+- add opened heroes to recent heroes list upon file rename
 - cap hero level at 75 (74 in Horn of the Abyss)
 - cap hero level at 2^31 - 1 instead of 2^32 - 1
 

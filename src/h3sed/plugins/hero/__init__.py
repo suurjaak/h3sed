@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  15.06.2024
+@modified  18.06.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -523,7 +523,7 @@ class HeroPlugin(object):
 
 
     def action(self, **kwargs):
-        """Handler for action (load=hero name or index) or (save=True, ?spans=[..])."""
+        """Handler for action (load=hero name|index) or (save=True, ?rename=True, ?spans=[..])."""
         if kwargs.get("load") is not None:
             value = kwargs["load"]
             if isinstance(value, int):
@@ -532,13 +532,20 @@ class HeroPlugin(object):
             if index >= 0 and self._heroes: self.select_hero(index)
         if kwargs.get("save"):
             tabs = self._ctrls["tabs"]
+            heroes_open = []
             for index, hero in enumerate(self._heroes):
                 if kwargs.get("spans") \
                 and not any(a <= hero.span[0] and hero.span[1] <= b for a, b in kwargs["spans"]):
                     continue  # for index, hero
                 hero.yamls1[:], hero.yamls2[:] = (hero.yamls2 or hero.yamls1), []
                 page = next((p for p, i in self._pages.items() if i == index), None)
-                if page is not None: tabs.SetPageText(tabs.GetPageIndex(page), hero.name)
+                if page is not None:
+                    heroes_open.append(hero)
+                    tabs.SetPageText(tabs.GetPageIndex(page), hero.name)
+            if kwargs.get("rename") and heroes_open:
+                evt = gui.SavefilePageEvent(self._panel.Id)
+                evt.SetClientData(dict(plugin=self.name, load=set(x.name for x in heroes_open)))
+                wx.PostEvent(self._panel, evt)
 
 
     def reparse(self):

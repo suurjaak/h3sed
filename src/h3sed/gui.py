@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    17.06.2024
+@modified    18.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -682,9 +682,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         page, idx = event.source, self.notebook.GetPageIndex(event.source)
 
         if all(getattr(event, k, None) for k in ("plugin", "load")) and "hero" == event.plugin:
-            item = [event.load, page.filename]
-            self.history_hero.AddItem(item)
-            util.add_unique(conf.RecentHeroes, item, -1, conf.MaxRecentHeroes)
+            names = (event.load if isinstance(event.load, (list, set, tuple)) else [event.load])
+            for hero_name in names:
+                item = [hero_name, page.filename]
+                self.history_hero.AddItem(item)
+                util.add_unique(conf.RecentHeroes, item, -1, conf.MaxRecentHeroes)
             conf.save()
             return
 
@@ -1256,7 +1258,8 @@ class SavefilePage(wx.Panel):
             else:
                 evt = SavefilePageEvent(self.Id, source=self, modified=False)
             wx.PostEvent(self.Parent, evt)
-        for p in self.plugins: p.action(save=True, **{"spans": spans} if spans else {})
+        actionargs = dict(save=True, rename=rename, **{"spans": spans} if spans else {})
+        for p in self.plugins: p.action(**actionargs)
         guibase.status("Saved %s." % filename2, flash=conf.StatusShortFlashLength)
         return True
 
