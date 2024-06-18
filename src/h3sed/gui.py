@@ -477,6 +477,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.files[filename] = opts
         conf.FilesOpen.add(filename)
         conf.SelectedPath = filename
+        self.on_refresh_dir_ctrl()
         self.dir_ctrl.ExpandPath(conf.SelectedPath)
         conf.save()
         for i in range(self.notebook.GetPageCount()):
