@@ -444,8 +444,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 conf.save()
         elif not silent:
             err = ValueError("No such file.")
-            wx.MessageBox("Nonexistent file: %s." % filename,
-                          conf.Title, wx.OK | wx.ICON_ERROR)
+            wx.MessageBox("No such file:\n\n%s." % filename, conf.Title, wx.OK | wx.ICON_ERROR)
         return savefile, err
 
 
@@ -495,23 +494,27 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         subpages for them, if not already created, and focus the subpages.
         Skips files that are not recognizable as savefiles.
         """
-        savefiles, notsave_filenames, files0 = {}, [], set(self.files)
+        savefiles, notsave_filenames, missing_filenames, files0 = {}, [], [], set(self.files)
         for f in filenames:
-            if f in self.files: savefile, err = self.files[f]["savefile"], None
-            else: savefile, err = self.load_savefile(f, silent=True)
-            if savefile: savefiles[f] = savefile
+            if f in self.files: savefiles[f] = self.files[f]["savefile"]
+            elif not os.path.exists(f): missing_filenames.append(f)
             else:
-                notsave_filenames.append(f)
-                err = err if isinstance(err, ValueError) else "Not a valid gzipped file?"
-                guibase.status("Failed to open %s. %s", f, err, log=True, flash=True)
+                savefile, err = self.load_savefile(f, silent=True)
+                if savefile: savefiles[f] = savefile
+                else:
+                    notsave_filenames.append(f)
+                    err = err if isinstance(err, ValueError) else "Not a valid gzipped file?"
+                    guibase.status("Failed to open %s. %s", f, err, log=True, flash=True)
 
         for filename, savefile in savefiles.items():
             self.load_savefile_page(filename, savefile)
-        if notsave_filenames:
-            t = "valid savefiles"
-            if len(notsave_filenames) == 1: t = "a " + t[:-1]
-            wx.MessageBox("Not %s:\n\n%s" % (t, "\n".join(notsave_filenames)),
-                          conf.Title, wx.OK | wx.ICON_ERROR)
+        if notsave_filenames or missing_filenames:
+            texts = []
+            if missing_filenames:
+                texts.append("No such file:\n\n%s" % ("\n".join(missing_filenames)))
+            if notsave_filenames:
+                texts.append("Not a valid savefile:\n\n%s" % ("\n".join(notsave_filenames)))
+            wx.MessageBox("\n\n".join(texts), conf.Title, wx.OK | wx.ICON_ERROR)
 
 
     def populate_statusbar(self):
@@ -931,8 +934,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def on_open_current_savefile(self, event=None):
         """Handler for clicking to open selected file from dir list."""
-        if os.path.isfile(self.dir_ctrl.GetPath()):
-            self.load_savefile_pages([self.dir_ctrl.GetPath()])
+        self.load_savefile_pages([self.dir_ctrl.GetPath()])
 
 
     def on_open_from_dir_ctrl(self, event):

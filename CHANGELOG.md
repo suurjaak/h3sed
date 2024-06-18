@@ -13,6 +13,7 @@ CHANGELOG
 - add opened heroes to recent heroes list upon file rename
 - cap hero level at 75 (74 in Horn of the Abyss)
 - cap hero level at 2^31 - 1 instead of 2^32 - 1
+- show different error on trying to open files no longer on disk
 
 
 2.4, 2024-06-14
