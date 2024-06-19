@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  13.06.2024
+@modified  19.06.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -126,7 +126,7 @@ def adapt(source, category, value):
     - "regex" for hero-plugin:      dropping one slot from artifacts
     """
     root = util.get(source, "parent", default=source)
-    savefile = getattr(root, "savefile")
+    savefile = getattr(root, "savefile", None)
     if not savefile or savefile.version != PROPS["name"]: return value
     is_new_format = savefile.match_byte_ranges(BytePositions, NewVersionByteRanges)
 

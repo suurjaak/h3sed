@@ -187,7 +187,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         logger.info("Started application.")
         def after():
             if not self: return
+            wildcards = metadata.wildcards()
             plugins.init()
+            if wildcards != metadata.wildcards():
+                self.set_savegame_filters(self.dir_ctrl) # Some plugin changed extensions
         wx.CallAfter(after)
 
 
