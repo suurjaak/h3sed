@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    18.06.2024
+@modified    19.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -180,12 +180,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.Center(wx.HORIZONTAL)
             self.Position.top = 50
         self.dir_ctrl.SetFocus()
-        if conf.Positions.get("filefilter_index") \
-        and conf.Positions["filefilter_index"] < len(metadata.wildcard()):
-            self.dir_ctrl.UnselectAll()
-            self.dir_ctrl.SetFilterIndex(conf.Positions["filefilter_index"])
-            self.dir_ctrl.GetFilterListCtrl().Select(conf.Positions["filefilter_index"])
-            self.dir_ctrl.ReCreateTree()
+        self.set_savegame_filters(self.dir_ctrl)
         if conf.SelectedPath: self.dir_ctrl.ExpandPath(conf.SelectedPath)
 
         self.Show(True)
@@ -208,12 +203,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         button_open    = self.button_open    = wx.Button(page, label="&Open")
         button_refresh = self.button_refresh = wx.Button(page, label="&Refresh")
         button_browse  = self.button_browse  = wx.Button(page, label="&Browse..")
-        dir_ctrl = self.dir_ctrl = wx.GenericDirCtrl(page,
-            style=wx.DIRCTRL_SHOW_FILTERS, filter=metadata.wildcard(), defaultFilter=0)
-        dialog = self.dialog_browse = wx.FileDialog(
-            parent=self, message="Select file", wildcard=metadata.wildcard(),
-            style=wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.RESIZE_BORDER
-        )
+        dir_ctrl = self.dir_ctrl = wx.GenericDirCtrl(page, filter="*.*", style=wx.DIRCTRL_SHOW_FILTERS)
 
         text_file.SetEditable(False)
         button_open.SetDefault()
@@ -476,8 +466,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.files[filename] = opts
         conf.FilesOpen.add(filename)
         conf.SelectedPath = filename
-        self.on_refresh_dir_ctrl()
-        self.dir_ctrl.ExpandPath(conf.SelectedPath)
+        self.refresh_dir_ctrl(conf.SelectedPath)
         conf.save()
         for i in range(self.notebook.GetPageCount()):
             if self.notebook.GetPage(i) == page:
@@ -525,6 +514,55 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         WPLUS = 10 if "nt" == os.name else 30
         self.StatusBar.SetStatusStyles([wx.SB_SUNKEN] * 3)
         self.StatusBar.SetStatusWidths([-2, extent1 + WPLUS, extent2 + WPLUS])
+
+
+    def refresh_dir_ctrl(self, path=None):
+        """Refreshes files in directory listing, selects given or current file."""
+        path = path or self.dir_ctrl.GetPath()
+        pos1 = self.dir_ctrl.TreeCtrl.GetScrollPos(wx.VERTICAL)
+        wildcards = metadata.wildcards()
+        self.page_main.Freeze()
+        try:
+            # Workaround for DirCtrl raising error if any selection during populate
+            self.dir_ctrl.UnselectAll()
+            self.dir_ctrl.ReCreateTree()
+            self.dir_ctrl.ExpandPath(path)
+            filter1 = self.dir_ctrl.FilterIndex
+            for index in (0, len(wildcards) - 1):  # Expand filter until file visible
+                if self.dir_ctrl.GetPath() != path and (index or self.dir_ctrl.FilterIndex):
+                    self.dir_ctrl.UnselectAll()
+                    self.dir_ctrl.SetFilterIndex(index)
+                    self.dir_ctrl.FilterListCtrl.Select(index)
+                    self.dir_ctrl.ReCreateTree()
+                    self.dir_ctrl.ExpandPath(path)
+            if filter1 != self.dir_ctrl.FilterIndex:
+                conf.Positions["filefilter_index"] = self.dir_ctrl.FilterIndex
+            conf.SelectedPath = path
+            conf.save()
+        finally:
+            self.page_main.Thaw()
+            pos2 = self.dir_ctrl.TreeCtrl.GetScrollPos(wx.VERTICAL)
+            self.dir_ctrl.TreeCtrl.ScrollLines(pos1 - pos2)
+
+
+    def set_savegame_filters(self, ctrl):
+        """Sets savegame extensions filter and current choice to file dialog or dir ctrl."""
+        wildcards = metadata.wildcards()
+        if ctrl is self.dir_ctrl:
+            path = ctrl.GetPath()
+            ctrl.UnselectAll()
+            ctrl.SetFilter("|".join(wildcards))
+            ctrl.ReCreateTree()
+            ctrl.ExpandPath(path)
+        else:
+             ctrl.SetWildcard("|".join(wildcards))
+             path = conf.SelectedPath
+             if path and os.path.isfile(path): path = os.path.dirname(path)
+             if path: ctrl.SetDirectory(path)
+        index = conf.Positions.get("filefilter_index")
+        if index and index < len(wildcards):
+            ctrl.SetFilterIndex(index)
+            if ctrl is self.dir_ctrl: ctrl.FilterListCtrl.Select(index)
 
 
     def get_unique_tab_title(self, title):
@@ -710,8 +748,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             util.add_unique(conf.RecentFiles, filename2, -1,
                             conf.MaxRecentFiles)
             conf.SelectedPath = filename2
-            self.on_refresh_dir_ctrl()
-            self.dir_ctrl.ExpandPath(conf.SelectedPath)
+            self.refresh_dir_ctrl(conf.SelectedPath)
             conf.save()
 
         if ready or rename: self.update_notebook_header()
@@ -816,9 +853,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
 
     def on_browse(self, event=None):
-        """Handler for clicking Browse-button, opens file dialog."""
-        if wx.ID_OK != self.dialog_browse.ShowModal(): return
-        self.dir_ctrl.SetPath(self.dialog_browse.GetPath())
+        """Handler for clicking Browse-button, opens file dialog and selects file in dir ctrl."""
+        with wx.FileDialog(parent=self, message="Select file",
+            style=wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.RESIZE_BORDER
+        ) as dialog:
+            self.set_savegame_filters(dialog)
+            if wx.ID_OK == dialog.ShowModal():
+                self.refresh_dir_ctrl(dialog.GetPath())
 
 
     def on_choose_filter(self, event):
@@ -878,11 +919,12 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         Handler for open savefile menu or button, displays a file dialog and
         loads the chosen file.
         """
-        dialog = wx.FileDialog(self, message="Open", wildcard=metadata.wildcard(),
+        with wx.FileDialog(self, message="Open",
             style=wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_OPEN | wx.RESIZE_BORDER
-        )
-        if wx.ID_OK == dialog.ShowModal():
-            self.load_savefile_pages(dialog.GetPaths())
+        ) as dialog:
+            self.set_savegame_filters(dialog)
+            if wx.ID_OK == dialog.ShowModal():
+                self.load_savefile_pages(dialog.GetPaths())
 
 
     def on_open_savefile_event(self, event):
@@ -916,6 +958,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         filename = event.EventObject.GetPath()
         self.text_file.Value = filename if os.path.isfile(filename) else ""
         self.button_open.Enable(os.path.isfile(filename))
+        if self.Shown: conf.SelectedPath = filename
         self.update_fileinfo()
 
 
@@ -942,22 +985,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.load_savefile_pages([event.EventObject.GetPath()])
 
 
-    def on_refresh_dir_ctrl(self, event=None):
+    def on_refresh_dir_ctrl(self, event):
         """Handler for pressing F5 on directory tab, refreshes contents."""
-        event and event.Skip()
+        event.Skip()
         if isinstance(event, wx.KeyEvent) and wx.WXK_F5 != event.KeyCode: return
-        path = self.dir_ctrl.Path
-        pos1 = self.dir_ctrl.TreeCtrl.GetScrollPos(wx.VERTICAL)
-        self.page_main.Freeze()
-        try:
-            # Workaround for DirCtrl raising error if any selection during populate
-            self.dir_ctrl.UnselectAll()
-            self.dir_ctrl.ReCreateTree()
-            self.dir_ctrl.ExpandPath(path)
-        finally:
-            self.page_main.Thaw()
-            pos2 = self.dir_ctrl.TreeCtrl.GetScrollPos(wx.VERTICAL)
-            self.dir_ctrl.TreeCtrl.ScrollLines(pos1 - pos2)
+        self.refresh_dir_ctrl()
 
 
     def on_exit(self, event=None):
@@ -1167,7 +1199,7 @@ class SavefilePage(wx.Panel):
         if rename:
             title = "Save %s as.." % os.path.split(self.filename)[-1]
             dialog = wx.FileDialog(self,
-                message=title, wildcard=metadata.wildcard(),
+                message=title, wildcard="|".join(metadata.wildcards()),
                 defaultDir=os.path.split(self.filename)[0],
                 defaultFile=os.path.basename(self.filename),
                 style=wx.FD_OVERWRITE_PROMPT | wx.FD_SAVE | wx.RESIZE_BORDER
@@ -1179,6 +1211,7 @@ class SavefilePage(wx.Panel):
                 "%s is already open in %s." % (filename2, conf.Title),
                 conf.Title, wx.OK | wx.ICON_WARNING
             )
+            dialog.Destroy()
         rename = (filename1 != filename2)
         changes = "\n\n".join(p.get_changes(html=False) for p in self.plugins
                               if hasattr(p, "get_changes"))
