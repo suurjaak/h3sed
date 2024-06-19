@@ -12,7 +12,7 @@ CHANGELOG
 - fix not being able to modify experience points over 2^30
 - add opened heroes to recent heroes list upon file rename
 - cap hero level at 75 (74 in Horn of the Abyss)
-- cap hero level at 2^31 - 1 instead of 2^32 - 1
+- cap hero experience at 2^31 - 1 instead of 2^32 - 1
 - show different error on trying to open files no longer on disk
 - use current directory and extension filter in file dialogs
 
