@@ -181,7 +181,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.Position.top = 50
         self.dir_ctrl.SetFocus()
         self.set_savegame_filters(self.dir_ctrl)
-        if conf.SelectedPath: self.dir_ctrl.ExpandPath(conf.SelectedPath)
+        if conf.SelectedPath: self.refresh_dir_ctrl(conf.SelectedPath)
 
         self.Show(True)
         logger.info("Started application.")
@@ -522,8 +522,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def refresh_dir_ctrl(self, path=None):
         """Refreshes files in directory listing, selects given or current file."""
         path = path or self.dir_ctrl.GetPath()
-        pos1 = self.dir_ctrl.TreeCtrl.GetScrollPos(wx.VERTICAL)
-        wildcards = metadata.wildcards()
         self.page_main.Freeze()
         try:
             # Workaround for DirCtrl raising error if any selection during populate
@@ -531,7 +529,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.dir_ctrl.ReCreateTree()
             self.dir_ctrl.ExpandPath(path)
             filter1 = self.dir_ctrl.FilterIndex
-            for index in (0, len(wildcards) - 1):  # Expand filter until file visible
+            for index in (0, len(metadata.wildcards()) - 1):  # Expand filter until file visible
                 if self.dir_ctrl.GetPath() != path and (index or self.dir_ctrl.FilterIndex):
                     self.dir_ctrl.UnselectAll()
                     self.dir_ctrl.SetFilterIndex(index)
@@ -544,8 +542,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             conf.save()
         finally:
             self.page_main.Thaw()
-            pos2 = self.dir_ctrl.TreeCtrl.GetScrollPos(wx.VERTICAL)
-            self.dir_ctrl.TreeCtrl.ScrollLines(pos1 - pos2)
+        if "linux" in sys.platform:
+            wx.CallLater(100, lambda: c and c.EnsureVisibile(c.Selection), self.dir_ctrl.TreeCtrl)
 
 
     def set_savegame_filters(self, ctrl):
