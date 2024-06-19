@@ -12,7 +12,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.08.2023
+@modified    19.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -61,7 +61,7 @@ class GUILogHandler(logging.Handler):
 
     def __init__(self):
         self.deferred = [] # Messages logged before main window available
-        super(self.__class__, self).__init__()
+        super(GUILogHandler, self).__init__()
 
 
     def emit(self, record):

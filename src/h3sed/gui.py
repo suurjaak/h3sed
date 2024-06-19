@@ -154,7 +154,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         class FileDrop(wx.FileDropTarget):
             """A simple file drag-and-drop handler for application window."""
             def __init__(self, window):
-                super(self.__class__, self).__init__()
+                super(FileDrop, self).__init__()
                 self.window = window
 
             def OnDropFiles(self, x, y, filenames):
@@ -457,10 +457,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                     self.notebook.SetSelection(i)
                     break # for i
             self.on_change_page()
-            return
+            return None
 
         savefile = savefile or self.load_savefile(filename)[0]
-        if not savefile: return
+        if not savefile: return None
 
         guibase.status("Opening page for %s." % filename, flash=True)
         tab_title = self.get_unique_tab_title(filename)
@@ -486,7 +486,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         subpages for them, if not already created, and focus the subpages.
         Skips files that are not recognizable as savefiles.
         """
-        savefiles, notsave_filenames, missing_filenames, files0 = {}, [], [], set(self.files)
+        savefiles, notsave_filenames, missing_filenames = {}, [], []
         for f in filenames:
             if f in self.files: savefiles[f] = self.files[f]["savefile"]
             elif not os.path.exists(f): missing_filenames.append(f)
@@ -558,10 +558,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             ctrl.ReCreateTree()
             ctrl.ExpandPath(path)
         else:
-             ctrl.SetWildcard("|".join(wildcards))
-             path = conf.SelectedPath
-             if path and os.path.isfile(path): path = os.path.dirname(path)
-             if path: ctrl.SetDirectory(path)
+            ctrl.SetWildcard("|".join(wildcards))
+            path = conf.SelectedPath
+            if path and os.path.isfile(path): path = os.path.dirname(path)
+            if path: ctrl.SetDirectory(path)
         index = conf.Positions.get("filefilter_index")
         if index and index < len(wildcards):
             ctrl.SetFilterIndex(index)
@@ -642,7 +642,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         for x in (self.menu_close, self.menu_reload, self.menu_save, self.menu_save_as,
                   self.menu_undo, self.menu_redo, self.menu_changes, self.menu_history):
             x.Enable(False)
-        self.Title, subtitle = conf.Title, ""
+        self.Title = conf.Title
 
         if isinstance(page, SavefilePage):
             self.page_file_latest = page
@@ -1043,15 +1043,21 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.pages_visited = [x for x in self.pages_visited if x != page]
             self.page_log.Show(False)
             return
-        elif not isinstance(page, SavefilePage): return event.Veto()
+        elif not isinstance(page, SavefilePage):
+            event.Veto()
+            return
 
         if conf.ConfirmUnsaved and page.get_unsaved():
             msg = "%s has modifications.\n\n" % page.filename
             resp = wx.MessageBox(msg + "Do you want to save the changes?", conf.Title,
                                  wx.YES | wx.NO | wx.CANCEL | wx.ICON_INFORMATION)
-            if wx.CANCEL == resp: return event.Veto()
+            if wx.CANCEL == resp:
+                event.Veto()
+                return
             if wx.YES == resp:
-                if not page.save_file(): return event.Veto()
+                if not page.save_file():
+                    event.Veto()
+                    return
 
         page.undoredo.ClearCommands()
         page.undoredo.SetMenuStrings()
@@ -1177,9 +1183,9 @@ class SavefilePage(wx.Panel):
         try: self.savefile.read()
         except Exception as e:
             logger.exception("Error reloading %s.", self.filename)
-            return wx.MessageBox("Error reloading %s:\n\n%s" %
-                                 (self.filename, util.format_exc(e)),
-                                 wx.OK | wx.ICON_ERROR)
+            wx.MessageBox("Error reloading %s:\n\n%s" % (self.filename, util.format_exc(e)),
+                          wx.OK | wx.ICON_ERROR)
+            return
         self.undoredo.ClearCommands()
         self.undoredo.SetMenuStrings()
         evt = SavefilePageEvent(self.Id, source=self, modified=False)
@@ -1207,7 +1213,7 @@ class SavefilePage(wx.Panel):
                 defaultFile=os.path.basename(self.filename),
                 style=wx.FD_OVERWRITE_PROMPT | wx.FD_SAVE | wx.RESIZE_BORDER
             )
-            if wx.ID_OK != dialog.ShowModal(): return
+            if wx.ID_OK != dialog.ShowModal(): return False
 
             filename2 = dialog.GetPath()
             if filename1 != filename2 and filename2 in conf.FilesOpen: return wx.MessageBox(
@@ -1259,7 +1265,7 @@ class SavefilePage(wx.Panel):
                 logger.info("Saving backup file %s.", backupname)
                 try:
                     shutil.copy(filename2, backupname)
-                except Exception as e:
+                except Exception:
                     logger.warning("Error saving backup of %s as %s.",
                                    filename2, backupname, exc_info=True)
 
