@@ -182,7 +182,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.Position.top = 50
         self.dir_ctrl.SetFocus()
         self.set_savegame_filters(self.dir_ctrl)
-        if conf.SelectedPath: self.refresh_dir_ctrl(conf.SelectedPath)
 
         self.Show(True)
         logger.info("Started application.")
@@ -192,6 +191,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             plugins.init()
             if wildcards != metadata.wildcards():
                 self.set_savegame_filters(self.dir_ctrl) # Some plugin changed extensions
+            if conf.SelectedPath: self.refresh_dir_ctrl(conf.SelectedPath)
         wx.CallAfter(after)
 
 
@@ -547,7 +547,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         finally:
             self.page_main.Thaw()
         if "linux" in sys.platform:
-            wx.CallLater(100, lambda: c and c.EnsureVisibile(c.Selection), self.dir_ctrl.TreeCtrl)
+            wx.CallLater(100, lambda c: c and c.EnsureVisible(c.Selection), self.dir_ctrl.TreeCtrl)
 
 
     def set_savegame_filters(self, ctrl):
