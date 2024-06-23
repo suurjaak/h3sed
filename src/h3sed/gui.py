@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    19.06.2024
+@modified    23.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -221,13 +221,14 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         ColourManager.Manage(tree, "ForegroundColour", wx.SYS_COLOUR_WINDOWTEXT)
         ColourManager.Manage(tree, "BackgroundColour", wx.SYS_COLOUR_WINDOW)
 
-        page.Bind(wx.EVT_CHAR_HOOK, self.on_refresh_dir_ctrl)
+        page.Bind(wx.EVT_CHAR_HOOK,     self.on_key_dir_ctrl)
+        dir_ctrl.Bind(wx.EVT_CHAR_HOOK, self.on_key_dir_ctrl)
         dir_ctrl.Bind(wx.EVT_DIRCTRL_SELECTIONCHANGED, self.on_change_dir_ctrl)
         dir_ctrl.Bind(wx.EVT_DIRCTRL_FILEACTIVATED,    self.on_open_from_dir_ctrl)
         choice.Bind(wx.EVT_CHOICE,                     self.on_choose_filter)
         button_browse.Bind(wx.EVT_BUTTON,              self.on_browse)
         button_open.Bind(wx.EVT_BUTTON,                self.on_open_current_savefile)
-        button_refresh.Bind(wx.EVT_BUTTON,             self.on_refresh_dir_ctrl)
+        button_refresh.Bind(wx.EVT_BUTTON,             lambda e: self.refresh_dir_ctrl())
 
         hsizer.Add(text_file,      border=5, proportion=1, flag=wx.BOTTOM | wx.GROW)
         hsizer.Add(button_open,    border=5, flag=wx.BOTTOM | wx.LEFT)
@@ -564,6 +565,25 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if index and index < len(wildcards):
             ctrl.SetFilterIndex(index)
             if ctrl is self.dir_ctrl: ctrl.FilterListCtrl.Select(index)
+
+
+    def delete_path(self, path):
+        """Deletes specified path and refreshes file list after confirmation popup."""
+        if not os.path.exists(path): return
+        category = "directory" if os.path.isdir(path) else "file"
+        msg = "Delete this %s from disk?\n\n%s" % (category, path)
+        if wx.OK != wx.MessageBox(msg, conf.Title,
+                                  wx.OK | wx.CANCEL | wx.CANCEL_DEFAULT | wx.ICON_WARNING):
+            return
+        guibase.status("Deleting %s" % path, flash=conf.StatusShortFlashLength, log=True)
+        try:
+            (shutil.rmtree if "file" != category else os.unlink)(path)
+        except Exception as e:
+            logger.exception("Error deleting %s.", path)
+            wx.MessageBox("Error deleting %s:\n\n%s" % (path, util.format_exc(e)),
+                          wx.OK | wx.ICON_ERROR)
+        else:
+            self.refresh_dir_ctrl()
 
 
     def get_unique_tab_title(self, title):
@@ -986,11 +1006,15 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.load_savefile_pages([event.EventObject.GetPath()])
 
 
-    def on_refresh_dir_ctrl(self, event):
-        """Handler for pressing F5 on directory tab, refreshes contents."""
-        event.Skip()
-        if isinstance(event, wx.KeyEvent) and wx.WXK_F5 != event.KeyCode: return
-        self.refresh_dir_ctrl()
+    def on_key_dir_ctrl(self, event):
+        """Handler for keypress in main tab, refreshes contents or deletes file if F5/Del."""
+        if wx.WXK_F5 == event.KeyCode:
+            self.refresh_dir_ctrl()
+        elif self.dir_ctrl in (event.EventObject, event.EventObject.Parent) \
+        and event.KeyCode in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
+            self.delete_path(self.dir_ctrl.GetPath())
+        else:
+            event.Skip()
 
 
     def on_exit(self, event=None):
