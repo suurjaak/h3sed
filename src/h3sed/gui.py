@@ -73,6 +73,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         })
 
         self.files = {} # {filename: {name, title, savefile, page}, }
+        self.flags = {} # {name: various flags for UI flow}
         self.page_file_latest = None  # Last opened savefile page
         # List of Notebook pages user has visited, used for choosing page to
         # show when closing one.
@@ -195,7 +196,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
 
     def create_page_main(self, notebook):
-        """Creates the main page with directory list and buttons."""
+        """Creates the main page with files list and buttons."""
         page = self.page_main = wx.Panel(notebook)
         ColourManager.Manage(page, "BackgroundColour", "MainBgColour")
         notebook.AddPage(page, "Choose file")
@@ -221,11 +222,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         ColourManager.Manage(tree, "ForegroundColour", wx.SYS_COLOUR_WINDOWTEXT)
         ColourManager.Manage(tree, "BackgroundColour", wx.SYS_COLOUR_WINDOW)
 
-        page.Bind(wx.EVT_CHAR_HOOK,     self.on_key_dir_ctrl)
-        dir_ctrl.Bind(wx.EVT_CHAR_HOOK, self.on_key_dir_ctrl)
+        page.Bind(wx.EVT_CHAR_HOOK,                    self.on_key_dir_ctrl)
+        dir_ctrl.Bind(wx.EVT_CHAR_HOOK,                self.on_key_dir_ctrl)
         dir_ctrl.Bind(wx.EVT_DIRCTRL_SELECTIONCHANGED, self.on_change_dir_ctrl)
         dir_ctrl.Bind(wx.EVT_DIRCTRL_FILEACTIVATED,    self.on_open_from_dir_ctrl)
         choice.Bind(wx.EVT_CHOICE,                     self.on_choose_filter)
+        tree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK,        self.on_menu_dir_ctrl)
+        tree.Bind(wx.EVT_CONTEXT_MENU,                 self.on_menu_dir_ctrl)
         button_browse.Bind(wx.EVT_BUTTON,              self.on_browse)
         button_open.Bind(wx.EVT_BUTTON,                self.on_open_current_savefile)
         button_refresh.Bind(wx.EVT_BUTTON,             lambda e: self.refresh_dir_ctrl())
@@ -521,7 +524,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
 
     def refresh_dir_ctrl(self, path=None):
-        """Refreshes files in directory listing, selects given or current file."""
+        """Refreshes files list, selects given or current file."""
         path = path or self.dir_ctrl.GetPath()
         self.page_main.Freeze()
         try:
@@ -568,7 +571,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
 
     def delete_path(self, path):
-        """Deletes specified path and refreshes file list after confirmation popup."""
+        """Deletes specified path and refreshes files list after confirmation popup."""
         if not os.path.exists(path): return
         category = "directory" if os.path.isdir(path) else "file"
         msg = "Delete this %s from disk?\n\n%s" % (category, path)
@@ -651,7 +654,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """
         Handler for changing a page in the main Notebook, remembers the visit.
         """
-        if getattr(self, "_ignore_paging", False): return
+        if self.flags.get("ignore_paging"): return
         if event: event.Skip() # Pass event along to next handler
         page = self.notebook.GetCurrentPage()
         if not self.pages_visited or self.pages_visited[-1] != page:
@@ -681,7 +684,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         Handler for dragging notebook tabs, keeps main-tab first and log-tab last.
         """
         self.notebook.Freeze()
-        self._ignore_paging = True
+        self.flags["ignore_paging"] = True
         try:
             cur_page = self.notebook.GetCurrentPage()
             idx_main = self.notebook.GetPageIndex(self.page_main)
@@ -697,7 +700,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             if self.notebook.GetCurrentPage() != cur_page:
                 self.notebook.SetSelection(self.notebook.GetPageIndex(cur_page))
         finally:
-            delattr(self, "_ignore_paging")
+            self.flags.pop("ignore_paging", None)
             self.notebook.Thaw()
 
 
@@ -975,7 +978,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
 
     def on_change_dir_ctrl(self, event):
-        """Handler for selecting a file in dir list, refreshes file controls."""
+        """Handler for selecting a file in files list, refreshes file controls."""
         filename = event.EventObject.GetPath()
         self.text_file.Value = filename if os.path.isfile(filename) else ""
         self.button_open.Enable(os.path.isfile(filename))
@@ -997,12 +1000,12 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
 
     def on_open_current_savefile(self, event=None):
-        """Handler for clicking to open selected file from dir list."""
+        """Handler for clicking to open selected file from files list."""
         self.load_savefile_pages([self.dir_ctrl.GetPath()])
 
 
     def on_open_from_dir_ctrl(self, event):
-        """Handler for clicking to open selected files from directory list."""
+        """Handler for clicking to open selected files from files list."""
         self.load_savefile_pages([event.EventObject.GetPath()])
 
 
@@ -1015,6 +1018,68 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.delete_path(self.dir_ctrl.GetPath())
         else:
             event.Skip()
+
+
+    def on_menu_dir_ctrl(self, event):
+        """Handler for right-click or context menu on files list, opens popup menu."""
+        if isinstance(event, wx.TreeEvent):
+            if not event.Item or not event.Item.IsOk(): return
+            self.flags["ignore_dir_ctrl_menu"] = True # Avoid duplicate event from EVT_CONTEXT_MENU
+            self.dir_ctrl.SelectPath(self.dir_ctrl.GetPath(event.Item))
+        else:
+            if self.flags.pop("ignore_dir_ctrl_menu", False): return
+        self.open_menu_dir_ctrl()
+
+
+    def open_menu_dir_ctrl(self):
+        """Opens popup menu on files list for currently selected path."""
+        path = self.dir_ctrl.GetPath()
+        is_file, is_dir = os.path.isfile(path), os.path.isdir(path)
+        category = "directory" if is_dir else "file" if is_file else ""
+
+        def handler(event):
+            if item_name.Id == event.Id \
+            or item_copy.Id == event.Id:
+                with wx.TheClipboard: wx.TheClipboard.SetData(wx.TextDataObject(path))
+            elif item_open and item_open.Id == event.Id:
+                self.load_savefile_page(path)
+            elif item_folder.Id == event.Id:
+                util.select_file(path)
+            elif item_delete.Id == event.Id:
+                self.delete_path(path)
+            elif item_toggle and item_toggle.Id == event.Id:
+                item = self.dir_ctrl.TreeCtrl.Selection
+                if self.dir_ctrl.TreeCtrl.IsExpanded(item): self.dir_ctrl.TreeCtrl.Collapse(item)
+                else: self.dir_ctrl.ExpandPath(path)
+            elif item_refresh.Id == event.Id:
+                self.refresh_dir_ctrl()
+
+        menu = wx.Menu()
+        boldfont = self.Font.Bold()
+
+        item_name    = wx.MenuItem(menu, -1, os.path.basename(path) or path)
+        item_open    = wx.MenuItem(menu, -1, "&Open file") if is_file else None
+        item_folder  = wx.MenuItem(menu, -1, "&Go to directory")
+        item_copy    = wx.MenuItem(menu, -1, "&Copy path")
+        item_delete  = wx.MenuItem(menu, -1, "&Delete %s" % category)
+        item_toggle  = wx.MenuItem(menu, -1, "&Expand/collapse") if is_dir else None
+        item_refresh = wx.MenuItem(menu, -1, "&Refresh list")
+
+        item_name.Font = boldfont
+        item_folder.Enabled = item_delete.Enabled = is_file or is_dir
+
+        menu.Append(item_name)
+        menu.AppendSeparator()
+        menu.Append(item_open) if item_open else None
+        menu.Append(item_folder)
+        menu.Append(item_copy)
+        menu.AppendSeparator()
+        menu.Append(item_delete)
+        menu.Append(item_toggle) if item_toggle else None
+        menu.Append(item_refresh)
+
+        menu.Bind(wx.EVT_MENU, handler)
+        self.dir_ctrl.TreeCtrl.PopupMenu(menu)
 
 
     def on_exit(self, event=None):
@@ -1052,7 +1117,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         Handler for closing a page, asks the user about saving unsaved data,
         if any, removes page from main notebook.
         """
-        if getattr(self, "_ignore_paging", False): return
+        if self.flags.get("ignore_paging"): return
         if event.EventObject == self.notebook:
             page = self.notebook.GetPage(event.GetSelection())
         else:
