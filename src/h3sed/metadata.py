@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    19.06.2024
+@modified    23.06.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -1127,6 +1127,8 @@ class Savefile(object):
     def write(self, filename=None):
         """Writes out gzipped file."""
         filename = filename or self.filename
+        try: os.makedirs(os.path.dirname(filename))
+        except Exception: pass
         with gzip.GzipFile(filename, "wb") as f: f.write(bytes(self.raw))
         self.raw0 = self.raw
         self.update_info(filename)
