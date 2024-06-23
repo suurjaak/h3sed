@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  16.06.2024
+@modified  23.06.2024
 ------------------------------------------------------------------------------
 """
 import logging
