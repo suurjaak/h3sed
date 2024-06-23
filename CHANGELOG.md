@@ -6,6 +6,7 @@ CHANGELOG
 - fix missing creatures in Horn of the Abyss (pull request #13)
 - fix Halfling having duplicate name Halfing (pull request #13)
 - fix Halfling Grenadier being named Halfing Grenadier (pull request #13)
+- add missing Energy Elemental in Horn of the Abyss
 
 
 2.5, 2024-06-19
