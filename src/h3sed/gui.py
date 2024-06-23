@@ -589,6 +589,57 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.refresh_dir_ctrl()
 
 
+    def open_menu_dir_ctrl(self):
+        """Opens popup menu on files list for currently selected path."""
+        path = self.dir_ctrl.GetPath()
+        is_file, is_dir = os.path.isfile(path), os.path.isdir(path)
+        category = "directory" if is_dir else "file" if is_file else ""
+
+        def handler(event):
+            if item_name.Id == event.Id \
+            or item_copy.Id == event.Id:
+                with wx.TheClipboard: wx.TheClipboard.SetData(wx.TextDataObject(path))
+            elif item_open and item_open.Id == event.Id:
+                self.load_savefile_page(path)
+            elif item_folder.Id == event.Id:
+                util.select_file(path)
+            elif item_delete.Id == event.Id:
+                self.delete_path(path)
+            elif item_toggle and item_toggle.Id == event.Id:
+                item = self.dir_ctrl.TreeCtrl.Selection
+                if self.dir_ctrl.TreeCtrl.IsExpanded(item): self.dir_ctrl.TreeCtrl.Collapse(item)
+                else: self.dir_ctrl.ExpandPath(path)
+            elif item_refresh.Id == event.Id:
+                self.refresh_dir_ctrl()
+
+        menu = wx.Menu()
+        boldfont = self.Font.Bold()
+
+        item_name    = wx.MenuItem(menu, -1, os.path.basename(path) or path)
+        item_open    = wx.MenuItem(menu, -1, "&Open file") if is_file else None
+        item_folder  = wx.MenuItem(menu, -1, "&Go to directory")
+        item_copy    = wx.MenuItem(menu, -1, "&Copy path")
+        item_delete  = wx.MenuItem(menu, -1, "&Delete %s" % category)
+        item_toggle  = wx.MenuItem(menu, -1, "&Expand/collapse") if is_dir else None
+        item_refresh = wx.MenuItem(menu, -1, "&Refresh list")
+
+        item_name.Font = boldfont
+        item_folder.Enabled = item_delete.Enabled = is_file or is_dir
+
+        menu.Append(item_name)
+        menu.AppendSeparator()
+        menu.Append(item_open) if item_open else None
+        menu.Append(item_folder)
+        menu.Append(item_copy)
+        menu.AppendSeparator()
+        menu.Append(item_delete)
+        menu.Append(item_toggle) if item_toggle else None
+        menu.Append(item_refresh)
+
+        menu.Bind(wx.EVT_MENU, handler)
+        self.dir_ctrl.TreeCtrl.PopupMenu(menu)
+
+
     def get_unique_tab_title(self, title):
         """
         Returns a title that is unique for the current notebook - if the
@@ -1029,57 +1080,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         else:
             if self.flags.pop("ignore_dir_ctrl_menu", False): return
         self.open_menu_dir_ctrl()
-
-
-    def open_menu_dir_ctrl(self):
-        """Opens popup menu on files list for currently selected path."""
-        path = self.dir_ctrl.GetPath()
-        is_file, is_dir = os.path.isfile(path), os.path.isdir(path)
-        category = "directory" if is_dir else "file" if is_file else ""
-
-        def handler(event):
-            if item_name.Id == event.Id \
-            or item_copy.Id == event.Id:
-                with wx.TheClipboard: wx.TheClipboard.SetData(wx.TextDataObject(path))
-            elif item_open and item_open.Id == event.Id:
-                self.load_savefile_page(path)
-            elif item_folder.Id == event.Id:
-                util.select_file(path)
-            elif item_delete.Id == event.Id:
-                self.delete_path(path)
-            elif item_toggle and item_toggle.Id == event.Id:
-                item = self.dir_ctrl.TreeCtrl.Selection
-                if self.dir_ctrl.TreeCtrl.IsExpanded(item): self.dir_ctrl.TreeCtrl.Collapse(item)
-                else: self.dir_ctrl.ExpandPath(path)
-            elif item_refresh.Id == event.Id:
-                self.refresh_dir_ctrl()
-
-        menu = wx.Menu()
-        boldfont = self.Font.Bold()
-
-        item_name    = wx.MenuItem(menu, -1, os.path.basename(path) or path)
-        item_open    = wx.MenuItem(menu, -1, "&Open file") if is_file else None
-        item_folder  = wx.MenuItem(menu, -1, "&Go to directory")
-        item_copy    = wx.MenuItem(menu, -1, "&Copy path")
-        item_delete  = wx.MenuItem(menu, -1, "&Delete %s" % category)
-        item_toggle  = wx.MenuItem(menu, -1, "&Expand/collapse") if is_dir else None
-        item_refresh = wx.MenuItem(menu, -1, "&Refresh list")
-
-        item_name.Font = boldfont
-        item_folder.Enabled = item_delete.Enabled = is_file or is_dir
-
-        menu.Append(item_name)
-        menu.AppendSeparator()
-        menu.Append(item_open) if item_open else None
-        menu.Append(item_folder)
-        menu.Append(item_copy)
-        menu.AppendSeparator()
-        menu.Append(item_delete)
-        menu.Append(item_toggle) if item_toggle else None
-        menu.Append(item_refresh)
-
-        menu.Bind(wx.EVT_MENU, handler)
-        self.dir_ctrl.TreeCtrl.PopupMenu(menu)
 
 
     def on_exit(self, event=None):
