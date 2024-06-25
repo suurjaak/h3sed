@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-2.6, 2024-06-23
+2.6, 2024-06-25
 ---------------
 - add option to delete from disk in files list
 - add right-click menu to files list
@@ -9,6 +9,7 @@ CHANGELOG
 - fix Halfling having duplicate name Halfing (pull request #13)
 - fix Halfling Grenadier being named Halfing Grenadier (pull request #13)
 - add missing Energy Elemental in Horn of the Abyss
+- ensure padding around file list selection upon refresh
 
 
 2.5, 2024-06-19

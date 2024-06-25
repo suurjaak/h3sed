@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    23.06.2024
+@modified    25.06.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -546,8 +546,24 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             conf.save()
         finally:
             self.page_main.Thaw()
-        if "linux" in sys.platform:
-            wx.CallLater(100, lambda c: c and c.EnsureVisible(c.Selection), self.dir_ctrl.TreeCtrl)
+        if "linux" in sys.platform:  # Linux appears to need time to lay out tree
+            wx.CallLater(100, self.ensure_selection_visible, self.dir_ctrl.TreeCtrl)
+        else: self.ensure_selection_visible(self.dir_ctrl.TreeCtrl)
+
+
+    def ensure_selection_visible(self, treectrl, padding=6):
+        """Ensures current selection is visible in wx.TreeCtrl, with N items of padding."""
+        if not treectrl: return
+        treectrl.EnsureVisible(treectrl.Selection)
+        horizon = {-1: 0, +1: 0}  # {direction: count visible}
+        for i, stepper in enumerate([treectrl.GetPrevVisible, treectrl.GetNextVisible]):
+            ptr = treectrl.Selection
+            while ptr:
+                ptr = stepper(ptr)
+                horizon[+1 if i else -1] += bool(ptr)
+        direction, visible = next((k, v) for k, v in horizon.items() if v == min(horizon.values()))
+        if visible < padding:
+            treectrl.ScrollLines(direction * (padding - visible))
 
 
     def set_savegame_filters(self, ctrl):
@@ -624,7 +640,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         item_refresh = wx.MenuItem(menu, -1, "&Refresh list")
 
         item_name.Font = boldfont
-        item_folder.Enabled = item_delete.Enabled = is_file or is_dir
 
         menu.Append(item_name)
         menu.AppendSeparator()
@@ -636,6 +651,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu.Append(item_toggle) if item_toggle else None
         menu.Append(item_refresh)
 
+        item_folder.Enabled = item_delete.Enabled = is_file or is_dir
         menu.Bind(wx.EVT_MENU, handler)
         self.dir_ctrl.TreeCtrl.PopupMenu(menu)
 
