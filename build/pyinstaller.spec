@@ -6,11 +6,10 @@ depending on current environment.
 Pyinstaller-provided names and variables: Analysis, EXE, PYZ, SPEC, TOC.
 
 @created   12.04.2020
-@modified  11.06.2024
+@modified  07.07.2024
 """
 import atexit
 import os
-import shutil
 import struct
 import sys
 
