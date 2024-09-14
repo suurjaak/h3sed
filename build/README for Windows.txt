@@ -14,7 +14,10 @@ allowing to edit any and all hero attributes:
 
 Attributes can be copied from one hero and pasted to another.
 
-Supports savegames from Shadow of Death and Horn of the Abyss.
+Hero data can be exported as HTML or spreadsheet.
+
+Supports savegames from: Restoration of Erathia, Armageddon's Blade, Shadow of Death,
+Heroes Chronicles, and Horn of the Abyss.
 
 Downloads at http://suurjaak.github.io/h3sed.
 
@@ -22,7 +25,8 @@ Downloads at http://suurjaak.github.io/h3sed.
 Usage
 -----
 
-Navigate the file view to Heroes3 games-folder, and open a savegame file to edit.
+Navigate the file view to Heroes3 games-folder and open a savegame file to edit,
+or drag and drop a savegame file onto the program window.
 
 Choose a hero to modify, change attributes to your liking, and save the file.
 Changes will be available in Heroes3 after loading the changed savegame.
@@ -31,6 +35,10 @@ Attributes from one hero can be copied to clipboard as text,
 and pasted onto another hero, overwriting their data.
 
 A timestamped backup copy is automatically created of the savegame file, one per day.
+
+Note: savegames from different releases of Armageddon's Blade may have different
+structure for artifacts and inventory. For working with savegames from an earlier
+version, uncheck "New format in Armageddon's Blade" in program menu File -> Options.
 
 **Warning:** as Heroes3 savefile format is not publicly known,
 loaded data and saved results may be invalid and cause problems in game.
