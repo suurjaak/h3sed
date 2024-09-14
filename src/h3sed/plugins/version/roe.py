@@ -7,17 +7,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  19.06.2024
+@modified  14.09.2024
 ------------------------------------------------------------------------------
 """
-import logging
 import re
 
 from h3sed.lib import util
 from h3sed.metadata import BytePositions
-
-
-logger = logging.getLogger(__package__)
 
 
 PROPS = {"name": "roe", "label": "Restoration of Erathia", "index": 0}

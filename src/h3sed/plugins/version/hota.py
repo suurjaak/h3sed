@@ -7,17 +7,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  23.06.2024
+@modified  14.09.2024
 ------------------------------------------------------------------------------
 """
-import logging
 import re
 
 from h3sed.lib import util
 from h3sed.metadata import BytePositions, Store
-
-
-logger = logging.getLogger(__package__)
 
 
 PROPS = {"name": "hota", "label": "Horn of the Abyss", "index": 3}

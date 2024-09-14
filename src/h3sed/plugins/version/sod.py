@@ -7,15 +7,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  12.06.2024
+@modified  14.09.2024
 ------------------------------------------------------------------------------
 """
-import logging
-
 from h3sed.metadata import BytePositions, Store
-
-
-logger = logging.getLogger(__package__)
 
 
 PROPS = {"name": "sod", "label": "Shadow of Death", "index": 2}
