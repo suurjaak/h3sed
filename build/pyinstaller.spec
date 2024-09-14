@@ -6,7 +6,7 @@ depending on current environment.
 Pyinstaller-provided names and variables: Analysis, EXE, PYZ, SPEC, TOC.
 
 @created   12.04.2020
-@modified  07.07.2024
+@modified  14.09.2024
 """
 import atexit
 import os
@@ -61,7 +61,7 @@ a.binaries = a.binaries - TOC([
 
 is_64bit = (struct.calcsize("P") * 8 == 64)
 ext = ".exe" if "nt" == os.name else ""
-app_file = "%s_%s%s%s" % (NAME, conf.Version, "_x64" if is_64bit else "", ext)
+app_file = "%s_%s%s%s" % (NAME, conf.Version, "" if is_64bit else "_x86", ext)
 
 exe = EXE(
     PYZ(a.pure),

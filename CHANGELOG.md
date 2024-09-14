@@ -4,6 +4,7 @@ CHANGELOG
 2.7, 2024-09-14
 ---------------
 - add support for Heroes Chronicles savefiles
+- use _x86 suffix for 32-bit binaries, drop _x64 suffix from 64-bit binaries
 
 
 2.6, 2024-06-25
