@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+2.7, 2024-09-14
+---------------
+- add support for Heroes Chronicles savefiles
+
+
 2.6, 2024-06-25
 ---------------
 - add option to delete from disk in files list
