@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    23.06.2024
+@modified    14.09.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -1152,7 +1152,8 @@ class Savefile(object):
 
     def detect_version(self):
         """Auto-detects game version, raises error if savefile not recognizable."""
-        if not self.RGX_MAGIC.match(self.raw):
+        RGX_MAGIC = plugins.adapt(None, "savefile_magic_regex", self.RGX_MAGIC)
+        if not RGX_MAGIC.match(self.raw):
             raise ValueError("Not recognized as Heroes3 savefile.")
         if getattr(plugins, "version", None):
             for p in plugins.version.PLUGINS:
@@ -1167,7 +1168,8 @@ class Savefile(object):
 
     def parse_metadata(self):
         """Populates savefile map name and description."""
-        match = self.RGX_HEADER.match(self.raw[:2048])
+        RGX_HEADER = plugins.adapt(None, "savefile_header_regex", self.RGX_HEADER)
+        match = RGX_HEADER.match(self.raw[:2048])
         if not match:
             logger.warning("Failed to parse map name and description from %s.", self.filename)
             return
