@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+2.8, 2024-12-02
+---------------
+- fix saving slots that were initially empty then populated then emptied again
+
+
 2.7, 2024-09-14
 ---------------
 - add support for Heroes Chronicles savefiles

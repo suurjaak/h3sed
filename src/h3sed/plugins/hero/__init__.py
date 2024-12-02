@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  18.06.2024
+@modified  02.12.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -250,7 +250,7 @@ class Hero(object):
         self.span      = span      # Hero byte span in uncompressed savefile
         self.savefile  = savefile  # metadata.SaveFile instance
         self.basestats = {}  # Primary attributes without artifact bonuses
-        self.state0    = {}  # Data after first load, as {category: {..} or [..]}
+        self.state0    = {}  # Data after first load or last save, as {category: {..} or [..]}
         self.yaml      = ""  # Data after first load or last change, as full hero charsheet YAML
         self.yamls1    = []  # Data after first load or last save, as [category YAML, ]
         self.yamls2    = []  # Data after last change, as [category YAML, ]
@@ -538,6 +538,9 @@ class HeroPlugin(object):
                 and not any(a <= hero.span[0] and hero.span[1] <= b for a, b in kwargs["spans"]):
                     continue  # for index, hero
                 hero.yamls1[:], hero.yamls2[:] = (hero.yamls2 or hero.yamls1), []
+                for p in self._plugins if hero.state0 else ():
+                    if hasattr(hero, p["name"]):
+                        hero.state0[p["name"]] = copy.deepcopy(getattr(hero, p["name"]))
                 page = next((p for p, i in self._pages.items() if i == index), None)
                 if page is not None:
                     heroes_open.append(hero)
