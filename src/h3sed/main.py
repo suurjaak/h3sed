@@ -8,7 +8,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    27.05.2024
+@modified    02.12.2024
 ------------------------------------------------------------------------------
 """
 import argparse
@@ -54,7 +54,8 @@ class MainApp(wx.App):
             # Py3 provides "en[-_]US" in wx.Locale names and accepts "en" in locale.setlocale();
             # Py2 provides "English_United States.1252" in wx.Locale.SysName and accepts only that.
             name = mylocale.SysName if sys.version_info < (3, ) else mylocale.Name.split("_", 1)[0]
-            locale.setlocale(locale.LC_ALL, name)
+            try: locale.setlocale(locale.LC_ALL, name)
+            except Exception: logger.warning("Failed to set locale %r.", name, exc_info=True)
 
 
 def except_hook(etype, evalue, etrace):
