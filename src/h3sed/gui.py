@@ -15,10 +15,16 @@ import functools
 import logging
 import math
 import os
+import re
 import shutil
+import ssl
 import sys
 import tempfile
 import time
+import webbrowser
+
+try: import urllib.request as urllib_request         # Py3
+except ImportError: import urllib2 as urllib_request # Py2
 
 import step
 import wx
@@ -185,6 +191,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         self.Show(True)
         logger.info("Started application.")
+        wx.CallLater(20000, self.update_check)
         def after():
             if not self: return
             wildcards = metadata.wildcards()
@@ -277,6 +284,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu_file.AppendSeparator()
         menu_options = wx.Menu()
         menu_file.AppendSubMenu(menu_options, "Opt&ions")
+        menu_autoupdate_check = self.menu_autoupdate_check = menu_options.Append(
+            wx.ID_ANY, "Automatic &update check",
+            "Automatically check for program updates periodically", kind=wx.ITEM_CHECK
+        )
+        menu_autoupdate_check.Check(conf.UpdateCheckAutomatic)
         menu_backup = self.menu_backup = menu_options.Append(
             wx.ID_ANY, "&Back up files before saving", "Create backup copy of savefile before saving changes",
             kind=wx.ITEM_CHECK
@@ -321,6 +333,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu_help = wx.Menu()
         menu.Append(menu_help, "&Help")
 
+        menu_update = self.menu_update = menu_help.Append(wx.ID_ANY,
+            "Check for &updates",
+            "Check whether a new version of %s is available" % conf.Title
+        )
         menu_log = self.menu_log = menu_help.Append(wx.ID_ANY,
             "Show &log window", "Show/hide the log messages window",
             kind=wx.ITEM_CHECK)
@@ -352,6 +368,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_reload_savefile,  menu_reload)
         self.Bind(wx.EVT_MENU, self.on_save_savefile,    menu_save)
         self.Bind(wx.EVT_MENU, self.on_save_savefile_as, menu_save_as)
+        self.Bind(wx.EVT_MENU, self.on_menu_autoupdate,  menu_autoupdate_check)
         self.Bind(wx.EVT_MENU, self.on_menu_backup,      menu_backup)
         self.Bind(wx.EVT_MENU, self.on_menu_confirm,     menu_confirm)
         self.Bind(wx.EVT_MENU, self.on_menu_newformat,   menu_newformat)
@@ -359,6 +376,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_exit,             menu_exit)
         self.Bind(wx.EVT_MENU, self.on_undo_savefile,    menu_undo)
         self.Bind(wx.EVT_MENU, self.on_redo_savefile,    menu_redo)
+        self.Bind(wx.EVT_MENU, self.on_check_update,     menu_update)
         self.Bind(wx.EVT_MENU, self.on_showhide_log,     menu_log)
         self.Bind(wx.EVT_MENU, self.on_toggle_console,   menu_console)
         self.Bind(wx.EVT_MENU, self.on_about,            menu_about)
@@ -670,6 +688,73 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         return util.make_unique(title, all_titles, suffix=" (%s)", case=True)
 
 
+    def update_check(self):
+        """
+        Checks for an updated program version if sufficient time from last check has passed,
+        and opens dialog for upgrading if new version available. Schedules a new check on due date.
+        """
+        if not self or not conf.UpdateCheckAutomatic: return
+        if self.flags.get("update_window"): # Update feedback already open: reschedule a later check
+            millis = max(3600 * 1000, min(sys.maxsize, conf.UpdateCheckInterval * 24 * 3600 * 1000))
+            wx.CallLater(millis, self.update_check)
+            return
+
+        check_delta, last_date = datetime.timedelta(days=conf.UpdateCheckInterval), None
+        if conf.UpdateCheckLast:
+            try: last_date = datetime.datetime.strptime(conf.UpdateCheckLast, "%Y%m%d")
+            except Exception: logger.warning("Failed to parse last update check %r as date.",
+                                             conf.UpdateCheckLast, exc_info=True)
+        if not last_date or last_date < datetime.datetime.now() - check_delta:
+            callback = functools.partial(self.on_check_update_callback, full_response=False)
+            check_newest_version(callback)
+        elif last_date: # Shift next check closer by elapsed time
+            next_delta = check_delta - (datetime.datetime.now() - last_date)
+            if next_delta > datetime.timedelta(): check_delta = next_delta
+        # Schedule next check, should the program run that long
+        millis = max(1, min(sys.maxsize, int(util.timedelta_seconds(check_delta) * 1000)))
+        wx.CallLater(millis, self.update_check)
+
+
+    def on_check_update(self, event=None):
+        """
+        Handler for checking for updates, starts a background process for checking and feedback.
+        """
+        guibase.status("Checking for new version of %s.", conf.Title)
+        wx.CallAfter(check_newest_version, self.on_check_update_callback)
+
+
+    def on_check_update_callback(self, check_result, full_response=True):
+        """
+        Callback function for processing update check result, offers new
+        version for download if available.
+
+        @param   full_response  if False, show message only if update available
+        """
+        if not self: return
+
+        self.flags["update_window"] = True
+        guibase.status("")
+        if check_result:
+            version = check_result
+            guibase.status("New %s version %s available.", conf.Title, version)
+            message = "Newer version (%s) available. You are currently on version %s.\n\n" \
+                      "Open the program homepage?" % (version, conf.Version)
+            style = wx.ICON_INFORMATION | wx.OK | wx.CANCEL
+            if wx.OK == wx.MessageBox(message, "Update information", style):
+                webbrowser.open(conf.HomeUrl)
+        elif full_response and check_result is not None:
+            wx.MessageBox("You are using the latest version of %s, %s.\n\n " %
+                (conf.Title, conf.Version), "Update information",
+                wx.OK | wx.ICON_INFORMATION)
+        elif full_response:
+            wx.MessageBox("Could not contact server.",
+                          "Update information", wx.OK | wx.ICON_WARNING)
+        if check_result is not None:
+            conf.UpdateCheckLast = datetime.date.today().strftime("%Y%m%d")
+            conf.save()
+        self.flags.pop("update_window", None)
+
+
     def update_notebook_header(self):
         """
         Removes or adds X to notebook tab style, depending on whether current
@@ -884,6 +969,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             page.undoredo.Redo()
 
 
+    def on_menu_autoupdate(self, event):
+        """Handler for toggling automatic update checking, changes conf."""
+        conf.UpdateCheckAutomatic = event.IsChecked()
+        conf.save()
+        if conf.UpdateCheckAutomatic: wx.CallAfter(self.update_check)
+
+
     def on_menu_backup(self, event):
         """Handler for clicking to toggle backup-option."""
         conf.Backup = event.IsChecked()
@@ -940,7 +1032,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def on_about(self, event=None):
         """Handler for clicking "About program" menu, opens a small info frame."""
         maketext = lambda: step.Template(templates.ABOUT_HTML).expand()
-        controls.HtmlDialog(self, "About %s" % conf.Title, maketext).ShowModal()
+        buttons = {"Check for &updates": self.on_check_update}
+        controls.HtmlDialog(self, "About %s" % conf.Title, maketext, buttons=buttons).ShowModal()
 
 
     def on_browse(self, event=None):
@@ -1856,4 +1949,39 @@ def build(plugin, panel):
     panel.Layout()
     panel.SendSizeEvent()
     panel.Thaw()
+    return result
+
+
+def check_newest_version(callback=None):
+    """
+    Queries the program download page for available newer releases.
+
+    @param   callback  function to call with check result, if any
+             @result   version string if new version up, empty string if up-to-date,
+                       None if query failed
+    """
+    result = ""
+    try:
+        url_opener = urllib_request.build_opener(
+            urllib_request.HTTPSHandler(context=ssl._create_unverified_context())
+        )
+        logger.info("Checking for new version at %s.", conf.DownloadURL)
+        html = util.to_unicode(url_opener.open(conf.DownloadURL).read())
+        links = re.findall(r"<a[^>]*\shref=['\"](.+)['\"][^>]*>", html, re.I)
+        if links:
+            link = next((l for l in links[:3] if l.lower().endswith(".zip")), "")
+            # Extract version number like 1.3.2a from myprogram_1.3.2a_x64.exe
+            version = next(iter(re.findall(r"_(\d[\da-z.]+)", link)), None)
+            if version:
+                logger.info("Newest program version is %s.", version)
+                try:
+                    if version != conf.Version \
+                    and util.canonic_version(conf.Version) < util.canonic_version(version):
+                        result = version
+                except Exception: pass
+    except Exception:
+        logger.exception("Failed to retrieve new version from %s", conf.DownloadURL)
+        result = None
+    if callback:
+        callback(result)
     return result

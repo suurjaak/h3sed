@@ -436,10 +436,10 @@ class HtmlDialog(wx.Dialog):
         self.Sizer = wx.BoxSizer(wx.VERTICAL)
         self.Sizer.Add(wrapper or html, proportion=1, flag=wx.GROW)
         sizer_buttons = self.CreateButtonSizer(wx.OK)
-        for label, handler in buttons.items() if buttons else ():
+        for label, handler in reversed(buttons.items()) if buttons else ():
             button = wx.Button(self, label=label)
             button.Bind(wx.EVT_BUTTON, lambda e, f=handler: handler())
-            sizer_buttons.Add(button, border=3, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER)
+            sizer_buttons.Insert(0, button, border=50, flag=wx.RIGHT)
         self.Sizer.Add(sizer_buttons, border=8, flag=wx.ALIGN_CENTER | wx.ALL)
         self.Layout()
 

@@ -48,12 +48,13 @@ ConfigFile = "%s.ini" % os.path.join(EtcDirectory, Name.lower())
 """List of attribute names that can be saved to and loaded from ConfigFile."""
 FileDirectives = [
     "Backup", "ConfirmUnsaved", "ConsoleHistoryCommands", "RecentFiles", "RecentHeroes",
-    "SelectedPath", "WindowPosition", "WindowSize",
+    "SelectedPath", "UpdateCheckAutomatic", "UpdateCheckLast", "WindowPosition", "WindowSize",
 ]
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
     "FileExtensions", "HeroToggles", "MaxConsoleHistory", "MaxRecentFiles",
     "PopupUnexpectedErrors", "Positions", "SavegameNewFormat", "StatusFlashLength",
+    "UpdateCheckInterval",
 ]
 Defaults = {}
 
@@ -93,6 +94,15 @@ RecentHeroes = []
 """Whether to assume new savegame format when ambiguous e.g. updated Armageddon's Blade."""
 SavegameNewFormat = True
 
+"""Whether the program checks for updates every UpdateCheckInterval."""
+UpdateCheckAutomatic = True
+
+"""Days between automatic update checks."""
+UpdateCheckInterval = 7
+
+"""Date string of last time updates were checked."""
+UpdateCheckLast = None
+
 """Main window position, (x, y)."""
 WindowPosition = None
 
@@ -110,8 +120,9 @@ PopupUnexpectedErrors = True
 """Currently opened savefiles, as {filename, }."""
 FilesOpen = set()
 
-"""URL for homepage."""
-HomeUrl = "https://suurjaak.github.io/h3sed"
+"""URLs for download list and homepage."""
+DownloadURL = "https://erki.lap.ee/downloads/h3sed/"
+HomeUrl     = "https://suurjaak.github.io/h3sed"
 
 """Minimum allowed size for the main window, as (width, height)."""
 MinWindowSize = (500, 400)

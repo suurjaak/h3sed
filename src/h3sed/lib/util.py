@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    15.06.2024
+@modified    03.12.2024
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -101,6 +101,17 @@ def bytoi(blob):
     """Converts a string of bytes or a bytearray to unsigned integer."""
     fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[len(blob)]
     return struct.unpack(fmt, blob)[0]
+
+
+def canonic_version(v):
+    """Returns a numeric version representation: "1.3.2a" to 10301,99885."""
+    nums = [int(re.sub(r"[^\d]", "", x)) for x in v.split(".")][::-1]
+    nums[0:0] = [0] * (3 - len(nums)) # Zero-pad if version like 1.4 or just 2
+    # Like 1.4a: subtract 1 and add fractions to last number to make < 1.4
+    if re.findall(r"\d+([\D]+)$", v):
+        ords = [ord(x) for x in re.findall(r"\d+([\D]+)$", v)[0]]
+        nums[0] += sum(x / (65536. ** (i + 1)) for i, x in enumerate(ords)) - 1
+    return sum((x * 100 ** i) for i, x in enumerate(nums))
 
 
 def format_bytes(size, precision=2, max_units=True, with_units=True):
@@ -298,6 +309,16 @@ def start_file(filepath):
     except Exception as e:
         success, error = False, format_exc(e)
     return success, error
+
+
+def timedelta_seconds(timedelta):
+    """Returns the total timedelta duration in seconds."""
+    if hasattr(timedelta, "total_seconds"):
+        result = timedelta.total_seconds()
+    else: # Python 2.6 compatibility
+        result = timedelta.days * 24 * 3600 + timedelta.seconds + \
+                 timedelta.microseconds / 1000000.
+    return result
 
 
 def to_unicode(value, encoding=None):
