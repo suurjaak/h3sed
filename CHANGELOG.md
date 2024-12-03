@@ -6,6 +6,7 @@ CHANGELOG
 - fix saving slots that were initially empty then populated then emptied again
 - fix tracking changes over undo-redo after saving
 - fix error after confirming to save changes when closing file
+- improve support for dark mode in Windows 10+
 
 
 2.7, 2024-09-14

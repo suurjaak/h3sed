@@ -25,7 +25,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    11.06.2024
+@modified    03.12.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -186,6 +186,7 @@ class ColourManager(object):
         @param   colour  colour name in colour container like "BgColour",
                          or system colour ID like wx.SYS_COLOUR_WINDOW
         """
+        if not ctrl: return
         cls.ctrls[ctrl][prop] = colour
         cls.UpdateControlColour(ctrl, prop, colour)
 
@@ -217,12 +218,35 @@ class ColourManager(object):
 
 
     @classmethod
+    def Diff(cls, colour1, colour2):
+        """
+        Returns difference between two colours, as wx.Colour of absolute deltas over channels.
+
+        Arguments can be wx.Colour, RGB tuple, colour hex string, or wx.SystemSettings colour index.
+        """
+        colour1 = wx.SystemSettings.GetColour(colour1) \
+                  if isinstance(colour1, integer_types) else wx.Colour(colour1)
+        colour2 = wx.SystemSettings.GetColour(colour2) \
+                  if isinstance(colour2, integer_types) else wx.Colour(colour2)
+        rgb1, rgb2 = tuple(colour1)[:3], tuple(colour2)[:3]
+        result = tuple(abs(a - b) for a, b in zip(rgb1, rgb2))
+        return wx.Colour(result)
+
+
+    @classmethod
+    def IsDark(cls):
+        """Returns whether display is in dark mode (heuristical judgement from system colours)."""
+        try:              return wx.SystemSettings.GetAppearance().IsDark()
+        except Exception: return sum(cls.Diff(wx.WHITE, wx.SYS_COLOUR_WINDOW)[:3]) > 3 * 175
+
+
+    @classmethod
     def UpdateContainer(cls):
         """Updates configuration colours with current system theme values."""
         for name, colourid in cls.colourmap.items():
             setattr(cls.colourcontainer, name, cls.ColourHex(colourid))
 
-        if "#FFFFFF" != cls.ColourHex(wx.SYS_COLOUR_WINDOW):
+        if cls.IsDark():
             for name, colourid in cls.darkcolourmap.items():
                 setattr(cls.colourcontainer, name, cls.ColourHex(colourid))
         else:
@@ -250,6 +274,30 @@ class ColourManager(object):
             setattr(ctrl, prop, mycolour)
         elif hasattr(ctrl, "Set" + prop):
             getattr(ctrl, "Set" + prop)(mycolour)
+
+
+    @classmethod
+    def Patch(cls, ctrl):
+        """
+        Ensures foreground and background system colours on control and its descendant controls.
+
+        Explicitly sets background colour on ComboBox, SpinCtrl and TextCtrl,
+        and foreground colour on wx.CheckBox (workaround for dark mode in Windows 10+).
+        """
+        if "nt" != os.name or sys.getwindowsversion() < (10, ): return
+
+        PROPS = {wx.ComboBox:       {"BackgroundColour": wx.SYS_COLOUR_WINDOW},
+                 wx.SpinCtrl:       {"BackgroundColour": wx.SYS_COLOUR_WINDOW},
+                 wx.SpinCtrlDouble: {"BackgroundColour": wx.SYS_COLOUR_WINDOW},
+                 wx.TextCtrl:       {"BackgroundColour": wx.SYS_COLOUR_WINDOW},
+                 wx.CheckBox:       {"ForegroundColour": wx.SYS_COLOUR_BTNTEXT}, }
+        for ctrl in [ctrl] + get_all_children(ctrl):
+            if isinstance(ctrl, wx.TextCtrl) \
+            and isinstance(ctrl.Parent, (wx.SpinCtrl, wx.SpinCtrlDouble)):
+                continue # for ctrl
+            for prop, colour in PROPS.get(type(ctrl), {}).items():
+                if ctrl not in cls.ctrls or prop not in cls.ctrls[ctrl]:
+                    cls.Manage(ctrl, prop, colour)
 
 
 
@@ -640,6 +688,17 @@ class Patch(object):
 
         Patch._PATCHED = True
 
+
+
+def get_all_children(ctrl):
+    """Returns a list of all nested children of given wx component."""
+    result, stack = [], [ctrl]
+    while stack:
+        ctrl = stack.pop(0)
+        for child in ctrl.GetChildren() if hasattr(ctrl, "GetChildren") else []:
+            result.append(child)
+            stack.append(child)
+    return result
 
 
 def get_dialog_path(dialog):

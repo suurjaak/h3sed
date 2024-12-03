@@ -467,6 +467,7 @@ class HeroPlugin(object):
         self._ctrls["count"] = info
         self._ctrls["html"] = html
         self._ctrls["toolbar"] = tb
+        controls.ColourManager.Patch(self._panel)
 
 
     def build(self):
@@ -481,6 +482,7 @@ class HeroPlugin(object):
             subpanel = p["panel"] = wx.ScrolledWindow(nb)
             title = p.get("label", p["name"])
             nb.AddPage(subpanel, title)
+            controls.ColourManager.Manage(subpanel, "BackgroundColour", wx.SYS_COLOUR_BTNFACE)
         self._heropanel.Sizer.Add(nb, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW, proportion=1)
 
         if conf.Positions.get("herotab_index") \
@@ -851,7 +853,8 @@ class HeroPlugin(object):
     def on_sys_colour_change(self, event):
         """Handler for system colour change, refreshes hero index HTML."""
         event.Skip()
-        wx.CallAfter(lambda: self and self.populate_index())
+        wx.CallAfter(lambda: self._panel and self.populate_index())
+        wx.CallLater(100, lambda: self._panel and self._panel.Layout())
 
 
     def select_hero(self, index, status=True):
@@ -1180,4 +1183,5 @@ class HeroPlugin(object):
             elif callable(getattr(obj, "props",  None)): accel, _ = True, gui.build(obj, p["panel"])
             if accel or item0 is None: wx_accel.accelerate(p["panel"])
         finally:
+            controls.ColourManager.Patch(p["panel"])
             p["panel"].Thaw()
