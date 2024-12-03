@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    25.06.2024
+@modified    03.12.2024
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -848,7 +848,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.menu_changes.Enable(page.get_unsaved())
         self.menu_history.Enable(bool(page.undoredo.Commands))
 
-        if modified is not None or rename:
+        if (modified is not None or rename) and event.source.filename in self.files:
             suffix = "*" if modified else ""
             title1 = not rename and self.files[event.source.filename].get("title") \
                      or self.get_unique_tab_title(event.source.filename)
