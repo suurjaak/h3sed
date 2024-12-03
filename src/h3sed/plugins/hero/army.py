@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  17.06.2024
+@modified  02.12.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -207,7 +207,7 @@ class ArmyPlugin(object):
         wx.CallLater(100, after)  # Hidden SpinCtrl arrows can become visible on colour change
 
 
-    def parse(self, heroes):
+    def parse(self, heroes, original=False):
         """Returns army states parsed from hero bytearrays, as [[{name, count} or {}, ], ]."""
         result = []
         NAMES = {x[y]: y for x in [metadata.Store.get("ids", self._savefile.version)]
@@ -216,9 +216,10 @@ class ArmyPlugin(object):
 
         for hero in heroes:
             values = []
+            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
             for prop in self.props():
                 for i in range(prop["max"]):
-                    unit, count = (util.bytoi(hero.bytes[MYPOS[k]  + i * 4:MYPOS[k]  + i * 4 + 4])
+                    unit, count = (util.bytoi(hero_bytes[MYPOS[k]  + i * 4:MYPOS[k]  + i * 4 + 4])
                                    for k in ("army_types", "army_counts"))
                     name = NAMES.get(unit)
                     if not count or not name: values.append({})

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  17.06.2024
+@modified  02.12.2024
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict
@@ -365,7 +365,7 @@ class ArtifactsPlugin(object):
         return slots_free, slots_owner
 
 
-    def parse(self, heroes):
+    def parse(self, heroes, original=False):
         """Returns artifacts states parsed from hero bytearrays, as [{helm, ..}, ]."""
         result = []
         version = self._savefile.version
@@ -376,15 +376,16 @@ class ArtifactsPlugin(object):
         NAMES = {x[y]: y for x in [IDS] for y in self._cache["inventory"]}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        def parse_item(hero, pos):
-            b, v = hero.bytes[pos:pos + 4], util.bytoi(hero.bytes[pos:pos + 4])
+        def parse_item(hero_bytes, pos):
+            b, v = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
             if all(x == ord(metadata.Blank) for x in b): return None # Blank
-            return util.bytoi(hero.bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
+            return util.bytoi(hero_bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
 
         for hero in heroes:
             values = {}
+            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
             for prop in self.props():
-                values[prop["name"]] = NAMES.get(parse_item(hero, MYPOS[prop["name"]]))
+                values[prop["name"]] = NAMES.get(parse_item(hero_bytes, MYPOS[prop["name"]]))
             result.append(values)
         return result
 

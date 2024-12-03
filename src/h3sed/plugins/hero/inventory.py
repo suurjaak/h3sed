@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  23.05.2024
+@modified  02.12.2024
 ------------------------------------------------------------------------------
 """
 import functools
@@ -192,7 +192,7 @@ class InventoryPlugin(object):
             return True
 
 
-    def parse(self, heroes):
+    def parse(self, heroes, original=False):
         """Returns inventory states parsed from hero bytearrays, as [[item or None, ..], ]."""
         result = []
         IDS   = metadata.Store.get("ids", self._savefile.version)
@@ -200,16 +200,17 @@ class InventoryPlugin(object):
                  metadata.Store.get("artifacts", self._savefile.version, category="inventory")}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        def parse_item(hero, pos):
-            b, v = hero.bytes[pos:pos + 4], util.bytoi(hero.bytes[pos:pos + 4])
+        def parse_item(hero_bytes, pos):
+            b, v = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
             if all(x == metadata.Blank for x in b): return None # Blank
-            return util.bytoi(hero.bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
+            return util.bytoi(hero_bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
 
         for hero in heroes:
             values = []
+            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
             for prop in self.props():
                 for i in range(prop["max"]):
-                    v = parse_item(hero, MYPOS["inventory"] + i*8)
+                    v = parse_item(hero_bytes, MYPOS["inventory"] + i*8)
                     values.append(NAMES.get(v))
             result.append(values)
         return result

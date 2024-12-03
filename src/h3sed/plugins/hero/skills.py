@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.01.2024
+@modified  02.12.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -147,7 +147,7 @@ class SkillsPlugin(object):
         return True
 
 
-    def parse(self, heroes):
+    def parse(self, heroes, original=False):
         """Returns skills states parsed from hero bytearrays, as [{name, level, slot}]."""
         result = []
         version = self._savefile.version
@@ -159,10 +159,11 @@ class SkillsPlugin(object):
 
         for hero in heroes:
             values = []
-            count = hero.bytes[MYPOS["skills_count"]]
+            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
+            count = hero_bytes[MYPOS["skills_count"]]
             for name in metadata.Store.get("skills", version):
                 pos = IDS.get(name)
-                level, slot = (hero.bytes[MYPOS[k] + pos] for k in ("skills_level", "skills_slot"))
+                level, slot = (hero_bytes[MYPOS[k] + pos] for k in ("skills_level", "skills_slot"))
                 if not level or not slot or slot > count:
                     continue # for i
                 values.append({"name": name, "level": LEVELNAMES[level], "slot": slot})

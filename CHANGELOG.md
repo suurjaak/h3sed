@@ -1,9 +1,10 @@
 CHANGELOG
 =========
 
-2.8, 2024-12-02
+2.8, 2024-12-03
 ---------------
 - fix saving slots that were initially empty then populated then emptied again
+- fix tracking changes over undo-redo after saving
 
 
 2.7, 2024-09-14

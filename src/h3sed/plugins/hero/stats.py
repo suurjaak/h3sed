@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  17.06.2024
+@modified  02.12.2024
 ------------------------------------------------------------------------------
 """
 import functools
@@ -295,27 +295,28 @@ class StatsPlugin(object):
         return text, tooltip
 
 
-    def parse(self, heroes):
+    def parse(self, heroes, original=False):
         """Returns stats states parsed from hero bytearrays, as [{attack, defense, ..}, ]."""
         result = []
         NAMES = {x[y]: y for x in [metadata.Store.get("ids", self._savefile.version)]
                  for y in metadata.Store.get("special_artifacts", self._savefile.version)}
         MYPOS = plugins.adapt(self, "pos", POS)
 
-        def parse_special(hero, pos):
-            b, v = hero.bytes[pos:pos + 4], util.bytoi(hero.bytes[pos:pos + 4])
+        def parse_special(hero_bytes, pos):
+            b, v = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
             return None if all(x == ord(metadata.Blank) for x in b) else v
 
         for hero in heroes:
             values = {}
+            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
             for prop in self.props():
                 pos = MYPOS[prop["name"]]
                 if "check" == prop["type"]:
-                    v = parse_special(hero, pos) is not None
+                    v = parse_special(hero_bytes, pos) is not None
                 elif "number" == prop["type"]:
-                    v = util.bytoi(hero.bytes[pos:pos + prop["len"]])
+                    v = util.bytoi(hero_bytes[pos:pos + prop["len"]])
                 elif "combo" == prop["type"]:
-                    v = NAMES.get(parse_special(hero, pos), "")
+                    v = NAMES.get(parse_special(hero_bytes, pos), "")
                 values[prop["name"]] = v
             result.append(values)
         return result

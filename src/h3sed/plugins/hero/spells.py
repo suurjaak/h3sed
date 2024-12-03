@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  27.01.2024
+@modified  02.12.2024
 ------------------------------------------------------------------------------
 """
 import logging
@@ -112,7 +112,7 @@ class SpellsPlugin(object):
         return True
 
 
-    def parse(self, heroes):
+    def parse(self, heroes, original=False):
         """Returns spells states parsed from hero bytearrays, as [[name, ], ]."""
         result = [] # Lists of values like ["Haste", ..]
         IDS = {y: x[y] for x in [metadata.Store.get("ids", self._savefile.version)]
@@ -121,8 +121,9 @@ class SpellsPlugin(object):
 
         for hero in heroes:
             values = []
+            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
             for name, pos in IDS.items():
-                if hero.bytes[MYPOS["spells_book"] + pos]: values.append(name)
+                if hero_bytes[MYPOS["spells_book"] + pos]: values.append(name)
             result.append(sorted(values))
         return result
 

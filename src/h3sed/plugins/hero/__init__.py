@@ -44,8 +44,8 @@ Subplugin instances are expected to have the following API:
     def load_state(self, state):
         '''Optional. Loads subplugin state from given data. Returns whether state changed.'''
 
-    def parse(self, hero):
-        '''Mandatory. Returns subplugin state parsed from hero bytearray.'''
+    def parse(self, hero, original=False):
+        '''Mandatory. Returns subplugin state parsed from hero bytearray, current or original.'''
 
     def serialize(self):
         '''Mandatory. Returns new hero bytearray from subplugin state.'''
@@ -74,7 +74,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  02.12.2024
+@modified  03.12.2024
 ------------------------------------------------------------------------------
 """
 import collections
@@ -618,7 +618,7 @@ class HeroPlugin(object):
                     setattr(hero, p["name"], state)
             for hero in heroes:
                 hero.ensure_basestats()
-                self.serialize_yaml(hero)
+                self.populate_hero_yamls(hero, parse=True)
             self._index["herotexts"] = [maketexts(h) for h in heroes]
         elif self._hero:
             self._hero.ensure_basestats()
@@ -1023,7 +1023,7 @@ class HeroPlugin(object):
                 if state is None: state = type(state0)()
                 if plugin.load_state(state): changeds.append(category)
                 setattr(self._hero, category, plugin.state())
-            self.serialize_yaml(self._hero, changes=True)
+            self.populate_hero_yamls(self._hero, changes=True)
             self._hero.ensure_basestats(clear=True)
             if changeds:
                 self.patch()
@@ -1033,16 +1033,17 @@ class HeroPlugin(object):
         self.command(functools.partial(on_do, usables), "paste hero data from clipboard")
 
 
-    def serialize_yaml(self, hero, changes=False):
+    def populate_hero_yamls(self, hero, changes=False, parse=False):
         """
         Sets hero data YAML attributes.
 
         @param   changes   whether to populate `yamls2` instead of `yamls1`
+        @param   parse     whether to parse data from hero original bytes
         """
         LF, INDENT = os.linesep, "  "
         states, maxlen = [], 0  # [(category, [(prefix, value), ])]
         for p in self._plugins:  # Assemble YAML by hand for more readable indentation
-            pairs, prefixlen = self.serialize_plugin_yaml(hero, p["instance"], INDENT)
+            pairs, prefixlen = self.serialize_plugin_yaml(hero, p["instance"], INDENT, parse=parse)
             states.append((p["name"], pairs))
             maxlen = max(maxlen, prefixlen)
         maxlen += len(INDENT) + 3
@@ -1056,12 +1057,13 @@ class HeroPlugin(object):
         setattr(hero, "yamls2" if changes else "yamls1", formatteds)
 
 
-    def serialize_plugin_yaml(self, hero, plugin, indent="  "):
+    def serialize_plugin_yaml(self, hero, plugin, indent="  ", parse=False):
         """
         Returns hero data from plugin as YAML components.
 
         @param   plugin  plugin instance
         @param   indent  line leading indent
+        @param   parse   whether to parse data from hero original bytes
         @return          [(formatted prefix, formatted value)], raw prefix maxlen
         """
         pairs, maxlen = [], 0
@@ -1069,8 +1071,10 @@ class HeroPlugin(object):
                         next((x[1:-1] if isinstance(v, util.text_types)
                               and re.match(r"[\x20-\x7e]+$", x) else x for x in [json.dumps(v)]))
         props = plugin.props()
-        state = copy.copy(plugin.state()) if plugin.item() == hero else \
-                getattr(hero, plugin.name) if hasattr(hero, plugin.name) else plugin.parse([hero])[0]
+        if parse:                        state = plugin.parse([hero], original=True)[0]
+        elif plugin.item() == hero:      state = copy.copy(plugin.state())
+        elif hasattr(hero, plugin.name): state = getattr(hero, plugin.name)
+        else:                            state = plugin.parse([hero])[0]
         for prop in props if isinstance(props, (list, tuple)) else [props]:
             if prop["type"] in ("itemlist", "checklist"):
                 while state and not state[-1]: state.pop()  # Strip empty trailing values
@@ -1112,6 +1116,8 @@ class HeroPlugin(object):
         if self._hero != hero:
             self._hero = self._heroes[index]
         self._hero.update(hero)
+        for p in self._plugins:
+            self._hero.state0[p["name"]] = p["instance"].parse([self._hero], original=True)[0]
         combo.SetSelection(index)
 
 
@@ -1133,7 +1139,8 @@ class HeroPlugin(object):
             if callable(getattr(p.get("instance"), "serialize", None)):
                 self._hero.bytes = p["instance"].serialize()
         self.savefile.patch(self._hero.bytes, self._hero.span)
-        self.serialize_yaml(self._hero, changes=True)
+        self.populate_hero_yamls(self._hero, parse=True)
+        self.populate_hero_yamls(self._hero, changes=True)
         changed = self._hero.yamls2 and self._hero.yamls1 != self._hero.yamls2
         title = "%s%s" % (self._hero.name, "*" if changed else "")
         index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
