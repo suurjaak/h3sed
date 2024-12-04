@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "2.8.dev4"
+Version = "2.8.dev5"
 VersionDate = "04.12.2024"
 
 Frozen = getattr(sys, "frozen", False)
@@ -233,8 +233,8 @@ def save():
     parser.add_section(section)
     try:
         f = open(ConfigFile, "w")
-        f.write("# %s %s configuration written on %s.\n" % (Title, Version,
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        f.write("# %s configuration written on %s.\n" %
+                (Title, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         for name in FileDirectives:
             try: parser.set(section, name, json.dumps(getattr(module, name)))
             except Exception: pass
