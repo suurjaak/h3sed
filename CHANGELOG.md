@@ -1,9 +1,10 @@
 CHANGELOG
 =========
 
-2.8, 2024-12-03
+2.8, 2024-12-04
 ---------------
 - add program version update check
+- fix wrong IDs and spelling for a number of army creatures (pull request #15)
 - fix saving slots that were initially empty then populated then emptied again
 - fix tracking changes over undo-redo after saving
 - fix error after confirming to save changes when closing file
