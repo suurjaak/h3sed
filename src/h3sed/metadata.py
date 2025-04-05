@@ -62,10 +62,10 @@ SKILL_LEVELS = ["Basic", "Advanced", "Expert"]
 
 
 """Slots for hero artifact locations, mapping equivalents like "side1" and "side" to "side"."""
-HERO_SLOTS = {"armor": "armor", "cloak": "cloak", "feet": "feet", "helm": "helm",
-              "lefthand": "hand", "neck": "neck", "righthand": "hand", "shield": "shield",
-              "side1": "side", "side2": "side", "side3": "side", "side4": "side", "side5": "side",
-              "weapon": "weapon"}
+EQUIPMENT_SLOTS = {"armor": "armor", "cloak": "cloak", "feet": "feet", "helm": "helm",
+                   "lefthand": "hand", "neck": "neck", "righthand": "hand", "shield": "shield",
+                   "side1": "side", "side2": "side", "side3": "side", "side4": "side",
+                   "side5": "side", "weapon": "weapon"}
 
 
 """Hero primary attribute value range, as (min, max)."""
@@ -1456,9 +1456,9 @@ Store.add("artifact_slots",      ARTIFACT_SLOTS)
 Store.add("artifact_spells",     ARTIFACT_SPELLS)
 Store.add("artifact_stats",      ARTIFACT_STATS)
 Store.add("creatures",           CREATURES)
+Store.add("equipment_slots",     EQUIPMENT_SLOTS)
 Store.add("hero_byte_positions", HERO_BYTE_POSITIONS)
 Store.add("hero_ranges",         HERO_RANGES)
-Store.add("hero_slots",          HERO_SLOTS)
 Store.add("ids",                 IDS)
 Store.add("skills",              SKILLS)
 Store.add("skill_levels",        SKILL_LEVELS)

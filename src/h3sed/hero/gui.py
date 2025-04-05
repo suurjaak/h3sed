@@ -95,7 +95,7 @@ class HeroPlugin(object):
     SEARCH_INTERVAL = 300
 
     """Hero index columns for toggling."""
-    INDEX_CATEGORIES = ["stats", "devices", "skills", "army", "artifacts", "inventory", "spells"]
+    INDEX_CATEGORIES = ["stats", "devices", "skills", "army", "equipment", "inventory", "spells"]
 
 
     def __init__(self, savefile, panel, commandprocessor):

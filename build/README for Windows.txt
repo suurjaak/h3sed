@@ -37,7 +37,7 @@ and pasted onto another hero, overwriting their data.
 A timestamped backup copy is automatically created of the savegame file, one per day.
 
 Note: savegames from different releases of Armageddon's Blade may have different
-structure for artifacts and inventory. For working with savegames from an earlier
+structure for equipment and inventory. For working with savegames from an earlier
 version, uncheck "New format in Armageddon's Blade" in program menu File -> Options.
 
 **Warning:** as Heroes3 savefile format is not publicly known,

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Artifacts subplugin for hero-plugin, shows artifact selection slots like helm etc.
+Handles parsing, serializing and managing hero equipment - artifacts worn.
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
@@ -34,7 +34,7 @@ def format_stats(plugin, prop, state, artifact_stats=None):
                      for k, v in zip(metadata.PRIMARY_ATTRIBUTES.values(), STATS[value]) if v)
 
 
-PROPS = {"name": "artifacts", "label": "Artifacts", "index": 3}
+PROPS = {"name": "equipment", "label": "Equipment", "index": 3}
 DATAPROPS = [{
     "name":     "helm",
     "label":    "Helm slot",
@@ -145,18 +145,18 @@ DATAPROPS = [{
 
 
 def props():
-    """Returns props for artifacts-tab, as {label, index}."""
+    """Returns props for equipment-tab, as {label, index}."""
     return PROPS
 
 
 def factory(parent, panel, version):
-    """Returns a new artifacts-plugin instance."""
-    return ArtifactsPlugin(parent, panel, version)
+    """Returns a new equipment-plugin instance."""
+    return EquipmentPlugin(parent, panel, version)
 
 
 
-class ArtifactsPlugin(object):
-    """Provides UI functionality for listing and changing artifacts donned by hero."""
+class EquipmentPlugin(object):
+    """Provides UI functionality for listing and changing equipment worn by hero."""
 
 
     def __init__(self, parent, panel, version):
@@ -164,24 +164,24 @@ class ArtifactsPlugin(object):
         self.parent  = parent
         self.version = version
         self._panel  = panel  # Plugin contents panel
-        self._state  = h3sed.hero.Artifacts.factory(version)
+        self._state  = h3sed.hero.Equipment.factory(version)
         self._hero   = None
         self._ctrls  = {}     # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
 
 
     def props(self):
-        """Returns UI props for artifacts-tab, as [{type: "combo", ..}]."""
+        """Returns UI props for equipment-tab, as [{type: "combo", ..}]."""
         result = []
-        LOCATION_TO_SLOT = metadata.Store.get("hero_slots", version=self.version)
+        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
         for prop in DATAPROPS:
             slot = LOCATION_TO_SLOT[prop["name"]]
             choices = metadata.Store.get("artifacts", category=slot, version=self.version)
             result.append(dict(prop, choices=[""] + choices))
-        return h3sed.version.adapt("hero.artifacts.DATAPROPS", result, version=self.version)
+        return h3sed.version.adapt("hero.equipment.DATAPROPS", result, version=self.version)
 
 
     def state(self):
-        """Returns data state for artifacts-plugin, as {helm, ..}."""
+        """Returns data state for equipment-plugin, as {helm, ..}."""
         return self._state
 
 
@@ -193,7 +193,7 @@ class ArtifactsPlugin(object):
     def load(self, hero):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state = hero.artifacts
+        self._state = hero.equipment
 
 
     def load_state(self, state):
@@ -236,7 +236,7 @@ class ArtifactsPlugin(object):
     def update_slots(self):
         """Updates slots availability in UI."""
         ARTIFACT_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
-        LOCATION_TO_SLOT = metadata.Store.get("hero_slots", version=self.version)
+        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
 
         slot_owners = {} # {slot: [artifact, ]}
         for location, artifact in self._state.items():
@@ -269,10 +269,9 @@ class ArtifactsPlugin(object):
 
     def on_change(self, prop, row, ctrl, value):
         """
-        Handler for artifact slot change, updates state,
-        and hero stats if old or new artifact affects primary skills.
+        Handler for equipment slot change, updates state, returns whether action succeeded.
+
         Rolls back change if lacking free slot due to a combination artifact.
-        Returns whether action succeeded.
         """
         v1, v2 = self._state[prop["name"]], value or None
         if v1 == v2: return False
@@ -294,8 +293,8 @@ class ArtifactsPlugin(object):
 
 
 def parse(hero_bytes, version):
-    """Returns h3sed.hero.Artifacts() parsed from hero bytearray artifacts section."""
-    ARTIFACT_LOCATIONS = list(metadata.Store.get("hero_slots", version=version))
+    """Returns h3sed.hero.Equipment() parsed from hero bytearray equipment section."""
+    EQUIPMENT_LOCATIONS = list(metadata.Store.get("equipment_slots", version=version))
     BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
                                   version=version)
     IDS = metadata.Store.get("ids", version=version)
@@ -308,17 +307,17 @@ def parse(hero_bytes, version):
         if integer == IDS["Spell Scroll"]: return util.bytoi(hero_bytes[pos:pos + 8])
         return integer
 
-    artifacts = h3sed.hero.Artifacts.factory(version)
-    for location in ARTIFACT_LOCATIONS:
+    equipment = h3sed.hero.Equipment.factory(version)
+    for location in EQUIPMENT_LOCATIONS:
         artifact_id = parse_id(hero_bytes, BYTEPOS[location])
-        if artifact_id: artifacts[location] = ARTIFACT_NAMES[artifact_id]
-    return artifacts
+        if artifact_id: equipment[location] = ARTIFACT_NAMES[artifact_id]
+    return equipment
 
 
-def serialize(artifacts, hero_bytes, version, hero=None):
-    """Returns new hero bytearray with updated artifacts section."""
+def serialize(equipment, hero_bytes, version, hero=None):
+    """Returns new hero bytearray with updated equipment section."""
     IDS = metadata.Store.get("ids", version=version)
-    ARTIFACT_LOCATIONS = list(metadata.Store.get("hero_slots", version=version))
+    EQUIPMENT_LOCATIONS = list(metadata.Store.get("equipment_slots", version=version))
     ARTIFACT_SLOTS = metadata.Store.get("artifact_slots", version=version)
     SCROLL_ARTIFACTS = metadata.Store.get("artifacts", category="scroll", version=version)
     BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
@@ -333,8 +332,8 @@ def serialize(artifacts, hero_bytes, version, hero=None):
         len_reserved = len(BYTEPOS["reserved"])
         new_bytes[pos_reserved:pos_reserved + len_reserved] = metadata.NULL * len_reserved
 
-    for location in ARTIFACT_LOCATIONS:
-        artifact_name = artifacts.get(location)
+    for location in EQUIPMENT_LOCATIONS:
+        artifact_name = equipment.get(location)
         artifact_id, location_pos = IDS.get(artifact_name), BYTEPOS[location]
         if artifact_name in SCROLL_ARTIFACTS:
             binary = util.itoby(artifact_id, 8) # XY 00 00 00 00 00 00 00

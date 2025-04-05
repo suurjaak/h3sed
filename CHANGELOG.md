@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.0, 2025-04-05
+---------------
+- rename hero artifacts to equipment
+
+
 2.8, 2024-12-04
 ---------------
 - add program version update check

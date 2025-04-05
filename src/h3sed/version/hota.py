@@ -396,8 +396,8 @@ class ArmyStack(DataClass, hero.ArmyStack,):
                  "count": make_integer_cast("army.count", version=NAME)}
 
 
-class Artifacts(DataClass, hero.Artifacts):
-    __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Artifacts.__slots__}
+class Equipment(DataClass, hero.Equipment):
+    __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Equipment.__slots__}
 
 
 class Attributes(DataClass, hero.Attributes):
@@ -441,8 +441,8 @@ def adapt(name, value):
     - "hero_regex":           adding support for Interference-skill
     - "hero_byte_positions":  adding support for Interference-skill
     - "hero.ArmyStack":       adding support for new creatures
-    - "hero.Artifacts":       adding support for new artifacts
     - "hero.Attributes":      adding cannon support, capping level at 74
+    - "hero.Equipment":       adding support for new artifacts
     - "hero.Skill":           adding support for Interference-skill
     """
     result = value
@@ -454,10 +454,10 @@ def adapt(name, value):
         result = HERO_REGEX
     elif "hero.ArmyStack" == name:
         result = ArmyStack
-    elif "hero.Artifacts" == name:
-        result = Artifacts
     elif "hero.Attributes" == name:
         result = Attributes
+    elif "hero.Equipment" == name:
+        result = Equipment
     elif "hero.Skill" == name:
         result = Skill
     elif "hero.stats.DATAPROPS" == name:

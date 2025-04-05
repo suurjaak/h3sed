@@ -171,8 +171,8 @@ class ArmyStack(DataClass, hero.ArmyStack):
                  "count": make_integer_cast("army.count", version=NAME)}
 
 
-class Artifacts(DataClass, hero.Artifacts):
-    __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Artifacts.__slots__
+class Equipment(DataClass, hero.Equipment):
+    __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Equipment.__slots__
                  if "side5" != k}
 
 
@@ -198,15 +198,15 @@ def adapt(name, value):
     """
     Adapts certain categories:
 
-    - "hero.artifacts.DATAPROPS":  dropping slot "side5"
+    - "hero.equipment.DATAPROPS":  dropping slot "side5"
     - "hero_byte_positions":  dropping slot "side5", shifting slot "inventory" if older format
     - "hero_regex":           dropping one slot from artifacts
     - "hero.ArmyStack":       adding support for new creatures
-    - "hero.Artifacts":       adding support for new artifacts
+    - "hero.Equipment":       adding support for new artifacts
 
     """
     result = value
-    if "hero.artifacts.DATAPROPS" == name:
+    if "hero.equipment.DATAPROPS" == name:
         result = [x for x in value if x.get("name") != "side5"]
     elif "hero_byte_positions" == name:
         result = value.copy()
@@ -217,8 +217,8 @@ def adapt(name, value):
         result = HERO_REGEX_NEWFORMAT if conf.SavegameNewFormat else HERO_REGEX
     elif "hero.ArmyStack" == name:
         result = ArmyStack
-    elif "hero.Artifacts" == name:
-        result = Artifacts
+    elif "hero.Equipment" == name:
+        result = Equipment
     return result
 
 

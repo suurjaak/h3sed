@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  04.04.2025
+@modified  05.04.2025
 ------------------------------------------------------------------------------
 """
 import logging
@@ -129,9 +129,9 @@ def serialize(spells, hero_bytes, version, hero=None):
     ARTIFACT_SPELLS = metadata.Store.get("artifact_spells", version=version)
     BANNABLE_SPELLS = metadata.Store.get("bannable_spells", version=version)
 
-    artifact_spells0 = set(y for x in hero.original.get("artifacts", {}).values()
+    artifact_spells0 = set(y for x in hero.original.get("equipment", {}).values()
                            for y in ARTIFACT_SPELLS.get(x, [])) if hero else set()
-    artifact_spells  = set(y for x in hero.artifacts.values()
+    artifact_spells  = set(y for x in hero.equipment.values()
                            for y in ARTIFACT_SPELLS.get(x, [])) if hero else set()
     conditional_spells  = set(BANNABLE_SPELLS)
     conditional_spells &= artifact_spells0 & artifact_spells

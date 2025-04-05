@@ -19,7 +19,7 @@ import h3sed
 from .. lib.util import AttrDict, OrderedSet, SlotsDict, TypedArray
 from .. import metadata
 from . import army
-from . import artifacts
+from . import equipment
 from . import inventory
 from . import skills
 from . import spells
@@ -34,7 +34,7 @@ PROPERTIES = {
     "stats":     stats,
     "skills":    skills,
     "army":      army,
-    "artifacts": artifacts,
+    "equipment": equipment,
     "inventory": inventory,
     "spells":    spells,
 }
@@ -57,9 +57,9 @@ def make_artifact_cast(location, version=None):
     def cast(value=None):
         if not lower_to_cased: # First run: populate cache
             if "inventory" == location: slot = location
-            else: slot = metadata.Store.get("hero_slots", version=version)[location]
+            else: slot = metadata.Store.get("equipment_slots", version=version)[location]
             error_template[:] = ["Invalid value for %s artifacts: %%r" % slot]
-            choices[:] = metadata.Store.get("artifacts", version=version, category=slot)
+            choices[:] = metadata.Store.get("artifacts", category=slot, version=version)
             lower_to_cased.update((x.lower(), x) for x in choices)
 
         if not value: return None
@@ -166,8 +166,8 @@ class Army(TypedArray, DataClass):
         TypedArray.__init__(self, dataclass, minmax[1], dataclass)
 
 
-class Artifacts(SlotsDict, DataClass):
-    """Hero artifacts property."""
+class Equipment(SlotsDict, DataClass):
+    """Hero equipment property."""
     __slots__ = {k: make_artifact_cast(k) for k in (
         "armor", "cloak", "feet", "helm", "lefthand", "neck", "righthand",
         "shield", "side1", "side2", "side3", "side4", "side5", "weapon"
@@ -181,7 +181,7 @@ class Artifacts(SlotsDict, DataClass):
         """
         errors = []
 
-        location_to_slot = metadata.Store.get("hero_slots", version=self.get_version())
+        location_to_slot = metadata.Store.get("equipment_slots", version=self.get_version())
         artifact_to_slots = metadata.Store.get("artifact_slots", version=self.get_version())
 
         data = dict(args[0], **kwargs) if args else kwargs
@@ -211,13 +211,13 @@ class Artifacts(SlotsDict, DataClass):
 
 
     def realize(self, hero=None):
-        """Updates hero primary attributes from changed artifacts, if hero given."""
+        """Updates hero primary attributes from changed equipment, if hero given."""
         if not hero: return
 
         ARTIFACT_STATS = metadata.Store.get("artifact_stats", version=self.get_version())
         HERO_RANGES = metadata.Store.get("hero_ranges", version=self.get_version())
         diff = [0] * len(metadata.PRIMARY_ATTRIBUTES)
-        for item in filter(bool, hero.artifacts.values()):
+        for item in filter(bool, hero.equipment.values()):
             if item in ARTIFACT_STATS: diff = [a + b for a, b in zip(diff, ARTIFACT_STATS[item])]
         hero.ensure_basestats()
         for attribute, value in zip(metadata.PRIMARY_ATTRIBUTES, diff):
@@ -266,9 +266,9 @@ class Inventory(TypedArray, DataClass):
         items, sortkeys = [x for x in self if x], []
         if order:
             ARTIFACT_SLOTS = metadata.Store.get("artifact_slots", version=self.get_version())
-            LOCATION_TO_SLOT = metadata.Store.get("hero_slots", version=self.get_version())
-            HERO_LOCATIONS = list(Artifacts.factory(self.get_version()).__slots__)
-            slot_order = [LOCATION_TO_SLOT[location] for location in HERO_LOCATIONS]
+            LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.get_version())
+            EQUIPMENT_LOCATIONS = list(Equipment.factory(self.get_version()).__slots__)
+            slot_order = [LOCATION_TO_SLOT[location] for location in EQUIPMENT_LOCATIONS]
             slot_order.extend(("inventory", "unknown")) # "unknown" just in case
         for name in order:
             if "name" == name:
@@ -335,7 +335,7 @@ class Hero(object):
         self.stats     = Attributes.factory(version)
         self.skills    = Skills    .factory(version)
         self.army      = Army      .factory(version)
-        self.artifacts = Artifacts .factory(version)
+        self.equipment = Equipment .factory(version)
         self.inventory = Inventory .factory(version)
         self.spells    = Spells    .factory(version)
         ## Primary attributes without artifact bonuses, to track changes beyond attribute range
@@ -380,7 +380,7 @@ class Hero(object):
         if self.basestats and not force: return
         ARTIFACT_STATS = metadata.Store.get("artifact_stats", version=self.version)
         diff = [0] * len(metadata.PRIMARY_ATTRIBUTES)
-        for artifact_name in filter(ARTIFACT_STATS.get, self.artifacts.values()):
+        for artifact_name in filter(ARTIFACT_STATS.get, self.equipment.values()):
             diff = [a + b for a, b in zip(diff, ARTIFACT_STATS[artifact_name])]
         for attribute_name, value in zip(metadata.PRIMARY_ATTRIBUTES, diff):
             self.basestats[attribute_name] = self.stats[attribute_name] - value

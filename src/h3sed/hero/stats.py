@@ -255,12 +255,12 @@ class StatsPlugin(object):
         Return (text, tooltip) for primaty attribute bonuses or "" if no bonus,
         like ("base 3 +1 Armo.. +2 Cent..", "base 3\n+1 Armor of Wonder\n+2 Centaur's Axe").
         """
-        if not getattr(self._hero, "artifacts", None): return None
+        if not self._hero.equipment: return None
         MAXLEN = 65
         STATS = artifact_stats or metadata.Store.get("artifact_stats", version=self.version)
         INDEX = list(metadata.PRIMARY_ATTRIBUTES).index(prop["name"])
         base = self._hero.basestats[prop["name"]]
-        artifacts = list(self._hero.artifacts.values())
+        artifacts = list(self._hero.equipment.values())
         artifacts = [n for n in artifacts if n in STATS and STATS[n][INDEX]]
         if not artifacts:
             return ""

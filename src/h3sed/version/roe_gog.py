@@ -68,12 +68,12 @@ def adapt(name, value):
     """
     Adapts certain categories:
 
-    - "hero.artifacts.DATAPROPS":  dropping slot "side5"
+    - "hero.equipment.DATAPROPS":  dropping slot "side5"
     - "hero_byte_positions"        dropping slot "side5"
-    - "hero_regex" :               dropping one slot from artifacts to expect 18 items
+    - "hero_regex" :               dropping one slot from equipment to expect 18 items
     """
     result = value
-    if "hero.artifacts.DATAPROPS" == name:
+    if "hero.equipment.DATAPROPS" == name:
         result = [x for x in value if x.get("name") != "side5"]
     elif "hero_regex" == name:
         result = HERO_REGEX

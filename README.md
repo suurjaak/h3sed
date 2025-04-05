@@ -41,7 +41,7 @@ A timestamped daily backup copy is automatically created of the savegame file, o
 ![Screenshot](https://raw.githubusercontent.com/suurjaak/h3sed/gh-pages/img/screen.png)
 
 Note: savegames from different releases of Armageddon's Blade may have different
-structure for artifacts and inventory. For working with savegames from an earlier
+structure for equipment and inventory. For working with savegames from an earlier
 version, uncheck "New format in Armageddon's Blade" in program menu File -> Options.
 
 **Warning:** as Heroes3 savefile format is not publicly known,

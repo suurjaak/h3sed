@@ -294,8 +294,8 @@ category = get("category")
 {{ item }}
     %endfor
 %endif
-%if category is None or "artifacts" == category:
-    %for item in filter(bool, hero.artifacts.values()):
+%if category is None or "equipment" == category:
+    %for item in filter(bool, hero.equipment.values()):
 {{ item }}
     %endfor
 %endif
@@ -362,8 +362,8 @@ def sortarrow(col):
 %if not categories or categories["army"]:
     <th align="left" valign="bottom" nowrap><a href="sort:army"><font color="{{ conf.FgColour }}">Army{{! sortarrow("army") }}</font></a></th>
 %endif
-%if not categories or categories["artifacts"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:artifacts"><font color="{{ conf.FgColour }}">Artifacts{{! sortarrow("artifacts") }}</font></a></th>
+%if not categories or categories["equipment"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:equipment"><font color="{{ conf.FgColour }}">Equipment{{! sortarrow("equipment") }}</font></a></th>
 %endif
 %if not categories or categories["inventory"]:
     <th align="left" valign="bottom" nowrap><a href="sort:inventory"><font color="{{ conf.FgColour }}">Inventory{{! sortarrow("inventory") }}</font></a></th>
@@ -412,9 +412,9 @@ def sortarrow(col):
     %endfor
     </td>
 %endif
-%if not categories or categories["artifacts"]:
+%if not categories or categories["equipment"]:
     <td align="left" valign="top" nowrap>
-    %for item in filter(bool, hero.artifacts.values()):
+    %for item in filter(bool, hero.equipment.values()):
     {{ item }}<br />
     %endfor
     </td>
@@ -475,8 +475,8 @@ deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_AR
     %for item in hero.spells:
 {{ item }}
     %endfor
-%elif "artifacts" == column:
-    %for slot, item in ((k, v) for k, v in hero.artifacts.items() if v):
+%elif "equipment" == column:
+    %for slot, item in ((k, v) for k, v in hero.equipment.items() if v):
 {{ slot }}: {{ item }}
     %endfor
 %elif "inventory" == column:
@@ -806,8 +806,8 @@ colptr += state
 %if not categories or categories["army"]:
     <th><a class="sort" title="Sort by army" onclick="onSort(this)">Army</a></th>
 %endif
-%if not categories or categories["artifacts"]:
-    <th><a class="sort" title="Sort by artifacts" onclick="onSort(this)">Artifacts</a></th>
+%if not categories or categories["equipment"]:
+    <th><a class="sort" title="Sort by equipment" onclick="onSort(this)">Equipment</a></th>
 %endif
 %if not categories or categories["inventory"]:
     <th><a class="sort" title="Sort by inventory" onclick="onSort(this)">Inventory</a></th>
@@ -850,9 +850,9 @@ colptr += state
     %endfor
     </td>
 %endif
-%if not categories or categories["artifacts"]:
+%if not categories or categories["equipment"]:
     <td>
-    %for item in filter(bool, hero.artifacts.values()):
+    %for item in filter(bool, hero.equipment.values()):
     {{ item }}<br />
     %endfor
     </td>
