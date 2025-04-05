@@ -7,33 +7,44 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  14.09.2024
+@modified  05.04.2025
 ------------------------------------------------------------------------------
 """
 import re
 
-from h3sed.lib import util
-from h3sed.metadata import BytePositions, Store
+from .. import hero
+from .. import metadata
+from .. hero import make_artifact_cast, make_integer_cast, make_string_cast
 
 
-PROPS = {"name": "hota", "label": "Horn of the Abyss", "index": 3}
+NAME  = "hota"
+TITLE = "Horn of the Abyss"
 
 
 """Game major and minor version byte ranges, as (min, max)."""
-VersionByteRanges = {
+VERSION_BYTERANGES = {
     "version_major":  (44, -1),
     "version_minor":  ( 5, -1),
 }
 
 
-"""Maximum possible level for heroes."""
-HeroLevelMax = 74
-
 """Hero skills, in file order, added to default skills."""
-Skills = ["Interference"]
+SKILLS = ["Interference"]
+
+
+"""Allowed (min, max) ranges for various hero properties."""
+HERO_RANGES = {
+    "level":           ( 0, 74),
+    "skills":          ( 0, 29),
+}
+
+
+"""Options for Ballista war machine."""
+BALLISTA_CHOICES = ["Ballista", "Cannon"]
+
 
 """Hero artifacts, for wearing and side slots, excluding spell scrolls."""
-Artifacts = [
+ARTIFACTS = [
     "Admiral's Hat",
     "Angelic Alliance",
     "Armageddon's Blade",
@@ -74,13 +85,13 @@ Artifacts = [
 
 
 """Special artifacts like Ballista."""
-SpecialArtifacts = [
+SPECIAL_ARTIFACTS = [
     "Cannon",
 ]
 
 
 """Creatures for hero army slots."""
-Creatures = [
+CREATURES = [
     "Armadillo",
     "Automaton",
     "Ayssid",
@@ -142,7 +153,7 @@ Creatures = [
 
 
 """IDs of all items in savefile."""
-IDs = {
+IDS = {
     # Artifacts
     "Admiral's Hat":                     0x88,
     "Angelic Alliance":                  0x81,
@@ -252,7 +263,7 @@ IDs = {
 
 
 """Artifact slots, with first being primary slot."""
-ArtifactSlots = {
+ARTIFACT_SLOTS = {
     "Admiral's Hat":                     ["helm", "neck"],
     "Angelic Alliance":                  ["weapon", "helm", "neck", "armor", "shield", "feet"],
     "Armageddon's Blade":                ["weapon"],
@@ -293,7 +304,7 @@ ArtifactSlots = {
 
 
 """Primary skill modifiers that artifacts give to hero."""
-ArtifactStats = {
+ARTIFACT_STATS = {
     "Angelic Alliance":                  (21, 21, 21, 21),
     "Armageddon's Blade":                (+3, +3, +3, +6),
     "Armor of the Damned":               (+3, +3, +2, +2),
@@ -308,14 +319,14 @@ ArtifactStats = {
 
 
 """Spells that artifacts make available to hero."""
-ArtifactSpells = {
+ARTIFACT_SPELLS = {
     "Armageddon's Blade":                ["Armageddon"],
     "Titan's Thunder":                   ["Titan's Lightning Bolt"],
 }
 
 
 """Spells that may be banned on certain maps, like boat spells on maps with no water."""
-BannableSpells = [
+BANNABLE_SPELLS = [
     "Scuttle Boat",
     "Summon Boat",
     "Water Walk",
@@ -323,14 +334,14 @@ BannableSpells = [
 
 
 
-# Index for byte start of various attributes in hero bytearray
-POS = {
+# Index overrides for byte start of various attributes in hero bytearray
+HERO_BYTEPOSITIONS = {
     "skills_slot":     1061, # Skill slots
 }
 
-# Since savefile format is unknown, hero structs are identified heuristically,
-# by matching byte patterns.
-RGX_HERO = re.compile(b"""
+
+"""Regulax expression for finding hero struct in savefile bytes."""
+HERO_REGEX = re.compile(b"""
     .{4}                     #   4 bytes: movement points in total             000-003
     .{4}                     #   4 bytes: movement points remaining            004-007
     .{4}                     #   4 bytes: experience                           008-011
@@ -360,7 +371,7 @@ RGX_HERO = re.compile(b"""
       (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
     ){19}
 
-                             # 512 bytes: 64 8-byte artifacts in backpack      503-1014
+                             # 512 bytes: 64 8-byte artifacts in inventory     503-1014
     ( ((.\x00{3}) | \xFF{4}){2} ){64}
 
                              # 10 bytes: slots taken by combination artifacts 1015-1024
@@ -373,71 +384,92 @@ RGX_HERO = re.compile(b"""
 
 
 
+class DataClass(hero.DataClass):
+
+    def get_version(self):
+        """Returns game version."""
+        return NAME
+
+
+class ArmyStack(DataClass, hero.ArmyStack,):
+    __slots__ = {"name":  make_string_cast("creatures", version=NAME),
+                 "count": make_integer_cast("army.count", version=NAME)}
+
+
+class Artifacts(DataClass, hero.Artifacts):
+    __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Artifacts.__slots__}
+
+
+class Attributes(DataClass, hero.Attributes):
+    __slots__ = dict(hero.Attributes.__slots__)
+    __slots__["level"] = make_integer_cast("level", version=NAME)
+    __slots__["ballista"] = make_string_cast("ballista", version=NAME, choices=BALLISTA_CHOICES)
+
+
+class Skill(DataClass, hero.Skill):
+    __slots__ = {"name":  make_string_cast("skills", version=NAME),
+                 "level": make_string_cast("skill_levels", default=True, version=NAME)}
+
+
+
 def init():
-    """Initializes artifacts and creatures for Horn of the Abyss."""
-    Store.add("artifacts", Artifacts, version=PROPS["name"])
-    Store.add("artifacts", Artifacts, version=PROPS["name"], category="inventory")
-    for slot in set(sum(ArtifactSlots.values(), [])):
-        Store.add("artifacts", [k for k, v in ArtifactSlots.items() if v[0] == slot],
-                  version=PROPS["name"], category=slot)
+    """Adds Armageddon's Blade data to metadata stores."""
+    metadata.Store.add("artifacts", ARTIFACTS, version=NAME)
+    metadata.Store.add("artifacts", ARTIFACTS, category="inventory", version=NAME)
+    for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
+        metadata.Store.add("artifacts", [k for k, v in ARTIFACT_SLOTS.items() if v[0] == slot],
+                  category=slot, version=NAME)
 
-    Store.add("artifact_slots",    ArtifactSlots,    version=PROPS["name"])
-    Store.add("artifact_spells",   ArtifactSpells,   version=PROPS["name"])
-    Store.add("artifact_stats",    ArtifactStats,    version=PROPS["name"])
-    Store.add("creatures",         Creatures,        version=PROPS["name"])
-    Store.add("ids",               IDs,              version=PROPS["name"])
-    Store.add("skills",            Skills,           version=PROPS["name"])
-    Store.add("special_artifacts", SpecialArtifacts, version=PROPS["name"])
-    Store.add("bannable_spells",   BannableSpells,   version=PROPS["name"])
-    for artifact, spells in ArtifactSpells.items():
-        Store.add("spells", spells, version=PROPS["name"], category=artifact)
-
-
-def props():
-    """Returns props as {label, index}."""
-    return PROPS
+    metadata.Store.add("artifact_slots",    ARTIFACT_SLOTS,    version=NAME)
+    metadata.Store.add("artifact_spells",   ARTIFACT_SPELLS,   version=NAME)
+    metadata.Store.add("artifact_stats",    ARTIFACT_STATS,    version=NAME)
+    metadata.Store.add("creatures",         CREATURES,         version=NAME)
+    metadata.Store.add("hero_ranges",       HERO_RANGES,       version=NAME)
+    metadata.Store.add("ids",               IDS,               version=NAME)
+    metadata.Store.add("skills",            SKILLS,            version=NAME)
+    metadata.Store.add("special_artifacts", SPECIAL_ARTIFACTS, version=NAME)
+    metadata.Store.add("bannable_spells",   BANNABLE_SPELLS,   version=NAME)
+    for artifact, spells in ARTIFACT_SPELLS.items():
+        metadata.Store.add("spells", spells, category=artifact, version=NAME)
 
 
-def adapt(source, category, value):
+def adapt(name, value):
     """
     Adapts certain categories:
 
-    - "pos"        for hero sub-plugins: adding Interference-skill support
-    - "props"      for skills-plugin:    adding Interference-skill support
-    - "props"      for stats-plugin:     adding cannon support, capping level at 74
-    - "regex"      for hero-plugin:      adding Interference-skill support
-    - "exp_levels" for stats-plugin:     capping level at 74
+    - "expereience_levels":   capping level at 74
+    - "hero_regex":           adding support for Interference-skill
+    - "hero_byte_positions":  adding support for Interference-skill
+    - "hero.ArmyStack":       adding support for new creatures
+    - "hero.Artifacts":       adding support for new artifacts
+    - "hero.Attributes":      adding cannon support, capping level at 74
+    - "hero.Skill":           adding support for Interference-skill
     """
-    root = util.get(source, "parent", default=source)
-    if util.get(root, "savefile", "version") != PROPS["name"]: return value
-
     result = value
-    if "props" == category and "stats" == util.get(source, "name"):
+    if "experience_levels" == name:
+        result = {k: v for k, v in value.items() if k <= HERO_RANGES["level"][1]}
+    elif "hero_byte_positions" == name:
+        result = dict(value, **HERO_BYTEPOSITIONS)
+    elif "hero_regex" == name:
+        result = HERO_REGEX
+    elif "hero.ArmyStack" == name:
+        result = ArmyStack
+    elif "hero.Artifacts" == name:
+        result = Artifacts
+    elif "hero.Attributes" == name:
+        result = Attributes
+    elif "hero.Skill" == name:
+        result = Skill
+    elif "hero.stats.DATAPROPS" == name:
         # Replace ballista-prop checkbox with combobox including cannon
         result = []
         for prop in value:
             if "ballista" == prop["name"]:
-                cc = ["", "Ballista", "Cannon"]
-                prop = dict(prop, type="combo", choices=cc)
-            elif "level" == prop["name"]:
-                prop = dict(prop, max=HeroLevelMax)
+                prop = dict(prop, type="combo", choices=[""] + BALLISTA_CHOICES)
             result.append(prop)
-    if "experience_levels" == category and "stats" == util.get(source, "name"):
-        result = {k: v for k, v in value.items() if k <= HeroLevelMax}
-    elif "props" == category and "skills" == util.get(source, "name"):
-        result = []
-        for prop in value:
-            if "max" in prop: prop = dict(prop, max=prop["max"] + len(Skills))
-            result.append(prop)
-    elif "regex" == category and "hero" == util.get(source, "name"):
-        # Replace hero regex with one expecting 29 skill choices
-        result = RGX_HERO
-    elif "pos" == category and "hero" == util.get(root, "name"):
-        # Update skill slots position
-        result = dict(value, **POS)
     return result
 
 
 def detect(savefile):
     """Returns whether savefile bytes match Horn of the Abyss."""
-    return savefile.match_byte_ranges(BytePositions, VersionByteRanges)
+    return savefile.match_byte_ranges(metadata.BYTE_POSITIONS, VERSION_BYTERANGES)

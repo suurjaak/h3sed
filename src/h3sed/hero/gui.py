@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Hero plugin, parses savefile for heroes.
-
-All hero specifics are handled by subplugins in file directory, auto-loaded.
+UI plugin for managing heroes in a savefile.
 
 
-Subplugin modules are expected to have the following API (all methods optional):
-
-    def init():
-        '''Called at plugin load.'''
+Subplugin modules are expected to have the following API (all methods mandatory):
 
     def props():
         '''
@@ -17,13 +12,13 @@ Subplugin modules are expected to have the following API (all methods optional):
         Index is used for sorting plugins.
         '''
 
-    def factory(savefile, parent, panel):
+    def factory(parent, panel, version):
         '''
-        Returns new plugin instance, if plugin instantiable.
+        Returns new plugin instance.
 
-        @param   savefile  xx
-        @param   parent    parent plugin (hero-plugin)
-        @param   panel     metadata.Savefile instance
+        @param   parent   parent plugin (hero-plugin)
+        @param   panel    wx.Panel for plugin render
+        @param   version  game version
         '''
 
 
@@ -35,26 +30,13 @@ Subplugin instances are expected to have the following API:
     def state(self):
         '''Mandatory. Returns subplugin state for gui.build().'''
 
-    def item(self):
-        '''Mandatory. Returns current hero.'''
-
-    def load(self, hero, panel=None):
-        '''Mandatory. Loads subplugin state from hero, optionally resetting panel.'''
-
-    def load_state(self, state):
-        '''Optional. Loads subplugin state from given data. Returns whether state changed.'''
-
-    def parse(self, hero, original=False):
-        '''Mandatory. Returns subplugin state parsed from hero bytearray, current or original.'''
-
-    def serialize(self):
-        '''Mandatory. Returns new hero bytearray from subplugin state.'''
+    def load(self, hero):
+        '''Mandatory. Loads hero to subplugin state.'''
 
     def render(self):
         '''
         Optional. Renders subplugin into panel given in factory(),
         if subplugin not renderable with gui.build().
-        Returns whether new controls were created.
         '''
 
     def on_add(self, prop, value):
@@ -74,14 +56,11 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  03.12.2024
+@modified  05.04.2025
 ------------------------------------------------------------------------------
 """
 import collections
-import copy
 import functools
-import glob
-import importlib
 import json
 import logging
 import os
@@ -94,207 +73,23 @@ import wx
 import wx.html
 import wx.lib.agw.flatnotebook
 
-from h3sed import conf
-from h3sed import gui
-from h3sed import guibase
-from h3sed import images
-from h3sed import metadata
-from h3sed import plugins
-from h3sed import templates
-from h3sed.lib import controls
-from h3sed.lib import util
-from h3sed.lib import wx_accel
+import h3sed
+from .. lib import controls
+from .. lib import util
+from .. lib import wx_accel
+from .. import conf
+from .. import gui
+from .. import guibase
+from .. import metadata
+from .. import templates
+
 
 logger = logging.getLogger(__package__)
 
 
-PLUGINS = [] # Loaded plugins as [{name, module}, ]
-PROPS   = {"name": "hero", "label": "Hero", "icon": images.PageHero}
-
-
-# Index for byte start of various attributes in hero bytearray
-POS = {
-    "movement_total":     0, # Movement points in total
-    "movement_left":      4, # Movement points remaining
-
-    "exp":                8, # Experience points
-    "mana":              16, # Spell points remaining
-    "level":             18, # Hero level
-
-    "skills_count":      12, # Skills count
-    "skills_level":     151, # Skill levels
-    "skills_slot":      179, # Skill slots
-
-    "army_types":        82, # Creature type IDs
-    "army_counts":      110, # Creature counts
-
-    "spells_book":      211, # Spells in book
-    "spells_available": 281, # All spells available for casting
-
-    "attack":           207, # Primary attribute: Attack
-    "defense":          208, # Primary attribute: Defense
-    "power":            209, # Primary attribute: Spell Power
-    "knowledge":        210, # Primary attribute: Knowledge
-
-    "helm":             351, # Helm slot
-    "cloak":            359, # Cloak slot
-    "neck":             367, # Neck slot
-    "weapon":           375, # Weapon slot
-    "shield":           383, # Shield slot
-    "armor":            391, # Armor slot
-    "lefthand":         399, # Left hand slot
-    "righthand":        407, # Right hand slot
-    "feet":             415, # Feet slot
-    "side1":            423, # Side slot 1
-    "side2":            431, # Side slot 2
-    "side3":            439, # Side slot 3
-    "side4":            447, # Side slot 4
-    "ballista":         455, # Ballista slot
-    "ammo":             463, # Ammo Cart slot
-    "tent":             471, # First Aid Tent slot
-    "catapult":         479, # Catapult slot
-    "spellbook":        487, # Spellbook slot
-    "side5":            495, # Side slot 5
-    "inventory":        503, # Inventory start
-
-    "reserved": {            # Slots reserved by combination artifacts
-        "helm":        1016,
-        "cloak":       1017,
-        "neck":        1018,
-        "weapon":      1019,
-        "shield":      1020,
-        "armor":       1021,
-        "hand":        1022, # For both left and right hand, \x00-\x02
-        "feet":        1023,
-        "side":        1024, # For all side slots, \x00-\x05
-    },
-
-}
-
-# Since savefile format is unknown, hero structs are identified heuristically,
-# by matching byte patterns.
-RGX_HERO = re.compile(b"""
-    # There are at least 60 bytes more at front, but those can also include
-    # hero biography, making length indeterminate.
-    # Bio ends at position -32 from total movement point start.
-    # If bio end position is \x00, then bio is empty, otherwise bio extends back
-    # until a 4-byte span giving bio length (which always ends with \x00).
-
-    .{4}                     #   4 bytes: movement points in total             000-003
-    .{4}                     #   4 bytes: movement points remaining            004-007
-    .{4}                     #   4 bytes: experience                           008-011
-    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     012-015
-    .{2}                     #   2 bytes: spell points remaining               016-017
-    .{1}                     #   1 byte:  hero level                           018-018
-
-    .{63}                    #  63 bytes: unknown                              019-081
-
-    .{28}                    #  28 bytes: 7 4-byte creature IDs                082-109
-    .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
-
-                             #  13 bytes: hero name, null-padded               138-150
-    (?P<name>[^\x00-\x20].{11}\x00)
-    [\x00-\x03]{28}          #  28 bytes: skill levels                         151-178
-    [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
-    .{4}                     #   4 bytes: primary stats                        207-210
-
-    [\x00-\x01]{70}          #  70 bytes: spells in book                       211-280
-    [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
-
-                             # 152 bytes: 19 8-byte equipments worn            351-502
-                             # Blank spots:   FF FF FF FF XY XY XY XY
-                             # Artifacts:     XY 00 00 00 FF FF FF FF
-                             # Scrolls:       XY 00 00 00 00 00 00 00
-    (?P<artifacts>(          # Catapult etc:  XY 00 00 00 XY XY 00 00
-      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
-    ){19})
-
-                             # 512 bytes: 64 8-byte artifacts in backpack      503-1014
-    ( ((.\x00{3}) | \xFF{4}){2} ){64}
-
-                             # 10 bytes: slots taken by combination artifacts 1015-1024
-    .[\x00-\x01]{6}[\x00-\x02][\x00-\x01][\x00-\x05]
-""", re.VERBOSE | re.DOTALL)
-
-
-
-def init():
-    """Loads hero plugins list."""
-    global PLUGINS
-    basefile = os.path.join(conf.PluginDirectory, "hero", "__init__.py")
-    PLUGINS[:] = plugins.load_modules(__package__, basefile)
-
-
-def props():
-    """Returns props for hero-tab, as {label, icon}."""
-    return PROPS
-
-
-def factory(savefile, panel, commandprocessor):
-    """Returns a new hero-plugin instance."""
-    return HeroPlugin(savefile, panel, commandprocessor)
-
-
-
-class Hero(object):
-    """
-    Container for all hero attributes.
-
-    Plugins will add their own specific attributes like `inventory`.
-    """
-
-    def __init__(self, name, bytes, place, span, savefile):
-        self.name      = name
-        self.bytes     = bytes     # Hero bytearray
-        self.place     = place     # Hero index in savefile
-        self.span      = span      # Hero byte span in uncompressed savefile
-        self.savefile  = savefile  # metadata.SaveFile instance
-        self.basestats = {}  # Primary attributes without artifact bonuses
-        self.state0    = {}  # Data after first load or last save, as {category: {..} or [..]}
-        self.yaml      = ""  # Data after first load or last change, as full hero charsheet YAML
-        self.yamls1    = []  # Data after first load or last save, as [category YAML, ]
-        self.yamls2    = []  # Data after last change, as [category YAML, ]
-
-    def copy(self):
-        """Returns a copy of this hero."""
-        hero = Hero(self.name, self.bytes, self.place, self.span, self.savefile)
-        hero.update(self)
-        return hero
-
-    def update(self, hero):
-        """Replaces attributes on hero with copies from given hero."""
-        for k, v in vars(hero).items():
-            v2 = v if isinstance(v, metadata.Savefile) else copy.deepcopy(v)
-            setattr(self, k, v2)
-
-    def get_bytes(self, original=False):
-        """Returns hero bytearray, current or original."""
-        if not original: return copy.copy(self.bytes)
-        return bytearray(self.savefile.raw0[self.span[0]:self.span[1]])
-
-    def ensure_basestats(self, clear=False):
-        """Populates internal hero stats without artifacts, if not already populated."""
-        if clear: self.basestats.clear()
-        if self.basestats or not hasattr(self, "artifacts"): return
-        STATS = metadata.Store.get("artifact_stats", self.savefile.version)
-        diff = [0] * len(metadata.PrimaryAttributes)
-        for item in filter(STATS.get, self.artifacts.values()):
-            diff = [a + b for a, b in zip(diff, STATS[item])]
-        for k, v in zip(metadata.PrimaryAttributes, diff):
-            self.basestats[k] = self.stats[k] - v
-
-    def __eq__(self, other):
-        """Returns whether this hero is the same as given (same name and place)."""
-        return isinstance(other, Hero) and (self.name, self.place) == (other.name, other.place)
-
-    def __str__(self):
-        """Returns hero name."""
-        return self.name
-
-
 
 class HeroPlugin(object):
-    """Encapsulates hero-plugin state and behaviour."""
+    """Provides UI functionality for viewing and updating hero data in savegame."""
 
     """Milliseconds to wait after edit before applying search filter"""
     SEARCH_INTERVAL = 300
@@ -304,12 +99,12 @@ class HeroPlugin(object):
 
 
     def __init__(self, savefile, panel, commandprocessor):
-        self.name        = PROPS["name"]
+        self.name        = "hero"
         self.savefile    = savefile
         self._panel      = panel   # wxPanel container for plugin components
         self._undoredo   = commandprocessor # wx.CommandProcessor
         self._plugins    = []      # [{name, label, instance, panel}, ]
-        self._heroes     = []      # [Hero(name, bytes, place, span, ..), ] ordered by name
+        self._heroes     = []      # [h3sed.hero.Hero] ordered by name
         self._ctrls      = {}      # {name: wx.Control, }
         self._pages      = {}      # {wx.Window from self._ctrls["tabs"]: hero index in self._heroes}
         self._indexpanel = None    # Heroes index panel
@@ -334,7 +129,8 @@ class HeroPlugin(object):
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT | wx.FD_CHANGE_DIR | wx.RESIZE_BORDER
         )
         self._dialog_export.FilterIndex = 1
-        self.parse()
+
+        self._heroes = self.savefile.heroes[:]
         self.prebuild()
         panel.Bind(gui.EVT_PLUGIN, self.on_plugin_event)
 
@@ -406,10 +202,10 @@ class HeroPlugin(object):
         tb.AddTool(wx.ID_PASTE,   "", bmp3, shortHelp="Paste data from clipboard to current hero")
         tb.AddSeparator()
         tb.AddTool(wx.ID_SAVE,    "", bmp4, shortHelp="Save current hero to file")
-        tb.Bind(wx.EVT_TOOL,    self.on_charsheet,   id=wx.ID_INFO)
-        tb.Bind(wx.EVT_TOOL,    self.on_copy_hero,   id=wx.ID_COPY)
-        tb.Bind(wx.EVT_TOOL,    self.on_paste_hero,  id=wx.ID_PASTE)
-        tb.Bind(wx.EVT_TOOL,    self.on_save_hero,  id=wx.ID_SAVE)
+        tb.Bind(wx.EVT_TOOL, self.on_charsheet,  id=wx.ID_INFO)
+        tb.Bind(wx.EVT_TOOL, self.on_copy_hero,  id=wx.ID_COPY)
+        tb.Bind(wx.EVT_TOOL, self.on_paste_hero, id=wx.ID_PASTE)
+        tb.Bind(wx.EVT_TOOL, self.on_save_hero,  id=wx.ID_SAVE)
         self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
         tb.Realize()
         tb.Disable()
@@ -475,14 +271,18 @@ class HeroPlugin(object):
         self._panel.Freeze()
         self._heropanel.DestroyChildren()
         self._heropanel.Sizer.Clear()
+        del self._plugins[:]
         self._ctrls["hero"].SetItems([x.name for x in self._heroes])
 
         nb = wx.Notebook(self._heropanel)
-        for p in self._plugins:
-            subpanel = p["panel"] = wx.ScrolledWindow(nb)
-            title = p.get("label", p["name"])
+        self._plugins = [dict(m.props(), module=m) for m in h3sed.hero.PROPERTIES.values()]
+        for props in self._plugins:
+            subpanel = props["panel"] = wx.ScrolledWindow(nb)
+            title = props.get("label", props["name"])
             nb.AddPage(subpanel, title)
             controls.ColourManager.Manage(subpanel, "BackgroundColour", wx.SYS_COLOUR_BTNFACE)
+            props["instance"] = props["module"].factory(self, subpanel, self.savefile.version)
+
         self._heropanel.Sizer.Add(nb, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW, proportion=1)
 
         if conf.Positions.get("herotab_index") \
@@ -501,7 +301,7 @@ class HeroPlugin(object):
         """Submits callable to undo-redo command processor to be invoked."""
         if not self._panel: return
         self._index["stale"] = True
-        self._undoredo.Submit(plugins.PluginCommand(self, callable, name))
+        self._undoredo.Submit(gui.PluginCommand(self, callable, name))
 
 
     def render(self, reparse=False, reload=False, log=True):
@@ -512,15 +312,13 @@ class HeroPlugin(object):
         @param   reload   whether plugins should reload state from hero
         @param   log      whether plugin should log actions
         """
-        if not self._plugins:
-            if not PLUGINS: init()
-            self._plugins = [x.copy() for x in PLUGINS]
-            for p in self._plugins:
-                p["instance"] = p["module"].factory(self.savefile, self, panel=None)
         if reparse or reload: self._index["stale"] = True
-        if reparse: self.reparse()
+
+        if reparse:
+            self.refresh_file()
         elif self._hero and self._heropanel.Children:
-            for p in self._plugins: self.render_plugin(p["name"], reload=reload, log=log)
+            for p in self._plugins:
+                self.render_plugin(p["name"], reload=reload, log=log)
         else: self.build()
 
 
@@ -539,10 +337,8 @@ class HeroPlugin(object):
                 if kwargs.get("spans") \
                 and not any(a <= hero.span[0] and hero.span[1] <= b for a, b in kwargs["spans"]):
                     continue  # for index, hero
+
                 hero.yamls1[:], hero.yamls2[:] = (hero.yamls2 or hero.yamls1), []
-                for p in self._plugins if hero.state0 else ():
-                    if hasattr(hero, p["name"]):
-                        hero.state0[p["name"]] = copy.deepcopy(getattr(hero, p["name"]))
                 page = next((p for p, i in self._pages.items() if i == index), None)
                 if page is not None:
                     heroes_open.append(hero)
@@ -553,8 +349,8 @@ class HeroPlugin(object):
                 wx.PostEvent(self._panel, evt)
 
 
-    def reparse(self):
-        """Reparses state from savefile and refreshes UI."""
+    def refresh_file(self):
+        """Reloads heroes and refreshes UI."""
         tabs = self._ctrls["tabs"]
         hero0 = self._hero if self._pages_visited[-1:] not in ([], [None]) else None
         pages0 = [self._pages[p] for i in range(tabs.GetPageCount())
@@ -567,7 +363,7 @@ class HeroPlugin(object):
         for k, v in list(self._index.items()):
             if isinstance(v, (str, list)): self._index[k] = type(v)()
 
-        self.parse()
+        self._heroes = self.savefile.heroes[:]
         self._panel.Freeze()
         self._ignore_events = True
         try:
@@ -578,7 +374,7 @@ class HeroPlugin(object):
                 hero1 = heroes0[index]
                 hero2 = index < len(self._heroes) and self._heroes[index]
                 if hero1 != hero2:
-                    hero2 = next((x for x in self._heroes if x == hero1), None)  # Match name+place
+                    hero2 = next((x for x in self._heroes if x == hero1), None)  # Match name+index
                     hero2 = hero2 or next((x for x in self._heroes if x.name == hero1.name), None)
                 if not hero2:
                     visited0 = [i for i in visited0 if i != index]
@@ -608,22 +404,16 @@ class HeroPlugin(object):
             return
 
         heroes, links = self._heroes[:], list(range(len(self._heroes)))
-        pluginmap = {p["name"]: p["instance"] for p in self._plugins}
         tpl = step.Template(templates.HERO_SEARCH_TEXT)
-        tplargs = dict(pluginmap=pluginmap, categories=self._index["toggles"],
-                       sort_col=self._index["sort_col"], sort_asc=self._index["sort_asc"])
+        tplargs = dict(sort_col=self._index["sort_col"], sort_asc=self._index["sort_asc"],
+                       categories=self._index["toggles"])
         maketexts = lambda h: {c: tpl.expand(hero=h, category=c, **tplargs).lower()
                                for c in (["name"] + self.INDEX_CATEGORIES)}
         if not self._index["herotexts"]:
-            for p in self._plugins:
-                for hero, state in zip(heroes, p["instance"].parse(heroes)):
-                    setattr(hero, p["name"], state)
             for hero in heroes:
-                hero.ensure_basestats()
-                self.populate_hero_yamls(hero, parse=True)
+                self.populate_hero_yamls(hero)
             self._index["herotexts"] = [maketexts(h) for h in heroes]
         elif self._hero:
-            self._hero.ensure_basestats()
             index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
             self._index["herotexts"][index] = maketexts(self._hero)
 
@@ -636,8 +426,8 @@ class HeroPlugin(object):
             links, heroes = zip(*matches) if matches else ([], [])
         self._index["text"] = searchtext
         self._index["visible"] = heroes
-        tplargs.update(dict(heroes=heroes, count=len(self._heroes), links=links, text=searchtext,
-                            herotexts=self._index["herotexts"]))
+        tplargs.update(heroes=heroes, count=len(self._heroes), links=links, text=searchtext,
+                       herotexts=self._index["herotexts"], savefile=self.savefile)
         page = step.Template(templates.HERO_INDEX_HTML, escape=True).expand(**tplargs)
         if page != self._index["html"]:
             info = util.plural("hero", heroes) if len(heroes) == len(self._heroes) else \
@@ -819,22 +609,21 @@ class HeroPlugin(object):
         wx.YieldIfNeeded() # Allow dialog to disappear
         path = controls.get_dialog_path(self._dialog_export)
         guibase.status("Exporting %s..", path, flash=True)
-        plugins = {p["name"]: p["instance"] for p in self._plugins}
         if self._dialog_export.FilterIndex:
             tpl = step.Template(templates.HERO_EXPORT_HTML, strip=False, escape=True)
             tplargs = dict(heroes=self._index["visible"], categories=self._index["toggles"],
-                           pluginmap=plugins, savefile=self.savefile, count=len(self._heroes))
+                           savefile=self.savefile, count=len(self._heroes))
             with open(path, "wb") as f:
                 tpl.stream(f, **tplargs)
         else:
             COLS = ["name"]
             for k in (k for k, v in self._index["toggles"].items() if v):
-                COLS.extend((["level"] + list(metadata.PrimaryAttributes)) if "stats" == k else [k])
+                COLS.extend((["level"] + list(metadata.PRIMARY_ATTRIBUTES)) if "stats" == k else [k])
             tpl = step.Template(templates.HERO_EXPORT_CSV, strip=False)
             with util.csv_writer(path) as f:
                 f.writerow([c.capitalize() for c in COLS])
                 for hero in self._index["visible"]:
-                    vv = [tpl.expand(hero=hero, column=c, pluginmap=plugins).strip() for c in COLS]
+                    vv = [tpl.expand(hero=hero, column=c).strip() for c in COLS]
                     f.writerow(vv)
         guibase.status("Exported %s (%s).", path, util.format_bytes(os.path.getsize(path)),
                        flash=True)
@@ -871,7 +660,6 @@ class HeroPlugin(object):
             self.select_hero_tab(index)
             return
 
-        hero2.ensure_basestats()
         combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
         if status: guibase.status("Loading %s.", hero2.name, flash=True)
@@ -901,10 +689,8 @@ class HeroPlugin(object):
                 logger.info("Loading hero %s (bytes %s-%s in savefile).",
                             hero2.name, hero2.span[0], hero2.span[1] - 1)
             self._hero = hero2
-            do_state0 = not self._hero.state0
             for p in self._plugins:
                 self.render_plugin(p["name"], reload=True, log=not page_existed)
-                if do_state0: self._hero.state0[p["name"]] = copy.deepcopy(p["instance"].state())
 
         finally:
             if self._pages_visited[-1:] != [index]: self._pages_visited.append(index)
@@ -956,40 +742,6 @@ class HeroPlugin(object):
             search.SetSelection(*searchsel)
 
 
-    def parse(self):
-        """
-        Populates the list of hero bytearrays parsed from savefile binary,
-        as [{"name": hero name, "bytes": bytearray()}], sorted by name.
-        """
-        heroes = []
-
-        rgx_strip = re.compile(br"^(?!\xFF+\x00+$)([^\x00-\x19]+)\x00+$")
-        rgx_nulls = re.compile(br"^(\x00+)|(\x00{4}\xFF{4})+$")
-        RGX = plugins.adapt(self, "regex", RGX_HERO)
-
-        # Jump over potential campaign carry-over heroes, stored in savefile with their
-        # original armies+artifacts; the structs used by game come later.
-        pos = 30000
-        m = re.search(RGX, self.savefile.raw[pos:])
-        while m:
-            start, end = m.span()
-            if rgx_strip.match(m.group("name")) and not rgx_nulls.match(m.group("artifacts")):
-                blob = bytearray(self.savefile.raw[pos + start:pos + end])
-                name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
-                hero = Hero(name, blob, len(heroes), (start + pos, end + pos), self.savefile)
-                heroes.append(hero)
-                pos += end
-            else:
-                pos += start + 1
-            # Continue in small chunks once heroes section reached, regex can get slow for remainder
-            m = re.search(RGX, self.savefile.raw[pos:pos+5000])
-
-        logger.info("%s heroes detected in %s as version '%s'.",
-                    len(heroes) or "No ", self.savefile.filename, self.savefile.version)
-        self._heroes[:] = sorted(heroes, key=lambda x: x.name.lower())
-        self._index["stale"] = True
-
-
     def parse_yaml(self, value):
         """Populates current hero with value parsed as YAML."""
         try:
@@ -999,54 +751,53 @@ class HeroPlugin(object):
             logger.warning("Error loading hero data from clipboard: %s", e)
             guibase.status("No valid hero data in clipboard.", flash=conf.StatusShortFlashLength)
             return
+
+        new_states = {}  # {property name: state}
         pluginmap = {p["name"]: p["instance"] for p in self._plugins}
-        usables = {}  # {plugin name: state}
         for category, state in states.items():
             plugin = pluginmap.get(category)
-            if not callable(getattr(plugin, "load_state", None)):
-                continue  # for
             if not plugin:
                 logger.warning("Unknown category in hero data: %r", category)
                 continue  # for
+
             state0 = plugin.state()
-            if state is None: state = type(state0)()
-            if not isinstance(state0, type(state)):
+            if state is None:
+                state = state0.copy()
+                state.clear()
+
+            if isinstance(state0, type(state)):
+                new_states[category] = state
+            else:
                 logger.warning("Invalid data type in hero data %r for %s: %s",
                                category, type(state0).__name__, state)
-                continue  # for
-            usables[category] = state
-        if not usables: return
+        if not new_states: return
 
         def on_do(states):
-            changeds = []  # [plugin name, ]
+            changeds = []  # [property name, ]
             pluginmap = {p["name"]: p["instance"] for p in self._plugins}
             for category, state in states.items():
-                plugin = pluginmap.get(category)
-                state0 = plugin.state()
-                if state is None: state = type(state0)()
-                if plugin.load_state(state): changeds.append(category)
-                setattr(self._hero, category, plugin.state())
+                if pluginmap[category].load_state(state):
+                    changeds.append(category)
+            self._hero.realize()
             self.populate_hero_yamls(self._hero, changes=True)
-            self._hero.ensure_basestats(clear=True)
             if changeds:
                 self.patch()
                 for name in changeds:
                     self.render_plugin(name)
             return bool(changeds)
-        self.command(functools.partial(on_do, usables), "paste hero data from clipboard")
+        self.command(functools.partial(on_do, new_states), "paste hero data from clipboard")
 
 
-    def populate_hero_yamls(self, hero, changes=False, parse=False):
+    def populate_hero_yamls(self, hero, changes=False):
         """
         Sets hero data YAML attributes.
 
         @param   changes   whether to populate `yamls2` instead of `yamls1`
-        @param   parse     whether to parse data from hero original bytes
         """
         LF, INDENT = os.linesep, "  "
         states, maxlen = [], 0  # [(category, [(prefix, value), ])]
         for p in self._plugins:  # Assemble YAML by hand for more readable indentation
-            pairs, prefixlen = self.serialize_plugin_yaml(hero, p["instance"], INDENT, parse=parse)
+            pairs, prefixlen = self.serialize_plugin_yaml(hero, p["instance"], INDENT, original=not changes)
             states.append((p["name"], pairs))
             maxlen = max(maxlen, prefixlen)
         maxlen += len(INDENT) + 3
@@ -1060,26 +811,24 @@ class HeroPlugin(object):
         setattr(hero, "yamls2" if changes else "yamls1", formatteds)
 
 
-    def serialize_plugin_yaml(self, hero, plugin, indent="  ", parse=False):
+    def serialize_plugin_yaml(self, hero, plugin, indent="  ", original=False):
         """
         Returns hero data from plugin as YAML components.
 
-        @param   plugin  plugin instance
-        @param   indent  line leading indent
-        @param   parse   whether to parse data from hero original bytes
-        @return          [(formatted prefix, formatted value)], raw prefix maxlen
+        @param   plugin     plugin instance
+        @param   indent     line leading indent
+        @param   origianl   whether to use hero saved data instead of current unsaved
+        @return             [(formatted prefix, formatted value)], raw prefix maxlen
         """
         pairs, maxlen = [], 0
         fmt = lambda v: "" if v in (None, {}) else \
                         next((x[1:-1] if isinstance(v, util.text_types)
                               and re.match(r"[\x20-\x7e]+$", x) else x for x in [json.dumps(v)]))
         props = plugin.props()
-        if parse:                        state = plugin.parse([hero], original=True)[0]
-        elif plugin.item() == hero:      state = copy.copy(plugin.state())
-        elif hasattr(hero, plugin.name): state = getattr(hero, plugin.name)
-        else:                            state = plugin.parse([hero])[0]
+        state = hero.original[plugin.name] if original else hero.tree[plugin.name]
         for prop in props if isinstance(props, (list, tuple)) else [props]:
             if prop["type"] in ("itemlist", "checklist"):
+                state = list(state)
                 while state and not state[-1]: state.pop()  # Strip empty trailing values
                 for v in state:
                     itempairs = []
@@ -1119,8 +868,6 @@ class HeroPlugin(object):
         if self._hero != hero:
             self._hero = self._heroes[index]
         self._hero.update(hero)
-        for p in self._plugins:
-            self._hero.state0[p["name"]] = p["instance"].parse([self._hero], original=True)[0]
         combo.SetSelection(index)
 
 
@@ -1138,14 +885,13 @@ class HeroPlugin(object):
 
     def patch(self):
         """Serializes current plugin state to hero bytes, patches savefile binary."""
-        for p in self._plugins:
-            if callable(getattr(p.get("instance"), "serialize", None)):
-                self._hero.bytes = p["instance"].serialize()
+        self._hero.serialize()
         self.savefile.patch(self._hero.bytes, self._hero.span)
-        self.populate_hero_yamls(self._hero, parse=True)
+
+        self.populate_hero_yamls(self._hero)
         self.populate_hero_yamls(self._hero, changes=True)
-        changed = self._hero.yamls2 and self._hero.yamls1 != self._hero.yamls2
-        title = "%s%s" % (self._hero.name, "*" if changed else "")
+
+        title = "%s%s" % (self._hero.name, "*" if self._hero.is_changed() else "")
         index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
         page = next(p for p, i in self._pages.items() if i == index)
         self._ctrls["tabs"].SetPageText(self._ctrls["tabs"].GetPageIndex(page), title)
@@ -1165,23 +911,29 @@ class HeroPlugin(object):
             return
 
         def fmt(state):
+            if isinstance(state, set):  return list(state)
             if isinstance(state, dict): return {k: v for k, v in state.items() if v is not None}
-            if isinstance(state, list) and state[-2:] == [None, None]:
+            if isinstance(state, list) and state[-2:] == [None, None]: # Collapse trailing blanks
                 count = next((i for i, x in enumerate(state[::-1]) if x is not None), len(state))
                 return (("%s + " % state[:len(state) - count]) if count < len(state) else "") + \
                        "%s * %s" % ([None], count)
             return state
 
-        obj, item0 = p["instance"], p["instance"].item()
+        plugin, item0 = p["instance"], p["instance"].item()
         if reload or item0 is None:
-            obj.load(self._hero, p["panel"])
+            plugin.load(self._hero)
             if log: logger.info("Loaded hero %s %s %s.",
-                                self._hero.name, p["name"], fmt(obj.state()))
+                                self._hero.name, p["name"], fmt(plugin.state()))
         p["panel"].Freeze()
         try:
-            if   callable(getattr(obj, "render", None)): accel = obj.render()
-            elif callable(getattr(obj, "props",  None)): accel, _ = True, gui.build(obj, p["panel"])
-            if accel or item0 is None: wx_accel.accelerate(p["panel"])
+            do_accelerate = False
+            if callable(getattr(plugin, "render", None)):
+                do_accelerate = plugin.render()
+            elif callable(getattr(plugin, "props",  None)):
+                gui.build(plugin, p["panel"])
+                do_accelerate = True
+            if do_accelerate or item0 is None:
+                wx_accel.accelerate(p["panel"])
         finally:
             controls.ColourManager.Patch(p["panel"])
             p["panel"].Thaw()

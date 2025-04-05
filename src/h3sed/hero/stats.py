@@ -9,23 +9,19 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  02.12.2024
+@modified  05.04.2025
 ------------------------------------------------------------------------------
 """
 import functools
 import logging
-import sys
 
-import wx
+try: import wx
+except ImportError: wx = None
 
-from h3sed import conf
-from h3sed import gui
-from h3sed import guibase
-from h3sed import metadata
-from h3sed import plugins
-from h3sed.lib import util
-from h3sed.plugins.hero import POS
-from h3sed.plugins.hero.artifacts import UIPROPS as ARTIFACT_PROPS
+import h3sed
+from .. lib import util
+from .. import conf
+from .. import metadata
 
 
 logger = logging.getLogger(__package__)
@@ -36,45 +32,45 @@ PROPS = {"name": "stats", "label": "Main attributes", "index": 0}
 ## 100..127 is probably used as a buffer for artifact boosts;
 ## game will only show and use a maximum of 99.
 ## 128 or higher will cause overflow wraparound to 0.
-UIPROPS = [{
+DATAPROPS = [{
     "name":   "attack",
     "label":  "Attack",
     "type":   "number",
     "len":    1,
-    "min":    metadata.PrimaryAttributeRange[0],
-    "max":    metadata.PrimaryAttributeRange[1],
+    "min":    None,  # Populated later
+    "max":    None,  # Populated later
     "info":   None,  # Populated later
 }, {
     "name":   "defense",
     "label":  "Defense",
     "type":   "number",
     "len":    1,
-    "min":    metadata.PrimaryAttributeRange[0],
-    "max":    metadata.PrimaryAttributeRange[1],
+    "min":    None,  # Populated later
+    "max":    None,  # Populated later
     "info":   None,  # Populated later
 }, {
     "name":   "power",
     "label":  "Spell Power",
     "type":   "number",
     "len":    1,
-    "min":    metadata.PrimaryAttributeRange[0],
-    "max":    metadata.PrimaryAttributeRange[1],
+    "min":    None,  # Populated later
+    "max":    None,  # Populated later
     "info":   None,  # Populated later
 }, {
     "name":   "knowledge",
     "label":  "Knowledge",
     "type":   "number",
     "len":    1,
-    "min":    metadata.PrimaryAttributeRange[0],
-    "max":    metadata.PrimaryAttributeRange[1],
+    "min":    None,  # Populated later
+    "max":    None,  # Populated later
     "info":   None,  # Populated later
 }, {
     "name":   "exp",
     "label":  "Experience",
     "type":   "number",
     "len":    4,
-    "min":    0,
-    "max":    2**31 - 1,
+    "min":    None,  # Populated later
+    "max":    None,  # Populated later
     "extra":  {
         "type":     "button",
         "label":    "Set from level",
@@ -86,8 +82,8 @@ UIPROPS = [{
     "label":  "Level",
     "type":   "number",
     "len":    1,
-    "min":    0,
-    "max":    max(metadata.ExperienceLevels),
+    "min":    None,  # Populated later
+    "max":    None,  # Populated later
     "extra":  {
         "type":     "button",
         "label":    "Set from experience",
@@ -99,23 +95,23 @@ UIPROPS = [{
     "label":    "Movement points in total",
     "type":     "number",
     "len":      4,
-    "min":      0,
-    "max":      2**32 - 1,
+    "min":      None,  # Populated later
+    "max":      None,  # Populated later
     "readonly": True,
 }, {
     "name":   "movement_left",
     "label":  "Movement points remaining",
     "type":   "number",
     "len":    4,
-    "min":    0,
-    "max":    2**32 - 1,
+    "min":    None,  # Populated later
+    "max":    None,  # Populated later
 }, {
-    "name":   "mana",
+    "name":   "mana_left",
     "label":  "Spell points remaining",
     "type":   "number",
     "len":    2,
-    "min":    0,
-    "max":    2**16 - 1,
+    "min":    None,  # Populated later
+    "max":    None,  # Populated later
 }, {
     "name":   "spellbook",
     "type":   "check",
@@ -125,17 +121,17 @@ UIPROPS = [{
     "name":   "ballista",
     "type":   "check",
     "label":  "Ballista",
-    "value":  None,
+    "value":  None, # Populated later
 }, {
     "name":   "ammo",
     "type":   "check",
     "label":  "Ammo Cart",
-    "value":  None,
+    "value":  None, # Populated later
 }, {
     "name":   "tent",
     "type":   "check",
     "label":  "First Aid Tent",
-    "value":  None,
+    "value":  None, # Populated later
 }]
 
 
@@ -145,42 +141,45 @@ def props():
     return PROPS
 
 
-def factory(savefile, parent, panel):
+def factory(parent, panel, version):
     """Returns a new stats-plugin instance."""
-    return StatsPlugin(savefile, parent, panel)
+    return StatsPlugin(parent, panel, version)
 
 
 
 class StatsPlugin(object):
-    """Encapsulates stats-plugin state and behaviour."""
+    """Provides UI functionality for listing and changing hero main attributes."""
 
 
-    def __init__(self, savefile, parent, panel):
-        self.name      = PROPS["name"]
-        self.parent    = parent
-        self._savefile = savefile
-        self._hero     = None
-        self._panel    = panel  # Plugin contents panel
-        self._state    = {}     # {attack, defense, ..}
+    def __init__(self, parent, panel, version):
+        self.name    = PROPS["name"]
+        self.parent  = parent
+        self.version = version
+        self._panel  = panel # Plugin contents panel
+        self._state  = h3sed.hero.Attributes.factory(version)
+        self._hero   = None
 
 
     def props(self):
         """Returns props for stats-tab, as [{type: "number", ..}]."""
         result = []
-        IDS = metadata.Store.get("ids", self._savefile.version)
-        for prop in UIPROPS:
+        IDS = metadata.Store.get("ids", version=self.version)
+        HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
+        for prop in DATAPROPS:
             if "value" in prop: prop = dict(prop, value=IDS[prop["label"]])
-            if prop["name"] in metadata.PrimaryAttributes and prop.get("info", prop) is None:
+            if "min"   in prop: prop = dict(prop, min=HERO_RANGES[prop["name"]][0])
+            if "max"   in prop: prop = dict(prop, max=HERO_RANGES[prop["name"]][1])
+            if prop["name"] in metadata.PRIMARY_ATTRIBUTES and prop.get("info", prop) is None:
                 prop = dict(prop, info=self.format_stat_bonus)
             if prop["name"] in ("exp", "level") and "extra" in prop:
                 prop = dict(prop, extra=dict(prop["extra"], handler=self.on_experience_level))
             result.append(prop)
-        return plugins.adapt(self, "props", result)
+        return h3sed.version.adapt("hero.stats.DATAPROPS", result, version=self.version)
 
 
     def state(self):
         """Returns data state for stats-plugin, as {mana, exp, ..}."""
-        return plugins.adapt(self, "state", self._state)
+        return self._state
 
 
     def item(self):
@@ -188,31 +187,19 @@ class StatsPlugin(object):
         return self._hero
 
 
-    def load(self, hero, panel=None):
+    def load(self, hero):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state.clear()
-        if panel: self._panel = panel
-        if hero:
-            self._state.clear()
-            self._state.update(self.parse([hero])[0])
-            hero.stats = self._state
-            hero.ensure_basestats()
+        self._state = hero.stats
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
-        state0 = type(self._state)(self._state)
-        for prop in self.props():
-            if prop["name"] not in state:
-                continue  # for
-            v = state[prop["name"]]
-            if "check" == prop["type"] and isinstance(v, bool):
-                self._state[prop["name"]] = v
-            elif "number" == prop["type"] and isinstance(v, int):
-                self._state[prop["name"]] = min(prop["max"], max(prop["min"], v))
-            else:
-                logger.warning("Invalid stats item %r: %r", prop["name"], v)
+        state0 = self._state.copy()
+        for attribute, value in state.items():
+            if attribute not in self._state or self._state[attribute] == value: continue # for
+            try: self._state[attribute] = value
+            except Exception as e: logger.warning(str(e))
         return state0 != self._state
 
 
@@ -221,38 +208,31 @@ class StatsPlugin(object):
         Handler for stats change, updates state, notifies other plugins if spellbook was toggled.
         Returns whether anything changed in stats.
         """
-        v2, v1 = None if value == "" else value, self._state[prop["name"]]
-        if v2 == v1: return False
+        v1, v2 = self._state[prop["name"]], None if value == "" else value
+        if v1 == v2: return False
 
         self._state[prop["name"]] = v2
 
         if prop["name"] in self._hero.basestats:
             self._hero.basestats[prop["name"]] += v2 - v1
         if "spellbook" == prop["name"]:
-            evt = gui.PluginEvent(self._panel.Id, action="render", name="spells")
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name="spells")
             wx.PostEvent(self._panel, evt)
         return True
 
 
     def on_experience_level(self, plugin, prop, state, event=None):
         """Handler for "Set from level|experience" buttons, updates hero attribute."""
-        EXP_LEVELS = plugins.adapt(self, "exp_levels", metadata.ExperienceLevels)
         SOURCE, TARGET = ("level", "exp") if "exp" == prop["name"] else ("exp", "level")
         source_prop = next(x for x in self.props() if x["name"] == SOURCE)
-        exp, level = self._state["exp"], self._state["level"]
         value = None
         if "level" == TARGET:
-            orderlist = sorted(EXP_LEVELS.items(), reverse=True)
-            value = next((k for k, v in orderlist if v <= exp), None)
+            value = self._state.get_experience_level()
         elif "exp" == TARGET:
-            value = EXP_LEVELS.get(level)
-            if value is not None and value <= exp < EXP_LEVELS.get(level + 1, sys.maxsize):
-                value = exp  # Do not reset experience if already at level
-            elif value is None and level == 0:
-                value = 0
+            value = self._state.get_level_experience()
         if value == self._state[TARGET]:
-            guibase.status("%s already matching %s %s", prop["label"].capitalize(),
-                           source_prop["label"].lower(), self._state[source_prop["name"]])
+            h3sed.guibase.status("%s already matching %s %s", prop["label"].capitalize(),
+                                 source_prop["label"].lower(), self._state[source_prop["name"]])
             value = None
         if value is None:
             return
@@ -260,12 +240,12 @@ class StatsPlugin(object):
         def on_do(self, state):
             self._state.update(state)
             self.parent.patch()
-            evt = gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
             wx.PostEvent(self._panel, evt)
             return True
         label = "%s stats: %s %s" % (self._hero.name, TARGET, value)
-        guibase.status("Setting %s from %s", label, source_prop["label"].lower(),
-                       flash=conf.StatusShortFlashLength, log=True)
+        h3sed.guibase.status("Setting %s from %s", label, source_prop["label"].lower(),
+                             flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, {TARGET: value})
         self.parent.command(callable, name="set %s" % label)
 
@@ -275,18 +255,17 @@ class StatsPlugin(object):
         Return (text, tooltip) for primaty attribute bonuses or "" if no bonus,
         like ("base 3 +1 Armo.. +2 Cent..", "base 3\n+1 Armor of Wonder\n+2 Centaur's Axe").
         """
-        if not getattr(self._hero, "artifacts", None): return
+        if not getattr(self._hero, "artifacts", None): return None
         MAXLEN = 65
-        STATS = artifact_stats or metadata.Store.get("artifact_stats", plugin._savefile.version)
-        IDX = list(metadata.PrimaryAttributes).index(prop["name"])
+        STATS = artifact_stats or metadata.Store.get("artifact_stats", version=self.version)
+        INDEX = list(metadata.PRIMARY_ATTRIBUTES).index(prop["name"])
         base = self._hero.basestats[prop["name"]]
-        artifacts = [self._hero.artifacts[x["name"]] for x in ARTIFACT_PROPS
-                     if self._hero.artifacts.get(x["name"])]
-        artifacts = [n for n in artifacts if n in STATS and STATS[n][IDX]]
+        artifacts = list(self._hero.artifacts.values())
+        artifacts = [n for n in artifacts if n in STATS and STATS[n][INDEX]]
         if not artifacts:
             return ""
 
-        pairs = [(("%s" if v < 0 else "+%s") % v, k) for k in artifacts for v in [STATS[k][IDX]]]
+        pairs = [(("%s" if v < 0 else "+%s") % v, k) for k in artifacts for v in [STATS[k][INDEX]]]
         textpairs, toolpairs = ([(v, k[:i] + ".." if i else k) for v, k in pairs] for i in (4, 0))
         text    = "base %s %s"  % (base, " " .join(map(" ".join, textpairs)))
         tooltip = "base %s\n%s" % (base, "\n".join(map(" ".join, toolpairs)))
@@ -295,55 +274,55 @@ class StatsPlugin(object):
         return text, tooltip
 
 
-    def parse(self, heroes, original=False):
-        """Returns stats states parsed from hero bytearrays, as [{attack, defense, ..}, ]."""
-        result = []
-        NAMES = {x[y]: y for x in [metadata.Store.get("ids", self._savefile.version)]
-                 for y in metadata.Store.get("special_artifacts", self._savefile.version)}
-        MYPOS = plugins.adapt(self, "pos", POS)
 
-        def parse_special(hero_bytes, pos):
-            b, v = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
-            return None if all(x == ord(metadata.Blank) for x in b) else v
+def parse(hero_bytes, version):
+    """Returns h3sed.hero.Attributes() parsed from hero bytearray attribute sections."""
+    IDS = metadata.Store.get("ids", version=version)
+    ID_TO_SPECIAL = {IDS[n]: n for n in metadata.Store.get("special_artifacts", version=version)}
+    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                  version=version)
 
-        for hero in heroes:
-            values = {}
-            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
-            for prop in self.props():
-                pos = MYPOS[prop["name"]]
-                if "check" == prop["type"]:
-                    v = parse_special(hero_bytes, pos) is not None
-                elif "number" == prop["type"]:
-                    v = util.bytoi(hero_bytes[pos:pos + prop["len"]])
-                elif "combo" == prop["type"]:
-                    v = NAMES.get(parse_special(hero_bytes, pos), "")
-                values[prop["name"]] = v
-            result.append(values)
-        return result
+    def parse_special(hero_bytes, pos):
+        binary, integer = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
+        if all(x == ord(metadata.BLANK) for x in binary): return None # Blank
+        return integer
+
+    attributes = h3sed.hero.Attributes.factory(version)
+    for prop in h3sed.version.adapt("hero.stats.DATAPROPS", DATAPROPS):
+        pos = BYTEPOS[prop["name"]]
+        if "check" == prop["type"]:
+            value = parse_special(hero_bytes, pos) is not None
+        elif "number" == prop["type"]:
+            value = util.bytoi(hero_bytes[pos:pos + prop["len"]])
+        elif "combo" == prop["type"]:
+            value = ID_TO_SPECIAL.get(parse_special(hero_bytes, pos), "")
+        else:
+            continue # for prop
+        attributes[prop["name"]] = value
+    return attributes
 
 
-    def serialize(self):
-        """Returns new hero bytearray, with edited stats sections."""
-        result = self._hero.bytes[:]
+def serialize(attributes, hero_bytes, version, hero=None):
+    """Returns new hero bytearray with updated attribute sections."""
+    IDS = metadata.Store.get("ids", version=version)
+    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                  version=version)
 
-        IDS = metadata.Store.get("ids", self._savefile.version)
-        MYPOS = plugins.adapt(self, "pos", POS)
-
-        for prop in self.props():
-            v, pos = self._state[prop["name"]], MYPOS[prop["name"]]
-            if "check" == prop["type"]:
-                b = (util.itoby(prop["value"], 4) if v else metadata.Blank * 4)
-                b = b[:4] + result[pos + 4:pos + 8]
-            elif "number" == prop["type"]: b = util.itoby(v, prop["len"])
-            elif "combo" == prop["type"]:
-                if v:
-                    v = IDS.get(v)
-                    if v is None:
-                        logger.warning("Unknown stats %s value: %s.", prop["name"],
-                                       self._state[prop["name"]])
-                        continue # for prop
-                    b = util.itoby(v, 4)[:4] + result[pos + 4:pos + 8]
-                else: b = metadata.Blank * 4
-            result[pos:pos + len(b)] = b
-
-        return result
+    new_bytes = hero_bytes[:]
+    for prop in h3sed.version.adapt("hero.stats.DATAPROPS", DATAPROPS):
+        value, pos = attributes[prop["name"]], BYTEPOS[prop["name"]]
+        if "check" == prop["type"]:
+            binary = (util.itoby(IDS[prop["label"]], 4) if value else metadata.BLANK * 4)
+            binary = binary[:4] + new_bytes[pos + 4:pos + 8]
+        elif "number" == prop["type"]:
+            binary = util.itoby(value, prop["len"])
+        elif "combo" == prop["type"]:
+            if value:
+                value_id = IDS.get(value)
+                if value_id is None:
+                    logger.warning("Unknown stats %s value: %s.", prop["name"], value)
+                    continue # for prop
+                binary = util.itoby(value_id, 4)[:4] + new_bytes[pos + 4:pos + 8]
+            else: binary = metadata.BLANK * 4
+        new_bytes[pos:pos + len(binary)] = binary
+    return new_bytes

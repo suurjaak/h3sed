@@ -7,14 +7,14 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.06.2024
+@modified    04.04.2025
 ------------------------------------------------------------------------------
 """
 import difflib, re
 # Modules imported inside templates:
 #import datetime, json, os, sys, step, wx
 #from h3sed.lib import util
-#from h3sed import conf, images, plugins, templates
+#from h3sed import conf, images, metadata, templates
 
 
 def make_category_diff(v1, v2):
@@ -254,13 +254,13 @@ if shift: shift_pending = False
 Text to search for filtering heroes index.
 
 @param   hero       Hero instance
-@param   pluginmap  {name: plugin instance}
 @param  ?category   category to produce if not all
 """
 HERO_SEARCH_TEXT = """<%
+import h3sed
 from h3sed import conf, metadata
-deviceprops = pluginmap["stats"].props()
-deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=hero.version)
+deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACTS]
 category = get("category")
 %>
 %if category is None or "name" == category:
@@ -268,7 +268,7 @@ category = get("category")
 %endif
 %if category is None or "stats" == category:
 {{ hero.stats["level"] }}
-    %for name in metadata.PrimaryAttributes:
+    %for name in metadata.PRIMARY_ATTRIBUTES:
 {{ hero.stats[name] }}
     %endfor
 %endif
@@ -313,7 +313,7 @@ HTML text shown in heroes index.
 @param   heroes      [Hero instance, ]
 @param   links       [link for hero, ]
 @param   count       total number of heroes
-@param   pluginmap   {name: plugin instance}
+@param   savefile    metadata.Savefile instance
 @param  ?categories  {category: whether to show category columns} if not showing all
 @param  ?herotexts   [{category: text for hero, }] for sorting
 @param  ?sort_col    field to sort heroes by
@@ -321,16 +321,17 @@ HTML text shown in heroes index.
 @param  ?text        current search text if any
 """
 HERO_INDEX_HTML = """<%
+import h3sed
 from h3sed import conf, metadata
-deviceprops = pluginmap["stats"].props()
-deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=savefile.version)
+deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACTS]
 categories = get("categories")
 categories, herotexts, sort_col, sort_asc = (get(k) for k in ("categories", "herotexts", "sort_col", "sort_asc"))
 heroes_sorted = list(heroes)
 if sort_col:
     if "index" == sort_col:
         if not sort_asc: heroes_sorted.reverse()
-    elif "level" == sort_col or sort_col in list(metadata.PrimaryAttributes):
+    elif "level" == sort_col or sort_col in list(metadata.PRIMARY_ATTRIBUTES):
         heroes_sorted.sort(key=lambda h: h.stats[sort_col], reverse=not sort_asc)
     elif herotexts:
         indexlist = list(range(len(heroes)))
@@ -348,7 +349,7 @@ def sortarrow(col):
     <th align="left" valign="bottom" nowrap><a href="sort:name"><font color="{{ conf.FgColour }}">Name{{! sortarrow("name") }}</font></a></th>
 %if not categories or categories["stats"]:
     <th align="left" valign="bottom" nowrap><a href="sort:level"><font color="{{ conf.FgColour }}">Level{{! sortarrow("level") }}</font></a></th>
-    %for name, label in metadata.PrimaryAttributes.items():
+    %for name, label in metadata.PRIMARY_ATTRIBUTES.items():
     <th align="left" valign="bottom" nowrap><a href="sort:{{ name }}"><font color="{{ conf.FgColour }}">{{ next(x[:5] if len(x) > 7 else x for x in [label.split()[-1]]) }}{{! sortarrow(name) }}</font></a></th>
     %endfor
 %endif
@@ -384,7 +385,7 @@ def sortarrow(col):
     <td align="left" valign="top" nowrap><a href="{{ links[heroes.index(hero)] }}"><font color="{{ conf.LinkColour }}">{{ hero.name }}</font></a></td>
 %if not categories or categories["stats"]:
     <td align="left" valign="top" nowrap>{{ hero.stats["level"] }}</td>
-    %for name in metadata.PrimaryAttributes:
+    %for name in metadata.PRIMARY_ATTRIBUTES:
     <td align="left" valign="top" nowrap>{{ hero.stats[name] }}</td>
     %endfor
 %endif
@@ -446,11 +447,11 @@ Text to provide for hero columns in CSV export.
 
 @param   hero       Hero instance
 @param   column     column to provide like "level" or "devices"
-@param   pluginmap  {name: plugin instance}
 """
 HERO_EXPORT_CSV = """<%
-deviceprops = pluginmap["stats"].props()
-deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+import h3sed
+stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=hero.version)
+deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_ARTIFACTS]
 %>
 %if "name" == column:
 {{ hero.name }}
@@ -490,17 +491,17 @@ deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellboo
 HTML text for exporting heroes to file.
 
 @param   heroes      [Hero instance, ]
-@param   pluginmap   {name: plugin instance}
 @param   savefile    metadata.Savefile instance
 @param   count       total number of heroes
 @param   categories  {category: whether to show category columns initially}
 """
 HERO_EXPORT_HTML = """<%
 import datetime, json
+import h3sed
 from h3sed.lib import util
-from h3sed import conf, images, metadata, plugins
-deviceprops = pluginmap["stats"].props()
-deviceprops = deviceprops[next(i for i, x in enumerate(deviceprops) if "spellbook" == x["name"]):]
+from h3sed import conf, images, metadata
+stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=savefile.version)
+deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACTS]
 %><!DOCTYPE HTML><html lang="en">
 <head>
   <meta http-equiv='Content-Type' content='text/html;charset=utf-8'>
@@ -762,9 +763,7 @@ colptr += state
     <tr><td>Source:</td><td>{{ savefile.filename }}</td></tr>
     <tr><td>Size:</td><td title="{{ savefile.size }}">{{ util.format_bytes(savefile.size) }}</td></tr>
     <tr><td>Heroes:</td><td>{{ len(heroes) if len(heroes) == count else "%s exported (%s total)" % (len(heroes), count) }}</td></tr>
-%if hasattr(plugins, "version"):
-    <tr><td>Game version:</td><td>{{ next((x["label"] for x in plugins.version.PLUGINS if x["name"] == savefile.version), "unknown") }}</td></tr>
-%endif
+    <tr><td>Game version:</td><td>{{ h3sed.version.VERSIONS[savefile.version].TITLE }}</td></tr>
 %if savefile.mapdata.get("name"):
     <tr><td>Map:</td><td>{{ savefile.mapdata["name"] }}</td></tr>
 %endif
@@ -794,7 +793,7 @@ colptr += state
     <th><a class="sort" title="Sort by name" onclick="onSort(this)">Name</a></th>
 %if not categories or categories["stats"]:
     <th><a class="sort" title="Sort by level" onclick="onSort(this)">Level</a></th>
-    %for label in metadata.PrimaryAttributes.values():
+    %for label in metadata.PRIMARY_ATTRIBUTES.values():
     <th><a class="sort" title="Sort by {{ label.lower() }}" onclick="onSort(this)">{{ label.split()[-1] }}</a></th>
     %endfor
 %endif
@@ -824,7 +823,7 @@ colptr += state
     <td><a href="#{{ hero.name }}" title="Show {{ hero.name }} character sheet" onclick="showHero({{ i }})">{{ hero.name }}</a></td>
 %if not categories or categories["stats"]:
     <td>{{ hero.stats["level"] }}</td>
-    %for name in metadata.PrimaryAttributes:
+    %for name in metadata.PRIMARY_ATTRIBUTES:
     <td>{{ hero.stats[name] }}</td>
     %endfor
 %endif

@@ -1,33 +1,24 @@
-# -*- coding: utf-8 -*-
-"""
-Subplugin for HOMM3 version "Armageddon's Blade".
-
-------------------------------------------------------------------------------
-This file is part of h3sed - Heroes3 Savegame Editor.
-Released under the MIT License.
-
-@created   22.05.2024
-@modified  14.09.2024
-------------------------------------------------------------------------------
-"""
 import re
 
-from h3sed.lib import util
-from h3sed.metadata import BytePositions, Store
+from .. import conf
+from .. import hero
+from .. import metadata
+from .. hero import make_artifact_cast, make_integer_cast, make_string_cast
 
 
-PROPS = {"name": "ab", "label": "Armageddon's Blade", "index": 1}
+NAME  = "ab"
+TITLE = "Armageddon's Blade"
 
 
 """Game major and minor version byte ranges, as (min, max)."""
-VersionByteRanges = {
+VERSION_BYTERANGES = {
     "version_major":  (42, 42),
     "version_minor":  ( 1,  1),
 }
 
 
 """Hero artifacts, for wearing and side slots, excluding spell scrolls."""
-Artifacts = [
+ARTIFACTS = [
     "Armageddon's Blade",
     "Vial of Dragon Blood",
 ]
@@ -52,7 +43,7 @@ Creatures = [
 
 
 """IDs of artifacts, creatures and spells in savefile."""
-IDs = {
+IDS = {
     # Artifacts
     "Armageddon's Blade":                0x80,
     "Vial of Dragon Blood":              0x7F,
@@ -75,28 +66,27 @@ IDs = {
 
 
 """Artifact slots, with first being primary slot."""
-ArtifactSlots = {
+ARTIFACT_SLOTS = {
     "Armageddon's Blade":                ["weapon"],
     "Vial of Dragon Blood":              ["side"],
 }
 
 
 """Primary skill modifiers that artifacts give to hero."""
-ArtifactStats = {
+ARTIFACT_STATS = {
     "Armageddon's Blade":                (+3, +3, +3, +6),
 }
 
 
 """Spells that artifacts make available to hero."""
-ArtifactSpells = {
+ARTIFACT_SPELLS = {
     "Armageddon's Blade":                ["Armageddon"],
 }
 
 
 
-# Since savefile format is unknown, hero structs are identified heuristically,
-# by matching byte patterns.
-RGX_HERO = re.compile(b"""
+"""Regulax expression for finding hero struct in savefile bytes."""
+HERO_REGEX = re.compile(b"""
     .{4}                     #   4 bytes: movement points in total             000-003
     .{4}                     #   4 bytes: movement points remaining            004-007
     .{4}                     #   4 bytes: experience                           008-011
@@ -126,13 +116,13 @@ RGX_HERO = re.compile(b"""
       (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
     ){18})
 
-                             # 512 bytes: 64 8-byte artifacts in backpack      495-1006
+                             # 512 bytes: 64 8-byte artifacts in inventory     495-1006
     ( ((.\x00{3}) | \xFF{4}){2} ){64}
 """, re.VERBOSE | re.DOTALL)
 
 
-"""Hero pattern for RoE in newer releases like GOG Complete."""
-RGX_HERO_NEWFORMAT = re.compile(b"""
+"""Regulax expression for finding hero struct in newer releases like GOG Complete."""
+HERO_REGEX_NEWFORMAT = re.compile(b"""
     .{4}                     #   4 bytes: movement points in total             000-003
     .{4}                     #   4 bytes: movement points remaining            004-007
     .{4}                     #   4 bytes: experience                           008-011
@@ -163,62 +153,75 @@ RGX_HERO_NEWFORMAT = re.compile(b"""
     ){18})
     .{8}                     # 8 bytes: side5 slot unused in RoE               494-502
 
-                             # 512 bytes: 64 8-byte artifacts in backpack      503-1014
+                             # 512 bytes: 64 8-byte artifacts in inventory     503-1014
     ( ((.\x00{3}) | \xFF{4}){2} ){64}
 """, re.VERBOSE | re.DOTALL)
 
 
 
+class DataClass(hero.DataClass):
+
+    def get_version(self):
+        """Returns game version."""
+        return NAME
+
+
+class ArmyStack(DataClass, hero.ArmyStack):
+    __slots__ = {"name":  make_string_cast("creatures", version=NAME),
+                 "count": make_integer_cast("army.count", version=NAME)}
+
+
+class Artifacts(DataClass, hero.Artifacts):
+    __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Artifacts.__slots__
+                 if "side5" != k}
+
+
+
 def init():
-    """Initializes artifacts and creatures for Armageddon's Blade."""
-    Store.add("artifacts", Artifacts, version=PROPS["name"])
-    Store.add("artifacts", Artifacts, version=PROPS["name"], category="inventory")
-    for slot in set(sum(ArtifactSlots.values(), [])):
-        Store.add("artifacts", [k for k, v in ArtifactSlots.items() if v[0] == slot],
-                  version=PROPS["name"], category=slot)
+    """Adds Armageddon's Blade data to metadata stores."""
+    metadata.Store.add("artifacts", ARTIFACTS, version=NAME)
+    metadata.Store.add("artifacts", ARTIFACTS, version=NAME, category="inventory")
+    for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
+        metadata.Store.add("artifacts", [k for k, v in ARTIFACT_SLOTS.items() if v[0] == slot],
+                  version=NAME, category=slot)
 
-    Store.add("artifact_slots",  ArtifactSlots,  version=PROPS["name"])
-    Store.add("artifact_spells", ArtifactSpells, version=PROPS["name"])
-    Store.add("artifact_stats",  ArtifactStats,  version=PROPS["name"])
-    Store.add("creatures",       Creatures,      version=PROPS["name"])
-    Store.add("ids",             IDs,            version=PROPS["name"])
-    for artifact, spells in ArtifactSpells.items():
-        Store.add("spells", spells, version=PROPS["name"], category=artifact)
-
-
-def props():
-    """Returns props as {label, index}."""
-    return PROPS
+    metadata.Store.add("artifact_slots",  ARTIFACT_SLOTS,  version=NAME)
+    metadata.Store.add("artifact_spells", ARTIFACT_SPELLS, version=NAME)
+    metadata.Store.add("artifact_stats",  ARTIFACT_STATS,  version=NAME)
+    metadata.Store.add("creatures",       Creatures,      version=NAME)
+    metadata.Store.add("ids",             IDS,            version=NAME)
+    for artifact, spells in ARTIFACT_SPELLS.items():
+        metadata.Store.add("spells", spells, version=NAME, category=artifact)
 
 
-def adapt(source, category, value):
+def adapt(name, value):
     """
     Adapts certain categories:
 
-    - "pos"   for hero sub-plugins: dropping slot "side5", shifting slot "inventory" if older format
-    - "props" for artifacts-plugin: dropping slot "side5", dropping "reserved"
-    - "regex" for hero-plugin:      dropping one slot from artifacts
-    """
-    root = util.get(source, "parent", default=source)
-    savefile = getattr(root, "savefile", None)
-    if not savefile or getattr(savefile, "version", None) != PROPS["name"]: return value
-    is_new_format = getattr(savefile, "assume_newformat", False)
+    - "hero.artifacts.DATAPROPS":  dropping slot "side5"
+    - "hero_byte_positions":  dropping slot "side5", shifting slot "inventory" if older format
+    - "hero_regex":           dropping one slot from artifacts
+    - "hero.ArmyStack":       adding support for new creatures
+    - "hero.Artifacts":       adding support for new artifacts
 
+    """
     result = value
-    if "props" == category and "artifacts" == util.get(source, "name"):
+    if "hero.artifacts.DATAPROPS" == name:
         result = [x for x in value if x.get("name") != "side5"]
-    elif "regex" == category and "hero" == util.get(source, "name"):
-        # Replace hero regex with one expecting 18 artifact slots
-        result = RGX_HERO_NEWFORMAT if is_new_format else RGX_HERO
-    elif "pos" == category and "hero" == util.get(root, "name"):
-        # Move inventory start to side5 position, drop side5 unless new format
+    elif "hero_byte_positions" == name:
         result = value.copy()
-        if is_new_format: result.pop("side5")
+        if conf.SavegameNewFormat: result.pop("side5")
         else: result["inventory"] = result.pop("side5")
         result.pop("reserved", None)
+    elif "hero_regex" == name:
+        result = HERO_REGEX_NEWFORMAT if conf.SavegameNewFormat else HERO_REGEX
+    elif "hero.ArmyStack" == name:
+        result = ArmyStack
+    elif "hero.Artifacts" == name:
+        result = Artifacts
     return result
 
 
 def detect(savefile):
     """Returns whether savefile bytes match Armageddon's Blade."""
-    return savefile.match_byte_ranges(BytePositions, VersionByteRanges)
+    return savefile.match_byte_ranges(metadata.BYTE_POSITIONS, VERSION_BYTERANGES)

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    03.12.2024
+@modified    04.04.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -34,16 +34,17 @@ import wx.lib.agw.flatnotebook
 import wx.lib.agw.labelbook
 import wx.lib.newevent
 
-from h3sed.lib import controls
-from h3sed.lib.controls import ColourManager
-from h3sed.lib import util
-from h3sed.lib import wx_accel
-from h3sed import conf
-from h3sed import guibase
-from h3sed import images
-from h3sed import metadata
-from h3sed import plugins
-from h3sed import templates
+import h3sed
+from . lib import controls
+from . lib.controls import ColourManager
+from . lib import util
+from . lib import wx_accel
+from . hero import gui as hero_gui
+from . import conf
+from . import guibase
+from . import images
+from . import metadata
+from . import templates
 
 logger = logging.getLogger(__name__)
 
@@ -192,14 +193,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Show(True)
         logger.info("Started application.")
         wx.CallLater(20000, self.update_check)
-        def after():
-            if not self: return
-            wildcards = metadata.wildcards()
-            plugins.init()
-            if wildcards != metadata.wildcards():
-                self.set_savegame_filters(self.dir_ctrl) # Some plugin changed extensions
-            if conf.SelectedPath: self.refresh_dir_ctrl(conf.SelectedPath)
-        wx.CallAfter(after)
 
 
     def create_page_main(self, notebook):
@@ -551,7 +544,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.dir_ctrl.ReCreateTree()
             self.dir_ctrl.ExpandPath(path)
             filter1 = self.dir_ctrl.FilterIndex
-            for index in (0, len(metadata.wildcards()) - 1):  # Expand filter until file visible
+            for index in (0, len(make_wildcards()) - 1):  # Expand filter until file visible
                 if self.dir_ctrl.GetPath() != path and (index or self.dir_ctrl.FilterIndex):
                     self.dir_ctrl.UnselectAll()
                     self.dir_ctrl.SetFilterIndex(index)
@@ -586,7 +579,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def set_savegame_filters(self, ctrl):
         """Sets savegame extensions filter and current choice to file dialog or dir ctrl."""
-        wildcards = metadata.wildcards()
+        wildcards = make_wildcards()
         if ctrl is self.dir_ctrl:
             path = ctrl.GetPath()
             ctrl.UnselectAll()
@@ -1376,7 +1369,9 @@ class SavefilePage(wx.Panel):
             "Are you sure you want to lose all changes?", conf.Title,
             wx.OK | wx.CANCEL | wx.ICON_INFORMATION
         ): return
-        try: self.savefile.read()
+        try:
+            self.savefile.read()
+            self.savefile.parse_heroes()
         except Exception as e:
             logger.exception("Error reloading %s.", self.filename)
             wx.MessageBox("Error reloading %s:\n\n%s" % (self.filename, util.format_exc(e)),
@@ -1404,7 +1399,7 @@ class SavefilePage(wx.Panel):
         if rename:
             title = "Save %s as.." % os.path.split(self.filename)[-1]
             dialog = wx.FileDialog(self,
-                message=title, wildcard="|".join(metadata.wildcards()),
+                message=title, wildcard="|".join(make_wildcards()),
                 defaultDir=os.path.split(self.filename)[0],
                 defaultFile=os.path.basename(self.filename),
                 style=wx.FD_OVERWRITE_PROMPT | wx.FD_SAVE | wx.RESIZE_BORDER
@@ -1508,7 +1503,12 @@ class SavefilePage(wx.Panel):
     def load_data(self):
         """Loads data from our file."""
         if not self.plugins:
-            self.plugins = plugins.populate(self.savefile, self.notebook, self.undoredo)
+            self.savefile.parse_heroes()
+            icon_index = self.notebook.GetImageList().Add(images.PageHero.Bitmap)
+            panel = wx.Panel(self.notebook)
+            self.notebook.AddPage(panel, "Hero", imageId=icon_index)
+            self.plugins.append(hero_gui.HeroPlugin(self.savefile, panel, self.undoredo))
+
             if self.notebook.PageCount < 2:
                 tabarea = next((x for x in self.notebook.Children
                                 if isinstance(x, wx.lib.agw.labelbook.ImageContainer)), None)
@@ -1523,12 +1523,9 @@ class SavefilePage(wx.Panel):
 
     def update_metadata(self):
         """Populates savefile metadata controls."""
-        v = self.savefile.version
-        if getattr(plugins, "version", None):
-            v = next((x["label"] for x in plugins.version.PLUGINS if x["name"] == v), v)
         self.edit_name.Value = self.savefile.mapdata.get("name", "")
         self.edit_desc.Value = self.savefile.mapdata.get("desc", "")
-        self.edit_vers.Value = v or ""
+        self.edit_vers.Value = h3sed.version.VERSIONS[self.savefile.version].TITLE
         self.edit_vers.MinSize = (self.edit_vers.GetTextExtent(self.edit_vers.Value).Width, -1)
         self.edit_vers.ContainingSizer.Layout()
 
@@ -1580,6 +1577,44 @@ class GenericCommand(wx.Command):
 
 
 
+class PluginCommand(wx.Command):
+    """
+    Undoable-redoable action by plugin.
+    """
+
+    def __init__(self, plugin, do, name=""):
+        super(PluginCommand, self).__init__(canUndo=True, name=name)
+        self._do = do
+        self._done = False
+        self._data1 = None
+        self._data2 = None
+        self._plugin = plugin
+        self._timestamp = time.time()
+
+    def Do(self):
+        if self._done:
+            self._plugin.set_data(self._data2)
+            self._plugin.render(reload=True, log=False)
+            self._plugin.patch()
+        else:
+            self._data1 = self._plugin.get_data()
+            if self._do():
+                self._data2, self._done = self._plugin.get_data(), True
+        return self._done
+
+    def Undo(self):
+        self._plugin.set_data(self._data1)
+        self._plugin.render(reload=True, log=False)
+        self._plugin.patch()
+        return True
+
+    @property
+    def Timestamp(self):
+        """Returns command creation timestamp, as UNIX epoch."""
+        return self._timestamp
+
+
+
 def build(plugin, panel):
     """
     Builds generic components into given panel according to plugin props,
@@ -1588,7 +1623,7 @@ def build(plugin, panel):
     """
     props = plugin.props()
     state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
-    result = type(state)()
+    build_result = {} if isinstance(state, dict) else []
 
     panel.Freeze()
     panel.DestroyChildren()
@@ -1729,6 +1764,8 @@ def build(plugin, panel):
             else:
                 if isinstance(state, list):
                     (state.append if checked else state.remove)(value)
+                elif isinstance(state, set):
+                    (state.add if checked else state.remove)(value)
                 else:
                     state.update({value: True}) if checked else state.pop(value)
             plugin.parent.patch()
@@ -1749,7 +1786,7 @@ def build(plugin, panel):
         ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         c.ToolTip = tooltip
         sizer.Add(c, pos=pos, flag=wx.ALIGN_CENTER_VERTICAL)
-        result["%s-info" % prop["name"]] = c
+        build_result["%s-info" % prop["name"]] = c
 
     def make_extra(prop, sizer, pos):
         opts = prop["extra"]
@@ -1759,7 +1796,7 @@ def build(plugin, panel):
         if c:
             if opts.get("tooltip"): c.ToolTip = opts["tooltip"]
             sizer.Add(c, pos=pos)
-            result["%s-extra" % prop["name"]] = c
+            build_result["%s-extra" % prop["name"]] = c
 
 
     count = 0
@@ -1846,8 +1883,8 @@ def build(plugin, panel):
                 sizer.Add(c1, pos=(count, 0))
                 sizer.Add(c2, pos=(count, 1), border=5, flag=wx.LEFT)
                 count += 1
-            if resultitems and isinstance(result, list):
-                result.append(resultitems)
+            if resultitems and isinstance(build_result, list):
+                build_result.append(resultitems)
 
 
         elif "checklist" == prop.get("type"):
@@ -1859,7 +1896,7 @@ def build(plugin, panel):
                 c.Value = bool(state.get(value)) if isinstance(state, dict) else value in state
                 c.Bind(wx.EVT_CHECKBOX, make_check_handler(c, prop, value))
                 sizer.Add(c, pos=(row, column), border=10, flag=wx.TOP if row == row0 else 0)
-                result.append(c)
+                build_result.append(c)
                 row, column = row + dx, column + dy
                 if   dx and row    > maxrows:  row, column = row0,    column + 1
                 elif dy and column >= maxcols: row, column = row + 1, col0
@@ -1883,7 +1920,7 @@ def build(plugin, panel):
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1))
-            result[prop["name"]] = c2
+            build_result[prop["name"]] = c2
             col = 2
             if "extra" in prop: col, _ = col + 1, make_extra(prop, sizer, (count, col))
             if "info"  in prop: col, _ = col + 1, make_info (prop, sizer, (count, col))
@@ -1915,7 +1952,7 @@ def build(plugin, panel):
                 c3.Bind(wx.EVT_BUTTON, make_clear_handler(c3, prop))
                 sizer.Add(c3, pos=(count, col))
                 col += 1
-            result[prop["name"]] = c2
+            build_result[prop["name"]] = c2
             if "extra" in prop: col, _ = col + 1, make_extra(prop, sizer, (count, col))
             if "info"  in prop: col, _ = col + 1, make_info (prop, sizer, (count, col))
             count += 1
@@ -1932,7 +1969,7 @@ def build(plugin, panel):
 
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1))
-            result[prop["name"]] = c2
+            build_result[prop["name"]] = c2
             col = 2
             if "extra" in prop: col, _ = col + 1, make_extra(prop, sizer, (count, col))
             if "info"  in prop: col, _ = col + 1, make_info (prop, sizer, (count, col))
@@ -1949,7 +1986,7 @@ def build(plugin, panel):
     panel.Layout()
     panel.SendSizeEvent()
     panel.Thaw()
-    return result
+    return build_result
 
 
 def check_newest_version(callback=None):
@@ -1984,4 +2021,15 @@ def check_newest_version(callback=None):
         result = None
     if callback:
         callback(result)
+    return result
+
+
+def make_wildcards():
+    """Returns savegame wildcard strings for file controls, as ["label (*.ext)|*.ext", ]."""
+    result = ["All files (*.*)|*.*"]
+    for name, exts in conf.FileExtensions:
+        exts1 = exts2 = ";".join("*" + x for x in exts)
+        if "linux" in sys.platform:  # Case-sensitive operating system
+            exts2 = ";".join("*%s;*%s" % (x.lower(), x.upper()) for x in exts)
+        result.append("%s (%s)|%s" % (name, exts1, exts2))
     return result

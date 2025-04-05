@@ -7,23 +7,20 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  02.12.2024
+@modified  04.04.2025
 ------------------------------------------------------------------------------
 """
 import logging
 
-from h3sed import gui
-from h3sed import metadata
-from h3sed import plugins
-from h3sed.lib import util
-from h3sed.plugins.hero import POS
+import h3sed
+from .. import metadata
 
 
-logger = logging.getLogger(__package__)
+logger = logging.getLogger(__name__)
 
 
 PROPS = {"name": "spells", "label": "Spells", "index": 5}
-UIPROPS = [{
+DATAPROPS = [{
     "type":       "checklist",
     "choices":    None, # Populated later
     "columns":    4,
@@ -36,36 +33,36 @@ def props():
     return PROPS
 
 
-def factory(parent, hero, panel):
+def factory(parent, panel, version):
     """Returns a new spells-plugin instance."""
-    return SpellsPlugin(parent, hero, panel)
+    return SpellsPlugin(parent, panel, version)
 
 
 
 class SpellsPlugin(object):
-    """Encapsulates spells-plugin state and behaviour."""
+    """Provides UI functionality for listing and changing spells in hero spellbook."""
 
 
-    def __init__(self, savefile, parent, panel):
-        self.name      = PROPS["name"]
-        self.parent    = parent
-        self._savefile = savefile
-        self._hero     = None
-        self._panel    = panel  # Plugin contents panel
-        self._state    = []     # ["Haste", "Slow", ..]
+    def __init__(self, parent, panel, version):
+        self.name    = PROPS["name"]
+        self.parent  = parent
+        self.version = version
+        self._panel  = panel  # Plugin contents panel
+        self._state  = h3sed.hero.Spells.factory(version)
+        self._hero   = None
 
 
     def props(self):
-        """Returns props for spells-tab, as [{type: "checklist", ..}]."""
+        """Returns UI props for spells-tab, as [{type: "checklist", ..}]."""
         result = []
-        for prop in UIPROPS:
-            cc = metadata.Store.get("spells", self._savefile.version)
-            result.append(dict(prop, choices=sorted(cc)))
+        for prop in DATAPROPS:
+            choices = metadata.Store.get("spells", version=self.version)
+            result.append(dict(prop, choices=sorted(choices)))
         return result
 
 
     def state(self):
-        """Returns data state for spells-plugin, as [spell name, ..]."""
+        """Returns data state for spells-plugin, as h3sed.hero.Spells."""
         return self._state
 
 
@@ -74,32 +71,26 @@ class SpellsPlugin(object):
         return self._hero
 
 
-    def load(self, hero, panel=None):
+    def load(self, hero):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = self.parse([hero])[0]
-        hero.spells = self._state
-        if panel: self._panel = panel
+        self._state = hero.spells
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
-        state0 = type(self._state)(self._state)
-        self._state = []
-        cmap = {x.lower(): x for x in metadata.Store.get("spells", self._savefile.version)}
-        for i, v in enumerate(state):
-            if v and hasattr(v, "lower") and v.lower() in cmap:
-                self._state += [cmap[v.lower()]]
-            elif v:
-                logger.warning("Invalid spell #%s: %s", i + 1, v)
-        self._state.sort()
+        state0 = self._state.copy()
+        self._state.clear()
+        for v in state:
+            try: self._state.add(v)
+            except Exception as e: logger.warning(e)
         return state0 != self._state
 
 
     def render(self):
         """Creates controls from state, disabling all if no spellbook. Returns True."""
-        gui.build(self, self._panel)
-        if not util.get(self._hero, "stats", "spellbook"):
+        h3sed.gui.build(self, self._panel)
+        if not self._hero.stats.spellbook:
             for c in self._panel.Children: c.Disable()
         return True
 
@@ -107,57 +98,57 @@ class SpellsPlugin(object):
     def on_add(self, prop, value):
         """Adds spell to current hero spells, returns whether state changed."""
         if value in self._state: return False
-        self._state.append(value)
-        self._state.sort()
+        self._state.add(value)
         return True
 
 
-    def parse(self, heroes, original=False):
-        """Returns spells states parsed from hero bytearrays, as [[name, ], ]."""
-        result = [] # Lists of values like ["Haste", ..]
-        IDS = {y: x[y] for x in [metadata.Store.get("ids", self._savefile.version)]
-               for y in metadata.Store.get("spells", self._savefile.version)}
-        MYPOS = plugins.adapt(self, "pos", POS)
+def parse(hero_bytes, version):
+    """Returns h3sed.hero.Spells() parsed from hero bytearray spellbook section."""
+    SPELL_POSES = {y: x[y] for x in [metadata.Store.get("ids", version=version)]
+                   for y in metadata.Store.get("spells", version=version)}
+    SPELLBOOK_POS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                        version=version)["spells_book"]
 
-        for hero in heroes:
-            values = []
-            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
-            for name, pos in IDS.items():
-                if hero_bytes[MYPOS["spells_book"] + pos]: values.append(name)
-            result.append(sorted(values))
-        return result
+    spells = h3sed.hero.Spells.factory(version)
+    for spell_name, spell_pos in SPELL_POSES.items():
+        if hero_bytes[SPELLBOOK_POS + spell_pos]: spells.add(spell_name)
+    return spells
 
 
-    def serialize(self):
-        """Returns new hero bytearray, with edited spells sections."""
-        result = self._hero.bytes[:]
-        version = self._savefile.version
+def serialize(spells, hero_bytes, version, hero=None):
+    """
+    Returns new hero bytearray with updated spells section: spellbook and artifact spells.
 
-        IDS = {y: x[y] for x in [metadata.Store.get("ids", version)]
-               for y in metadata.Store.get("spells", version)}
-        MYPOS = plugins.adapt(self, "pos", POS)
-        state = self._state
+    @param   hero  used for checking spellbook availability and artifact spells, if given
+    """
+    SPELL_POSES = {y: x[y] for x in [metadata.Store.get("ids", version=version)]
+                   for y in metadata.Store.get("spells", version=version)}
+    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                  version=version)
+    SPELLBOOK_POS, ALLSPELLS_POS = BYTEPOS["spells_book"], BYTEPOS["spells_available"]
+    ARTIFACT_SPELLS = metadata.Store.get("artifact_spells", version=version)
+    BANNABLE_SPELLS = metadata.Store.get("bannable_spells", version=version)
 
-        artispells, condspells = set(), set()
-        if getattr(self._hero, "artifacts", None):
-            SPELL_ARTIFACTS = metadata.Store.get("artifact_spells", version)
-            artispells0 = set(y for x in self._hero.state0.get("artifacts", {}).values()
-                              for y in SPELL_ARTIFACTS.get(x, []))
-            artispells  = set(y for x in self._hero.artifacts.values()
-                              for y in SPELL_ARTIFACTS.get(x, []))
-            condspells  = set(metadata.Store.get("bannable_spells", version))
-            condspells &= artispells0 & artispells
-        for name, pos in IDS.items():
-            in_book   = name in state
-            available = in_book or name in artispells
+    artifact_spells0 = set(y for x in hero.original.get("artifacts", {}).values()
+                           for y in ARTIFACT_SPELLS.get(x, [])) if hero else set()
+    artifact_spells  = set(y for x in hero.artifacts.values()
+                           for y in ARTIFACT_SPELLS.get(x, [])) if hero else set()
+    conditional_spells  = set(BANNABLE_SPELLS)
+    conditional_spells &= artifact_spells0 & artifact_spells
+    has_spellbook = True if hero is None else hero.stats.spellbook
 
-            # Some maps may have certain spells banned, e.g. Summon Boat on maps with no water
-            # in Horn of the Abyss; savefiles will not have these spell bits set.
-            # At least try to avoid a needless file change if we can detect the ban being in effect.
-            if available and not in_book and not result[MYPOS["spells_available"] + pos] \
-            and name in condspells: available = False
+    new_bytes = hero_bytes[:]
+    for spell_name, spell_pos in SPELL_POSES.items():
+        in_book   = has_spellbook and spell_name in spells
+        available = in_book or spell_name in artifact_spells
 
-            result[MYPOS["spells_book"] + pos]      = in_book
-            result[MYPOS["spells_available"] + pos] = available
+        # Some maps may have certain spells banned, e.g. Summon Boat on maps with no water
+        # in Horn of the Abyss; savefiles will not have these spell bits set.
+        # At least try to avoid a needless file change if we can detect the ban being in effect.
+        if available and not in_book and not new_bytes[ALLSPELLS_POS + spell_pos] \
+        and spell_name in conditional_spells: available = False
 
-        return result
+        new_bytes[SPELLBOOK_POS + spell_pos] = in_book
+        new_bytes[ALLSPELLS_POS + spell_pos] = available
+
+    return new_bytes

@@ -1,79 +1,75 @@
 # -*- coding: utf-8 -*-
 """
-Version-plugin, provides support for different game versions.
-
-All versions specifics are handled by subplugins in file directory, auto-loaded.
-
-
-Subplugin modules are expected to have the following API (most methods optional):
-
-    def init():
-        '''Called at plugin load.'''
-
-    def detect(savefile):
-        '''Mandatory. Returns whether savefile matches game version.'''
-
-    def props():
-        '''
-        Returns plugin props {name, ?label, ?index}.
-        Label is used as plugin tab label, falling back to plugin name.
-        Index is used for sorting plugins.
-        Icon is wx.Bitmap, used as plugin tab icon in rendering notebook.
-        '''
-
-    def adapt(source, category, value):
-        '''
-        Returns value adapted by plugin specifics.
-
-        @param   source    plugin (or subplugin) requesting adaptation
-        @param   category  value category like "props"
-        '''
+Interface to game version differences.
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  22.05.2024
+@modified  02.05.2025
 ------------------------------------------------------------------------------
 """
-import copy
-import glob
-import importlib
-import logging
-import os
-import re
-
-import wx
-
-from h3sed import conf
-from h3sed import gui
-from h3sed import images
-from h3sed import plugins
-from h3sed.lib import util
-from h3sed.lib import wx_accel
-
-logger = logging.getLogger(__package__)
+from . import ab
+from . import hc
+from . import hota
+from . import roe
+from . import roe_gog
+from . import sod
 
 
-PLUGINS = [] # Loaded plugins as [{name, module}, ]
+## Modules for game versions in order of release
+VERSIONS = {
+    "roe":     roe,     # Restoration of Erathia
+    "ab":      ab,      # Armageddon's Blade
+    "sod":     sod,     # Shadow of Death
+    "hc":      hc,      # Heroes Chronicles
+    "hota":    hota,    # Horn of The Abyss
+    "roe_gog": roe_gog, # Restoration of Erathia (GOG Complete)
+}
+
+ADAPT_CACHE = {} # {(name, value, version): value}
+
+
+def adapt(name, value, version=None):
+    """
+    Returns value adapted either for specified game version, or run through all versions.
+
+    @param   name     value name like "hero.regex"
+    @param   value    the value to adapt
+    @param   version  specific game version to adapt for, if any, like "sod" for Shadow of Death
+    """
+    cachekey = (name, value, version)
+    try:
+        if cachekey in ADAPT_CACHE: return ADAPT_CACHE[cachekey]
+    except Exception: pass # TypeError if value in cachekey is not hashable
+
+    if version:
+        if hasattr(VERSIONS[version], "adapt"):
+            value = VERSIONS[version].adapt(name, value)
+    else:
+        for module in VERSIONS.values():
+            if hasattr(module, "adapt"):
+                value = module.adapt(name, value)
+    try: ADAPT_CACHE[cachekey] = value
+    except Exception: pass # TypeError if value in cachekey is not hashable
+    return value
+
+
+def detect(savefile):
+    """Returns savefile game version, like "sod" for Shadow of Death. Raises if unknown."""
+    for version, module in VERSIONS.items():
+        if module.detect(savefile):
+            return version
+    raise ValueError("Not recognized as Heroes3 savefile of any supported game version.")
 
 
 def init():
-    """Loads hero plugins list."""
-    global PLUGINS
-    basefile = os.path.join(conf.PluginDirectory, "version", "__init__.py")
-    PLUGINS[:] = plugins.load_modules(__package__, basefile)
+    """Initializes version data."""
+    for module in VERSIONS.values():
+        if hasattr(module, "init"): module.init()
 
 
-def adapt(source, category, value):
-    """
-    Runs value through adapt() of subplugins.
-
-    @param   source    source plugin or subplugin
-    @param   category  value category like "props"
-    """
-    for p in PLUGINS:
-        if callable(getattr(p["module"], "adapt", None)):
-            value = p["module"].adapt(source, category, value)
-    return value
+def title(version):
+    """Returns version title, like "Shadow of Death" for "sod"."""
+    return VERSIONS[version].TITLE

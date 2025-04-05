@@ -7,10 +7,11 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    04.12.2024
+@modified    05.04.2025
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
+import contextlib
 import copy
 import datetime
 import gzip
@@ -19,35 +20,35 @@ import os
 import re
 import sys
 
-from h3sed import conf
-from h3sed import plugins
-from h3sed.lib import util
+import h3sed
+from . import conf
+from . lib import util
 
 
 logger = logging.getLogger(__package__)
 
 
 """Blank value bytes."""
-Blank = b"\xFF"
-Null  = b"\x00"
+BLANK = b"\xFF"
+NULL  = b"\x00"
 
 
 """Index for various byte starts in savefile bytearray."""
-BytePositions = {
+BYTE_POSITIONS = {
     "version_major":    8,  # Game major version byte
     "version_minor":   12,  # Game minor version byte
 }
 
 
 """Hero primary attributes, in file order, as {name: label}."""
-PrimaryAttributes = OrderedDict([
+PRIMARY_ATTRIBUTES = OrderedDict([
     ('attack', 'Attack'),      ('defense',   'Defense'),
     ('power',  'Spell Power'), ('knowledge', 'Knowledge')
 ])
 
 
 """Hero skills, in file order."""
-Skills = [
+SKILLS = [
     "Pathfinding", "Archery", "Logistics", "Scouting", "Diplomacy", "Navigation",
     "Leadership", "Wisdom", "Mysticism", "Luck", "Ballistics", "Eagle Eye",
     "Necromancy", "Estates", "Fire Magic", "Air Magic", "Water Magic",
@@ -57,15 +58,146 @@ Skills = [
 
 
 """Hero skill levels, in ascending order."""
-SkillLevels = ["Basic", "Advanced", "Expert"]
+SKILL_LEVELS = ["Basic", "Advanced", "Expert"]
+
+
+"""Slots for hero artifact locations, mapping equivalents like "side1" and "side" to "side"."""
+HERO_SLOTS = {"armor": "armor", "cloak": "cloak", "feet": "feet", "helm": "helm",
+              "lefthand": "hand", "neck": "neck", "righthand": "hand", "shield": "shield",
+              "side1": "side", "side2": "side", "side3": "side", "side4": "side", "side5": "side",
+              "weapon": "weapon"}
 
 
 """Hero primary attribute value range, as (min, max)."""
-PrimaryAttributeRange = (0, 127)
+PRIMARY_ATTRIBUTE_RANGE = (0, 127)
+
+
+"""Allowed (min, max) ranges for various hero properties."""
+HERO_RANGES = {
+    "attack":          PRIMARY_ATTRIBUTE_RANGE,
+    "defense":         PRIMARY_ATTRIBUTE_RANGE,
+    "power":           PRIMARY_ATTRIBUTE_RANGE,
+    "knowledge":       PRIMARY_ATTRIBUTE_RANGE,
+
+    "exp":             ( 0, 2**32 - 1),
+    "level":           ( 0, 75),
+    "mana_left":       ( 0, 2**16 - 1),
+    "movement_left":   ( 0, 2**32 - 1),
+    "movement_total":  ( 0, 2**32 - 1),
+
+    "army":            ( 0, 7),
+    "army.count":      ( 1, 2**32 - 1),
+    "inventory":       ( 0, 64),
+    "skills":          ( 0, 28),
+}
+
+
+"""Index for byte start of various attributes in hero bytearray."""
+HERO_BYTE_POSITIONS = {
+    "movement_total":     0, # Movement points in total
+    "movement_left":      4, # Movement points remaining
+
+    "exp":                8, # Experience points
+    "mana_left":         16, # Spell points remaining
+    "level":             18, # Hero level
+
+    "skills_count":      12, # Skills count
+    "skills_level":     151, # Skill levels
+    "skills_slot":      179, # Skill slots
+
+    "army_types":        82, # Creature type IDs
+    "army_counts":      110, # Creature counts
+
+    "spells_book":      211, # Spells in book
+    "spells_available": 281, # All spells available for casting
+
+    "attack":           207, # Primary attribute: Attack
+    "defense":          208, # Primary attribute: Defense
+    "power":            209, # Primary attribute: Spell Power
+    "knowledge":        210, # Primary attribute: Knowledge
+
+    "helm":             351, # Helm slot
+    "cloak":            359, # Cloak slot
+    "neck":             367, # Neck slot
+    "weapon":           375, # Weapon slot
+    "shield":           383, # Shield slot
+    "armor":            391, # Armor slot
+    "lefthand":         399, # Left hand slot
+    "righthand":        407, # Right hand slot
+    "feet":             415, # Feet slot
+    "side1":            423, # Side slot 1
+    "side2":            431, # Side slot 2
+    "side3":            439, # Side slot 3
+    "side4":            447, # Side slot 4
+    "ballista":         455, # Ballista slot
+    "ammo":             463, # Ammo Cart slot
+    "tent":             471, # First Aid Tent slot
+    "catapult":         479, # Catapult slot
+    "spellbook":        487, # Spellbook slot
+    "side5":            495, # Side slot 5
+    "inventory":        503, # Inventory start
+
+    "reserved": {            # Slots reserved by combination artifacts
+        "helm":        1016,
+        "cloak":       1017,
+        "neck":        1018,
+        "weapon":      1019,
+        "shield":      1020,
+        "armor":       1021,
+        "hand":        1022, # For both left and right hand, \x00-\x02
+        "feet":        1023,
+        "side":        1024, # For all side slots, \x00-\x05
+    },
+}
+
+
+"""Regulax expression for finding hero struct in savefile bytes."""
+HERO_REGEX = re.compile(b"""
+    # There are at least 60 bytes more at front, but those can also include
+    # hero biography, making length indeterminate.
+    # Bio ends at position -32 from total movement point start.
+    # If bio end position is \x00, then bio is empty, otherwise bio extends back
+    # until a 4-byte span giving bio length (which always ends with \x00).
+
+    .{4}                     #   4 bytes: movement points in total             000-003
+    .{4}                     #   4 bytes: movement points remaining            004-007
+    .{4}                     #   4 bytes: experience                           008-011
+    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     012-015
+    .{2}                     #   2 bytes: spell points remaining               016-017
+    .{1}                     #   1 byte:  hero level                           018-018
+
+    .{63}                    #  63 bytes: unknown                              019-081
+
+    .{28}                    #  28 bytes: 7 4-byte creature IDs                082-109
+    .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
+
+                             #  13 bytes: hero name, null-padded               138-150
+    (?P<name>[^\x00-\x20].{11}\x00)
+    [\x00-\x03]{28}          #  28 bytes: skill levels                         151-178
+    [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
+    .{4}                     #   4 bytes: primary stats                        207-210
+
+    [\x00-\x01]{70}          #  70 bytes: spells in book                       211-280
+    [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
+
+                             # 152 bytes: 19 8-byte equipments worn            351-502
+                             # Blank spots:   FF FF FF FF XY XY XY XY
+                             # Artifacts:     XY 00 00 00 FF FF FF FF
+                             # Scrolls:       XY 00 00 00 00 00 00 00
+    (?P<artifacts>(          # Catapult etc:  XY 00 00 00 XY XY 00 00
+      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
+    ){19})
+
+                             # 512 bytes: 64 8-byte artifacts in inventory     503-1014
+    ( ((.\x00{3}) | \xFF{4}){2} ){64}
+
+                             # 10 bytes: slots taken by combination artifacts 1015-1024
+    .[\x00-\x01]{6}[\x00-\x02][\x00-\x01][\x00-\x05]
+""", re.VERBOSE | re.DOTALL)
 
 
 """Hero levels mapped to minimum experience points required."""
-ExperienceLevels = {
+EXPERIENCE_LEVELS = {
      1:          0,
      2:       1000,
      3:       2000,
@@ -145,7 +277,7 @@ ExperienceLevels = {
 
 
 """Hero artifacts, for wearing and side slots, excluding spell scrolls."""
-Artifacts = [
+ARTIFACTS = [
     "Ambassador's Sash",
     "Amulet of the Undertaker",
     "Angel Feather Arrows",
@@ -270,7 +402,7 @@ Artifacts = [
 
 
 """Special artifacts like Ballista."""
-SpecialArtifacts = [
+SPECIAL_ARTIFACTS = [
     "Ammo Cart",
     "Ballista",
     "Catapult",
@@ -280,7 +412,7 @@ SpecialArtifacts = [
 
 
 """Creatures for hero army slots."""
-Creatures = [
+CREATURES = [
     "Air Elemental",
     "Ancient Behemoth",
     "Angel",
@@ -403,7 +535,7 @@ Creatures = [
 
 
 """Spells for hero to cast."""
-Spells = [
+SPELLS = [
     "Air Shield",
     "Animate Dead",
     "Anti-Magic",
@@ -477,7 +609,7 @@ Spells = [
 
 
 """IDs of all items in savefile."""
-IDs = {
+IDS = {
     # Artifacts
     "Ambassador's Sash":                 0x44,
     "Amulet of the Undertaker":          0x36,
@@ -838,7 +970,7 @@ IDs = {
 
 
 """Artifact slots, with first being primary slot."""
-ArtifactSlots = {
+ARTIFACT_SLOTS = {
     "Ambassador's Sash":                 ["cloak"],
     "Amulet of the Undertaker":          ["neck"],
     "Angel Feather Arrows":              ["side"],
@@ -964,7 +1096,7 @@ ArtifactSlots = {
 
 
 """Spells that artifacts make available to hero."""
-ArtifactSpells = {
+ARTIFACT_SPELLS = {
     "Spellbinder's Hat":                 ["Dimension Door", "Fly", "Implosion",
                                           "Sacrifice", "Summon Air Elemental",
                                           "Summon Earth Elemental",
@@ -1000,7 +1132,7 @@ ArtifactSpells = {
 
 
 """Primary skill modifiers that artifacts give to hero."""
-ArtifactStats = {
+ARTIFACT_STATS = {
     "Crown of Dragontooth":              ( 0,  0, +4, +4),
     "Crown of the Supreme Magi":         ( 0,  0,  0, +4),
     "Hellstorm Helmet":                  ( 0,  0,  0, +5),
@@ -1051,27 +1183,42 @@ ArtifactStats = {
 Spell scroll artifacts, IDs like "01 00 00 00 09 00 00 00",
 with 01 standing for spell scroll and 09 for Town Portal.
 """
-ScrollArtifacts = []
-for t in Spells:
+SCROLL_ARTIFACTS = []
+for t in SPELLS:
     n = "%s: %s" % ("Spell Scroll", t)
-    Artifacts.append(n)
-    ArtifactSlots[n]  = ["side"]
-    ArtifactSpells[n] = [t]
-    IDs[n] = (IDs[t] << 32) + IDs["Spell Scroll"]
-    ScrollArtifacts.append(n)
+    ARTIFACTS.append(n)
+    ARTIFACT_SLOTS[n]  = ["side"]
+    ARTIFACT_SPELLS[n] = [t]
+    IDS[n] = (IDS[t] << 32) + IDS["Spell Scroll"]
+    SCROLL_ARTIFACTS.append(n)
 
 
 
-def wildcards():
-    """Returns wildcard strings for file controls, as ["label (*.ext)|*.ext", ]."""
-    result = ["All files (*.*)|*.*"]
-    file_extensions = plugins.adapt(None, "file_extensions", conf.FileExtensions)
-    for name, exts in file_extensions[::-1]:
-        exts1 = exts2 = ";".join("*" + x for x in exts)
-        if "linux" in sys.platform:  # Case-sensitive operating system
-            exts2 = ";".join("*%s;*%s" % (x.lower(), x.upper()) for x in exts)
-        result.insert(0, "%s (%s)|%s" % (name, exts1, exts2))
-    return result
+@contextlib.contextmanager
+def patch_gzip_for_partial():
+    """
+    Context manager replacing gzip.GzipFile._read_eof() with a version not throwing CRC error.
+    For decompressing partial files.
+    """
+
+    def read_eof_py3(self):
+        if not all(self._fp.read(1) for _ in range(8)): # Consume and require 8 bytes of CRC
+            raise EOFError("Compressed file ended before the end-of-stream marker was reached")
+        c = b"\x00"
+        while c == b"\x00": c = self._fp.read(1) # Consume stream until first non-zero byte
+        if c: self._fp.prepend(c)
+
+    def read_eof_py2(self):
+        c = "\x00"
+        while c == "\x00": c = self.fileobj.read(1) # Consume stream until first non-zero byte
+        if c: self.fileobj.seek(-1, 1)
+
+    readercls = getattr(gzip, "_GzipReader", gzip.GzipFile)  # Py3/Py2
+    read_eof_original = readercls._read_eof
+    readercls._read_eof = read_eof_py2 if readercls is gzip.GzipFile else read_eof_py3
+
+    try: yield
+    finally: readercls._read_eof = read_eof_original
 
 
 
@@ -1102,7 +1249,7 @@ class Savefile(object):
         self.mapdata  = {}
         self.size     = 0
         self.usize    = 0
-        self.assume_newformat = conf.SavegameNewFormat  # Persist current config setting
+        self.heroes   = []
         self.read()
 
 
@@ -1113,10 +1260,20 @@ class Savefile(object):
         self.usize = len(self.raw)
 
 
+    def patch_heroes(self):
+        """Patches unpacked contents with serialized heroes data."""
+        heroes_changed = [h for h in self.heroes if h.is_changed()]
+        for hero in heroes_changed: hero.serialize()
+        for hero in self.heroes: self.patch(hero.bytes, hero.span)
+
+
     def read(self):
-        """Reads in file contents and attributes."""
-        with gzip.GzipFile(self.filename, "rb") as f: raw = bytearray(f.read())
+        """Reads in file raw contents and main attributes."""
+        with patch_gzip_for_partial():
+            with gzip.GzipFile(self.filename, "rb") as f: raw = bytearray(f.read())
         self.raw0 = self.raw = raw
+        self.mapdata = {}
+        self.heroes = []
         self.detect_version()
         self.parse_metadata()
         self.update_info()
@@ -1132,6 +1289,8 @@ class Savefile(object):
         with gzip.GzipFile(filename, "wb") as f: f.write(bytes(self.raw))
         self.raw0 = self.raw
         self.update_info(filename)
+        for hero in self.heroes:
+            if hero.is_patched(self): hero.mark_saved()
         logger.info("Saved %s (%s, unzipped %s).", filename,
                     util.format_bytes(self.size), util.format_bytes(self.usize))
 
@@ -1144,6 +1303,9 @@ class Savefile(object):
         with gzip.GzipFile(filename, "wb") as f: f.write(bytes(raw))
         self.raw0 = raw
         self.update_info(filename)
+        for hero in self.heroes:
+            if any(hero.span[0] >= start and hero.span[1] < end for start, end in spans):
+                if hero.is_patched(self): hero.mark_saved()
         logger.info("Saved %s byte %s %s (%s, unzipped %s).", filename,
                     util.plural("range", spans, numbers=False),
                     " and ".join("..".join(map(str, x)) for x in spans),
@@ -1152,23 +1314,16 @@ class Savefile(object):
 
     def detect_version(self):
         """Auto-detects game version, raises error if savefile not recognizable."""
-        RGX_MAGIC = plugins.adapt(None, "savefile_magic_regex", self.RGX_MAGIC)
+        RGX_MAGIC = h3sed.version.adapt("savefile_magic_regex", self.RGX_MAGIC)
         if not RGX_MAGIC.match(self.raw):
             raise ValueError("Not recognized as Heroes3 savefile.")
-        if getattr(plugins, "version", None):
-            for p in plugins.version.PLUGINS:
-                if p["module"].detect(self):
-                    logger.info("Detected %s as version %r.", self.filename, p["name"])
-                    self.version = p["name"]
-                    break  # for p
-            if self.version is None:
-                raise ValueError("Not recognized as Heroes3 savefile "
-                                 "of any supported game version.")
+        self.version = h3sed.version.detect(self) # Raises ValueError if not detected
+        logger.info("Detected %s as version %r.", self.filename, self.version)
 
 
     def parse_metadata(self):
         """Populates savefile map name and description."""
-        RGX_HEADER = plugins.adapt(None, "savefile_header_regex", self.RGX_HEADER)
+        RGX_HEADER = h3sed.version.adapt("savefile_header_regex", self.RGX_HEADER)
         match = RGX_HEADER.match(self.raw[:2048])
         if not match:
             logger.warning("Failed to parse map name and description from %s.", self.filename)
@@ -1184,6 +1339,44 @@ class Savefile(object):
                 cpos += clen + nlen
             except Exception:
                 logger.exception("Failed to parse map name and description from %s.", self.filename)
+
+
+    def parse_heroes(self):
+        """Populates and parses all savefile heroes in detail."""
+        if not self.heroes: self.populate_heroes()
+        for hero in self.heroes: hero.parse()
+
+
+    def populate_heroes(self):
+        """Populates raw data on savefile heroes."""
+        heroes = []
+
+        rgx_strip = re.compile(br"^(?!\xFF+\x00+$)([^\x00-\x19]+)\x00+$")
+        rgx_nulls = re.compile(br"^(\x00+)|(\x00{4}\xFF{4})+$")
+        REGEX = h3sed.version.adapt("hero_regex", HERO_REGEX, version=self.version)
+
+        # Jump over potential campaign carry-over heroes, stored in savefile with their
+        # original armies+artifacts; the structs used by game come later.
+        pos = 30000
+        m = re.search(REGEX, self.raw[pos:])
+        while m:
+            start, end = m.span()
+            if rgx_strip.match(m.group("name")) and not rgx_nulls.match(m.group("artifacts")):
+                blob = bytearray(self.raw[pos + start:pos + end])
+                name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
+                hero = h3sed.hero.Hero(name, version=self.version)
+                hero.set_file_data(blob, len(heroes), (start + pos, end + pos)) #, self)
+                heroes.append(hero)
+                pos += end
+            else:
+                pos += start + 1
+            # Continue in small chunks once heroes section reached:
+            # regex can get pathologically slow for the entire remainder beyond heroes
+            m = re.search(REGEX, self.raw[pos:pos+5000])
+
+        logger.info("%s heroes detected in %s as version %r.",
+                    len(heroes) or "No ", self.filename, self.version)
+        self.heroes = sorted(heroes, key=lambda x: x.name.lower())
 
 
     def update_info(self, filename=None):
@@ -1217,15 +1410,16 @@ class Savefile(object):
 
 class Store(object):
     """
-    Simple data container, allowing to store and retrieve data by version
-    and subcategory.
+    Simple data container, allowing to store and retrieve data by subcategory and game version.
     """
 
     # {typename: {version: {category: {None: all, category1: filtered, ..}, ..}}}
     DATA = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
+    CACHE = {} # {(name, category, verdion): prepared result}
+
     @staticmethod
-    def add(name, data, version=None, category=None):
+    def add(name, data, category=None, version=None):
         stype = list if isinstance(data, tuple) else type(data)
         store = Store.DATA[name][version].setdefault(category, stype())
         if isinstance(store, list):
@@ -1233,9 +1427,10 @@ class Store(object):
         elif isinstance(store, dict): store.update(copy.deepcopy(data))
 
     @staticmethod
-    def get(name, version=None, category=None):
+    def get(name, category=None, version=None):
         """If version is not specified, returns data from all versions."""
-        result = None
+        result = Store.CACHE.get((name, category, version))
+        if result is not None: return result
 
         vv = [None, version] if version else [None] + list(Store.DATA.get(name, {}))
         for v in sorted(set(vv), key=lambda x: x or ""):
@@ -1245,27 +1440,30 @@ class Store(object):
             elif isinstance(result, list):
                 result.extend(x for x in copy.deepcopy(r) if x not in result)
             elif isinstance(result, dict): result.update(copy.deepcopy(r))
+        Store.CACHE[(name, category, version)] = result
         return result
 
 
 
-Store.add("artifacts", Artifacts)
-Store.add("artifacts", Artifacts, category="inventory")
+Store.add("artifacts", ARTIFACTS)
+Store.add("artifacts", ARTIFACTS, category="inventory")
 Store.add("artifacts", ["Spellbook", "The Grail"], category="inventory")
-Store.add("artifacts", ScrollArtifacts, category="scroll")
-for slot in set(sum(ArtifactSlots.values(), [])):
-    Store.add("artifacts", [k for k, v in ArtifactSlots.items() if v[0] == slot],
-              category=slot)
+Store.add("artifacts", SCROLL_ARTIFACTS, category="scroll")
+for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
+    Store.add("artifacts", [k for k, v in ARTIFACT_SLOTS.items() if v[0] == slot], category=slot)
 
-Store.add("artifact_slots",    ArtifactSlots)
-Store.add("artifact_spells",   ArtifactSpells)
-Store.add("artifact_stats",    ArtifactStats)
-Store.add("creatures",         Creatures)
-Store.add("ids",               IDs)
-Store.add("skills",            Skills)
-Store.add("skill_levels",      SkillLevels)
-Store.add("special_artifacts", SpecialArtifacts)
-Store.add("spells",            Spells)
-Store.add("bannable_spells",   [])
-for artifact, spells in ArtifactSpells.items():
+Store.add("artifact_slots",      ARTIFACT_SLOTS)
+Store.add("artifact_spells",     ARTIFACT_SPELLS)
+Store.add("artifact_stats",      ARTIFACT_STATS)
+Store.add("creatures",           CREATURES)
+Store.add("hero_byte_positions", HERO_BYTE_POSITIONS)
+Store.add("hero_ranges",         HERO_RANGES)
+Store.add("hero_slots",          HERO_SLOTS)
+Store.add("ids",                 IDS)
+Store.add("skills",              SKILLS)
+Store.add("skill_levels",        SKILL_LEVELS)
+Store.add("special_artifacts",   SPECIAL_ARTIFACTS)
+Store.add("spells",              SPELLS)
+Store.add("bannable_spells",     []) # Initialize empty array for version modules to update
+for artifact, spells in ARTIFACT_SPELLS.items():
     Store.add("spells", spells, category=artifact)

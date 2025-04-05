@@ -7,37 +7,35 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  02.12.2024
+@modified  05.04.2025
 ------------------------------------------------------------------------------
 """
-from collections import defaultdict
 import logging
 
-import wx
+try: import wx
+except ImportError: wx = None
 
-from h3sed import conf
-from h3sed import gui
-from h3sed import metadata
-from h3sed import plugins
-from h3sed.lib import util
-from h3sed.plugins.hero import POS
+import h3sed
+from .. lib import util
+from .. import conf
+from .. import metadata
 
 
-logger = logging.getLogger(__package__)
+logger = logging.getLogger(__name__)
 
 
 def format_stats(plugin, prop, state, artifact_stats=None):
     """Return item primaty stats modifier text like "+1 Attack, +1 Defense", or "" if no effect."""
     value = state.get(prop.get("name"))
     if not value: return ""
-    STATS = artifact_stats or metadata.Store.get("artifact_stats", plugin._savefile.version)
+    STATS = artifact_stats or metadata.Store.get("artifact_stats", version=plugin.version)
     if value not in STATS: return ""
     return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
-                     for k, v in zip(metadata.PrimaryAttributes.values(), STATS[value]) if v)
+                     for k, v in zip(metadata.PRIMARY_ATTRIBUTES.values(), STATS[value]) if v)
 
 
 PROPS = {"name": "artifacts", "label": "Artifacts", "index": 3}
-UIPROPS = [{
+DATAPROPS = [{
     "name":     "helm",
     "label":    "Helm slot",
     "type":     "combo",
@@ -151,34 +149,35 @@ def props():
     return PROPS
 
 
-def factory(savefile, parent, panel):
+def factory(parent, panel, version):
     """Returns a new artifacts-plugin instance."""
-    return ArtifactsPlugin(savefile, parent, panel)
+    return ArtifactsPlugin(parent, panel, version)
 
 
 
 class ArtifactsPlugin(object):
-    """Encapsulates artifacts-plugin state and behaviour."""
+    """Provides UI functionality for listing and changing artifacts donned by hero."""
 
 
-    def __init__(self, savefile, parent, panel):
-        self.name      = PROPS["name"]
-        self.parent    = parent
-        self._savefile = savefile
-        self._hero     = None
-        self._panel    = panel  # Plugin contents panel
-        self._state    = {}     # {"helm": "Skull Helmet", ..}
-        self._ctrls    = {}     # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
-        self._cache    = {}     # Cached {slot: [..all choices..], ..}
+    def __init__(self, parent, panel, version):
+        self.name    = PROPS["name"]
+        self.parent  = parent
+        self.version = version
+        self._panel  = panel  # Plugin contents panel
+        self._state  = h3sed.hero.Artifacts.factory(version)
+        self._hero   = None
+        self._ctrls  = {}     # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
 
 
     def props(self):
-        """Returns props for artifacts-tab, as [{type: "combo", ..}]."""
+        """Returns UI props for artifacts-tab, as [{type: "combo", ..}]."""
         result = []
-        for prop in UIPROPS:
-            slot = prop.get("slot", prop["name"])
-            result.append(dict(prop, choices=[""] + self._cache.get(slot, [])))
-        return plugins.adapt(self, "props", result)
+        LOCATION_TO_SLOT = metadata.Store.get("hero_slots", version=self.version)
+        for prop in DATAPROPS:
+            slot = LOCATION_TO_SLOT[prop["name"]]
+            choices = metadata.Store.get("artifacts", category=slot, version=self.version)
+            result.append(dict(prop, choices=[""] + choices))
+        return h3sed.version.adapt("hero.artifacts.DATAPROPS", result, version=self.version)
 
 
     def state(self):
@@ -191,48 +190,21 @@ class ArtifactsPlugin(object):
         return self._hero
 
 
-    def load(self, hero, panel):
+    def load(self, hero):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state.clear()
-        self._state.update(self.parse([hero])[0])
-        hero.artifacts = self._state
-        hero.ensure_basestats()
-        if panel: self._panel = panel
+        self._state = hero.artifacts
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values."""
-        state0 = type(self._state)(self._state)
-
-        for prop in self.props():  # First pass: don items
-            name, slot = prop["name"], prop.get("slot", prop["name"])
-            if name not in state:
-                continue  # for
-            v = state[name]
-            cmap = {x.lower(): x for x in self._cache[slot]}
-
-            if not v or hasattr(v, "lower") and v.lower() in cmap:
-                self._state[name] = v
-            else:
-                logger.warning("Invalid artifact for %r: %r", name, v)
-
-        for prop in self.props():  # Second pass: validate slots and drop invalid states
-            name, slot = prop["name"], prop.get("slot", prop["name"])
-            v = self._state[name]
-            if not v: continue  # for prop
-
-            slots_free, slots_owner = self._slots(prop, v)
-            slots_full = [k for k, x in slots_free.items() if x < 0]
-            if slots_full:
-                logger.warning("Cannot don %s, required slot taken:\n\n%s.",
-                               v, "\n".join("- %s (by %s)" % (x, ", ".join(sorted(slots_owner[x])))
-                                            for x in sorted(slots_full)))
-                self._state[name] = None
+        state0 = self._state.copy()
+        for location, artifact in state.items():
+            if location in self._state and self._state[location] != artifact:
+                try: self._state[location] = artifact
+                except Exception as e: logger.warning(str(e))
 
         result = (state0 != self._state)
-        self._hero.artifacts = self._state
-        if result: self._apply_artifact_stats()
         return result
 
 
@@ -242,12 +214,12 @@ class ArtifactsPlugin(object):
         
         Returns whether new controls were created.
         """
-        result, version = False, self._savefile.version
-        if self._ctrls and all(self._ctrls.values()):
-            STATS = metadata.Store.get("artifact_stats", version)
+        result = False
+        if self._ctrls and all(self._ctrls.values()): # All built and still valid
+            STATS = metadata.Store.get("artifact_stats", version=self.version)
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
-                cc = [""] + self._cache[slot]
+                cc = [""] + metadata.Store.get("artifacts", category=slot, version=self.version)
 
                 ctrl, value, choices = self._ctrls[name], self._state.get(name), cc
                 if value and value not in choices: choices = [value] + cc
@@ -256,40 +228,42 @@ class ArtifactsPlugin(object):
                 infoctrl = self._ctrls["%s-info" % name]
                 infoctrl.Label = infoctrl.ToolTip = format_stats(self, prop, self._state, STATS)
         else:
-            self._ctrls, result = gui.build(self, self._panel), True
+            self._ctrls, result = h3sed.gui.build(self, self._panel), True
         self.update_slots()
         return result
 
 
     def update_slots(self):
-        """Updates slots availability."""
-        version = self._savefile.version
-        slots_free, slots_owner = self._slots()
-        SLOTS = metadata.Store.get("artifact_slots", version)
+        """Updates slots availability in UI."""
+        ARTIFACT_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
+        LOCATION_TO_SLOT = metadata.Store.get("hero_slots", version=self.version)
+
+        slot_owners = {} # {slot: [artifact, ]}
+        for location, artifact in self._state.items():
+            slots = ARTIFACT_SLOTS.get(artifact, [])
+            for slot in slots[1:]: # Artifact first slot is primary
+                slot_owners.setdefault(slot, []).append(artifact)
+
         self._panel.Freeze()
         try:
-            for prop in self.props():
-                name, slot = prop["name"], prop.get("slot", prop["name"])
-                cc = [""] + self._cache[slot]
-
-                ctrl, value = self._ctrls[name], self._state.get(name)
+            for location, artifact in self._state.items():
+                slot = LOCATION_TO_SLOT[location]
+                choices = [""] + metadata.Store.get("artifacts", category=slot, version=self.version)
+                ctrl = self._ctrls[location]
 
                 if not ctrl.Enabled:
-                    if value and value not in cc:
-                        cc = [value] + cc
-                    if cc != ctrl.GetItems(): ctrl.SetItems(cc)
-                    ctrl.Value = value or ""
+                    if artifact and artifact not in choices:
+                        choices = [artifact] + choices
+                    if choices != ctrl.GetItems(): ctrl.SetItems(choices)
+                    ctrl.Value = artifact or ""
                     ctrl.Enable()
 
-                if not value and slot in slots_owner:
-                    if slots_free.get(slot, 0):
-                        slots_free[slot] -= 1
-                    else:
-                        owner = next(x for x in slots_owner[slot] if len(SLOTS[x]) > 1)
-                        l = "<taken by %s>" % owner
-                        ctrl.SetItems([l])
-                        ctrl.Value = l
-                        ctrl.Disable()
+                if not artifact and slot_owners.get(slot):
+                    owner_artifact = slot_owners[slot].pop()
+                    label = "<taken by %s>" % owner_artifact
+                    ctrl.SetItems([label])
+                    ctrl.Value = label
+                    ctrl.Disable()
         finally: self._panel.Thaw()
 
 
@@ -300,135 +274,86 @@ class ArtifactsPlugin(object):
         Rolls back change if lacking free slot due to a combination artifact.
         Returns whether action succeeded.
         """
-        v2, v1 = value or None, self._state[prop["name"]]
-        if v2 == v1: return False
+        v1, v2 = self._state[prop["name"]], value or None
+        if v1 == v2: return False
 
-        # Check whether combination artifacts leave sufficient slots free
-        slots_free, slots_owner = self._slots(prop, v2)
-        slots_full = [k for k, v in slots_free.items() if v < 0]
-        if slots_full:
-            wx.MessageBox("Cannot don %s, required slot taken:\n\n%s." %
-                (v2, "\n".join("- %s (by %s)" % (x, ", ".join(sorted(slots_owner[x])))
-                               for x in sorted(slots_full))),
-                conf.Title, wx.OK | wx.ICON_WARNING
-            )
+        try: self._state[prop["name"]] = v2
+        except Exception as e:
+            wx.MessageBox(str(e), conf.Title, wx.OK | wx.ICON_WARNING)
             ctrl.Value = v1 or ""
             return False
 
-        self._state[prop["name"]] = v2
-        self._hero.artifacts = self._state
-        if self._apply_artifact_stats():
-            evt = gui.PluginEvent(self._panel.Id, action="render", name="stats")
+        stats0 = self._hero.stats.copy()
+        self._hero.realize()
+        if stats0 != self._hero.stats:
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name="stats")
             wx.PostEvent(self._panel, evt)
         self.update_slots()
         self._ctrls["%s-info" % prop["name"]].Label = format_stats(self, prop, self._state)
         return True
 
 
-    def _apply_artifact_stats(self):
-        """
-        Applies current artifact stats to hero primary stats, returns whether anything changed.
-        """
-        result = False
-        if not all(getattr(self._hero, k, None) for k in ("stats", "basestats")): return result
+def parse(hero_bytes, version):
+    """Returns h3sed.hero.Artifacts() parsed from hero bytearray artifacts section."""
+    ARTIFACT_LOCATIONS = list(metadata.Store.get("hero_slots", version=version))
+    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                  version=version)
+    IDS = metadata.Store.get("ids", version=version)
+    ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=version)
+    ARTIFACT_NAMES = {IDS[n]: n for n in ARTIFACTS}
 
-        STATS = metadata.Store.get("artifact_stats", self._savefile.version)
-        MIN, MAX = metadata.PrimaryAttributeRange
-        diff = [0] * len(metadata.PrimaryAttributes)
-        for prop in self.props():
-            item = self._state[prop["name"]]
-            if item in STATS: diff = [a + b for a, b in zip(diff, STATS[item])]
-        for k, v in zip(metadata.PrimaryAttributes, diff):
-            v1, v2 = self._hero.stats[k], min(max(MIN, self._hero.basestats[k] + v), MAX)
-            if v1 != v2: result, self._hero.stats[k] = True, v2
-        return result
+    def parse_id(hero_bytes, pos):
+        binary, integer = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
+        if all(x == ord(metadata.BLANK) for x in binary): return None # Blank
+        if integer == IDS["Spell Scroll"]: return util.bytoi(hero_bytes[pos:pos + 8])
+        return integer
 
-
-    def _slots(self, prop=None, value=None):
-        """Returns free and taken slots as {"side": 4, }, {"helm": "Skull Helmet", }."""
-        MYPROPS, SLOTS = self.props(), metadata.Store.get("artifact_slots", self._savefile.version)
-
-        # Check whether combination artifacts leave sufficient slots free
-        slots_free, slots_owner = defaultdict(int), defaultdict(list)
-        for myprop in MYPROPS:
-            slots_free[myprop.get("slot", myprop["name"])] += 1
-        for prop1 in MYPROPS:
-            if prop and prop1["name"] == prop["name"]: continue # for prop
-            v = self._state.get(prop1["name"])
-            if not v: continue # for prop1
-            for slot in SLOTS.get(v, ()):
-                slots_free[slot] -= 1
-                if v not in slots_owner[slot]: slots_owner[slot] += [v]
-        if prop: slots_free[prop.get("slot", prop["name"])] -= 1
-        for slot in SLOTS.get(value, ())[1:]: # First element is primary slot
-            slots_free[slot] -= 1
-        return slots_free, slots_owner
+    artifacts = h3sed.hero.Artifacts.factory(version)
+    for location in ARTIFACT_LOCATIONS:
+        artifact_id = parse_id(hero_bytes, BYTEPOS[location])
+        if artifact_id: artifacts[location] = ARTIFACT_NAMES[artifact_id]
+    return artifacts
 
 
-    def parse(self, heroes, original=False):
-        """Returns artifacts states parsed from hero bytearrays, as [{helm, ..}, ]."""
-        result = []
-        version = self._savefile.version
-        slots = set(p.get("slot", p["name"]) for p in self.props()) | set(["inventory", "scroll"])
-        self._cache = {slot: sorted(metadata.Store.get("artifacts", version, category=slot))
-                       for slot in slots}
-        IDS   = metadata.Store.get("ids", version)
-        NAMES = {x[y]: y for x in [IDS] for y in self._cache["inventory"]}
-        MYPOS = plugins.adapt(self, "pos", POS)
+def serialize(artifacts, hero_bytes, version, hero=None):
+    """Returns new hero bytearray with updated artifacts section."""
+    IDS = metadata.Store.get("ids", version=version)
+    ARTIFACT_LOCATIONS = list(metadata.Store.get("hero_slots", version=version))
+    ARTIFACT_SLOTS = metadata.Store.get("artifact_slots", version=version)
+    SCROLL_ARTIFACTS = metadata.Store.get("artifacts", category="scroll", version=version)
+    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                  version=version)
+    HAS_COMBOS = "reserved" in BYTEPOS
 
-        def parse_item(hero_bytes, pos):
-            b, v = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
-            if all(x == ord(metadata.Blank) for x in b): return None # Blank
-            return util.bytoi(hero_bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
+    new_bytes = hero_bytes[:]
+    bytes0 = None if hero is None else hero.get_bytes(original=True)
+    reserved_sets = set()  # [pos updated in combination artifact flags, ]
+    if HAS_COMBOS:
+        pos_reserved = min(BYTEPOS["reserved"].values())
+        len_reserved = len(BYTEPOS["reserved"])
+        new_bytes[pos_reserved:pos_reserved + len_reserved] = metadata.NULL * len_reserved
 
-        for hero in heroes:
-            values = {}
-            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
-            for prop in self.props():
-                values[prop["name"]] = NAMES.get(parse_item(hero_bytes, MYPOS[prop["name"]]))
-            result.append(values)
-        return result
+    for location in ARTIFACT_LOCATIONS:
+        artifact_name = artifacts.get(location)
+        artifact_id, location_pos = IDS.get(artifact_name), BYTEPOS[location]
+        if artifact_name in SCROLL_ARTIFACTS:
+            binary = util.itoby(artifact_id, 8) # XY 00 00 00 00 00 00 00
+        elif artifact_id:
+            binary = util.itoby(artifact_id, 4) + metadata.BLANK * 4 # XY 00 00 00 FF FF FF FF
+        elif hero and not hero.original.get("artifacts", {}).get(location):
+            # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
+            binary = bytes0[location_pos:location_pos + 8]
+        else:
+            binary = metadata.BLANK * 8 # FF FF FF FF FF FF FF FF
+        new_bytes[location_pos:location_pos + len(binary)] = binary
 
+        for slot in ARTIFACT_SLOTS.get(artifact_name, [])[1:] if HAS_COMBOS else ():
+            new_bytes[BYTEPOS["reserved"][slot]] += 1
+            reserved_sets.add(BYTEPOS["reserved"][slot])
 
-    def serialize(self):
-        """Returns new hero bytearray, with edited artifacts section."""
-        result = self._hero.bytes[:]
-        bytes0 = self._hero.get_bytes(original=True)
-        version = self._savefile.version
+    for pos in range(pos_reserved, pos_reserved + len_reserved) if HAS_COMBOS else ():
+        if pos not in reserved_sets and bytes0[pos] > 5:
+            # Retain original bytes unchanged, Horn of the Abyss uses them for unknown purpose
+            new_bytes[pos] = bytes0[pos]
 
-        IDS = {y: x[y] for x in [metadata.Store.get("ids", version)]
-               for y in self._cache["inventory"]}
-        SCROLL_ARTIFACTS = self._cache["scroll"]
-        MYPOS = plugins.adapt(self, "pos", POS)
-        SLOTS = metadata.Store.get("artifact_slots", version)
-        HAS_COMBOS = bool(MYPOS.get("reserved"))
-
-        if HAS_COMBOS:
-            pos_reserved, len_reserved = min(MYPOS["reserved"].values()), len(MYPOS["reserved"])
-            result[pos_reserved:pos_reserved + len_reserved] = [0] * len_reserved
-            reserved_sets = set()  # [pos updated in combination artifact flags, ]
-
-        state0 = self._hero.state0.get("artifacts") or {}
-        for prop in self.props():
-            name = self._state[prop["name"]]
-            v, pos = IDS.get(name), MYPOS[prop["name"]]
-            if name in SCROLL_ARTIFACTS:
-                b = util.itoby(v, 8)
-            elif v:
-                b = util.itoby(v, 4) + metadata.Blank * 4
-            elif not state0.get(prop["name"]):
-                # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
-                b = bytes0[pos:pos + 8]
-            else:
-                b = metadata.Blank * 8
-            result[pos:pos + len(b)] = b
-            for slot in SLOTS.get(name, [])[1:] if HAS_COMBOS else ():
-                result[MYPOS["reserved"][slot]] += 1
-                reserved_sets.add(MYPOS["reserved"][slot])
-
-        for pos in range(pos_reserved, pos_reserved + len_reserved) if HAS_COMBOS else ():
-            if pos not in reserved_sets and bytes0[pos] > 5:
-                # Retain original bytes unchanged, Horn of the Abyss uses them for unknown purpose.
-                result[pos] = bytes0[pos]
-
-        return result
+    return new_bytes

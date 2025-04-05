@@ -7,24 +7,25 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  14.09.2024
+@modified  02.04.2025
 ------------------------------------------------------------------------------
 """
-from h3sed.metadata import BytePositions, Store
+from .. import metadata
 
 
-PROPS = {"name": "sod", "label": "Shadow of Death", "index": 2}
+NAME  = "sod"
+TITLE = "Shadow of Death"
 
 
 """Game major and minor version byte ranges, as (min, max)."""
-VersionByteRanges = {
+VERSION_BYTE_RANGES = {
     "version_major":  (42, 43),
     "version_minor":  ( 2,  4),
 }
 
 
 """Hero artifacts, for wearing and side slots, excluding spell scrolls."""
-Artifacts = [
+ARTIFACTS = [
     "Admiral's Hat",
     "Angelic Alliance",
     "Armageddon's Blade",
@@ -43,7 +44,7 @@ Artifacts = [
 
 
 """Creatures for hero army slots."""
-Creatures = [
+CREATURES = [
     "Azure Dragon",
     "Boar",
     "Crystal Dragon",
@@ -71,7 +72,7 @@ Creatures = [
 
 
 """IDs of artifacts, creatures and spells in savefile."""
-IDs = {
+IDS = {
     # Artifacts
     "Admiral's Hat":                     0x88,
     "Angelic Alliance":                  0x81,
@@ -119,7 +120,7 @@ IDs = {
 
 
 """Artifact slots, with first being primary slot."""
-ArtifactSlots = {
+ARTIFACT_SLOTS = {
     "Admiral's Hat":                     ["helm", "neck"],
     "Angelic Alliance":                  ["weapon", "helm", "neck", "armor", "shield", "feet"],
     "Armageddon's Blade":                ["weapon"],
@@ -138,7 +139,7 @@ ArtifactSlots = {
 
 
 """Primary skill modifiers that artifacts give to hero."""
-ArtifactStats = {
+ARTIFACT_STATS = {
     "Angelic Alliance":                  (21, 21, 21, 21),
     "Armageddon's Blade":                (+3, +3, +3, +6),
     "Armor of the Damned":               (+3, +3, +2, +2),
@@ -148,7 +149,7 @@ ArtifactStats = {
 
 
 """Spells that artifacts make available to hero."""
-ArtifactSpells = {
+ARTIFACT_SPELLS = {
     "Admiral's Hat":                     ["Scuttle Boat", "Summon Boat"],
     "Armageddon's Blade":                ["Armageddon"],
     "Titan's Thunder":                   ["Titan's Lightning Bolt"],
@@ -158,26 +159,21 @@ ArtifactSpells = {
 
 def init():
     """Initializes artifacts and creatures for Shadow of Death."""
-    Store.add("artifacts", Artifacts, version=PROPS["name"])
-    Store.add("artifacts", Artifacts, version=PROPS["name"], category="inventory")
-    for slot in set(sum(ArtifactSlots.values(), [])):
-        Store.add("artifacts", [k for k, v in ArtifactSlots.items() if v[0] == slot],
-                  version=PROPS["name"], category=slot)
+    metadata.Store.add("artifacts", ARTIFACTS, version=NAME)
+    metadata.Store.add("artifacts", ARTIFACTS, category="inventory", version=NAME)
+    for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
+        metadata.Store.add("artifacts", [k for k, v in ARTIFACT_SLOTS.items() if v[0] == slot],
+                           category=slot, version=NAME)
 
-    Store.add("artifact_slots",  ArtifactSlots,  version=PROPS["name"])
-    Store.add("artifact_spells", ArtifactSpells, version=PROPS["name"])
-    Store.add("artifact_stats",  ArtifactStats,  version=PROPS["name"])
-    Store.add("creatures",       Creatures,      version=PROPS["name"])
-    Store.add("ids",             IDs,            version=PROPS["name"])
-    for artifact, spells in ArtifactSpells.items():
-        Store.add("spells", spells, version=PROPS["name"], category=artifact)
-
-
-def props():
-    """Returns props as {label, index}."""
-    return PROPS
+    metadata.Store.add("artifact_slots",  ARTIFACT_SLOTS,  version=NAME)
+    metadata.Store.add("artifact_spells", ARTIFACT_SPELLS, version=NAME)
+    metadata.Store.add("artifact_stats",  ARTIFACT_STATS,  version=NAME)
+    metadata.Store.add("creatures",       CREATURES,      version=NAME)
+    metadata.Store.add("ids",             IDS,            version=NAME)
+    for artifact, spells in ARTIFACT_SPELLS.items():
+        metadata.Store.add("spells", spells, category=artifact, version=NAME)
 
 
 def detect(savefile):
     """Returns whether savefile bytes match Shadow of Death."""
-    return savefile.match_byte_ranges(BytePositions, VersionByteRanges)
+    return savefile.match_byte_ranges(metadata.BYTE_POSITIONS, VERSION_BYTE_RANGES)

@@ -7,30 +7,29 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  02.12.2024
+@modified  05.04.2025
 ------------------------------------------------------------------------------
 """
 import logging
 
-import wx
+try: import wx
+except ImportError: wx = None
 
-from h3sed import gui
-from h3sed import metadata
-from h3sed import plugins
-from h3sed.lib import util
-from h3sed.plugins.hero import POS
+import h3sed
+from .. lib import util
+from .. import metadata
 
 
 logger = logging.getLogger(__package__)
 
 
 PROPS = {"name": "army", "label": "Army", "index": 2}
-UIPROPS = [{
+DATAPROPS = [{
     "type":        "itemlist",
     "orderable":   True,
     "nullable":    True,
-    "min":         1,
-    "max":         7,
+    "min":         None,  # Populated later
+    "max":         None,  # Populated later
     "item": [{
         "type":    "label",
         "label":   "Army slot",
@@ -41,8 +40,8 @@ UIPROPS = [{
       }, {
         "name":    "count",
         "type":    "number",
-        "min":     1,
-        "max":     2**32 - 1,
+        "min":     None,  # Populated later
+        "max":     None,  # Populated later
       }, {
         "name":    "placeholder",
         "type":    "window",
@@ -55,35 +54,40 @@ def props():
     return PROPS
 
 
-def factory(savefile, parent, panel):
+def factory(parent, panel, version):
     """Returns a new army-plugin instance."""
-    return ArmyPlugin(savefile, parent, panel)
+    return ArmyPlugin(parent, panel, version)
 
 
 
 class ArmyPlugin(object):
-    """Encapsulates army-plugin state and behaviour."""
+    """Provides UI functionality for listing and changing hero army stacks."""
 
 
-    def __init__(self, savefile, parent, panel):
-        self.name      = PROPS["name"]
-        self.parent    = parent
-        self._savefile = savefile
-        self._hero     = None
-        self._panel    = panel  # Plugin contents panel
-        self._state    = []     # [{"name": "Roc", "count": 6}, {}, ]
-        self._ctrls    = []     # [{"name": wx.ComboBox, "count": wx.SpinCtrlDouble}, ]
+    def __init__(self, parent, panel, version):
+        self.name    = PROPS["name"]
+        self.parent  = parent
+        self.version = version
+        self._panel  = panel  # Plugin contents panel
+        self._state  = h3sed.hero.Army.factory(version)
+        self._hero   = None
+        self._ctrls  = []  # [{"name": wx.ComboBox, "count": wx.SpinCtrlDouble}, ]
+
+        panel.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_colour_change)
 
 
     def props(self):
         """Returns props for army-tab, as [{type: "itemlist", ..}]."""
         result = []
-        cc = sorted(metadata.Store.get("creatures", self._savefile.version))
-        for prop in UIPROPS:
-            myprop = dict(prop, item=[])
+        HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
+        CHOICES = sorted(metadata.Store.get("creatures", version=self.version))
+        for prop in DATAPROPS:
+            myprop = dict(prop, item=[], min=HERO_RANGES["army"][0], max=HERO_RANGES["army"][1])
             for item in prop["item"]:
-                myitem = dict(item, choices=cc) if "choices" in item else item
-                myprop["item"].append(myitem)
+                if "choices" in item: item = dict(item, choices=CHOICES)
+                if "min"     in item: item = dict(item, min=HERO_RANGES["army." + item["name"]][0])
+                if "max"     in item: item = dict(item, max=HERO_RANGES["army." + item["name"]][1])
+                myprop["item"].append(item)
             result.append(myprop)
         return result
 
@@ -98,35 +102,22 @@ class ArmyPlugin(object):
         return self._hero
 
 
-    def load(self, hero, panel=None):
+    def load(self, hero):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = self.parse([hero])[0]
-        hero.army = self._state
-        if panel:
-            panel.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_colour_change)
-            self._panel = panel
+        self._state = hero.army
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
-        MYPROPS = self.props()
-        state0 = type(self._state)(self._state)
-        cmap = {x.lower(): x for x in metadata.Store.get("creatures", self._savefile.version)}
-        countitem = next(x for x in MYPROPS[0]["item"] if "count" == x.get("name"))
-        MIN, MAX = countitem["min"], countitem["max"]
-        state = state + [{}] * (MYPROPS[0]["max"] - len(state))
-        for i, v in enumerate(state[:MYPROPS[0]["max"]]):
-            self._state[i] = {}
-            if not isinstance(v, (dict, type(None))):
-                logger.warning("Invalid data type in army #%s: %r", i + 1, v)
+        state0 = self._state.copy()
+        self._state.clear()
+        for i, stack in enumerate(state[:len(self._state)]):
+            if not isinstance(stack, (dict, type(None))):
+                logger.warning("Invalid data type in army #%s: %r", i + 1, stack)
                 continue  # for
-            name, count = v and v.get("name"), v and v.get("count")
-            if name and hasattr(name, "lower") and name.lower() in cmap \
-            and isinstance(count, int) and MIN <= count <= MAX:
-                self._state[i] = {"name": cmap[name.lower()], "count": count}
-            elif v:
-                logger.warning("Invalid army #%s: %r", i + 1, v)
+            try: self._state[i].update(name=stack.get("name"), count=stack.get("count"))
+            except Exception as e: logger.warning(e)
         return state0 != self._state
 
 
@@ -137,28 +128,30 @@ class ArmyPlugin(object):
         Returns whether new controls were created.
         """
         result, MYPROPS = False, self.props()
-        if self._ctrls and all(all(x.values()) for x in self._ctrls):
-            cc = [""] + sorted(metadata.Store.get("creatures", self._savefile.version))
+        if self._ctrls and all(all(x.values()) for x in self._ctrls): # All built and still valid
+            CHOICES = [""] + sorted(metadata.Store.get("creatures", version=self.version))
             for i in range(len(self._state)):
                 creature = None
                 for prop in MYPROPS[0]["item"]:
                     if "name" not in prop: continue # for prop
-                    name, choices = prop["name"], cc
+
+                    name, choices = prop["name"], CHOICES
                     ctrl, value = self._ctrls[i][name], self._state[i].get(name)
                     if "choices" in prop:
-                        choices = ([value] if value and value not in cc else []) + cc
+                        choices = ([value] if value and value not in CHOICES else []) + CHOICES
                         if choices != ctrl.GetItems(): ctrl.SetItems(choices)
                         else: ctrl.Value = ""
                         creature = value
                     else: ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
                     if value is not None and hasattr(ctrl, "Value"): ctrl.Value = value
         else:
-            self._ctrls, result = gui.build(self, self._panel)[0], True
+            self._ctrls, result = h3sed.gui.build(self, self._panel)[0], True
             # Hide count controls where no creature type selected
             for i in range(len(self._state)):
                 creature, size = None, None
                 for prop in MYPROPS[0]["item"]:
                     if "name" not in prop: continue # for prop
+
                     name = prop["name"]
                     ctrl, value = self._ctrls[i][name], self._state[i].get(name)
                     if "choices" in prop: creature = value
@@ -181,11 +174,12 @@ class ArmyPlugin(object):
         placectrl = countctrl.GetNextSibling()
         if prop.get("nullable") and ctrl and "remove" == ctrl.Label:  # Clearing army slot
             idx = next(i for i, cc in enumerate(self._ctrls) if namectrl in cc.values())
-            row[idx] = value
+            row[idx].clear()
             namectrl.Value = ""
             countctrl.Show(False)
             placectrl.Show(True)
             return True
+
         row[prop["name"]] = value
         if "name" == prop["name"]:
             if value and not row.get("count"):
@@ -207,50 +201,51 @@ class ArmyPlugin(object):
         wx.CallLater(100, after)  # Hidden SpinCtrl arrows can become visible on colour change
 
 
-    def parse(self, heroes, original=False):
-        """Returns army states parsed from hero bytearrays, as [[{name, count} or {}, ], ]."""
-        result = []
-        NAMES = {x[y]: y for x in [metadata.Store.get("ids", self._savefile.version)]
-                 for y in metadata.Store.get("creatures", self._savefile.version)}
-        MYPOS = plugins.adapt(self, "pos", POS)
+def parse(hero_bytes, version):
+    """Returns h3sed.hero.Army() parsed from hero bytearray army section."""
+    HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
+    IDS = metadata.Store.get("ids", version=version)
+    ID_TO_NAME = {IDS[n]: n for n in metadata.Store.get("creatures", version=version)}
+    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                  version=version)
+    NAMES_POS, COUNT_POS = BYTEPOS["army_types"], BYTEPOS["army_counts"]
 
-        for hero in heroes:
-            values = []
-            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
-            for prop in self.props():
-                for i in range(prop["max"]):
-                    unit, count = (util.bytoi(hero_bytes[MYPOS[k]  + i * 4:MYPOS[k]  + i * 4 + 4])
-                                   for k in ("army_types", "army_counts"))
-                    name = NAMES.get(unit)
-                    if not count or not name: values.append({})
-                    else: values.append({"name": name, "count": count})
-            result.append(values)
-        return result
+    army = h3sed.hero.Army.factory(version)
+    for i in range(HERO_RANGES["army"][1]):
+        stack = h3sed.hero.ArmyStack.factory(version)
+        creature_id = util.bytoi(hero_bytes[NAMES_POS + i*4:NAMES_POS + i*4 + 4])
+        count       = util.bytoi(hero_bytes[COUNT_POS + i*4:COUNT_POS + i*4 + 4])
+        if count and creature_id in ID_TO_NAME:
+            stack.update(name=ID_TO_NAME[creature_id], count=count)
+        army[i] = stack
+    return army
 
 
-    def serialize(self):
-        """Returns new hero bytearray, with edited army section."""
-        result = self._hero.bytes[:]
-        bytes0 = self._hero.get_bytes(original=True)
+def serialize(army, hero_bytes, version, hero=None):
+    """Returns new hero bytearray with updated army section."""
+    HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
+    IDS = metadata.Store.get("ids", version=version)
+    NAME_TO_ID = {n: IDS[n] for n in metadata.Store.get("creatures", version=version)}
+    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                  version=version)
+    NAMES_POS, COUNT_POS = BYTEPOS["army_types"], BYTEPOS["army_counts"]
 
-        IDS = {y: x[y] for x in [metadata.Store.get("ids", self._savefile.version)]
-               for y in metadata.Store.get("creatures", self._savefile.version)}
-        MYPOS = plugins.adapt(self, "pos", POS)
+    new_bytes = hero_bytes[:]
+    bytes0 = None if hero is None else hero.get_bytes(original=True)
+    army0 = [] if hero is None else hero.original.get("army", [])
+    for i in range(HERO_RANGES["army"][1]):
+        name, count = None, None
+        if i < len(army) and army[i]: name, count = army[i]["name"], army[i]["count"]
+        if (not name or not count) and i < len(army0) and not (army0[i] and army0[i].get("name")):
+            # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
+            word1 = bytes0[NAMES_POS + i*4:NAMES_POS + i*4 + 4]
+            word2 = bytes0[COUNT_POS + i*4:COUNT_POS + i*4 + 4]
+        elif count and name in NAME_TO_ID:
+            word1 = util.itoby(NAME_TO_ID[name], 4)
+            word2 = util.itoby(count,  4)
+        else:
+            word1, word2 = metadata.BLANK * 4, metadata.NULL * 4
+        new_bytes[NAMES_POS + i * 4:NAMES_POS + i * 4 + 4] = word1
+        new_bytes[COUNT_POS + i * 4:COUNT_POS + i * 4 + 4] = word2
 
-        state0 = self._hero.state0.get("army") or []
-        for prop in self.props():
-            for i in range(prop["max"]):
-                name, count = (self._state[i].get(x) for x in ("name", "count"))
-                if (not name or not count) and i < len(state0) and not state0[i].get("name"):
-                    # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
-                    b1 = bytes0[MYPOS["army_types"]  + i * 4:MYPOS["army_types"]  + i * 4 + 4]
-                    b2 = bytes0[MYPOS["army_counts"] + i * 4:MYPOS["army_counts"] + i * 4 + 4]
-                else:
-                    b1, b2 = metadata.Blank * 4, metadata.Null * 4
-                    if count and name in IDS:
-                        b1 = util.itoby(IDS[name], 4)
-                        b2 = util.itoby(count,     4)
-                result[MYPOS["army_types"]  + i * 4:MYPOS["army_types"]  + i * 4 + 4] = b1
-                result[MYPOS["army_counts"] + i * 4:MYPOS["army_counts"] + i * 4 + 4] = b2
-
-        return result
+    return new_bytes

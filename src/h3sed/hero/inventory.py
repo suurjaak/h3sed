@@ -7,22 +7,19 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  02.12.2024
+@modified  05.04.2025
 ------------------------------------------------------------------------------
 """
 import functools
 import logging
 
-import wx
+try: import wx
+except ImportError: wx = None
 
-from h3sed import conf
-from h3sed import gui
-from h3sed import guibase
-from h3sed import metadata
-from h3sed import plugins
-from h3sed.lib import util
-from h3sed.plugins.hero import POS
-from h3sed.plugins.hero.artifacts import UIPROPS as ARTIFACT_PROPS
+import h3sed
+from .. lib import util
+from .. import conf
+from .. import metadata
 
 
 logger = logging.getLogger(__package__)
@@ -30,12 +27,12 @@ logger = logging.getLogger(__package__)
 
 
 PROPS = {"name": "inventory", "label": "Inventory", "index": 4}
-UIPROPS = [{
+DATAPROPS = [{
     "type":        "itemlist",
     "orderable":   True,
     "nullable":    True,
-    "min":          0,
-    "max":         64,
+    "min":         None, # Populated later
+    "max":         None, # Populated later
     "item": [{
         "type":    "label",
         "label":   "Inventory slot",
@@ -52,35 +49,36 @@ def props():
     return PROPS
 
 
-def factory(savefile, parent, panel):
+def factory(parent, panel, version):
     """Returns a new inventory-plugin instance."""
-    return InventoryPlugin(savefile, parent, panel)
+    return InventoryPlugin(parent, panel, version)
 
 
 
 class InventoryPlugin(object):
-    """Encapsulates inventory-plugin state and behaviour."""
+    """Provides UI functionality for listing and changing artifacts in hero inventory."""
 
 
-    def __init__(self, savefile, parent, panel):
-        self.name      = PROPS["name"]
-        self.parent    = parent
-        self._savefile = savefile
-        self._hero     = None
-        self._panel    = panel  # Plugin contents panel
-        self._state    = []     # ["Skull Helmet", None, ..]
-        self._ctrls    = []     # [wx.ComboBox, ]
+    def __init__(self, parent, panel, version):
+        self.name    = PROPS["name"]
+        self.parent  = parent
+        self.version = version
+        self._panel  = panel  # Plugin contents panel
+        self._state  = h3sed.hero.Inventory.factory(version)
+        self._hero   = None
+        self._ctrls  = []  # [wx.ComboBox, ]
 
 
     def props(self):
         """Returns props for inventory-tab, as [{type: "itemlist", ..}]."""
         result = []
-        cc = sorted(metadata.Store.get("artifacts", self._savefile.version, category="inventory"))
-        for prop in UIPROPS:
-            myprop = dict(prop, item=[])
+        MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
+        CHOICES = sorted(metadata.Store.get("artifacts", category="inventory", version=self.version))
+        for prop in DATAPROPS:
+            myprop = dict(prop, item=[], min=MIN, max=MAX)
             for item in prop["item"]:
-                myitem = dict(item, choices=cc) if "choices" in item else item
-                myprop["item"].append(myitem)
+                if "choices" in item: item = dict(item, choices=CHOICES)
+                myprop["item"].append(item)
             result.append(myprop)
         return result
 
@@ -95,28 +93,19 @@ class InventoryPlugin(object):
         return self._hero
 
 
-    def load(self, hero, panel=None):
+    def load(self, hero):
         """Loads hero to plugin."""
         self._hero = hero
-        self._state[:] = self.parse([hero])[0]
-        hero.inventory = self._state
-        if panel: self._panel = panel
+        self._state = hero.inventory
 
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
-        state0 = type(self._state)(self._state)
-        state = state + [None] * (self.props()[0]["max"] - len(state))
-        version = self._savefile.version
-        cmap = {x.lower(): x
-                for x in metadata.Store.get("artifacts", version, category="inventory")}
-        for i, v in enumerate(state):
-            if v and hasattr(v, "lower") and v.lower() in cmap:
-                self._state[i] = cmap[v.lower()]
-            elif v in ("", None):
-                self._state[i] = None
-            else:
-                logger.warning("Invalid inventory item #%s: %r", i + 1, v)
+        state0 = self._state.copy()
+        self._state.clear()
+        for i, artifact in enumerate(state[:len(self._state)]):
+            try: self._state[i] = artifact
+            except Exception as e: logger.warning(str(e))
         return state0 != self._state
 
 
@@ -140,23 +129,10 @@ class InventoryPlugin(object):
 
     def compact_items(self, order=(), reverse=False):
         """Compacts inventory items to top, in specified order if any."""
-        items, sortkeys = [x for x in self._state[:] if x], []
-        if order:
-            SLOTS = metadata.Store.get("artifact_slots", self._savefile.version)
-            slot_order = [x.get("slot", x["name"]) for x in ARTIFACT_PROPS]
-            slot_order += [x for x in set(sum(SLOTS.values(), [])) if x not in slot_order]
-            slot_order += ["unknown"]  # Just in case
-        for name in order:
-            if "name" == name:
-                sortkeys.append(lambda x: x.lower())
-            if "slot" == name:
-                sortkeys.append(lambda x: slot_order.index(SLOTS.get(x, slot_order[-1:])[0]))
-        if sortkeys: items.sort(key=lambda x: tuple(f(x) for f in sortkeys))
-        if reverse:  items = items[::-1]
-        items += [None] * (len(self._state) - len(items))
+        items = self._state.make_compact(order, reverse)
         if items == self._state:
-            guibase.status("No change from compacting inventory",
-                           flash=conf.StatusShortFlashLength)
+            h3sed.guibase.status("No change from compacting inventory",
+                                 flash=conf.StatusShortFlashLength)
             return
 
         def on_do(self, items):
@@ -164,9 +140,10 @@ class InventoryPlugin(object):
             self.parent.patch()
             self.render()
             return True
+
         label = " and ".join(order) if order else "reverse" if reverse else "current"
-        guibase.status("Compacting inventory in %s order", label,
-                       flash=conf.StatusShortFlashLength, log=True)
+        h3sed.guibase.status("Compacting inventory in %s order", label,
+                             flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, items)
         self.parent.command(callable, name="compact inventory in %s order" % label)
 
@@ -182,7 +159,7 @@ class InventoryPlugin(object):
                 self._ctrls[i].Value = value or ""
             return False
         else:
-            self._ctrls = gui.build(self, self._panel)[0]
+            self._ctrls = h3sed.gui.build(self, self._panel)[0]
             button = wx.Button(self._panel, label="Compact ..")
             button.Bind(wx.EVT_BUTTON, self.on_compact_menu)
             button.ToolTip = "Pack inventory artifacts to top"
@@ -192,53 +169,52 @@ class InventoryPlugin(object):
             return True
 
 
-    def parse(self, heroes, original=False):
-        """Returns inventory states parsed from hero bytearrays, as [[item or None, ..], ]."""
-        result = []
-        IDS   = metadata.Store.get("ids", self._savefile.version)
-        NAMES = {x[y]: y for x in [IDS] for y in
-                 metadata.Store.get("artifacts", self._savefile.version, category="inventory")}
-        MYPOS = plugins.adapt(self, "pos", POS)
+def parse(hero_bytes, version):
+    """Returns h3sed.hero.Inventory() parsed from hero bytearray inventory section."""
+    HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
+    IDS = metadata.Store.get("ids", version=version)
+    ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=version)
+    ID_TO_NAME = {IDS[n]: n for n in ARTIFACTS}
+    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                  version=version)
 
-        def parse_item(hero_bytes, pos):
-            b, v = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
-            if all(x == metadata.Blank for x in b): return None # Blank
-            return util.bytoi(hero_bytes[pos:pos + 8]) if v == IDS["Spell Scroll"] else v
+    def parse_id(hero_bytes, pos):
+        binary, integer = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
+        if all(x == metadata.BLANK for x in binary): return None # Blank
+        if integer == IDS["Spell Scroll"]: return util.bytoi(hero_bytes[pos:pos + 8])
+        return integer
 
-        for hero in heroes:
-            values = []
-            hero_bytes = hero.get_bytes(original=True) if original else hero.bytes
-            for prop in self.props():
-                for i in range(prop["max"]):
-                    v = parse_item(hero_bytes, MYPOS["inventory"] + i*8)
-                    values.append(NAMES.get(v))
-            result.append(values)
-        return result
+    inventory = h3sed.hero.Inventory.factory(version)
+    for i in range(HERO_RANGES["inventory"][1]):
+        artifact_id = parse_id(hero_bytes, BYTEPOS["inventory"] + i*8)
+        inventory[i] = ID_TO_NAME.get(artifact_id)
+    return inventory
 
 
-    def serialize(self):
-        """Returns new hero bytearray, with edited inventory section."""
-        result = self._hero.bytes[:]
-        bytes0 = self._hero.get_bytes(original=True)
+def serialize(inventory, hero_bytes, version, hero=None):
+    """Returns new hero bytearray with updated inventory section."""
+    HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
+    IDS = metadata.Store.get("ids", version=version)
+    SCROLL_ARTIFACTS = metadata.Store.get("artifacts", category="scroll", version=version)
+    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
+                                  version=version)
+    INVENTORY_POS = BYTEPOS["inventory"]
 
-        IDS = metadata.Store.get("ids", self._savefile.version)
-        SCROLL_ARTIFACTS = metadata.Store.get("artifacts", self._savefile.version, category="scroll")
-        MYPOS = plugins.adapt(self, "pos", POS)
-        pos = MYPOS["inventory"]
+    new_bytes = hero_bytes[:]
+    bytes0 = None if hero is None else hero.get_bytes(original=True)
+    inventory0 = [] if hero is None else hero.original.get("inventory", [])
+    for i in range(HERO_RANGES["inventory"][1]):
+        artifact_name = inventory[i]
+        artifact_id = IDS.get(artifact_name)
+        if artifact_name in SCROLL_ARTIFACTS:
+            binary = util.itoby(artifact_id, 8) # X0 00 00 00 00 00 00 00
+        elif artifact_id:
+            binary = util.itoby(artifact_id, 4) + metadata.BLANK * 4 # XY 00 00 00 FF FF FF FF
+        elif i < len(inventory0) and not inventory0[i]:
+            # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
+            binary = bytes0[INVENTORY_POS + i * 8:INVENTORY_POS + (i + 1) * 8]
+        else:
+            binary = metadata.BLANK * 4 + metadata.NULL * 4 # 00 00 00 00 FF FF FF FF
+        new_bytes[INVENTORY_POS + i * len(binary):INVENTORY_POS + (i + 1) * len(binary)] = binary
 
-        state0 = self._hero.state0.get("inventory") or []
-        for prop in self.props():
-            for i, name in enumerate(self._state) if "itemlist" == prop["type"] else ():
-                v = IDS.get(name)
-                if name in SCROLL_ARTIFACTS:
-                    b = util.itoby(v, 8)
-                elif v:
-                    b = util.itoby(v, 4) + metadata.Blank * 4
-                elif i < len(state0) and not state0[i]:
-                    # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
-                    b = bytes0[pos + i * 8:pos + (i + 1) * 8]
-                else:
-                    b = metadata.Blank * 4 + metadata.Null * 4
-                result[pos + i * len(b):pos + (i + 1) * len(b)] = b
-
-        return result
+    return new_bytes
