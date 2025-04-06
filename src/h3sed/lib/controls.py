@@ -25,7 +25,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    03.12.2024
+@modified    06.04.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -43,8 +43,10 @@ import wx.lib.gizmos
 import wx.lib.wordwrap
 
 
-try: text_types = (str, unicode)        # Py2
-except Exception: text_types = (str, )  # Py3
+try:
+    integer_types, text_type = (int, long), basestring  # Py2
+except NameError:
+    integer_types, text_type = (int, ), str  # Py3
 
 PY3 = sys.version_info > (3, )
 
@@ -213,7 +215,7 @@ class ColourManager(object):
     @classmethod
     def GetColour(cls, colour):
         return wx.Colour(getattr(cls.colourcontainer, colour)) \
-               if isinstance(colour, text_types) \
+               if isinstance(colour, text_type) \
                else wx.SystemSettings.GetColour(colour)
 
 
@@ -448,7 +450,7 @@ class HtmlDialog(wx.Dialog):
         contentwidth = html.VirtualSize[0]
         for k, v in links.items() if links and autowidth_links is not False else ():
             v = v(k) if callable(v) and autowidth_links else v
-            if isinstance(v, text_types):
+            if isinstance(v, text_type):
                 html.SetPage(v)
                 contentwidth = max(contentwidth, html.VirtualSize[0])
             html.SetPage(content)
@@ -477,7 +479,7 @@ class HtmlDialog(wx.Dialog):
         if href in self.links:
             page = self.links[href]
             if callable(page): page = page(href)
-            if isinstance(page, text_types):
+            if isinstance(page, text_type):
                 bcol, fcol = event.EventObject.BackgroundColour, event.EventObject.ForegroundColour
                 event.EventObject.SetPage(page)
                 event.EventObject.BackgroundColour, event.EventObject.ForegroundColour = bcol, fcol

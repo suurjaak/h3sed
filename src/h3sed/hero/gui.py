@@ -76,7 +76,6 @@ from .. lib import controls
 from .. lib import util
 from .. lib import wx_accel
 from .. import conf
-from .. import gui
 from .. import guibase
 from .. import metadata
 from .. import templates
@@ -131,7 +130,7 @@ class HeroPlugin(object):
 
         self._heroes = self.savefile.heroes[:]
         self.prebuild()
-        panel.Bind(gui.EVT_PLUGIN, self.on_plugin_event)
+        panel.Bind(h3sed.gui.EVT_PLUGIN, self.on_plugin_event)
 
 
     def prebuild(self):
@@ -300,7 +299,7 @@ class HeroPlugin(object):
         """Submits callable to undo-redo command processor to be invoked."""
         if not self._panel: return
         self._index["stale"] = True
-        self._undoredo.Submit(gui.PluginCommand(self, callable, name))
+        self._undoredo.Submit(h3sed.gui.PluginCommand(self, callable, name))
 
 
     def render(self, reparse=False, reload=False, log=True):
@@ -344,7 +343,7 @@ class HeroPlugin(object):
                     heroes_open.append(hero)
                     tabs.SetPageText(tabs.GetPageIndex(page), hero.name)
             if kwargs.get("rename") and heroes_open:
-                evt = gui.SavefilePageEvent(self._panel.Id)
+                evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
                 evt.SetClientData(dict(plugin=self.name, load=set(x.name for x in heroes_open)))
                 wx.PostEvent(self._panel, evt)
 
@@ -478,7 +477,7 @@ class HeroPlugin(object):
             tpl = step.Template(templates.HERO_DIFF_TEXT)
             changes = tpl.expand(name=self._hero.name, changes=pairs)
         logger.info("Saving hero %s to file.", self._hero.name)
-        evt = gui.SavefilePageEvent(self._panel.Id)
+        evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
         evt.SetClientData(dict(save=True, spans=[self._hero.span], changes=changes))
         wx.PostEvent(self._panel, evt)
 
@@ -701,7 +700,7 @@ class HeroPlugin(object):
             self._panel.Thaw()
             self._ignore_events = False
             if status: busy.Close(), wx.CallLater(500, guibase.status, "")
-            evt = gui.SavefilePageEvent(self._panel.Id)
+            evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
             evt.SetClientData(dict(plugin=self.name, load=hero2.name))
             wx.PostEvent(self._panel, evt)
 
@@ -838,7 +837,7 @@ class HeroPlugin(object):
         index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
         page = next(p for p, i in self._pages.items() if i == index)
         self._ctrls["tabs"].SetPageText(self._ctrls["tabs"].GetPageIndex(page), title)
-        wx.PostEvent(self._panel, gui.SavefilePageEvent(self._panel.Id))
+        wx.PostEvent(self._panel, h3sed.gui.SavefilePageEvent(self._panel.Id))
 
 
     def render_plugin(self, name, reload=False, log=True):
@@ -873,7 +872,7 @@ class HeroPlugin(object):
             if callable(getattr(plugin, "render", None)):
                 do_accelerate = plugin.render()
             elif callable(getattr(plugin, "props",  None)):
-                gui.build(plugin, p["panel"])
+                h3sed.gui.build(plugin, p["panel"])
                 do_accelerate = True
             if do_accelerate or item0 is None:
                 wx_accel.accelerate(p["panel"])
