@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  12.04.2020
+@modified  06.04.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -30,14 +30,14 @@ logger = logging.getLogger(__name__)
 
 
 ## Modules for hero properties in order of showing
-PROPERTIES = {
-    "stats":     stats,
-    "skills":    skills,
-    "army":      army,
-    "equipment": equipment,
-    "inventory": inventory,
-    "spells":    spells,
-}
+PROPERTIES = collections.OrderedDict([
+    ("stats",     stats),
+    ("skills",    skills),
+    ("army",      army),
+    ("equipment", equipment),
+    ("inventory", inventory),
+    ("spells",    spells),
+])
 
 
 def make_artifact_cast(location, version=None):
@@ -328,10 +328,6 @@ class Hero(object):
         self.index   = None  # Hero index in savefile
         self.span    = None  # Hero byte span in uncompressed savefile
 
-        self.yaml    = ""  # Data after first load or last change, as full hero charsheet YAML
-        self.yamls1  = []  # Data after first load or last save, as [category YAML, ]
-        self.yamls2  = []  # Data after last change, as [category YAML, ]
-
         self.stats     = Attributes.factory(version)
         self.skills    = Skills    .factory(version)
         self.army      = Army      .factory(version)
@@ -370,9 +366,6 @@ class Hero(object):
         self.original = AttrDict((k, v.copy()) for k, v in self.tree.items())
         self.realized = AttrDict((k, v.copy()) for k, v in self.tree.items())
         self.ensure_basestats(force=True)
-        self.yamls  = hero.yaml
-        self.yamls1 = hero.yamls1
-        self.yamls2 = hero.yamls2
 
 
     def ensure_basestats(self, force=False):
@@ -413,9 +406,6 @@ class Hero(object):
         self.original = AttrDict((k, v.copy()) for k, v in self.tree.items())
         self.realized = AttrDict((k, v.copy()) for k, v in self.tree.items())
         self.serialed = AttrDict((k, v.copy()) for k, v in self.tree.items())
-        self.yaml   = ""
-        self.yamls1 = []
-        self.yamls2 = []
 
 
     def serialize(self):
@@ -466,6 +456,11 @@ class Hero(object):
     def __eq__(self, other):
         """Returns whether this hero is the same as given (same name and index)."""
         return isinstance(other, Hero) and (self.name, self.index) == (other.name, other.index)
+
+
+    def __hash__(self):
+        """Returns hero hash code from name and index."""
+        return hash((self.name, self.index))
 
 
     def __str__(self):

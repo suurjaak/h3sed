@@ -7,9 +7,11 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  02.05.2025
+@modified  06.04.2025
 ------------------------------------------------------------------------------
 """
+import collections
+
 from . import ab
 from . import hc
 from . import hota
@@ -19,14 +21,14 @@ from . import sod
 
 
 ## Modules for game versions in order of release
-VERSIONS = {
-    "roe":     roe,     # Restoration of Erathia
-    "ab":      ab,      # Armageddon's Blade
-    "sod":     sod,     # Shadow of Death
-    "hc":      hc,      # Heroes Chronicles
-    "hota":    hota,    # Horn of The Abyss
-    "roe_gog": roe_gog, # Restoration of Erathia (GOG Complete)
-}
+VERSIONS = collections.OrderedDict([
+    ("roe",     roe),     # Restoration of Erathia
+    ("ab",      ab),      # Armageddon's Blade
+    ("sod",     sod),     # Shadow of Death
+    ("hc",      hc),      # Heroes Chronicles
+    ("hota",    hota),    # Horn of The Abyss
+    ("roe_gog", roe_gog), # Restoration of Erathia (GOG Complete)
+])
 
 ADAPT_CACHE = {} # {(name, value, version): value}
 

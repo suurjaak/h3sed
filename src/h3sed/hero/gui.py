@@ -56,15 +56,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  05.04.2025
+@modified  06.04.2025
 ------------------------------------------------------------------------------
 """
 import collections
 import functools
-import json
 import logging
 import os
-import re
 import sys
 
 import step
@@ -110,6 +108,7 @@ class HeroPlugin(object):
         self._indexpanel = None    # Heroes index panel
         self._hero       = None    # Currently selected Hero instance
         self._heropanel  = None    # Container for hero components
+        self._hero_yamls = {}      # {hero: {full, originals, currents}}
         self._pages_visited = []   # Visited tabs, as [hero index in self._heroes or None if index page]
         self._ignore_events = False  # For ignoring change events from programmatic selections
         self._index = {
@@ -338,7 +337,8 @@ class HeroPlugin(object):
                 and not any(a <= hero.span[0] and hero.span[1] <= b for a, b in kwargs["spans"]):
                     continue  # for index, hero
 
-                hero.yamls1[:], hero.yamls2[:] = (hero.yamls2 or hero.yamls1), []
+                hero.mark_saved()
+                self._hero_yamls[hero] = templates.make_hero_yamls(hero)
                 page = next((p for p, i in self._pages.items() if i == index), None)
                 if page is not None:
                     heroes_open.append(hero)
@@ -364,6 +364,8 @@ class HeroPlugin(object):
             if isinstance(v, (str, list)): self._index[k] = type(v)()
 
         self._heroes = self.savefile.heroes[:]
+        self._index["herotexts"] = []
+        self._hero_yamls.clear()
         self._panel.Freeze()
         self._ignore_events = True
         try:
@@ -411,7 +413,7 @@ class HeroPlugin(object):
                                for c in (["name"] + self.INDEX_CATEGORIES)}
         if not self._index["herotexts"]:
             for hero in heroes:
-                self.populate_hero_yamls(hero)
+                self._hero_yamls[hero] = templates.make_hero_yamls(hero)
             self._index["herotexts"] = [maketexts(h) for h in heroes]
         elif self._hero:
             index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
@@ -446,7 +448,7 @@ class HeroPlugin(object):
     def on_copy_hero(self, event=None):
         """Handler for copying a hero, adds hero data to clipboard."""
         if self._hero and wx.TheClipboard.Open():
-            d = wx.TextDataObject(self._hero.yaml)
+            d = wx.TextDataObject(self._hero_yamls[self._hero]["full"])
             wx.TheClipboard.SetData(d), wx.TheClipboard.Close()
             guibase.status("Copied hero %s data to clipboard.",
                            self._hero.name, flash=conf.StatusShortFlashLength, log=True)
@@ -464,15 +466,17 @@ class HeroPlugin(object):
         if value:
             guibase.status("Pasting data to hero %s from clipboard.",
                            self._hero.name, flash=conf.StatusShortFlashLength, log=True)
-            self.parse_yaml(value)
+            self.parse_hero_yaml(value)
 
 
     def on_save_hero(self, event=None):
         """Handler for saving a hero, sends event to save current hero span."""
-        changes = step.Template(templates.HERO_DIFF_TEXT).expand(name=self._hero.name, changes=[
-            (v1, v2) for v1, v2 in zip(self._hero.yamls1, self._hero.yamls2) if v1 != v2
-        ]) if self._hero.yamls1 and self._hero.yamls2 and self._hero.yamls1 != self._hero.yamls2 \
-        else ""
+        changes = ""
+        if self._hero.is_changed():
+            yamls = self._hero_yamls[self._hero]
+            pairs = [(v1, v2) for v1, v2 in zip(yamls["originals"], yamls["currents"]) if v1 != v2]
+            tpl = step.Template(templates.HERO_DIFF_TEXT)
+            changes = tpl.expand(name=self._hero.name, changes=pairs)
         logger.info("Saving hero %s to file.", self._hero.name)
         evt = gui.SavefilePageEvent(self._panel.Id)
         evt.SetClientData(dict(save=True, spans=[self._hero.span], changes=changes))
@@ -482,8 +486,8 @@ class HeroPlugin(object):
     def on_charsheet(self, event=None):
         """Opens popup with full hero profile."""
         tpl = step.Template(templates.HERO_CHARSHEET_HTML, escape=True)
-        texts, texts0 = self._hero.yamls2 or self._hero.yamls1, None
-        if self._hero.yamls2 and self._hero.yamls1 != self._hero.yamls2: texts0 = self._hero.yamls1 
+        texts, texts0 = self._hero_yamls[self._hero]["currents"], None
+        if self._hero.is_changed(): texts0 = self._hero_yamls[self._hero]["originals"]
         tplargs = dict(name=self._hero.name, texts=texts, texts0=texts0)
         normal, changes = tpl.expand(**tplargs), tpl.expand(changes=True, **tplargs)
         content = changes if texts0 and "normal" != conf.Positions.get("charsheet_view") else normal
@@ -612,7 +616,7 @@ class HeroPlugin(object):
         if self._dialog_export.FilterIndex:
             tpl = step.Template(templates.HERO_EXPORT_HTML, strip=False, escape=True)
             tplargs = dict(heroes=self._index["visible"], categories=self._index["toggles"],
-                           savefile=self.savefile, count=len(self._heroes))
+                           savefile=self.savefile, count=len(self._heroes), yamls=self._hero_yamls)
             with open(path, "wb") as f:
                 tpl.stream(f, **tplargs)
         else:
@@ -671,8 +675,7 @@ class HeroPlugin(object):
         if not page_existed:
             page = wx.Window(tabs)
             self._pages[page] = index
-            changed = hero2.yamls2 and hero2.yamls1 != hero2.yamls2
-            title = "%s%s" % (hero2.name, "*" if changed else "")
+            title = "%s%s" % (hero2.name, "*" if hero2.is_changed() else "")
             tabs.AddPage(page, title, select=True)
             style = tabs.GetAGWWindowStyleFlag() | wx.lib.agw.flatnotebook.FNB_X_ON_TAB
             if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
@@ -742,7 +745,7 @@ class HeroPlugin(object):
             search.SetSelection(*searchsel)
 
 
-    def parse_yaml(self, value):
+    def parse_hero_yaml(self, value):
         """Populates current hero with value parsed as YAML."""
         try:
             states = next(iter(yaml.safe_load(value).values()))
@@ -779,73 +782,13 @@ class HeroPlugin(object):
                 if pluginmap[category].load_state(state):
                     changeds.append(category)
             self._hero.realize()
-            self.populate_hero_yamls(self._hero, changes=True)
+            self._hero_yamls[self._hero] = templates.make_hero_yamls(self._hero)
             if changeds:
                 self.patch()
                 for name in changeds:
                     self.render_plugin(name)
             return bool(changeds)
         self.command(functools.partial(on_do, new_states), "paste hero data from clipboard")
-
-
-    def populate_hero_yamls(self, hero, changes=False):
-        """
-        Sets hero data YAML attributes.
-
-        @param   changes   whether to populate `yamls2` instead of `yamls1`
-        """
-        LF, INDENT = os.linesep, "  "
-        states, maxlen = [], 0  # [(category, [(prefix, value), ])]
-        for p in self._plugins:  # Assemble YAML by hand for more readable indentation
-            pairs, prefixlen = self.serialize_plugin_yaml(hero, p["instance"], INDENT, original=not changes)
-            states.append((p["name"], pairs))
-            maxlen = max(maxlen, prefixlen)
-        maxlen += len(INDENT) + 3
-        formatteds = ["%s%s:%s%s%s%s" % (
-            INDENT, category, LF if pairs else "", INDENT if pairs else "",
-            (LF + INDENT).join("%s%s" % (a.ljust(maxlen) if b and a.strip() != "-" else a, b)
-                               for a, b in pairs), LF
-        ) for category, pairs in states]
-        name = yaml.safe_dump([hero.name], default_flow_style=True).strip()[1:-1]
-        hero.yaml = "%s:%s%s" % (name, LF, "".join(formatteds))
-        setattr(hero, "yamls2" if changes else "yamls1", formatteds)
-
-
-    def serialize_plugin_yaml(self, hero, plugin, indent="  ", original=False):
-        """
-        Returns hero data from plugin as YAML components.
-
-        @param   plugin     plugin instance
-        @param   indent     line leading indent
-        @param   origianl   whether to use hero saved data instead of current unsaved
-        @return             [(formatted prefix, formatted value)], raw prefix maxlen
-        """
-        pairs, maxlen = [], 0
-        fmt = lambda v: "" if v in (None, {}) else \
-                        next((x[1:-1] if isinstance(v, util.text_types)
-                              and re.match(r"[\x20-\x7e]+$", x) else x for x in [json.dumps(v)]))
-        props = plugin.props()
-        state = hero.original[plugin.name] if original else hero.tree[plugin.name]
-        for prop in props if isinstance(props, (list, tuple)) else [props]:
-            if prop["type"] in ("itemlist", "checklist"):
-                state = list(state)
-                while state and not state[-1]: state.pop()  # Strip empty trailing values
-                for v in state:
-                    itempairs = []
-                    if not v or not isinstance(v, dict):
-                        itempairs += [("-%s" % ("" if v in (None, {}) else " "), fmt(v))]
-                    else:
-                        for itemprop in prop["item"]:
-                            if "name" in itemprop and itemprop["name"] in v:
-                                maxlen = max(maxlen, len(itemprop["name"]))
-                                lead = " " if itempairs else "-"
-                                itempairs += [("%s %s:" % (lead, itemprop["name"]),
-                                               fmt(v[itemprop["name"]]))]
-                    pairs.extend(itempairs)
-            elif "label" != prop["type"]:
-                maxlen = max(maxlen, len(prop["name"]))
-                pairs += [("%s%s:" % (indent, prop["name"]), fmt(state[prop["name"]]))]
-        return pairs, maxlen
 
 
     def get_data(self):
@@ -868,6 +811,7 @@ class HeroPlugin(object):
         if self._hero != hero:
             self._hero = self._heroes[index]
         self._hero.update(hero)
+        self._hero_yamls[self._hero] = templates.make_hero_yamls(self._hero)
         combo.SetSelection(index)
 
 
@@ -876,10 +820,10 @@ class HeroPlugin(object):
         TEMPLATE = templates.HERO_DIFF_HTML if html else templates.HERO_DIFF_TEXT
         changes, tpl = [], step.Template(TEMPLATE, escape=html, strip=html)
         for hero in self._heroes:
-            if hero.yamls1 and hero.yamls2 and hero.yamls1 != hero.yamls2:
-                changes.append(tpl.expand(name=hero.name, changes=[
-                    (v1, v2) for v1, v2 in zip(hero.yamls1, hero.yamls2) if v1 != v2
-                ]))
+            if not hero.is_changed(): continue # for hero
+            yamls = self._hero_yamls[hero]
+            pairs = [(v1, v2) for v1, v2 in zip(yamls["originals"], yamls["currents"]) if v1 != v2]
+            changes.append(tpl.expand(name=hero.name, changes=pairs))
         return "\n".join(changes)
 
 
@@ -888,8 +832,7 @@ class HeroPlugin(object):
         self._hero.serialize()
         self.savefile.patch(self._hero.bytes, self._hero.span)
 
-        self.populate_hero_yamls(self._hero)
-        self.populate_hero_yamls(self._hero, changes=True)
+        self._hero_yamls[self._hero] = templates.make_hero_yamls(self._hero)
 
         title = "%s%s" % (self._hero.name, "*" if self._hero.is_changed() else "")
         index = next(i for i, h in enumerate(self._heroes) if h == self._hero)

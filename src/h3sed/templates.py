@@ -7,10 +7,19 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    04.04.2025
+@modified    06.04.2025
 ------------------------------------------------------------------------------
 """
-import difflib, re
+import difflib
+import json
+import os
+import re
+
+import yaml
+
+import h3sed
+from . lib import util
+
 # Modules imported inside templates:
 #import datetime, json, os, sys, step, wx
 #from h3sed.lib import util
@@ -61,6 +70,66 @@ def make_category_diff(v1, v2):
             diff[LEN-i-1:LEN-i] = make_entries(*(s.replace(LFMARKER, LF) for s in (s1, s2)))
 
     return diff
+
+
+def make_hero_yamls(hero):
+    """
+    Returns YAML strings for hero properties.
+    
+    @return  {"full":      complete YAML dictionary string including name for hero current values,
+              "originals": [YAML texts for saved values per property in display order],
+              "currents":  [YAML texts for unsaved values per property in display order]}
+    """
+    LF, INDENT = os.linesep, "  "
+
+    result = {}
+    for original in [True, False] if hero.is_changed() else [True]:
+        states, maxlen = [], 0  # [[(prefix, value), ]], max key length
+        for category in h3sed.hero.PROPERTIES:
+            prop = (hero.original if original else hero.tree)[category]
+            pairs, prefixlen = serialize_property_yaml(prop, INDENT)
+            states.append(pairs)
+            maxlen = max(maxlen, prefixlen)
+        maxlen += len(INDENT) * 2 + 1 # Add leading and interleaving indent plus place for colon
+        formatteds = ["%s%s:" % (INDENT, category) for category in h3sed.hero.PROPERTIES]
+        for i, pairs in enumerate(states):
+            lines = [(a.ljust(maxlen) if b and a.strip() != "-" else a) + b for a, b in pairs]
+            formatteds[i] += (LF if lines else "") + LF.join(INDENT + x for x in lines) + LF
+        result["originals" if original else "currents"] = formatteds
+    if "currents" not in result: result["currents"] = result["originals"]
+
+    name = yaml.safe_dump([hero.name], default_flow_style=True).strip()[1:-1] # Strip []
+    result["full"] = "%s:%s%s" % (name, LF, "".join(result["currents"]))
+    return result
+
+
+def serialize_property_yaml(state, indent="  "):
+    """Returns hero property data as ([(formatted prefix, formatted value)], max key length)."""
+    pairs, maxlen = [], 0
+    fmt = lambda v: "" if v in (None, {}) else \
+                    next((x[1:-1] if isinstance(v, util.text_types)
+                          and re.match(r"[\x20-\x7e]+$", x) else x for x in [json.dumps(v)]))
+
+    if isinstance(state, (list, set)):
+        state = list(state)
+        while state and not state[-1]: state.pop()  # Strip empty trailing values
+        for entry in state:
+            itempairs = []
+            if not entry or not isinstance(entry, dict):
+                pairs += [("-%s" % ("" if entry in (None, {}) else " "), fmt(entry))]
+            else:
+                itempairs = []
+                for key in entry.__slots__:
+                    maxlen = max(maxlen, len(key))
+                    lead = " " if itempairs else "-"
+                    itempairs += [("%s %s:" % (lead, key), fmt(entry[key]))]
+                pairs.extend(itempairs)
+    else:
+        for key in state.__slots__:
+            maxlen = max(maxlen, len(key))
+            pairs += [("%s%s:" % (indent, key), fmt(state[key]))]
+    return pairs, maxlen
+
 
 
 """HTML text shown in Help -> About dialog."""
@@ -493,6 +562,7 @@ HTML text for exporting heroes to file.
 @param   heroes      [Hero instance, ]
 @param   savefile    metadata.Savefile instance
 @param   count       total number of heroes
+@param   yamls       hero YAML texts as {Hero: {"full"}}
 @param   categories  {category: whether to show category columns initially}
 """
 HERO_EXPORT_HTML = """<%
@@ -620,7 +690,7 @@ colptr += state
   };
   var HEROES = [
 %for i, hero in enumerate(heroes):
-    {{! json.dumps(hero.yaml) }},
+    {{! json.dumps(yamls[hero]["full"]) }},
 %endfor
   ];
   var toggles = {
