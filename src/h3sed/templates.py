@@ -831,6 +831,7 @@ colptr += state
 <div id="content">
   <table id="info">
     <tr><td>Source:</td><td>{{ savefile.filename }}</td></tr>
+    <tr><td>Modified:</td><td title="{{ savefile.dt }}">{{ savefile.dt.strftime("%d.%m.%Y %H:%M") }}</td></tr>
     <tr><td>Size:</td><td title="{{ savefile.size }}">{{ util.format_bytes(savefile.size) }}</td></tr>
     <tr><td>Heroes:</td><td>{{ len(heroes) if len(heroes) == count else "%s exported (%s total)" % (len(heroes), count) }}</td></tr>
     <tr><td>Game version:</td><td>{{ h3sed.version.VERSIONS[savefile.version].TITLE }}</td></tr>
