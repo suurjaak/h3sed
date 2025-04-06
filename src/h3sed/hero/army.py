@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  05.04.2025
+@modified  06.04.2025
 ------------------------------------------------------------------------------
 """
 import logging
@@ -231,15 +231,14 @@ def serialize(army, hero_bytes, version, hero=None):
     NAMES_POS, COUNT_POS = BYTEPOS["army_types"], BYTEPOS["army_counts"]
 
     new_bytes = hero_bytes[:]
-    bytes0 = None if hero is None else hero.get_bytes(original=True)
     army0 = [] if hero is None else hero.original.get("army", [])
     for i in range(HERO_RANGES["army"][1]):
         name, count = None, None
         if i < len(army) and army[i]: name, count = army[i]["name"], army[i]["count"]
         if (not name or not count) and i < len(army0) and not (army0[i] and army0[i].get("name")):
             # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
-            word1 = bytes0[NAMES_POS + i*4:NAMES_POS + i*4 + 4]
-            word2 = bytes0[COUNT_POS + i*4:COUNT_POS + i*4 + 4]
+            word1 = hero.bytes0[NAMES_POS + i*4:NAMES_POS + i*4 + 4]
+            word2 = hero.bytes0[COUNT_POS + i*4:COUNT_POS + i*4 + 4]
         elif count and name in NAME_TO_ID:
             word1 = util.itoby(NAME_TO_ID[name], 4)
             word2 = util.itoby(count,  4)

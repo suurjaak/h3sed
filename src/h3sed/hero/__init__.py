@@ -379,11 +379,6 @@ class Hero(object):
             self.basestats[attribute_name] = self.stats[attribute_name] - value
 
 
-    def get_bytes(self, original=False):
-        """Returns hero bytearray, current or original."""
-        return copy.copy(self.bytes0 if original else self.bytes)
-
-
     def set_file_data(self, bytes, index, span): #, savefile):
         """Sets data on hero raw content and position in savefile."""
         self.bytes  = copy.copy(bytes)

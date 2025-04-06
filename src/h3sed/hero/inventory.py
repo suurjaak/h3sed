@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  05.04.2025
+@modified  06.04.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -201,7 +201,6 @@ def serialize(inventory, hero_bytes, version, hero=None):
     INVENTORY_POS = BYTEPOS["inventory"]
 
     new_bytes = hero_bytes[:]
-    bytes0 = None if hero is None else hero.get_bytes(original=True)
     inventory0 = [] if hero is None else hero.original.get("inventory", [])
     for i in range(HERO_RANGES["inventory"][1]):
         artifact_name = inventory[i]
@@ -212,7 +211,7 @@ def serialize(inventory, hero_bytes, version, hero=None):
             binary = util.itoby(artifact_id, 4) + metadata.BLANK * 4 # XY 00 00 00 FF FF FF FF
         elif i < len(inventory0) and not inventory0[i]:
             # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
-            binary = bytes0[INVENTORY_POS + i * 8:INVENTORY_POS + (i + 1) * 8]
+            binary = hero.bytes0[INVENTORY_POS + i * 8:INVENTORY_POS + (i + 1) * 8]
         else:
             binary = metadata.BLANK * 4 + metadata.NULL * 4 # 00 00 00 00 FF FF FF FF
         new_bytes[INVENTORY_POS + i * len(binary):INVENTORY_POS + (i + 1) * len(binary)] = binary

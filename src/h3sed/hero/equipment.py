@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  05.04.2025
+@modified  06.04.2025
 ------------------------------------------------------------------------------
 """
 import logging
@@ -325,7 +325,6 @@ def serialize(equipment, hero_bytes, version, hero=None):
     HAS_COMBOS = "reserved" in BYTEPOS
 
     new_bytes = hero_bytes[:]
-    bytes0 = None if hero is None else hero.get_bytes(original=True)
     reserved_sets = set()  # [pos updated in combination artifact flags, ]
     if HAS_COMBOS:
         pos_reserved = min(BYTEPOS["reserved"].values())
@@ -341,7 +340,7 @@ def serialize(equipment, hero_bytes, version, hero=None):
             binary = util.itoby(artifact_id, 4) + metadata.BLANK * 4 # XY 00 00 00 FF FF FF FF
         elif hero and not hero.original.get("artifacts", {}).get(location):
             # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
-            binary = bytes0[location_pos:location_pos + 8]
+            binary = hero.bytes0[location_pos:location_pos + 8]
         else:
             binary = metadata.BLANK * 8 # FF FF FF FF FF FF FF FF
         new_bytes[location_pos:location_pos + len(binary)] = binary
@@ -351,8 +350,8 @@ def serialize(equipment, hero_bytes, version, hero=None):
             reserved_sets.add(BYTEPOS["reserved"][slot])
 
     for pos in range(pos_reserved, pos_reserved + len_reserved) if HAS_COMBOS else ():
-        if pos not in reserved_sets and bytes0[pos] > 5:
+        if hero and pos not in reserved_sets and hero.bytes0[pos] > 5:
             # Retain original bytes unchanged, Horn of the Abyss uses them for unknown purpose
-            new_bytes[pos] = bytes0[pos]
+            new_bytes[pos] = hero.bytes0[pos]
 
     return new_bytes
