@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     22.03.2020
-@modified    05.04.2025
+@modified    06.04.2025
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -1240,7 +1240,7 @@ class Savefile(object):
     HEADER_TEXTS = OrderedDict([("name", 2), ("desc", 2)])  # {name in mapdata: byte length count}
 
 
-    def __init__(self, filename):
+    def __init__(self, filename, parse_heroes=True):
         self.filename = filename
         self.raw      = None
         self.raw0     = None
@@ -1250,7 +1250,7 @@ class Savefile(object):
         self.size     = 0
         self.usize    = 0
         self.heroes   = []
-        self.read()
+        self.read(parse_heroes)
 
 
     def patch(self, bytes, span):
@@ -1267,7 +1267,7 @@ class Savefile(object):
         for hero in self.heroes: self.patch(hero.bytes, hero.span)
 
 
-    def read(self):
+    def read(self, parse_heroes=True):
         """Reads in file raw contents and main attributes."""
         with patch_gzip_for_partial():
             with gzip.GzipFile(self.filename, "rb") as f: raw = bytearray(f.read())
@@ -1276,6 +1276,7 @@ class Savefile(object):
         self.heroes = []
         self.detect_version()
         self.parse_metadata()
+        if parse_heroes: self.parse_heroes()
         self.update_info()
         logger.info("Opened %s (%s, unzipped %s).", self.filename,
                     util.format_bytes(self.size), util.format_bytes(self.usize))

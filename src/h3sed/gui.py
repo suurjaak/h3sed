@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    04.04.2025
+@modified    06.04.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -433,7 +433,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         savefile, err = None, None
         if os.path.exists(filename):
             try:
-                savefile = metadata.Savefile(filename)
+                savefile = metadata.Savefile(filename, parse_heroes=False)
             except Exception as e:
                 err = e
                 logger.exception("Error opening %s.", filename)
@@ -1371,7 +1371,6 @@ class SavefilePage(wx.Panel):
         ): return
         try:
             self.savefile.read()
-            self.savefile.parse_heroes()
         except Exception as e:
             logger.exception("Error reloading %s.", self.filename)
             wx.MessageBox("Error reloading %s:\n\n%s" % (self.filename, util.format_exc(e)),
