@@ -14,7 +14,7 @@ allowing to edit any and all hero attributes:
 
 Attributes can be copied from one hero and pasted to another.
 
-Hero data can be exported as HTML or spreadsheet.
+Hero data can be exported as HTML or spreadsheet or JSON/YAML data.
 
 Supports savegames from: Restoration of Erathia, Armageddon's Blade, Shadow of Death,
 Heroes Chronicles, and Horn of the Abyss.

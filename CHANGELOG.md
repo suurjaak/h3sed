@@ -1,8 +1,9 @@
 CHANGELOG
 =========
 
-3.0, 2025-04-06
+3.0, 2025-04-07
 ---------------
+- add JSON and YAML export
 - add savefile modification date to HTML export
 - rename hero artifacts to equipment
 

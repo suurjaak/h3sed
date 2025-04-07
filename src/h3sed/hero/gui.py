@@ -120,7 +120,8 @@ class HeroPlugin(object):
             "toggles":   collections.OrderedDict(),  # {category: toggled state}
         }
         self._dialog_export = wx.FileDialog(panel, "Export heroes to file",
-            wildcard="CSV spreadsheet (*.csv)|*.csv|HTML document (*.html)|*.html",
+            wildcard="CSV spreadsheet (*.csv)|*.csv|HTML document (*.html)|*.html|"
+                     "JSON document (*.json)|*.json|YAML document (*.yaml)|*.yaml",
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT | wx.FD_CHANGE_DIR | wx.RESIZE_BORDER
         )
         self._dialog_export.FilterIndex = 1

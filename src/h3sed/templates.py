@@ -55,14 +55,49 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
             for hero in heroes:
                 vv = [tpl.expand(hero=hero, column=c).strip() for c in COLS]
                 f.writerow(vv)
+        return
 
-    elif "html" == format:
+    if "html" == format:
         tpl = step.Template(HERO_EXPORT_HTML, strip=False, escape=True)
         hero_yamls = {h: make_hero_yamls(h) for h in heroes}
         tplargs = dict(heroes=heroes, categories=categories, savefile=savefile, yamls=hero_yamls,
                        count=len(savefile.heroes) if savefile else len(heroes))
         with open(filename, "wb") as f:
             tpl.stream(f, **tplargs)
+        return
+
+    data = {}
+    if savefile: data = {
+        "file": {"path": os.path.realpath(savefile.filename), "size": savefile.size,
+                 "modified": savefile.dt.isoformat(), "hero_count": len(savefile.heroes)},
+        "map": savefile.mapdata.copy(),
+    }
+
+    if "json" == format:
+        data["heroes"] = []
+        for hero in heroes:
+            hero_data = dict(name=hero.name)
+            for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
+                if "devices" == category: category = "stats"
+                state = hero.tree[category]
+                if isinstance(state, (list, set)):
+                    state = list(state)
+                    while state and not state[-1]: state.pop()  # Strip empty trailing values
+                hero_data[category] = state
+            data["heroes"].append(hero_data)
+        with open(filename, "w") as f:
+            f.write(json.dumps(data, indent=2))
+        return
+
+    if "yaml" == format:
+        hero_yamls = [make_hero_yamls(h, categories, as_list=True)["full"] for h in heroes]
+        with open(filename, "w") as f:
+            f.write(yaml.safe_dump(data, sort_keys=False))
+            f.write("%sheroes:%s" % (os.linesep, os.linesep))
+            for hero_yaml in hero_yamls:
+                f.write(os.linesep)
+                f.write(hero_yaml)
+        return
 
 
 def make_category_diff(v1, v2):
@@ -111,34 +146,44 @@ def make_category_diff(v1, v2):
     return diff
 
 
-def make_hero_yamls(hero):
+def make_hero_yamls(hero, categories=None, as_list=False):
     """
     Returns YAML strings for hero properties.
-    
+
+    @param   categories    hero property categories to include if not all, as {name: bool}
+    @param   as_list       whether to make full YAML as a list element, or a named dictioonary
     @return  {"full":      complete YAML dictionary string including name for hero current values,
               "originals": [YAML texts for saved values per property in display order],
               "currents":  [YAML texts for unsaved values per property in display order]}
     """
+    if categories is None: categories = {k: True for k in HERO_PROPERTY_CATEGORIES}
+    if categories.get("devices"): categories = dict(categories, stats=True)
     LF, INDENT = os.linesep, "  "
 
     result = {}
     for original in [True, False] if hero.is_changed() else [True]:
         states, maxlen = [], 0  # [[(prefix, value), ]], max key length
-        for category in h3sed.hero.PROPERTIES:
+        for category in filter(categories.get, h3sed.hero.PROPERTIES):
+            if not categories.get(category): continue # for category
             prop = (hero.original if original else hero.tree)[category]
             pairs, prefixlen = serialize_property_yaml(prop, INDENT)
             states.append(pairs)
             maxlen = max(maxlen, prefixlen)
         maxlen += len(INDENT) * 2 + 1 # Add leading and interleaving indent plus place for colon
-        formatteds = ["%s%s:" % (INDENT, category) for category in h3sed.hero.PROPERTIES]
+        formatteds = ["%s%s:" % (INDENT, category)
+                      for category in filter(categories.get, h3sed.hero.PROPERTIES)]
         for i, pairs in enumerate(states):
             lines = [(a.ljust(maxlen) if b and a.strip() != "-" else a) + b for a, b in pairs]
             formatteds[i] += (LF if lines else "") + LF.join(INDENT + x for x in lines) + LF
         result["originals" if original else "currents"] = formatteds
     if "currents" not in result: result["currents"] = result["originals"]
 
-    name = yaml.safe_dump([hero.name], default_flow_style=True).strip()[1:-1] # Strip []
-    result["full"] = "%s:%s%s" % (name, LF, "".join(result["currents"]))
+    if as_list:
+        header = "- name:".ljust(maxlen) + INDENT + hero.name
+    else:
+        name = yaml.safe_dump([hero.name], default_flow_style=True).strip()[1:-1] # Strip []
+        header = "%s:" % name
+    result["full"] = header + LF + "".join(result["currents"])
     return result
 
 
