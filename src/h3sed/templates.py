@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-HTML templates.
+Content and export templates.
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.04.2025
+@modified    07.04.2025
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -15,6 +15,7 @@ import json
 import os
 import re
 
+import step
 import yaml
 
 import h3sed
@@ -24,6 +25,44 @@ from . lib import util
 #import datetime, json, os, sys, step, wx
 #from h3sed.lib import util
 #from h3sed import conf, images, metadata, templates
+
+
+## Hero property categories for hero index and exports
+HERO_PROPERTY_CATEGORIES = ["stats", "devices", "skills", "army", "equipment", "inventory", "spells"]
+
+
+def export_heroes(filename, format, heroes, savefile=None, categories=None):
+    """
+    Exports heroes to output filename in specified format.
+
+    @param   format      output format, one of ("html", "csv")
+    @param   heroes      list of Hero instances to export
+    @param   savefile    metadata.Savefile instance if any
+    @param   categories  hero property categories to export if not all, as {name: bool}
+    """
+    if categories is None: categories = {k: True for k in HERO_PROPERTY_CATEGORIES}
+    format = format.lower()
+
+    if "csv" == format:
+        COLS = ["name"]
+        if categories.get("stats"): COLS.append("level")
+        for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
+            if "stats" == category: COLS.extend(h3sed.metadata.PRIMARY_ATTRIBUTES)
+            else: COLS.append(category)
+        tpl = step.Template(HERO_EXPORT_CSV, strip=False)
+        with util.csv_writer(filename) as f:
+            f.writerow([c.capitalize() for c in COLS])
+            for hero in heroes:
+                vv = [tpl.expand(hero=hero, column=c).strip() for c in COLS]
+                f.writerow(vv)
+
+    elif "html" == format:
+        tpl = step.Template(HERO_EXPORT_HTML, strip=False, escape=True)
+        hero_yamls = {h: make_hero_yamls(h) for h in heroes}
+        tplargs = dict(heroes=heroes, categories=categories, savefile=savefile, yamls=hero_yamls,
+                       count=len(savefile.heroes) if savefile else len(heroes))
+        with open(filename, "wb") as f:
+            tpl.stream(f, **tplargs)
 
 
 def make_category_diff(v1, v2):

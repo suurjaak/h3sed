@@ -56,7 +56,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  06.04.2025
+@modified  07.04.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -90,9 +90,6 @@ class HeroPlugin(object):
 
     """Milliseconds to wait after edit before applying search filter"""
     SEARCH_INTERVAL = 300
-
-    """Hero index columns for toggling."""
-    INDEX_CATEGORIES = ["stats", "devices", "skills", "army", "equipment", "inventory", "spells"]
 
 
     def __init__(self, savefile, panel, commandprocessor):
@@ -158,7 +155,7 @@ class HeroPlugin(object):
         export.ToolTip = "Export heroes to HTML or CSV"
         export.Bind(wx.EVT_BUTTON, self.on_export_heroes)
 
-        for category in self.INDEX_CATEGORIES:
+        for category in templates.HERO_PROPERTY_CATEGORIES:
             b = tb_index.AddCheckTool(wx.ID_ANY, category.capitalize(), wx.NullBitmap,
                                       shortHelp="Show or hide %s column%s" %
                                                 (category, "s" if "stats" == category else ""))
@@ -409,7 +406,7 @@ class HeroPlugin(object):
         tplargs = dict(sort_col=self._index["sort_col"], sort_asc=self._index["sort_asc"],
                        categories=self._index["toggles"])
         maketexts = lambda h: {c: tpl.expand(hero=h, category=c, **tplargs).lower()
-                               for c in (["name"] + self.INDEX_CATEGORIES)}
+                               for c in (["name"] + templates.HERO_PROPERTY_CATEGORIES)}
         if not self._index["herotexts"]:
             for hero in heroes:
                 self._hero_yamls[hero] = templates.make_hero_yamls(hero)
@@ -611,23 +608,10 @@ class HeroPlugin(object):
 
         wx.YieldIfNeeded() # Allow dialog to disappear
         path = controls.get_dialog_path(self._dialog_export)
+        format = os.path.splitext(path)[-1].strip(".").lower()
         guibase.status("Exporting %s..", path, flash=True)
-        if self._dialog_export.FilterIndex:
-            tpl = step.Template(templates.HERO_EXPORT_HTML, strip=False, escape=True)
-            tplargs = dict(heroes=self._index["visible"], categories=self._index["toggles"],
-                           savefile=self.savefile, count=len(self._heroes), yamls=self._hero_yamls)
-            with open(path, "wb") as f:
-                tpl.stream(f, **tplargs)
-        else:
-            COLS = ["name"]
-            for k in (k for k, v in self._index["toggles"].items() if v):
-                COLS.extend((["level"] + list(metadata.PRIMARY_ATTRIBUTES)) if "stats" == k else [k])
-            tpl = step.Template(templates.HERO_EXPORT_CSV, strip=False)
-            with util.csv_writer(path) as f:
-                f.writerow([c.capitalize() for c in COLS])
-                for hero in self._index["visible"]:
-                    vv = [tpl.expand(hero=hero, column=c).strip() for c in COLS]
-                    f.writerow(vv)
+        templates.export_heroes(path, format, self._index["visible"], self.savefile,
+                                categories=self._index["toggles"])
         guibase.status("Exported %s (%s).", path, util.format_bytes(os.path.getsize(path)),
                        flash=True)
         util.start_file(path)
