@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.04.2025
+@modified    07.04.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -189,6 +189,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.Position.top = 50
         self.dir_ctrl.SetFocus()
         self.set_savegame_filters(self.dir_ctrl)
+        if conf.SelectedPath: self.refresh_dir_ctrl(conf.SelectedPath)
 
         self.Show(True)
         logger.info("Started application.")
