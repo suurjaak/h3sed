@@ -116,6 +116,27 @@ optional arguments:
 ```
 
 
+Library usage
+-------------
+
+```python
+import h3sed
+
+savefile = h3sed.Savefile("path/to/my.CGM")
+
+hero = next(h for h in savefile.heroes if h.name == "Solmyr")
+hero.stats.attack += 10
+hero.skills.append(name="Logistics", level="Expert")
+hero.army.append(name="Master Gremlin", count=1000)
+hero.equipment.feet = "Boots of Speed"
+hero.inventory.append("Spyglass")
+hero.spells.add("Haste")
+
+savefile.realize()
+savefile.write()
+```
+
+
 Installation
 ------------
 
