@@ -1260,8 +1260,8 @@ class Savefile(object):
         self.usize = len(self.raw)
 
 
-    def patch_heroes(self):
-        """Patches unpacked contents with serialized heroes data."""
+    def realize(self):
+        """Validates and updates changed hero data, patches savefile unpacked contents for write."""
         heroes_changed = [h for h in self.heroes if h.is_changed()]
         for hero in heroes_changed: hero.serialize()
         for hero in self.heroes: self.patch(hero.bytes, hero.span)
