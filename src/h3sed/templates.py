@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    07.04.2025
+@modified    08.04.2025
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -66,12 +66,7 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
             tpl.stream(f, **tplargs)
         return
 
-    data = {}
-    if savefile: data = {
-        "file": {"path": os.path.realpath(savefile.filename), "size": savefile.size,
-                 "modified": savefile.dt.isoformat(), "hero_count": len(savefile.heroes)},
-        "map": savefile.mapdata.copy(),
-    }
+    data = make_savefile_data(savefile) if savefile else {}
 
     if "json" == format:
         data["heroes"] = []
@@ -86,17 +81,17 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
                 hero_data[category] = state
             data["heroes"].append(hero_data)
         with open(filename, "w") as f:
-            f.write(json.dumps(data, indent=2))
+            f.write(json.dumps(data, indent=2) + os.linesep)
         return
 
     if "yaml" == format:
         hero_yamls = [make_hero_yamls(h, categories, as_list=True)["full"] for h in heroes]
-        with open(filename, "w") as f:
-            f.write(yaml.safe_dump(data, sort_keys=False))
-            f.write("%sheroes:%s" % (os.linesep, os.linesep))
+        with open(filename, "wb") as f: # Binary to avoid linefeed auto-conversion issues
+            f.write(yaml.safe_dump(data, sort_keys=False, line_break=os.linesep).encode("utf-8"))
+            f.write(("%sheroes:%s" % (os.linesep, os.linesep)).encode("utf-8"))
             for hero_yaml in hero_yamls:
-                f.write(os.linesep)
-                f.write(hero_yaml)
+                f.write(os.linesep.encode("utf-8"))
+                f.write(hero_yaml.encode("utf-8"))
         return
 
 
@@ -185,6 +180,15 @@ def make_hero_yamls(hero, categories=None, as_list=False):
         header = "%s:" % name
     result["full"] = header + LF + "".join(result["currents"])
     return result
+
+
+def make_savefile_data(savefile):
+    """Returns savefile metadata dictionary."""
+    return {
+        "file": {"path": os.path.realpath(savefile.filename), "size": savefile.size,
+                 "modified": savefile.dt.isoformat(), "hero_count": len(savefile.heroes)},
+        "map": savefile.mapdata.copy(),
+    }
 
 
 def serialize_property_yaml(state, indent="  "):

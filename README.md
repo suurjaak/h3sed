@@ -21,11 +21,13 @@ Hero data can be exported as HTML or spreadsheet or JSON/YAML data.
 Supports savegames from: Restoration of Erathia, Armageddon's Blade, Shadow of Death,
 Heroes Chronicles, and Horn of the Abyss.
 
+Usable as a graphical program, command-line program, or library.
+
 Downloads at https://suurjaak.github.io/h3sed.
 
 
-Usage
------
+Graphical Usage
+---------------
 
 Navigate the file view to Heroes3 games-folder and open a savegame file to edit,
 or drag and drop a savegame file onto the program window.
@@ -48,6 +50,70 @@ version, uncheck "New format in Armageddon's Blade" in program menu File -> Opti
 loaded data and saved results may be invalid and cause problems in game.
 This program is based on unofficial information
 gathered from observation and online forums.
+
+
+Command-line Interface
+----------------------
+
+```
+$ h3sed -h
+
+usage: h3sed [-h] [-v] {gui,info,export} ...
+
+h3sed - Heroes3 Savegame Editor.
+
+positional arguments:
+  {gui,info,export}
+    gui              launch h3sed graphical program (default option)
+    info             print information on savegame
+    export           export heroes from savegame
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -v, --version      show program's version number and exit
+```
+
+```
+$ h3sed -h gui
+
+usage: h3sed gui [SAVEGAME [SAVEGAME ...]]
+
+Launch h3sed graphical program (default option).
+
+positional arguments:
+  SAVEGAME    Heroes3 savegames(s) to open on startup, if any (supports * wildcards)
+```
+
+```
+$ h3sed -h info
+
+usage: h3sed info SAVEGAME [SAVEGAME ...]
+
+Print information on given savegame(s).
+
+positional arguments:
+  SAVEGAME    Heroes3 savegame(s) to read (supports * wildcards)
+```
+
+```
+$ h3sed -h export
+
+usage: h3sed export [-f {csv,html,json,yaml}] [-o [OUTFILE]] SAVEGAME [SAVEGAME ...]
+
+Export heroes from savegame as CSV, HTML, JSON or YAML.
+
+positional arguments:
+  SAVEGAME              Heroes3 savegame(s) to read (supports * wildcards)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f {csv,html,json,yaml}, --format {csv,html,json,yaml}
+                        output format
+  -o [FILE], --output [FILE]
+                        write output to file instead of printing to console;
+                        filename will be auto-generated if not given;
+                        automatic for non-printable formats (csv, html)
+```
 
 
 Installation
@@ -77,7 +143,7 @@ If running from source code, h3sed needs Python 2.7 or Python 3.6 or higher,
 and the following 3rd-party Python packages:
 * pyyaml (https://pyyaml.org)
 * step (https://pypi.org/project/step-template)
-* wxPython 4.0+ (https://wxpython.org)
+* wxPython 4.0+ (https://wxpython.org) (optional, required for graphical interface)
 
 
 Attribution
