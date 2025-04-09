@@ -98,7 +98,8 @@ positional arguments:
 ```
 $ h3sed -h export
 
-usage: h3sed export [-f {csv,html,json,yaml}] [-o [OUTFILE]] SAVEGAME [SAVEGAME ...]
+usage: h3sed export [-f {csv,html,json,yaml}] [-s [TEXT [TEXT ...]]] [-o [OUTFILE]]
+                    SAVEGAME [SAVEGAME ...]
 
 Export heroes from savegame as CSV, HTML, JSON or YAML.
 
@@ -109,6 +110,9 @@ optional arguments:
   -h, --help            show this help message and exit
   -f {csv,html,json,yaml}, --format {csv,html,json,yaml}
                         output format (defaults to "yaml")
+  -s [TEXT [TEXT ...]], --search [TEXT [TEXT ...]]
+                        filter heroes by name or any matching properties
+                        (supports keyword search like "skill=Luck")
   -o [FILE], --output [FILE]
                         write output to file instead of printing to console;
                         filename will be auto-generated if not given;

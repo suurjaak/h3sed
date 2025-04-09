@@ -67,7 +67,11 @@ ARGUMENTS = {
               "help": "Heroes3 savegame(s) to read (supports * wildcards)"},
              {"args": ["-f", "--format"], "dest": "format", "default": "yaml",
               "choices": ["csv", "html", "json", "yaml"], "type": str.lower,
-              "help": 'output format (defaults to yaml)'},
+              "help": 'output format (defaults to "yaml")'},
+             {"args": ["-s", "--search"], "dest": "search", "metavar": "TEXT",
+              "nargs": "*", "default": [],
+              "help": "filter heroes by name or any matching properties\n"
+                      '(supports keyword search like "skill=Luck")'},
              {"args": ["-o", "--output"], "dest": "OUTFILE", "metavar": "OUTFILE",
                        "nargs": "?", "const": "",
               "help": "write output to file instead of printing to console;\n"
@@ -144,10 +148,17 @@ def run_info(filenames):
         print(content)
 
 
-def run_export(filenames, format, outname):
+def run_export(filenames, format, outname=None, search=()):
     """Parses given files and prints or writes output files with hero data."""
     format = format.lower()
     is_printable = format not in ("csv", "html")
+
+    search_texts, search_kws = [], {}
+    if search:
+        search_texts = [t for t in search if not ("=" in t and 1 < t.index("=") < len(t) - 1)]
+        for text in search:
+            if text not in search_texts: search_kws.update([text.split("=", 1)])
+
     for filename in filenames:
         if not os.path.isfile(filename):
             print("\nFile not found: %s" % filename)
@@ -157,6 +168,7 @@ def run_export(filenames, format, outname):
         except Exception as e:
             print("\nError reading %s: %s" % (filename, e))
             continue # for filename
+        heroes = savefile.find_heroes(*search_texts, **search_kws) if search else savefile.heroes
 
         if outname is None and is_printable:
             with tempfile.NamedTemporaryFile() as f:
@@ -166,7 +178,7 @@ def run_export(filenames, format, outname):
             outfile = ".".join([os.path.basename(filename), now.strftime("%Y%m%d_%H%M%S"), format])
             outfile = util.unique_path(outfile, suffix="_%(counter)s%(ext)s")
         else: outfile = util.unique_path(outname, suffix="_%(counter)s%(ext)s")
-        h3sed.templates.export_heroes(outfile, format, savefile.heroes, savefile)
+        h3sed.templates.export_heroes(outfile, format, heroes, savefile)
 
         if is_printable and outname is None:
             with open(outfile) as f: print(f.read())
@@ -250,7 +262,7 @@ def run():
     elif "info" == arguments.command:
         run_info(arguments.FILE)
     elif "export" == arguments.command:
-        run_export(arguments.FILE, arguments.format, arguments.OUTFILE)
+        run_export(arguments.FILE, arguments.format, arguments.OUTFILE, arguments.search)
 
 
 if "__main__" == __name__:
