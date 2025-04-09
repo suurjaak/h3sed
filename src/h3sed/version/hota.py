@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  05.04.2025
+@modified  09.04.2025
 ------------------------------------------------------------------------------
 """
 import re
@@ -367,7 +367,7 @@ HERO_REGEX = re.compile(b"""
                              # Blank spots:   FF FF FF FF XY XY XY XY
                              # Artifacts:     XY 00 00 00 FF FF FF FF
                              # Scrolls:       XY 00 00 00 00 00 00 00
-    (?P<artifacts>           # Catapult etc:  XY 00 00 00 XY XY 00 00
+    (?P<equipment>           # Catapult etc:  XY 00 00 00 XY XY 00 00
       (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
     ){19}
 

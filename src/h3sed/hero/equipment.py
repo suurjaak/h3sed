@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  06.04.2025
+@modified  09.04.2025
 ------------------------------------------------------------------------------
 """
 import logging
@@ -338,7 +338,7 @@ def serialize(equipment, hero_bytes, version, hero=None):
             binary = util.itoby(artifact_id, 8) # XY 00 00 00 00 00 00 00
         elif artifact_id:
             binary = util.itoby(artifact_id, 4) + metadata.BLANK * 4 # XY 00 00 00 FF FF FF FF
-        elif hero and not hero.original.get("artifacts", {}).get(location):
+        elif hero and not hero.original.get("equipment", {}).get(location):
             # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
             binary = hero.bytes0[location_pos:location_pos + 8]
         else:
