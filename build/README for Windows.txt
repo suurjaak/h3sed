@@ -8,7 +8,7 @@ allowing to edit any and all hero attributes:
 - other primary attributes, like level, experience points, spell points etc
 - war machines, like Ballista
 - secondary skills, like Logistics (more than 8 skills can be added)
-- artifacts, like Boots of Speed, both worn and inventory items
+- artifacts, like Boots of Speed, both equipment and inventory items
 - spells, like Slow
 - army creatures, like Golden Dragons
 
