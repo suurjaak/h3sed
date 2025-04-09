@@ -1,12 +1,13 @@
 CHANGELOG
 =========
 
-3.0, 2025-04-08
+3.0, 2025-04-09
 ---------------
 - add command-line interface
 - add Python library interface
 - add JSON and YAML export
 - add savefile modification date to HTML export
+- fix console output error for compiled binaries
 - rename hero artifacts to equipment
 
 

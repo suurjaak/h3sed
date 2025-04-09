@@ -7,20 +7,30 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    08.04.2025
+@modified    09.04.2025
 ------------------------------------------------------------------------------
 """
+from __future__ import print_function
 import argparse
+import atexit
 import datetime
+import errno
 import glob
 import locale
 import logging
 import os
+try: import Queue as queue        # Py2
+except ImportError: import queue  # Py3
 import sys
 import tempfile
+import time
 import threading
 import traceback
 
+try: # For printing to a console from a packaged Windows binary
+    import win32console
+except ImportError:
+    win32console = None
 try:
     import wx
     is_gui_possible = True
@@ -35,7 +45,12 @@ if is_gui_possible:
     from . import guibase
     from . import gui
 
+
+## Seconds to wait before exiting binary executable command-line use
+BINARY_WAIT = 60
+
 logger = logging.getLogger(__package__)
+window = None    # Application main window instance
 
 
 ARGUMENTS = {
@@ -80,6 +95,106 @@ ARGUMENTS = {
         ]},
     ],
 }
+
+
+class ConsoleWriter(object):
+    """
+    Wrapper for sys.stdout/stderr, attaches to the parent console or creates
+    a new command console, usable from python.exe, pythonw.exe or
+    compiled binary. Hooks application exit to wait for final user input.
+    """
+    handle = None # note: class variables
+    is_loaded = False
+    realwrite = None
+
+    def __init__(self, stream):
+        """
+        @param   stream  sys.stdout or sys.stderr
+        """
+        self.encoding = getattr(stream, "encoding", locale.getpreferredencoding())
+        self.stream = stream
+
+
+    def flush(self):
+        if not ConsoleWriter.handle and ConsoleWriter.is_loaded:
+            self.stream.flush()
+        elif hasattr(ConsoleWriter.handle, "flush"):
+            ConsoleWriter.handle.flush()
+
+
+    def write(self, text):
+        """
+        Prints text to console window. GUI application will need to attach to
+        the calling console, or launch a new console if not available.
+        """
+        global window
+        if not window and win32console:
+            if not ConsoleWriter.is_loaded and not ConsoleWriter.handle:
+                self.init_console()
+
+            try: self.realwrite(text), self.flush()
+            except Exception: self.stream.write(text)
+        else:
+            self.stream.write(text)
+
+
+    def init_console(self):
+        """Sets up connection to console."""
+        try:
+            win32console.AttachConsole(-1) # pythonw.exe from console
+            atexit.register(lambda: ConsoleWriter.realwrite("\n"))
+        except Exception:
+            pass # Okay if fails: can be python.exe from console
+        try:
+            handle = win32console.GetStdHandle(win32console.STD_OUTPUT_HANDLE)
+            handle.WriteConsole("\n")
+            ConsoleWriter.handle = handle
+            ConsoleWriter.realwrite = handle.WriteConsole
+        except Exception: # Fails if GUI program: make new console
+            try: win32console.FreeConsole()
+            except Exception: pass
+            try:
+                win32console.AllocConsole()
+                handle = open("CONOUT$", "w")
+                argv = [util.longpath(sys.argv[0])] + sys.argv[1:]
+                handle.write(" ".join(argv) + "\n\n")
+                handle.flush()
+                ConsoleWriter.handle = handle
+                ConsoleWriter.realwrite = handle.write
+                sys.stdin = open("CONIN$", "r")
+                if conf.Frozen: atexit.register(self.on_exe_exit)
+            except Exception:
+                try: win32console.FreeConsole()
+                except Exception: pass
+                ConsoleWriter.realwrite = self.stream.write
+        ConsoleWriter.is_loaded = True
+
+
+    def on_exe_exit(self):
+        """atexit handler for compiled binary, keeps window open for a minute."""
+        q = queue.Queue()
+
+        def waiter():
+            try: raw_input() # Py2
+            except NameError: input() # Py3
+            q.put(None)
+
+        def ticker():
+            countdown = BINARY_WAIT
+            txt = "\rClosing window in %s.. Press ENTER to exit."
+            while countdown > 0 and q.empty():
+                output(txt, countdown, end=" ")
+                countdown -= 1
+                time.sleep(1)
+            q.put(None)
+
+        self.write("\n\n")
+        for f in waiter, ticker:
+            t = threading.Thread(target=f)
+            t.daemon = True
+            t.start()
+        q.get()
+        os._exit(0)
 
 
 class MainApp(wx.App if wx else object):
@@ -130,22 +245,54 @@ def install_thread_excepthook():
     threading.Thread.__init__ = init
 
 
+def output(s="", *args, **kwargs):
+    """
+    Print wrapper, avoids "Broken pipe" errors if piping is interrupted.
+
+    @param   args    format arguments for text
+    @param   kwargs  additional arguments to print()
+    """
+    BREAK_EXS = (KeyboardInterrupt, IOError)
+    try: BREAK_EXS += (BrokenPipeError, )  # Py3
+    except NameError: pass  # Py2
+
+    stream = kwargs.get("file", sys.stdout)
+    if args: s %= args
+    try: print(s, **kwargs)
+    except UnicodeError:
+        try:
+            if isinstance(s, bytes): print(s.decode(errors="replace"), **kwargs)
+        except Exception: pass
+    except BREAK_EXS:
+        # Redirect remaining output to devnull to avoid another BrokenPipeError
+        try: os.dup2(os.open(os.devnull, os.O_WRONLY), stream.fileno())
+        except (Exception, KeyboardInterrupt): pass
+        sys.exit()
+
+    try:
+        stream.flush() # Uncatchable error otherwise if interrupted
+    except IOError as e:
+        if e.errno in (errno.EINVAL, errno.EPIPE):
+            sys.exit() # Stop work in progress if stream or pipe closed
+        raise # Propagate any other errors
+
+
 def run_info(filenames):
     """Parses given files and prints metadata."""
     for filename in filenames:
         if not os.path.isfile(filename):
-            print("\nFile not found: %s" % filename)
+            output("\nFile not found: %s" % filename)
             continue # for filename
 
         try: savefile = h3sed.metadata.Savefile(filename, parse_heroes=False)
         except Exception as e:
-            print("\nError reading %s: %s" % (filename, e))
+            output("\nError reading %s: %s" % (filename, e))
             continue # for filename
 
         savefile.populate_heroes()
         content = yaml.safe_dump(h3sed.templates.make_savefile_data(savefile), sort_keys=False)
-        print()
-        print(content)
+        output()
+        output(content)
 
 
 def run_export(filenames, format, outname=None, search=()):
@@ -161,12 +308,12 @@ def run_export(filenames, format, outname=None, search=()):
 
     for filename in filenames:
         if not os.path.isfile(filename):
-            print("\nFile not found: %s" % filename)
+            output("\nFile not found: %s" % filename)
             continue # for filename
 
         try: savefile = h3sed.metadata.Savefile(filename)
         except Exception as e:
-            print("\nError reading %s: %s" % (filename, e))
+            output("\nError reading %s: %s" % (filename, e))
             continue # for filename
         heroes = savefile.find_heroes(*search_texts, **search_kws) if search else savefile.heroes
 
@@ -181,17 +328,17 @@ def run_export(filenames, format, outname=None, search=()):
         h3sed.templates.export_heroes(outfile, format, heroes, savefile)
 
         if is_printable and outname is None:
-            with open(outfile) as f: print(f.read())
+            with open(outfile) as f: output(f.read())
             try: os.remove(outfile)
             except Exception: pass
         else:
-            print()
-            print("Wrote %s of %s bytes." % (outfile, os.path.getsize(outfile)))
+            output()
+            output("Wrote %s of %s bytes." % (outfile, os.path.getsize(outfile)))
 
 
 def run_gui(filenames):
     """Main GUI program entrance."""
-    global logger
+    global logger, window
 
     # Set up logging to GUI log window
     logger.addHandler(guibase.GUILogHandler())
@@ -223,6 +370,11 @@ def run_gui(filenames):
 
 def run():
     """Parses command-line arguments and runs application GUI or CLI."""
+    if (conf.Frozen # Binary application
+    or sys.executable.lower().endswith("pythonw.exe")):
+        sys.stdout = ConsoleWriter(sys.stdout) # Hooks for attaching to
+        sys.stderr = ConsoleWriter(sys.stderr) # a text console
+
     conf.load()
     argparser = argparse.ArgumentParser(description=ARGUMENTS["description"], prog=conf.Name)
     for arg in map(dict, ARGUMENTS["arguments"]):
