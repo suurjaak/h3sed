@@ -108,7 +108,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -f {csv,html,json,yaml}, --format {csv,html,json,yaml}
-                        output format
+                        output format (defaults to "yaml")
   -o [FILE], --output [FILE]
                         write output to file instead of printing to console;
                         filename will be auto-generated if not given;
@@ -124,13 +124,16 @@ import h3sed
 
 savefile = h3sed.Savefile("path/to/my.CGM")
 
-hero = next(h for h in savefile.heroes if h.name == "Solmyr")
+hero = next(savefile.find_heroes(name="Solmyr"))
 hero.stats.attack += 10
 hero.skills.append(name="Logistics", level="Expert")
 hero.army.append(name="Master Gremlin", count=1000)
 hero.equipment.feet = "Boots of Speed"
 hero.inventory.append("Spyglass")
 hero.spells.add("Haste")
+
+for hero in savefile.find_heroes(skill="Earth Magic"):
+    hero.equipment.side1 = "Orb of Silt"
 
 savefile.realize()
 savefile.write()

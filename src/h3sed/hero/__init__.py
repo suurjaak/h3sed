@@ -7,16 +7,17 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  06.04.2025
+@modified  08.04.2025
 ------------------------------------------------------------------------------
 """
 import collections
 import copy
 import logging
+import re
 import sys
 
 import h3sed
-from .. lib.util import AttrDict, OrderedSet, SlotsDict, TypedArray
+from .. lib.util import AttrDict, OrderedSet, SlotsDict, TypedArray, tuplefy
 from .. import metadata
 from . import army
 from . import equipment
@@ -127,7 +128,6 @@ class DataClass(object):
 
     @classmethod
     def factory(cls, version):
-        import h3sed.version # Late import to avoid circular import
         return h3sed.version.adapt("hero.%s" % cls.__name__, cls, version)()
 
     def get_version(self):
@@ -159,7 +159,6 @@ class Army(TypedArray, DataClass):
     """Hero army property."""
 
     def __init__(self):
-        import h3sed.version # Late import to avoid circular import
         version = self.get_version()
         dataclass = h3sed.version.adapt("hero.%s" % ArmyStack.__name__, ArmyStack, version)
         minmax = metadata.Store.get("hero_ranges", version=version)["army"]
@@ -287,7 +286,6 @@ class Skills(TypedArray, DataClass):
     """Hero skills property."""
 
     def __init__(self):
-        import h3sed.version # Late import to avoid circular import
         version = self.get_version()
         dataclass = h3sed.version.adapt("hero.%s" % Skill.__name__, Skill, version)
         minmax = metadata.Store.get("hero_ranges", version=version)["skills"]
@@ -446,6 +444,49 @@ class Hero(object):
         self.original = AttrDict((k, v.copy()) for k, v in self.tree.items())
         self.realized = AttrDict((k, v.copy()) for k, v in self.tree.items())
         self.serialed = AttrDict((k, v.copy()) for k, v in self.tree.items())
+
+
+    def matches(self, *texts, **keywords):
+        """
+        Returns whether this hero matches given texts in properties.
+
+        @param   texts     texts to match in any property value
+        @param   keywords  specific keywords to match, like "army" or "skill" or "spell";
+                           each valu may be a collection of values like list or tuple
+        """
+        matches = set() # {patterns that found match}
+        text_regexes = [re.compile(re.escape(str(t)), re.IGNORECASE) for t in texts]
+        kw_regexes = {}
+        for keyword, values in keywords.items():
+            rgxs = [re.compile(re.escape(str(v)), re.IGNORECASE) for v in tuplefy(values)]
+            if rgxs: kw_regexes.setdefault(keyword.lower(), []).extend(rgxs)
+            for single, plural in [("skill", "skills"), ("spell", "spells")]:
+                if single in kw_regexes:
+                    kw_regexes.setdefault(plural, []).extend(kw_regexes.pop(single))
+
+        def process_patterns(collection, regexes, prefix=None):
+            for value in collection.values() if isinstance(collection, dict) else collection:
+                if isinstance(value, dict): process_patterns(value, regexes)
+                else:
+                    value = str(value)
+                    if prefix is None: matches.update(r for r in regexes if r.search(value))
+                    else: matches.update((prefix, r) for r in regexes if r.search(value))
+
+        def process_keywords(collection):
+            if isinstance(collection, dict):
+                for keyword in kw_regexes:
+                    if keyword in collection:
+                        process_patterns([collection[keyword]], kw_regexes[keyword], prefix=keyword)
+                for value in collection.values():
+                    if isinstance(value, (dict, list, set)): process_keywords(value)
+            else:
+                for value in collection:
+                    if isinstance(value, dict): process_keywords(value)
+
+        process_patterns(dict(self.tree, name=self.name), text_regexes)
+        process_keywords(dict(self.tree, name=self.name))
+        return all(r in matches for r in text_regexes) and \
+               all((k, r) in matches for k, rr in kw_regexes.items() for r in rr)
 
 
     def __eq__(self, other):

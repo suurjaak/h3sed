@@ -1384,6 +1384,12 @@ class Savefile(object):
         self.heroes = sorted(heroes, key=lambda x: x.name.lower())
 
 
+    def find_heroes(self, *texts, **keywords):
+        """Yields heroes matching given texts and specific keywords, like skill="Luck"."""
+        for hero in self.heroes:
+            if hero.matches(*texts, **keywords): yield hero
+
+
     def update_info(self, filename=None):
         """Updates file modification and size information."""
         filename = filename or self.filename
