@@ -331,7 +331,7 @@ a:hover small {
 }
 
 .wrapper {
-    width: 860px;
+    width: 1000px;
     margin: 0 auto
 }
 
@@ -354,6 +354,7 @@ blockquote {
 
 code,pre {
     font-family: Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal, Consolas, Liberation Mono, DejaVu Sans Mono, Courier New, monospace;
+    font-size: 12px;
     color: #333
 }
 
@@ -363,6 +364,11 @@ pre {
     border-radius: 5px;
     border: 1px solid #e5e5e5;
     overflow-x: auto
+}
+
+pre a:hover {
+  font-weight: normal;
+  text-decoration: underline
 }
 
 table {
@@ -457,7 +463,7 @@ header ul a strong {
 }
 
 section {
-    width: 500px;
+    width: 700px;
     float: right;
     padding-bottom: 50px
 }

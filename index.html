@@ -30,7 +30,9 @@
 
           <a href="index.html">Index</a><br />
           <span class="subview">
-            <a href="#using">Using the program</a><br />
+            <a href="#gui">Graphical usage</a><br />
+            <a href="#cli">Command line</a><br />
+            <a href="#library">Library</a><br />
             <a href="#installation">Installation</a><br />
             <a href="#dependencies">Source dependencies</a><br />
             <a href="#attribution">Attribution</a><br />
@@ -41,9 +43,9 @@
           <a href="https://github.com/suurjaak/h3sed">View the Project on GitHub <small>suurjaak/h3sed</small></a>
 
           <ul>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_2.8_setup.exe" title="Setup for Windows">Download <strong>Setup</strong></a></li>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_2.8.exe" title="Stand-alone program for Windows">Download <strong>Executable</strong></a></li>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_2.8-src.zip" title="Source distribution">Download <strong>Source</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.0_setup.exe" title="Setup for Windows">Download <strong>Setup</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.0.exe" title="Stand-alone program for Windows">Download <strong>Executable</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.0-src.zip" title="Source distribution">Download <strong>Source</strong></a></li>
           </ul>
         </p>
 
@@ -61,7 +63,7 @@
   <li>other primary attributes, like level, experience points, spell points etc</li>
   <li>war machines, like Ballista</li>
   <li>secondary skills, like Logistics (more than 8 skills can be added)</li>
-  <li>artifacts, like Boots of Speed, both worn and inventory items</li>
+  <li>artifacts, like Boots of Speed, both equipment and inventory items</li>
   <li>spells, like Slow</li>
   <li>army creatures, like Golden Dragons</li>
 </ul>
@@ -72,12 +74,13 @@
 
 <p>Supports savegames from: Restoration of Erathia, Armageddon's Blade, Shadow of Death, Heroes Chronicles, and Horn of the Abyss.</p>
 
+<p>Usable as a <a href="#gui">graphical program</a>, <a href="#cli">command-line program</a>, or <a href="#library">library</a>.</p>
 
-<h2 id="using-the-program">Using The Program</h2>
+
+<h2 id="gui">Graphical Usage</h2>
 
 <p>Navigate the file view to Heroes3 games-folder, and open a savegame file to edit,
-or drag and drop a savegame file onto the program window.
-.<p>
+or drag and drop a savegame file onto the program window.</p>
 
 <p>Choose a hero to modify, change attributes to your liking, and save the file. Changes will be available in Heroes3 after loading the changed savegame.</p>
 
@@ -90,6 +93,97 @@ or drag and drop a savegame file onto the program window.
 <p>Note: savegames from different releases of Armageddon's Blade may have different structure for artifacts and inventory. For working with savegames from an earlier version, uncheck "New format in Armageddon's Blade" in program menu File -> Options.</p>
 
 <p><b>Warning:</b> as Heroes3 savefile format is not publicly known, loaded data and saved results may be invalid and cause problems in game. This program is based on unofficial information gathered from observation and online forums.</p>
+
+
+<h2 id="cli">Command-line Interface</h2>
+
+<pre>
+<code>$ h3sed -h</code>
+
+usage: h3sed [-h] [-v] {gui,info,export} ...
+
+h3sed - Heroes3 Savegame Editor.
+
+positional arguments:
+  {gui,info,export}
+    <a href="#cli-gui">gui</a>              launch h3sed graphical program (default option)
+    <a href="#cli-info">info</a>             print information on savegame
+    <a href="#cli-export">export</a>           export heroes from savegame
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -v, --version      show program's version number and exit
+</pre>
+
+<pre id="cli-gui">
+<code>$ h3sed -h gui</code>
+
+usage: h3sed gui [SAVEGAME [SAVEGAME ...]]
+
+Launch h3sed graphical program (default option).
+
+positional arguments:
+  SAVEGAME    Heroes3 savegames(s) to open on startup, if any (supports * wildcards)
+</pre>
+
+
+<pre id="cli-info">
+<code>$ h3sed -h info</code>
+
+usage: h3sed info SAVEGAME [SAVEGAME ...]
+
+Print information on given savegame(s).
+
+positional arguments:
+  SAVEGAME    Heroes3 savegame(s) to read (supports * wildcards)
+</pre>
+
+<pre id="cli-export">
+<code>$ h3sed -h export</code>
+
+usage: h3sed export [-f {csv,html,json,yaml}] [-s [TEXT [TEXT ...]]] [-o [OUTFILE]]
+                    SAVEGAME [SAVEGAME ...]
+
+Export heroes from savegame as CSV, HTML, JSON or YAML.
+
+positional arguments:
+  SAVEGAME              Heroes3 savegame(s) to read (supports * wildcards)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f {csv,html,json,yaml}, --format {csv,html,json,yaml}
+                        output format (defaults to "yaml")
+  -s [TEXT [TEXT ...]], --search [TEXT [TEXT ...]]
+                        filter heroes by name or any matching properties
+                        (supports keyword search like "skill=Luck")
+  -o [FILE], --output [FILE]
+                        write output to file instead of printing to console;
+                        filename will be auto-generated if not given;
+                        automatic for non-printable formats (csv, html)
+</pre>
+
+
+<h2 id="library">Library usage</h2>
+
+<pre>
+import h3sed
+
+savefile = h3sed.Savefile("path/to/my.CGM")
+
+hero = next(savefile.find_heroes(name="Solmyr"))
+hero.stats.attack += 10
+hero.skills.append(name="Logistics", level="Expert")
+hero.army.append(name="Master Gremlin", count=1000)
+hero.equipment.feet = "Boots of Speed"
+hero.inventory.append("Spyglass")
+hero.spells.add("Haste")
+
+for hero in savefile.find_heroes(skill="Earth Magic"):
+    hero.equipment.side1 = "Orb of Silt"
+
+savefile.realize()
+savefile.write()
+</pre>
 
 
 <h2 id="installation">Installation</h2>
@@ -112,7 +206,7 @@ or drag and drop a savegame file onto the program window.
 <ul>
   <li>pyyaml (<a href="https://pyyaml.org">pyyaml.org</a>)</li>
   <li>step (<a href="https://pypi.org/project/step-template">pypi.org/project/step-template</a>)</li>
-  <li>wxPython 4.0+ (<a href="https://wxpython.org">wxpython.org</a>)</li>
+  <li>wxPython 4.0+ (<a href="https://wxpython.org">wxpython.org</a>) (optional, required for graphical interface)</li>
 </ul>
 
 
