@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    08.04.2025
+@modified    09.04.2025
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -74,7 +74,7 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
             hero_data = dict(name=hero.name)
             for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
                 if "devices" == category: category = "stats"
-                state = hero.tree[category]
+                state = hero.properties[category]
                 if isinstance(state, (list, set)):
                     state = list(state)
                     while state and not state[-1]: state.pop()  # Strip empty trailing values
@@ -160,7 +160,7 @@ def make_hero_yamls(hero, categories=None, as_list=False):
         states, maxlen = [], 0  # [[(prefix, value), ]], max key length
         for category in filter(categories.get, h3sed.hero.PROPERTIES):
             if not categories.get(category): continue # for category
-            prop = (hero.original if original else hero.tree)[category]
+            prop = (hero.original if original else hero.properties)[category]
             pairs, prefixlen = serialize_property_yaml(prop, INDENT)
             states.append(pairs)
             maxlen = max(maxlen, prefixlen)

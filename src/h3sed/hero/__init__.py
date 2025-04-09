@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  08.04.2025
+@modified  09.04.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -336,13 +336,13 @@ class Hero(object):
         self.basestats = {}
 
         ## All properties in one structure
-        self.tree = AttrDict((k, getattr(self, k)) for k in list(PROPERTIES))
+        self.properties = AttrDict((k, getattr(self, k)) for k in list(PROPERTIES))
         ## Deep copy of initial or saved properties
-        self.original = AttrDict((k, v.copy()) for k, v in self.tree.items())
+        self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
         ## Deep copy of initial or realized properties
-        self.realized = AttrDict((k, v.copy()) for k, v in self.tree.items())
+        self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
         ## Deep copy of iniital or serialized properties
-        self.serialed = AttrDict((k, v.copy()) for k, v in self.tree.items())
+        self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
         self.ensure_basestats()
 
 
@@ -357,12 +357,12 @@ class Hero(object):
     def update(self, hero):
         """Replaces hero properties with those of given hero."""
         for section in PROPERTIES:
-            if section not in hero.tree: continue # for section
-            prop2 = hero.tree[section].copy()
-            self.tree[section] = prop2
+            if section not in hero.properties: continue # for section
+            prop2 = hero.properties[section].copy()
+            self.properties[section] = prop2
             setattr(self, section, prop2)
-        self.original = AttrDict((k, v.copy()) for k, v in self.tree.items())
-        self.realized = AttrDict((k, v.copy()) for k, v in self.tree.items())
+        self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
+        self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
         self.ensure_basestats(force=True)
 
 
@@ -383,7 +383,7 @@ class Hero(object):
         self.bytes0 = copy.copy(bytes)
         self.index  = index
         self.span   = span
-        self.serialed = AttrDict((k, v.copy()) for k, v in self.tree.items())
+        self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 
     def parse(self):
@@ -396,17 +396,17 @@ class Hero(object):
                 prop.clear()
                 prop.update(state)
         self.ensure_basestats(force=True)
-        self.original = AttrDict((k, v.copy()) for k, v in self.tree.items())
-        self.realized = AttrDict((k, v.copy()) for k, v in self.tree.items())
-        self.serialed = AttrDict((k, v.copy()) for k, v in self.tree.items())
+        self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
+        self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
+        self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 
     def serialize(self):
         """Updates hero bytes with current properties state."""
         self.realize()
         for section, module in PROPERTIES.items():
-            self.bytes = module.serialize(self.tree[section], self.bytes, self.version, self)
-        self.serialed = AttrDict((k, v.copy()) for k, v in self.tree.items())
+            self.bytes = module.serialize(self.properties[section], self.bytes, self.version, self)
+        self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 
     def realize(self):
@@ -424,26 +424,26 @@ class Hero(object):
                 errors.append(str(e))
         if errors:
             raise ValueError("Invalid data in hero %s:\n- %s" % (self.name, "\n- ".join(errors)))
-        self.realized = AttrDict((k, v.copy()) for k, v in self.tree.items())
+        self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 
     def is_changed(self):
         """Returns whether hero has any unsaved changes."""
-        return self.tree != self.original
+        return self.properties != self.original
 
 
     def is_patched(self, savefile):
         """Returns whether hero bytes match its span in savefile unpacked contents."""
-        if not self.bytes or not self.span or self.tree != self.serialed: return False
+        if not self.bytes or not self.span or self.properties != self.serialed: return False
         return self.bytes == bytearray(savefile.raw[self.span[0]:self.span[1]])
 
 
     def mark_saved(self):
         """Marks hero as saved in savefile."""
         self.bytes0 = copy.copy(self.bytes)
-        self.original = AttrDict((k, v.copy()) for k, v in self.tree.items())
-        self.realized = AttrDict((k, v.copy()) for k, v in self.tree.items())
-        self.serialed = AttrDict((k, v.copy()) for k, v in self.tree.items())
+        self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
+        self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
+        self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 
     def matches(self, *texts, **keywords):
@@ -483,8 +483,8 @@ class Hero(object):
                 for value in collection:
                     if isinstance(value, dict): process_keywords(value)
 
-        process_patterns(dict(self.tree, name=self.name), text_regexes)
-        process_keywords(dict(self.tree, name=self.name))
+        process_patterns(dict(self.properties, name=self.name), text_regexes)
+        process_keywords(dict(self.properties, name=self.name))
         return all(r in matches for r in text_regexes) and \
                all((k, r) in matches for k, rr in kw_regexes.items() for r in rr)
 
