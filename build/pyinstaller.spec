@@ -6,7 +6,7 @@ depending on current environment.
 Pyinstaller-provided names and variables: Analysis, EXE, PYZ, SPEC, TOC.
 
 @created   12.04.2020
-@modified  14.09.2024
+@modified  09.04.2025
 """
 import atexit
 import os
@@ -22,23 +22,11 @@ APPPATH   = os.path.join(ROOTPATH, "src", NAME)
 sys.path.insert(0, os.path.join(ROOTPATH, "src"))
 from h3sed import conf
 
-# Include source files for auto-loading plugins during runtime
-datas, hiddenimports = [], []
-for root, _, files in os.walk(APPPATH):
-    folder = root.replace(APPPATH, "").strip("/\/")
-    for f in (f for f in files if f.endswith(".py")):
-        path = os.path.join(NAME, folder, f)
-        datas += [(path, os.path.join(root, f), "DATA")]
-        if "plugins" in folder and not folder.endswith("plugins"):
-            # Add hidden imports for Pyinstaller, as plugins are loaded dynamically
-            package = folder.replace("/", ".").replace("\\", ".")
-            module = "" if "__init__.py" == f else os.path.splitext(f)[0]
-            hiddenimports += [".".join(filter(bool, (NAME, package, module)))]
-hiddenimports.sort()
 
 def cleanup():
     try: os.unlink(entrypoint)
     except Exception: pass
+
 
 entrypoint = os.path.join(ROOTPATH, "launch.py")
 with open(entrypoint, "w") as f:
@@ -48,9 +36,7 @@ atexit.register(cleanup)
 a = Analysis(
     [entrypoint],
     excludes=["FixTk", "numpy", "tcl", "tk", "_tkinter", "tkinter", "Tkinter"],
-    hiddenimports=hiddenimports,
 )
-a.datas = a.datas + datas
 a.datas += [("res/3rd-party licenses.txt",  "3rd-party licenses.txt", "DATA")]
 a.binaries = a.binaries - TOC([
     ('tcl85.dll', None, None),
