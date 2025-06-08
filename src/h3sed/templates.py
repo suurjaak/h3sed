@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    09.04.2025
+@modified    08.06.2025
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -383,7 +383,7 @@ shift_pending = shift = False
     %for i, (l1, l2) in enumerate(entries):
 <%
 shift_pending = shift_pending or (l1.strip() + l2.strip() == "-")
-l1, l2 = (re.sub("(^\s*-\s*)|(\s{2,})", " ", x).strip() for x in (l1, l2))
+l1, l2 = (re.sub(r"(^\s*-\s*)|(\s{2,})", " ", x).strip() for x in (l1, l2))
 l1, l2 = ("" if i and l.endswith(":") else l for l in (l1, l2))
 shift = shift_pending and bool(l1 or l2)
 if shift: shift_pending = False
