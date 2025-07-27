@@ -7,12 +7,14 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  09.04.2025
+@modified  26.07.2025
 ------------------------------------------------------------------------------
 """
 import re
 
+from .. import hero
 from .. import metadata
+from .. hero import make_artifact_cast
 
 
 NAME  = "roe_gog"
@@ -64,6 +66,40 @@ HERO_REGEX = re.compile(b"""
 
 
 
+class DataClass(hero.DataClass):
+
+    def get_version(self):
+        """Returns game version."""
+        return NAME
+
+
+class Equipment(DataClass, hero.Equipment):
+    __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Equipment.__slots__
+                 if "side5" != k}
+
+
+class ArmyStack(DataClass, hero.ArmyStack):   pass
+
+class Army(DataClass, hero.Army):             pass
+
+class Attributes(DataClass, hero.Attributes): pass
+
+class Inventory(DataClass, hero.Inventory):   pass
+
+class Skill(DataClass, hero.Skill):           pass
+
+class Skills(DataClass, hero.Skills):         pass
+
+class Spells(DataClass, hero.Spells):         pass
+
+
+
+def init():
+    """Adds Restoration of Erathia data to metadata stores."""
+    EQUIPMENT_SLOTS = {k: v for k, v in metadata.EQUIPMENT_SLOTS.items() if "side5" != k}
+    metadata.Store.add("equipment_slots", EQUIPMENT_SLOTS, version=NAME)
+
+
 def adapt(name, value):
     """
     Adapts certain categories:
@@ -71,16 +107,33 @@ def adapt(name, value):
     - "hero.equipment.DATAPROPS":  dropping slot "side5"
     - "hero_byte_positions"        dropping slot "side5"
     - "hero_regex" :               dropping one slot from equipment to expect 18 items
+    - all hero property classes:   returning version-specific data class, without slot "side5"
     """
     result = value
     if "hero.equipment.DATAPROPS" == name:
         result = [x for x in value if x.get("name") != "side5"]
-    elif "hero_regex" == name:
-        result = HERO_REGEX
     elif "hero_byte_positions" == name:
         result = value.copy()
         result.pop("side5")
         result.pop("reserved", None) # Combination artifacts reservations
+    elif "hero_regex" == name:
+        result = HERO_REGEX
+    elif "hero.ArmyStack" == name:
+        result = ArmyStack
+    elif "hero.Army" == name:
+        result = Army
+    elif "hero.Attributes" == name:
+        result = Attributes
+    elif "hero.Equipment" == name:
+        result = Equipment
+    elif "hero.Inventory" == name:
+        result = Inventory
+    elif "hero.Skill" == name:
+        result = Skill
+    elif "hero.Skills" == name:
+        result = Skills
+    elif "hero.Spells" == name:
+        result = Spells
     return result
 
 

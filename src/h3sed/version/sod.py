@@ -7,10 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  02.04.2025
+@modified  26.07.2025
 ------------------------------------------------------------------------------
 """
+from .. import hero
 from .. import metadata
+from .. hero import make_artifact_cast, make_integer_cast, make_string_cast
 
 
 NAME  = "sod"
@@ -157,6 +159,37 @@ ARTIFACT_SPELLS = {
 
 
 
+class DataClass(hero.DataClass):
+
+    def get_version(self):
+        """Returns game version."""
+        return NAME
+
+
+class ArmyStack(DataClass, hero.ArmyStack):
+    __slots__ = {"name":  make_string_cast("creatures", version=NAME),
+                 "count": make_integer_cast("army.count", version=NAME)}
+
+
+
+class Equipment(DataClass, hero.Equipment):
+    __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Equipment.__slots__}
+                 
+                 
+class Army(DataClass, hero.Army):             pass
+
+class Attributes(DataClass, hero.Attributes): pass
+
+class Inventory(DataClass, hero.Inventory):   pass
+
+class Skill(DataClass, hero.Skill):           pass
+
+class Skills(DataClass, hero.Skills):         pass
+
+class Spells(DataClass, hero.Spells):         pass
+
+
+
 def init():
     """Initializes artifacts and creatures for Shadow of Death."""
     metadata.Store.add("artifacts", ARTIFACTS, version=NAME)
@@ -172,6 +205,33 @@ def init():
     metadata.Store.add("ids",             IDS,            version=NAME)
     for artifact, spells in ARTIFACT_SPELLS.items():
         metadata.Store.add("spells", spells, category=artifact, version=NAME)
+
+
+def adapt(name, value):
+    """
+    Adapts certain categories:
+
+    - all hero property classes:  returning version-specific data class,
+                                  with support for new artifacts-creatures-spells
+    """
+    result = value
+    if "hero.ArmyStack" == name:
+        result = ArmyStack
+    elif "hero.Army" == name:
+        result = Army
+    elif "hero.Attributes" == name:
+        result = Attributes
+    elif "hero.Equipment" == name:
+        result = Equipment
+    elif "hero.Inventory" == name:
+        result = Inventory
+    elif "hero.Skill" == name:
+        result = Skill
+    elif "hero.Skills" == name:
+        result = Skills
+    elif "hero.Spells" == name:
+        result = Spells
+    return result
 
 
 def detect(savefile):

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  09.04.2025
+@modified  27.07.2025
 ------------------------------------------------------------------------------
 """
 import re
@@ -335,7 +335,7 @@ BANNABLE_SPELLS = [
 
 
 # Index overrides for byte start of various attributes in hero bytearray
-HERO_BYTEPOSITIONS = {
+HERO_BYTE_POSITIONS = {
     "skills_slot":     1061, # Skill slots
 }
 
@@ -391,7 +391,7 @@ class DataClass(hero.DataClass):
         return NAME
 
 
-class ArmyStack(DataClass, hero.ArmyStack,):
+class ArmyStack(DataClass, hero.ArmyStack):
     __slots__ = {"name":  make_string_cast("creatures", version=NAME),
                  "count": make_integer_cast("army.count", version=NAME)}
 
@@ -409,6 +409,15 @@ class Attributes(DataClass, hero.Attributes):
 class Skill(DataClass, hero.Skill):
     __slots__ = {"name":  make_string_cast("skills", version=NAME),
                  "level": make_string_cast("skill_levels", default=True, version=NAME)}
+
+
+class Army(DataClass, hero.Army):           pass
+
+class Inventory(DataClass, hero.Inventory): pass
+
+class Skills(DataClass, hero.Skills):       pass
+
+class Spells(DataClass, hero.Spells):       pass
 
 
 
@@ -440,7 +449,14 @@ def adapt(name, value):
     - "expereience_levels":   capping level at 74
     - "hero_regex":           adding support for Interference-skill
     - "hero_byte_positions":  adding support for Interference-skill
+
+    - "hero.PropertyName" classes:  returning version-specific data class,
+                                    with support for new artifacts/creatures/skills/spells,
+                                    attributes having cannon support and level capped at 74
+
+
     - "hero.ArmyStack":       adding support for new creatures
+    - "hero.Army":            adding version
     - "hero.Attributes":      adding cannon support, capping level at 74
     - "hero.Equipment":       adding support for new artifacts
     - "hero.Skill":           adding support for Interference-skill
@@ -449,17 +465,9 @@ def adapt(name, value):
     if "experience_levels" == name:
         result = {k: v for k, v in value.items() if k <= HERO_RANGES["level"][1]}
     elif "hero_byte_positions" == name:
-        result = dict(value, **HERO_BYTEPOSITIONS)
+        result = dict(value, **HERO_BYTE_POSITIONS)
     elif "hero_regex" == name:
         result = HERO_REGEX
-    elif "hero.ArmyStack" == name:
-        result = ArmyStack
-    elif "hero.Attributes" == name:
-        result = Attributes
-    elif "hero.Equipment" == name:
-        result = Equipment
-    elif "hero.Skill" == name:
-        result = Skill
     elif "hero.stats.DATAPROPS" == name:
         # Replace ballista-prop checkbox with combobox including cannon
         result = []
@@ -467,6 +475,22 @@ def adapt(name, value):
             if "ballista" == prop["name"]:
                 prop = dict(prop, type="combo", choices=[""] + BALLISTA_CHOICES)
             result.append(prop)
+    elif "hero.ArmyStack" == name:
+        result = ArmyStack
+    elif "hero.Army" == name:
+        result = Army
+    elif "hero.Attributes" == name:
+        result = Attributes
+    elif "hero.Equipment" == name:
+        result = Equipment
+    elif "hero.Inventory" == name:
+        result = Inventory
+    elif "hero.Skill" == name:
+        result = Skill
+    elif "hero.Skills" == name:
+        result = Skills
+    elif "hero.Spells" == name:
+        result = Spells
     return result
 
 
