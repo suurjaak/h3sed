@@ -4,6 +4,7 @@ CHANGELOG
 3.1, 2025-07-27
 ---------------
 - fix error on opening savefiles from Restoration of Erathia Steam edition (issue #16)
+- fix showing hero as changed upon opening for some game versions
 
 
 3.0, 2025-04-09

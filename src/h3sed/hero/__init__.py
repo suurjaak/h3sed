@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  09.04.2025
+@modified  26.07.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -124,7 +124,7 @@ def make_string_cast(name, version=None, nullable=True, default=False, choices=(
 
 
 class DataClass(object):
-    """Min-in for hero property classes."""
+    """Mix-in for hero property classes."""
 
     @classmethod
     def factory(cls, version):
@@ -312,7 +312,7 @@ class Spells(OrderedSet, DataClass):
 
     def spawn(self, other=()):
         """Returns new Spells instance from iterable (OrderedSet override)."""
-        return Spells(other)
+        return type(self)(other)
 
 
 
