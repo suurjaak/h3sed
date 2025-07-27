@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  09.04.2025
+@modified  26.07.2025
 ------------------------------------------------------------------------------
 """
 import logging
@@ -174,7 +174,8 @@ class EquipmentPlugin(object):
         result = []
         LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
         for prop in DATAPROPS:
-            slot = LOCATION_TO_SLOT[prop["name"]]
+            slot = LOCATION_TO_SLOT.get(prop["name"])
+            if slot is None: continue # for prop
             choices = metadata.Store.get("artifacts", category=slot, version=self.version)
             result.append(dict(prop, choices=[""] + choices))
         return h3sed.version.adapt("hero.equipment.DATAPROPS", result, version=self.version)

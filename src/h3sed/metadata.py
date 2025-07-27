@@ -6,8 +6,8 @@ Constants, data store and savefile functionality.
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
-@created     22.03.2020
-@modified    09.04.2025
+@created   22.03.2020
+@modified  26.07.2025
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -18,10 +18,8 @@ import gzip
 import logging
 import os
 import re
-import sys
 
 import h3sed
-from . import conf
 from . lib import util
 
 
@@ -1422,28 +1420,41 @@ class Savefile(object):
 class Store(object):
     """
     Simple data container, allowing to store and retrieve data by subcategory and game version.
+
+    By default, retrieved data gets combined from multiple versions.
     """
 
     # {typename: {version: {category: {None: all, category1: filtered, ..}, ..}}}
     DATA = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
     CACHE = {} # {(name, category, verdion): prepared result}
+    
+    SEPARATES = set() # {data names to not combine over versions}
 
     @staticmethod
-    def add(name, data, category=None, version=None):
+    def add(name, data, category=None, version=None, separate=False):
         stype = list if isinstance(data, tuple) else type(data)
         store = Store.DATA[name][version].setdefault(category, stype())
         if isinstance(store, list):
             store.extend(x for x in copy.deepcopy(data) if x not in store)
         elif isinstance(store, dict): store.update(copy.deepcopy(data))
+        if separate: Store.SEPARATES.add(name)
 
     @staticmethod
     def get(name, category=None, version=None):
-        """If version is not specified, returns data from all versions."""
+        """
+        Returns specified data, by subcategory like "inventory" if specified.
+
+        Combines version data with default data, unless data was added as separate.
+
+        If version is not specified, returns data from all versions.
+        """
         result = Store.CACHE.get((name, category, version))
         if result is not None: return result
 
         vv = [None, version] if version else [None] + list(Store.DATA.get(name, {}))
+        if name in Store.SEPARATES:
+            vv = [version] if version and version in Store.DATA.get(name, {}) else [None]
         for v in sorted(set(vv), key=lambda x: x or ""):
             r = Store.DATA.get(name, {}).get(v, {}).get(category)
             if r is None: continue # for v
@@ -1467,7 +1478,7 @@ Store.add("artifact_slots",      ARTIFACT_SLOTS)
 Store.add("artifact_spells",     ARTIFACT_SPELLS)
 Store.add("artifact_stats",      ARTIFACT_STATS)
 Store.add("creatures",           CREATURES)
-Store.add("equipment_slots",     EQUIPMENT_SLOTS)
+Store.add("equipment_slots",     EQUIPMENT_SLOTS, separate=True)  # No combine: side5 can disappear
 Store.add("hero_byte_positions", HERO_BYTE_POSITIONS)
 Store.add("hero_ranges",         HERO_RANGES)
 Store.add("ids",                 IDS)

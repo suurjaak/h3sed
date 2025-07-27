@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.1, 2025-07-27
+---------------
+- fix error on opening savefiles from Restoration of Erathia Steam edition (issue #16)
+
+
 3.0, 2025-04-09
 ---------------
 - add command-line interface
