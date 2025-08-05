@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  26.07.2025
+@modified  05.08.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -98,7 +98,7 @@ def make_string_cast(name, version=None, nullable=True, default=False, choices=(
     @param   name      name for metadata.Store like "artifacts"
     @param   version   game version like "sod", if any
     @param   nullable  whether empty value is allowed
-    @param   default   whether 
+    @param   default   whether to return first choice as default for empty value
     @param   choices   pre-defined choices if not taking from metadata.Store
     """
     choices = list(choices)
@@ -162,7 +162,7 @@ class Army(TypedArray, DataClass):
         version = self.get_version()
         dataclass = h3sed.version.adapt("hero.%s" % ArmyStack.__name__, ArmyStack, version)
         minmax = metadata.Store.get("hero_ranges", version=version)["army"]
-        TypedArray.__init__(self, dataclass, minmax[1], dataclass)
+        TypedArray.__init__(self, cls=dataclass, size=minmax[1], default=dataclass)
 
 
 class Equipment(SlotsDict, DataClass):
@@ -174,7 +174,7 @@ class Equipment(SlotsDict, DataClass):
 
     def validate_update(self, *args, **kwargs):
         """
-        Returns error string if updating given locations would cause slot conflicts, or None.
+        Returns error string if updating given locations would cause slot conflicts, else None.
 
         SlotsDict.validate_update() override.
         """
@@ -258,24 +258,25 @@ class Inventory(TypedArray, DataClass):
     def __init__(self):
         version = self.get_version()
         minmax = metadata.Store.get("hero_ranges", version=version)["inventory"]
-        TypedArray.__init__(self, make_artifact_cast("inventory", version), minmax[1])
+        TypedArray.__init__(self, cls=make_artifact_cast("inventory", version), size=minmax[1])
 
     def make_compact(self, order=(), reverse=False):
         """Returns new inventory with items compacted to top, in specified order if any."""
-        items, sortkeys = [x for x in self if x], []
+        items = [x for x in self if x]
         if order:
             ARTIFACT_SLOTS = metadata.Store.get("artifact_slots", version=self.get_version())
             LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.get_version())
             EQUIPMENT_LOCATIONS = list(Equipment.factory(self.get_version()).__slots__)
-            slot_order = [LOCATION_TO_SLOT[location] for location in EQUIPMENT_LOCATIONS]
-            slot_order.extend(("inventory", "unknown")) # "unknown" just in case
-        for name in order:
-            if "name" == name:
-                sortkeys.append(lambda x: x.lower())
-            if "slot" == name:
-                get_primary_slot = lambda x: ARTIFACT_SLOTS.get(x, slot_order[-1:])[0]
-                sortkeys.append(lambda x: slot_order.index(get_primary_slot(x)))
-        if sortkeys: items.sort(key=lambda x: tuple(f(x) for f in sortkeys))
+            SLOT_ORDER = [LOCATION_TO_SLOT[location] for location in EQUIPMENT_LOCATIONS]
+            SLOT_ORDER.extend(("inventory", "unknown")) # "unknown" just in case
+            get_primary_slot = lambda x: ARTIFACT_SLOTS.get(x, SLOT_ORDER[-1:])[0]
+            sortkeys = []
+            for name in order:
+                if "name" == name:
+                    sortkeys.append(lambda x: x.lower())
+                elif "slot" == name:
+                    sortkeys.append(lambda x: SLOT_ORDER.index(get_primary_slot(x)))
+            items.sort(key=lambda x: tuple(f(x) for f in sortkeys))
         if reverse:  items = items[::-1]
         result = type(self)()
         result.extend(items)
@@ -289,7 +290,7 @@ class Skills(TypedArray, DataClass):
         version = self.get_version()
         dataclass = h3sed.version.adapt("hero.%s" % Skill.__name__, Skill, version)
         minmax = metadata.Store.get("hero_ranges", version=version)["skills"]
-        TypedArray.__init__(self, dataclass, minmax, dataclass)
+        TypedArray.__init__(self, cls=dataclass, size=minmax, default=dataclass)
 
     def realize(self, hero=None):
         """Drops empty and duplicate entries."""
