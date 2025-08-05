@@ -25,7 +25,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.04.2025
+@modified    05.08.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -605,7 +605,7 @@ class ItemHistory(wx.Object):
 
     def GetFormatter(self):
         """Returns menu label formatter function."""
-        return self._hint
+        return self._formatter
     def SetFormatter(self, formatter):
         """Sets menu label formatter function, as func(item), and repopulates menu."""
         if formatter != self._formatter:
