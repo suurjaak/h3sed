@@ -235,15 +235,13 @@ class Attributes(SlotsDict, DataClass):
 
     def get_experience_level(self):
         """Returns hero level that ought to match current experience."""
-        EXP_LEVELS = h3sed.version.adapt("experience_levels", metadata.EXPERIENCE_LEVELS,
-                                         version=self.get_version())
+        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.get_version())
         orderlist = sorted(EXP_LEVELS.items(), reverse=True)
         return next((k for k, v in orderlist if v <= self.exp), None)
 
     def get_level_experience(self):
         """Returns hero experience that ought to match current level."""
-        EXP_LEVELS = h3sed.version.adapt("experience_levels", metadata.EXPERIENCE_LEVELS,
-                                         version=self.get_version())
+        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.get_version())
         value = EXP_LEVELS.get(self.level)
         if value is not None and value <= self.exp < EXP_LEVELS.get(self.level + 1, sys.maxsize):
             value = self.exp  # Do not reset experience if already at level

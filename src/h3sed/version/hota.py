@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  27.07.2025
+@modified  05.08.2025
 ------------------------------------------------------------------------------
 """
 import re
@@ -427,12 +427,15 @@ def init():
     metadata.Store.add("artifacts", ARTIFACTS, category="inventory", version=NAME)
     for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
         metadata.Store.add("artifacts", [k for k, v in ARTIFACT_SLOTS.items() if v[0] == slot],
-                  category=slot, version=NAME)
+                           category=slot, version=NAME)
+
+    LEVELS = {k: v for k, v in metadata.EXPERIENCE_LEVELS.items() if k <= HERO_RANGES["level"][1]}
 
     metadata.Store.add("artifact_slots",    ARTIFACT_SLOTS,    version=NAME)
     metadata.Store.add("artifact_spells",   ARTIFACT_SPELLS,   version=NAME)
     metadata.Store.add("artifact_stats",    ARTIFACT_STATS,    version=NAME)
     metadata.Store.add("creatures",         CREATURES,         version=NAME)
+    metadata.Store.add("experience_levels", LEVELS,            version=NAME)
     metadata.Store.add("hero_ranges",       HERO_RANGES,       version=NAME)
     metadata.Store.add("ids",               IDS,               version=NAME)
     metadata.Store.add("skills",            SKILLS,            version=NAME)
@@ -446,7 +449,6 @@ def adapt(name, value):
     """
     Adapts certain categories:
 
-    - "expereience_levels":   capping level at 74
     - "hero_regex":           adding support for Interference-skill
     - "hero_byte_positions":  adding support for Interference-skill
 
@@ -462,9 +464,7 @@ def adapt(name, value):
     - "hero.Skill":           adding support for Interference-skill
     """
     result = value
-    if "experience_levels" == name:
-        result = {k: v for k, v in value.items() if k <= HERO_RANGES["level"][1]}
-    elif "hero_byte_positions" == name:
+    if "hero_byte_positions" == name:
         result = dict(value, **HERO_BYTE_POSITIONS)
     elif "hero_regex" == name:
         result = HERO_REGEX

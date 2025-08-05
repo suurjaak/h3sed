@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  26.07.2025
+@modified  05.08.2025
 ------------------------------------------------------------------------------
 """
 from collections import defaultdict, OrderedDict
@@ -1478,7 +1478,8 @@ Store.add("artifact_slots",      ARTIFACT_SLOTS)
 Store.add("artifact_spells",     ARTIFACT_SPELLS)
 Store.add("artifact_stats",      ARTIFACT_STATS)
 Store.add("creatures",           CREATURES)
-Store.add("equipment_slots",     EQUIPMENT_SLOTS, separate=True)  # No combine: side5 can disappear
+Store.add("equipment_slots",     EQUIPMENT_SLOTS, separate=True)  # Versions without side5 e.g. RoE
+Store.add("experience_levels",   EXPERIENCE_LEVELS, separate=True) # Versions can cap level e.g. HoTA
 Store.add("hero_byte_positions", HERO_BYTE_POSITIONS)
 Store.add("hero_ranges",         HERO_RANGES)
 Store.add("ids",                 IDS)
