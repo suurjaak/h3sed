@@ -1407,19 +1407,20 @@ class SavefilePage(wx.Panel):
 
         if rename:
             title = "Save %s as.." % os.path.split(self.filename)[-1]
-            dialog = wx.FileDialog(self,
+            with wx.FileDialog(self,
                 message=title, defaultDir=os.path.split(self.filename)[0],
                 defaultFile=os.path.basename(self.filename),
                 style=wx.FD_OVERWRITE_PROMPT | wx.FD_SAVE | wx.RESIZE_BORDER
-            )
-            if wx.ID_OK != dialog.ShowModal(): return False
+            ) as dialog:
+                if wx.ID_OK != dialog.ShowModal(): return False
+                filename2 = dialog.GetPath()
 
-            filename2 = dialog.GetPath()
-            if filename1 != filename2 and filename2 in conf.FilesOpen: return wx.MessageBox(
-                "%s is already open in %s." % (filename2, conf.Title),
-                conf.Title, wx.OK | wx.ICON_WARNING
-            )
-            dialog.Destroy()
+            if filename1 != filename2 and filename2 in conf.FilesOpen:
+                wx.MessageBox(
+                    "%s is already open in %s." % (filename2, conf.Title),
+                    conf.Title, wx.OK | wx.ICON_WARNING
+                )
+                return
         rename = (filename1 != filename2)
         changes = "\n\n".join(p.get_changes(html=False) for p in self.plugins
                               if hasattr(p, "get_changes"))
