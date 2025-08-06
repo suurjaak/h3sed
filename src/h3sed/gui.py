@@ -1044,8 +1044,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             style=wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.RESIZE_BORDER
         ) as dialog:
             self.set_savegame_filters(dialog)
-            if wx.ID_OK == dialog.ShowModal():
-                self.refresh_dir_ctrl(dialog.GetPath())
+            if wx.ID_OK != dialog.ShowModal(): return
+            path = dialog.GetPath()
+        self.refresh_dir_ctrl(path)
 
 
     def on_choose_filter(self, event):
@@ -1109,8 +1110,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             style=wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_OPEN | wx.RESIZE_BORDER
         ) as dialog:
             self.set_savegame_filters(dialog)
-            if wx.ID_OK == dialog.ShowModal():
-                self.load_savefile_pages(dialog.GetPaths())
+            if wx.ID_OK != dialog.ShowModal(): return
+            paths = dialog.GetPaths()
+        self.load_savefile_pages(paths)
 
 
     def on_open_savefile_event(self, event):
