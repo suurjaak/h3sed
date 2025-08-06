@@ -1408,8 +1408,7 @@ class SavefilePage(wx.Panel):
         if rename:
             title = "Save %s as.." % os.path.split(self.filename)[-1]
             dialog = wx.FileDialog(self,
-                message=title, wildcard="|".join(make_wildcards()),
-                defaultDir=os.path.split(self.filename)[0],
+                message=title, defaultDir=os.path.split(self.filename)[0],
                 defaultFile=os.path.basename(self.filename),
                 style=wx.FD_OVERWRITE_PROMPT | wx.FD_SAVE | wx.RESIZE_BORDER
             )
