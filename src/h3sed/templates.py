@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    08.06.2025
+@modified    06.08.2025
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -539,7 +539,12 @@ def sortarrow(col):
 %for hero in heroes_sorted:
   <tr>
     <td align="right" valign="top" nowrap>{{ heroes.index(hero) + 1 }}</td>
-    <td align="left" valign="top" nowrap><a href="{{ links[heroes.index(hero)] }}"><font color="{{ conf.LinkColour }}">{{ hero.name }}</font></a></td>
+    <td align="left" valign="top" nowrap>
+      <a href="{{ links[heroes.index(hero)] }}"><font color="{{ conf.LinkColour }}">{{ hero.name }}</font></a>
+%if hero.name_counter > 1:
+ ({{ hero.name_counter }})
+%endif
+    </td>
 %if not categories or categories["stats"]:
     <td align="left" valign="top" nowrap>{{ hero.stats["level"] }}</td>
     %for name in metadata.PRIMARY_ATTRIBUTES:
@@ -979,7 +984,12 @@ colptr += state
 %for i, hero in enumerate(heroes):
   <tr>
     <td class="index">{{ i + 1 }}</td>
-    <td><a href="#{{ hero.name }}" title="Show {{ hero.name }} character sheet" onclick="showHero({{ i }})">{{ hero.name }}</a></td>
+    <td>
+      <a href="#{{ hero.name }}" title="Show {{ hero.name }} character sheet" onclick="showHero({{ i }})">{{ hero.name }}</a>
+%if hero.name_counter > 1:
+ ({{ hero.name_counter }})
+%endif
+    </td>
 %if not categories or categories["stats"]:
     <td>{{ hero.stats["level"] }}</td>
     %for name in metadata.PRIMARY_ATTRIBUTES:

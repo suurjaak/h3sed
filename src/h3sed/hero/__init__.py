@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  05.08.2025
+@modified  06.08.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -320,10 +320,11 @@ class Hero(object):
     def __init__(self, name, version=None):
         self.name    = name
         self.version = version
-        self.bytes   = None  # Hero bytearray
-        self.bytes0  = None  # Hero original or saved bytearray
-        self.index   = None  # Hero index in savefile
-        self.span    = None  # Hero byte span in uncompressed savefile
+        self.bytes   = None    # Hero bytearray
+        self.bytes0  = None    # Hero original or saved bytearray
+        self.index   = None    # Hero index in savefile
+        self.span    = None    # Hero byte span in uncompressed savefile
+        self.name_counter = 1  # 1-based index for hero name, tracking duplicate names
 
         self.stats     = Attributes.factory(version)
         self.skills    = Skills    .factory(version)
@@ -350,6 +351,7 @@ class Hero(object):
         hero = Hero(self.name, self.version)
         hero.update(self)
         hero.set_file_data(self.bytes, self.index, self.span)
+        hero.name_counter = self.name_counter
         return hero
 
 
@@ -374,6 +376,11 @@ class Hero(object):
             diff = [a + b for a, b in zip(diff, ARTIFACT_STATS[artifact_name])]
         for attribute_name, value in zip(metadata.PRIMARY_ATTRIBUTES, diff):
             self.basestats[attribute_name] = self.stats[attribute_name] - value
+
+
+    def get_name_ident(self):
+        """Returns hero name, or (name, name counter) if marked as duplicate name."""
+        return (self.name, self.name_counter) if self.name_counter > 1 else self.name
 
 
     def set_file_data(self, bytes, index, span): #, savefile):
@@ -419,10 +426,11 @@ class Hero(object):
             if prop == self.realized[section]: continue # for section
             try: prop.realize(self)
             except Exception as e:
-                logger.exception("Invalid data in hero %s %s.", self.name, section)
+                logger.exception("Invalid data in hero %s %s.", self.get_name_ident(), section)
                 errors.append(str(e))
         if errors:
-            raise ValueError("Invalid data in hero %s:\n- %s" % (self.name, "\n- ".join(errors)))
+            raise ValueError("Invalid data in hero %s:\n- %s" %
+                             (self.get_name_ident(), "\n- ".join(errors)))
         self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 
@@ -499,5 +507,7 @@ class Hero(object):
 
 
     def __str__(self):
-        """Returns hero name."""
-        return self.name
+        """Returns hero name, with name counter suffix if marked as duplicate name."""
+        result = self.name
+        if self.name_counter > 1: result += " (%s)" % self.name_counter
+        return result

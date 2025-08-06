@@ -56,7 +56,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  07.04.2025
+@modified  06.08.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -268,7 +268,7 @@ class HeroPlugin(object):
         self._heropanel.DestroyChildren()
         self._heropanel.Sizer.Clear()
         del self._plugins[:]
-        self._ctrls["hero"].SetItems([x.name for x in self._heroes])
+        self._ctrls["hero"].SetItems([str(x) for x in self._heroes])
 
         nb = wx.Notebook(self._heropanel)
         self._plugins = [dict(m.props(), module=m) for m in h3sed.hero.PROPERTIES.values()]
@@ -322,10 +322,16 @@ class HeroPlugin(object):
         """Handler for action (load=hero name|index) or (save=True, ?rename=True, ?spans=[..])."""
         if kwargs.get("load") is not None:
             value = kwargs["load"]
-            if isinstance(value, int):
+            if isinstance(value, int): # Hero absolute index
                 index = max(0, min(value, len(self._heroes) - 1))
+            elif isinstance(value, (list, tuple)): # (hero name, name counter if duplicate)
+                hero_name, name_counter = value[:2] if len(value) > 1 else (value[0], 1)
+                candidates = [i for i, x in enumerate(self._heroes) if x.name == hero_name]
+                index = candidates[min(name_counter, len(candidates)) - 1] if candidates else -1
             else: index = next((i for i, x in enumerate(self._heroes) if x.name == value), -1)
-            if index >= 0 and self._heroes: self.select_hero(index)
+            if index >= 0 and self._heroes:
+                self.select_hero(index)
+
         if kwargs.get("save"):
             tabs = self._ctrls["tabs"]
             heroes_open = []
@@ -339,11 +345,12 @@ class HeroPlugin(object):
                 page = next((p for p, i in self._pages.items() if i == index), None)
                 if page is not None:
                     heroes_open.append(hero)
-                    tabs.SetPageText(tabs.GetPageIndex(page), hero.name)
+                    tabs.SetPageText(tabs.GetPageIndex(page), str(hero))
             if kwargs.get("rename") and heroes_open:
                 evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
-                evt.SetClientData(dict(plugin=self.name, load=set(x.name for x in heroes_open)))
-                wx.PostEvent(self._panel, evt)
+                evt.SetClientData(dict(plugin=self.name,
+                                       load=[x.get_name_ident() for x in heroes_open]))
+                wx.PostEvent(self._panel, evt)  # Propagate to parent
 
 
     def refresh_file(self):
@@ -381,7 +388,7 @@ class HeroPlugin(object):
                 page = wx.Window(tabs)
                 self._pages[page] = index
                 if not hero and hero0 and hero2.name == hero0.name: hero = hero2
-                tabs.AddPage(page, hero2.name, select=hero2 is hero)
+                tabs.AddPage(page, str(hero2), select=hero2 is hero)
 
             visited0 = [v for i, v in enumerate(visited0) if not i or v != visited0[i - 1]]
             self._pages_visited[:] = visited0
@@ -448,7 +455,7 @@ class HeroPlugin(object):
             d = wx.TextDataObject(self._hero_yamls[self._hero]["full"])
             wx.TheClipboard.SetData(d), wx.TheClipboard.Close()
             guibase.status("Copied hero %s data to clipboard.",
-                           self._hero.name, flash=conf.StatusShortFlashLength, log=True)
+                           self._hero, flash=conf.StatusShortFlashLength, log=True)
 
 
     def on_paste_hero(self, event=None):
@@ -462,7 +469,7 @@ class HeroPlugin(object):
             wx.TheClipboard.Close()
         if value:
             guibase.status("Pasting data to hero %s from clipboard.",
-                           self._hero.name, flash=conf.StatusShortFlashLength, log=True)
+                           self._hero, flash=conf.StatusShortFlashLength, log=True)
             self.parse_hero_yaml(value)
 
 
@@ -474,7 +481,7 @@ class HeroPlugin(object):
             pairs = [(v1, v2) for v1, v2 in zip(yamls["originals"], yamls["currents"]) if v1 != v2]
             tpl = step.Template(templates.HERO_DIFF_TEXT)
             changes = tpl.expand(name=self._hero.name, changes=pairs)
-        logger.info("Saving hero %s to file.", self._hero.name)
+        logger.info("Saving hero %s to file.", self._hero)
         evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
         evt.SetClientData(dict(save=True, spans=[self._hero.span], changes=changes))
         wx.PostEvent(self._panel, evt)
@@ -485,7 +492,7 @@ class HeroPlugin(object):
         tpl = step.Template(templates.HERO_CHARSHEET_HTML, escape=True)
         texts, texts0 = self._hero_yamls[self._hero]["currents"], None
         if self._hero.is_changed(): texts0 = self._hero_yamls[self._hero]["originals"]
-        tplargs = dict(name=self._hero.name, texts=texts, texts0=texts0)
+        tplargs = dict(name=str(self._hero), texts=texts, texts0=texts0)
         normal, changes = tpl.expand(**tplargs), tpl.expand(changes=True, **tplargs)
         content = changes if texts0 and "normal" != conf.Positions.get("charsheet_view") else normal
         dlg = None
@@ -649,8 +656,8 @@ class HeroPlugin(object):
             return
 
         combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
-        busy = controls.BusyPanel(self._panel, "Loading %s." % hero2.name) if status else None
-        if status: guibase.status("Loading %s.", hero2.name, flash=True)
+        busy = controls.BusyPanel(self._panel, "Loading %s." % hero2) if status else None
+        if status: guibase.status("Loading %s.", hero2, flash=True)
 
         self._ignore_events = True
         self._panel.Freeze()
@@ -659,7 +666,7 @@ class HeroPlugin(object):
         if not page_existed:
             page = wx.Window(tabs)
             self._pages[page] = index
-            title = "%s%s" % (hero2.name, "*" if hero2.is_changed() else "")
+            title = "%s%s" % (hero2, "*" if hero2.is_changed() else "")
             tabs.AddPage(page, title, select=True)
             style = tabs.GetAGWWindowStyleFlag() | wx.lib.agw.flatnotebook.FNB_X_ON_TAB
             if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
@@ -674,7 +681,7 @@ class HeroPlugin(object):
             if self._hero: self.patch()
             if not page_existed:
                 logger.info("Loading hero %s (bytes %s-%s in savefile).",
-                            hero2.name, hero2.span[0], hero2.span[1] - 1)
+                            hero2, hero2.span[0], hero2.span[1] - 1)
             self._hero = hero2
             for p in self._plugins:
                 self.render_plugin(p["name"], reload=True, log=not page_existed)
@@ -686,7 +693,7 @@ class HeroPlugin(object):
             self._ignore_events = False
             if status: busy.Close(), wx.CallLater(500, guibase.status, "")
             evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
-            evt.SetClientData(dict(plugin=self.name, load=hero2.name))
+            evt.SetClientData(dict(plugin=self.name, load=hero2.get_name_ident()))
             wx.PostEvent(self._panel, evt)
 
 
@@ -789,7 +796,7 @@ class HeroPlugin(object):
         else:
             page = wx.Window(tabs)
             self._pages[page] = index
-            tabs.AddPage(page, hero.name, select=True)
+            tabs.AddPage(page, str(hero), select=True)
             self._indexpanel.Hide()
             self._heropanel.Show()
         if self._hero != hero:
@@ -807,7 +814,7 @@ class HeroPlugin(object):
             if not hero.is_changed(): continue # for hero
             yamls = self._hero_yamls[hero]
             pairs = [(v1, v2) for v1, v2 in zip(yamls["originals"], yamls["currents"]) if v1 != v2]
-            changes.append(tpl.expand(name=hero.name, changes=pairs))
+            changes.append(tpl.expand(name=str(hero), changes=pairs))
         return "\n".join(changes)
 
 
@@ -818,7 +825,7 @@ class HeroPlugin(object):
 
         self._hero_yamls[self._hero] = templates.make_hero_yamls(self._hero)
 
-        title = "%s%s" % (self._hero.name, "*" if self._hero.is_changed() else "")
+        title = "%s%s" % (self._hero, "*" if self._hero.is_changed() else "")
         index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
         page = next(p for p, i in self._pages.items() if i == index)
         self._ctrls["tabs"].SetPageText(self._ctrls["tabs"].GetPageIndex(page), title)
@@ -849,8 +856,7 @@ class HeroPlugin(object):
         plugin, item0 = p["instance"], p["instance"].item()
         if reload or item0 is None:
             plugin.load(self._hero)
-            if log: logger.info("Loaded hero %s %s %s.",
-                                self._hero.name, p["name"], fmt(plugin.state()))
+            if log: logger.info("Loaded hero %s %s %s.", self._hero, p["name"], fmt(plugin.state()))
         p["panel"].Freeze()
         try:
             do_accelerate = False

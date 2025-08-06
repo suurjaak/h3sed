@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  05.08.2025
+@modified  06.08.2025
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
@@ -26,8 +26,8 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "3.1.dev6"
-VersionDate = "05.08.2025"
+Version = "3.1.dev7"
+VersionDate = "06.08.2025"
 
 Frozen = getattr(sys, "frozen", False)
 if Frozen:
@@ -88,7 +88,7 @@ Positions = {"filefilter_index": 0, "herotab_index": 0, "charsheet_view": "norma
 """Contents of Recent Files menu."""
 RecentFiles = []
 
-"""Contents of Recent Heroes menu, as [[hero name, file path]]."""
+"""Contents of Recent Heroes menu, as [[hero name, file path, ?name counter if duplicate name]]."""
 RecentHeroes = []
 
 """Whether to assume new savegame format when ambiguous e.g. updated Armageddon's Blade."""

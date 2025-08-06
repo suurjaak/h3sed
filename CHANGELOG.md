@@ -1,8 +1,9 @@
 CHANGELOG
 =========
 
-3.1, 2025-07-27
+3.1, 2025-08-06
 ---------------
+- show duplicate hero names with a counter suffix
 - fix error on opening savefiles from Restoration of Erathia Steam edition (issue #16)
 - fix showing hero as changed upon opening for some game versions
 

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    07.04.2025
+@modified    06.08.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -350,9 +350,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         for f in conf.RecentFiles[::-1]: self.history_file.AddFileToHistory(f)
         self.Bind(wx.EVT_MENU_RANGE, self.on_recent_file, id=self.history_file.BaseId,
                   id2=self.history_file.BaseId + conf.MaxRecentFiles)
+
         self.history_hero = controls.ItemHistory(conf.MaxRecentHeroes)
         self.history_hero.UseMenu(menu_recent_hero)
-        self.history_hero.Formatter = "\t".join
+        needs_counter = lambda x: len(x) > 2 and isinstance(x[2], int) and x[2] > 1
+        make_counter  = lambda x: "%s (%s)\t%s" % (x[0], x[2], x[1])
+        format_item   = lambda x: make_counter(x) if needs_counter(x) else "\t".join(x[:2])
+        self.history_hero.Formatter = format_item
         for x in conf.RecentHeroes[::-1]: self.history_hero.AddItem(x)
         self.Bind(wx.EVT_MENU_RANGE, self.on_recent_hero, id=self.history_hero.BaseId,
                   id2=self.history_hero.BaseId + conf.MaxRecentHeroes)
@@ -894,9 +898,12 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         page, idx = event.source, self.notebook.GetPageIndex(event.source)
 
         if all(getattr(event, k, None) for k in ("plugin", "load")) and "hero" == event.plugin:
-            names = (event.load if isinstance(event.load, (list, set, tuple)) else [event.load])
-            for hero_name in names:
+            inputs = event.load
+            if isinstance(inputs, str) or any(isinstance(x, int) for x in inputs): inputs = [inputs]
+            for entry in inputs: # May be hero name, or (hero name, index)
+                hero_name, name_counter = (entry, 1) if isinstance(entry, str) else entry[:2]
                 item = [hero_name, page.filename]
+                if name_counter > 1: item.append(name_counter)
                 self.history_hero.AddItem(item)
                 util.add_unique(conf.RecentHeroes, item, -1, conf.MaxRecentHeroes)
             conf.save()
@@ -997,7 +1004,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
 
     def on_show_changes(self, event=None):
-        """Handler for clicking to show unsaved changes, pops up info dialog."""        
+        """Handler for clicking to show unsaved changes, pops up info dialog."""
         page = self.notebook.GetCurrentPage()
         if isinstance(page, SavefilePage): page.show_changes()
 
@@ -1125,10 +1132,12 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def on_recent_hero(self, event):
         """Handler for clicking an entry in Recent Heroes menu."""
-        heroname, filename = self.history_hero.GetItem(event.Id - self.history_hero.BaseId)
+        item = self.history_hero.GetItem(event.Id - self.history_hero.BaseId)
+        heroname, filename = item[:2] # item may be (hero name, filename, name counter)
+        name_counter = item[2] if len(item) > 2 else 1
         self.load_savefile_page(filename)
         if filename in self.files:
-            self.files[filename]["page"].plugin_action("hero", load=heroname)
+            self.files[filename]["page"].plugin_action("hero", load=(heroname, name_counter))
 
 
     def on_change_dir_ctrl(self, event):

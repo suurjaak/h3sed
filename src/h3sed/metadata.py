@@ -7,10 +7,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  05.08.2025
+@modified  06.08.2025
 ------------------------------------------------------------------------------
 """
-from collections import defaultdict, OrderedDict
+from collections import Counter, defaultdict, OrderedDict
 import contextlib
 import copy
 import datetime
@@ -1377,9 +1377,15 @@ class Savefile(object):
             # regex can get pathologically slow for the entire remainder beyond heroes
             m = re.search(REGEX, self.raw[pos:pos+5000])
 
+        dupe_counts = Counter(x.name for x in heroes)
+        heroes.sort(key=lambda x: x.name.lower())
+        for hero in heroes[::-1]:
+            if dupe_counts[hero.name] > 1:
+                hero.name_counter = dupe_counts[hero.name]
+                dupe_counts.subtract([hero.name])
         logger.info("%s heroes detected in %s as version %r.",
                     len(heroes) or "No ", self.filename, self.version)
-        self.heroes = sorted(heroes, key=lambda x: x.name.lower())
+        self.heroes = heroes
 
 
     def find_heroes(self, *texts, **keywords):
