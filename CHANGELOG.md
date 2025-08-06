@@ -6,6 +6,7 @@ CHANGELOG
 - show duplicate hero names with a counter suffix
 - fix error on opening savefiles from Restoration of Erathia Steam edition (issue #16)
 - fix showing hero as changed upon opening for some game versions
+- fix file extension filter in files list getting narrowed after deleting file
 
 
 3.0, 2025-04-09

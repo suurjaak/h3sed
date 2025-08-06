@@ -548,17 +548,18 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.dir_ctrl.UnselectAll()
             self.dir_ctrl.ReCreateTree()
             self.dir_ctrl.ExpandPath(path)
-            filter1 = self.dir_ctrl.FilterIndex
-            for index in (0, len(make_wildcards()) - 1):  # Expand filter until file visible
-                if self.dir_ctrl.GetPath() != path and (index or self.dir_ctrl.FilterIndex):
+            index0 = self.dir_ctrl.FilterIndex
+            # Expand filter from current to all extensions to all files, falling back to current
+            for index in [1, 0, index0] if os.path.isfile(path) else []:
+                if self.dir_ctrl.GetPath() != path:
                     self.dir_ctrl.UnselectAll()
                     self.dir_ctrl.SetFilterIndex(index)
                     self.dir_ctrl.FilterListCtrl.Select(index)
                     self.dir_ctrl.ReCreateTree()
                     self.dir_ctrl.ExpandPath(path)
-            if filter1 != self.dir_ctrl.FilterIndex:
+            if index0 != self.dir_ctrl.FilterIndex:
                 conf.Positions["filefilter_index"] = self.dir_ctrl.FilterIndex
-            conf.SelectedPath = path
+            conf.SelectedPath = self.dir_ctrl.GetPath()
             conf.save()
         finally:
             self.page_main.Thaw()
