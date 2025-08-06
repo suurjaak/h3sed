@@ -622,6 +622,37 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.refresh_dir_ctrl()
 
 
+    def save_file_as(self, path):
+        """Opens file dialog and saves file under new name."""
+        filename1 = filename2 = path
+        title = "Save %s as.." % os.path.split(filename1)[-1]
+        with wx.FileDialog(self,
+            message=title, defaultDir=os.path.split(filename1)[0],
+            defaultFile=os.path.basename(filename1),
+            style=wx.FD_OVERWRITE_PROMPT | wx.FD_SAVE | wx.RESIZE_BORDER
+        ) as dialog:
+            if wx.ID_OK != dialog.ShowModal(): return
+            filename2 = dialog.GetPath()
+        if filename1 == filename2: return
+
+        if filename2 in conf.FilesOpen:
+            wx.MessageBox(
+                "%s is already open in %s." % (filename2, conf.Title),
+                conf.Title, wx.OK | wx.ICON_WARNING
+            )
+            return
+
+        logger.info("Saving %s as %s.", filename1, filename2)
+        try:
+            shutil.copy(filename1, filename2)
+        except Exception as e:
+            logger.exception("Error saving %s as %s.", filename1, filename2)
+            return
+
+        guibase.status("Saved %s." % filename2, flash=conf.StatusShortFlashLength)
+        self.refresh_dir_ctrl(filename2)
+
+
     def open_menu_dir_ctrl(self):
         """Opens popup menu on files list for currently selected path."""
         path = self.dir_ctrl.GetPath()
@@ -636,6 +667,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 self.load_savefile_page(path)
             elif item_folder.Id == event.Id:
                 util.select_file(path)
+            elif item_saveas and item_saveas.Id == event.Id:
+                self.save_file_as(path)
             elif item_delete.Id == event.Id:
                 self.delete_path(path)
             elif item_toggle and item_toggle.Id == event.Id:
@@ -652,6 +685,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         item_open    = wx.MenuItem(menu, -1, "&Open file") if is_file else None
         item_folder  = wx.MenuItem(menu, -1, "&Go to directory")
         item_copy    = wx.MenuItem(menu, -1, "&Copy path")
+        item_saveas  = wx.MenuItem(menu, -1, "Save %s &as" % category) if is_file else None
         item_delete  = wx.MenuItem(menu, -1, "&Delete %s" % category)
         item_toggle  = wx.MenuItem(menu, -1, "&Expand/collapse") if is_dir else None
         item_refresh = wx.MenuItem(menu, -1, "&Refresh list")
@@ -664,6 +698,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu.Append(item_folder)
         menu.Append(item_copy)
         menu.AppendSeparator()
+        menu.Append(item_saveas) if item_saveas else None
         menu.Append(item_delete)
         menu.Append(item_toggle) if item_toggle else None
         menu.Append(item_refresh)
@@ -1423,7 +1458,7 @@ class SavefilePage(wx.Panel):
                     "%s is already open in %s." % (filename2, conf.Title),
                     conf.Title, wx.OK | wx.ICON_WARNING
                 )
-                return
+                return False
         rename = (filename1 != filename2)
         changes = "\n\n".join(p.get_changes(html=False) for p in self.plugins
                               if hasattr(p, "get_changes"))
