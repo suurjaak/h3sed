@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.08.2025
+@modified    07.08.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -611,15 +611,42 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if wx.OK != wx.MessageBox(msg, conf.Title,
                                   wx.OK | wx.CANCEL | wx.CANCEL_DEFAULT | wx.ICON_WARNING):
             return
+
+        if "file" == category:
+            files_blocking = [path] if path in conf.FilesOpen else []
+        else:
+            files_blocking = [f for f in conf.FilesOpen if f.startswith(path + os.sep)]
+        if files_blocking:
+            info = "currently" if "file" == category else util.plural("file", files_blocking)
+            wx.MessageBox("Cannot delete %s, %s open." % (path, info), conf.Title, wx.ICON_ERROR)
+            return
+
         guibase.status("Deleting %s" % path, flash=conf.StatusShortFlashLength, log=True)
         try:
             (shutil.rmtree if "file" != category else os.unlink)(path)
         except Exception as e:
             logger.exception("Error deleting %s.", path)
-            wx.MessageBox("Error deleting %s:\n\n%s" % (path, util.format_exc(e)),
+            wx.MessageBox("Error deleting %s:\n\n%s" % (path, util.format_exc(e)), conf.Title,
                           wx.OK | wx.ICON_ERROR)
+            return
+
+        if "file" == category:
+            files_remove = set([path])
         else:
-            self.refresh_dir_ctrl()
+            files_remove = set(f for f in conf.RecentFiles if f.startswith(path + os.sep))
+            files_remove.update(x[1] for x in conf.RecentHeroes if x[1].startswith(path + os.sep))
+        for filename in files_remove:
+            if filename in conf.RecentFiles:
+                idx = conf.RecentFiles.index(filename)
+                try: self.history_file.RemoveFileFromHistory(idx)
+                except Exception: pass
+                conf.RecentFiles.remove(filename)
+            for item in conf.RecentHeroes[::1]:
+                if item[1] == filename:
+                    self.history_hero.RemoveItem(item)
+                    conf.RecentHeroes.remove(item)
+
+        self.refresh_dir_ctrl()
 
 
     def save_file_as(self, path):
