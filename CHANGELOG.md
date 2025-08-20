@@ -9,6 +9,7 @@ CHANGELOG
 - fix error on opening savefiles from Restoration of Erathia Steam edition (issue #16)
 - fix saving invalid data if Pendant of Reflection or Golden Goose equipped (issue #17)
 - fix showing hero as changed upon opening for some game versions
+- fix showing hero as unchanged on undo or redo after multiple changes
 - fix file extension filter in files list getting narrowed after deleting file
 - retain button focus on skills page properly over removing or reordering
 

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  06.08.2025
+@modified  20.08.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -341,7 +341,7 @@ class Hero(object):
         self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
         ## Deep copy of initial or realized properties
         self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
-        ## Deep copy of iniital or serialized properties
+        ## Deep copy of initial or serialized properties
         self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
         self.ensure_basestats()
 
@@ -362,8 +362,8 @@ class Hero(object):
             prop2 = hero.properties[section].copy()
             self.properties[section] = prop2
             setattr(self, section, prop2)
-        self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
-        self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
+        self.original = AttrDict((k, v.copy()) for k, v in self.original.items())
+        self.realized = AttrDict((k, v.copy()) for k, v in self.realized.items())
         self.ensure_basestats(force=True)
 
 
