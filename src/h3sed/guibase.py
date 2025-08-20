@@ -12,7 +12,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    19.06.2024
+@modified    20.08.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -67,10 +67,11 @@ class GUILogHandler(logging.Handler):
     def emit(self, record):
         """Adds message to GUI log window, or postpones if window unavailable."""
         now = datetime.datetime.now()
-        try: text = record.msg % record.args if record.args else record.msg
+        text = record.msg if isinstance(record.msg, util.text_types) else str(record.msg)
+        try: text = text % record.args if record.args else text
         except UnicodeError:
-            args = tuple(map(util.to_unicode, record.args or ()))
-            text = record.msg % args if args else record.msg
+            try: text = text % tuple(map(util.to_unicode, record.args))
+            except Exception: pass
         if record.exc_info:
             text += "\n\n" + "".join(traceback.format_exception(*record.exc_info))
         if "\n" in text:
