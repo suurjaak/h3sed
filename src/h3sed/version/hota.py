@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  05.08.2025
+@modified  20.08.2025
 ------------------------------------------------------------------------------
 """
 import re
@@ -277,12 +277,12 @@ ARTIFACT_SLOTS = {
     "Demon's Horseshoe":                 ["side"],
     "Diplomat's Cloak":                  ["cloak", "neck", "hand"],
     "Elixir of Life":                    ["side", "hand", "hand"],
-    "Golden Goose":                      ["side"],
+    "Golden Goose":                      ["side", "side", "side"],
     "Hideous Mask":                      ["side"],
     "Horn of the Abyss":                 ["side"],
     "Ironfist of the Ogre":              ["weapon", "helm", "armor", "shield",],
     "Pendant of Downfall":               ["neck"],
-    "Pendant of Reflection":             ["neck"],
+    "Pendant of Reflection":             ["neck", "cloak", "feet"],
     "Plate of Dying Light":              ["armor"],
     "Power of the Dragon Father":        ["armor", "helm", "neck", "weapon", "shield", "hand", "hand", "cloak", "feet"],
     "Ring of Oblivion":                  ["hand"],
