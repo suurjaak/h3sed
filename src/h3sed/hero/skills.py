@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  04.04.2025
+@modified  20.08.2025
 ------------------------------------------------------------------------------
 """
 import logging
@@ -129,11 +129,23 @@ class SkillsPlugin(object):
 
     def render(self):
         """Builds plugin controls into panel. Returns True."""
+        focused_index = -1 # Remember focused position, as all controls get destroyed and rebuilt
+        focused_ctrl = self._panel.FindFocus()
+        if isinstance(focused_ctrl, wx.Button) and focused_ctrl.Parent is self._panel \
+        and isinstance(focused_ctrl.ContainingSizer, wx.BoxSizer): # One of up-down-remove buttons
+            focused_index = self._panel.Children.index(focused_ctrl)
+
         h3sed.gui.build(self, self._panel)
         label = wx.StaticText(self._panel, label=HINT)
         controls.ColourManager.Manage(label, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         self._panel.Sizer.Add(label, border=10, flag=wx.TOP, proportion=1)
         self._panel.Layout()
+
+        if focused_index > len(self._panel.Children) - 1:
+            focused_index -= 5 # Last row removed: shift to previous by label+combo+up+down+remove
+        if focused_index > 0:
+            self._panel.Children[focused_index].SetFocus()
+
         return True
 
 
