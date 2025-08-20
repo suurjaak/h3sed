@@ -56,7 +56,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  06.08.2025
+@modified  20.08.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -153,7 +153,7 @@ class HeroPlugin(object):
         export = wx.Button(indexpanel, label="Expo&rt")
         export.SetBitmap(bmpx)
         export.SetBitmapMargins(0, 0)
-        export.ToolTip = "Export heroes to HTML or CSV"
+        export.ToolTip = "Export heroes to HTML or data file"
         export.Bind(wx.EVT_BUTTON, self.on_export_heroes)
 
         for category in templates.HERO_PROPERTY_CATEGORIES:

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.08.2025
+@modified    20.08.2025
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -35,7 +35,7 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
     """
     Exports heroes to output filename in specified format.
 
-    @param   format      output format, one of ("html", "csv")
+    @param   format      output format, one of ("html", "csv", "json", "yaml")
     @param   heroes      list of Hero instances to export
     @param   savefile    metadata.Savefile instance if any
     @param   categories  hero property categories to export if not all, as {name: bool}
