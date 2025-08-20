@@ -77,7 +77,6 @@ from .. lib import util
 from .. lib import wx_accel
 from .. import conf
 from .. import guibase
-from .. import metadata
 from .. import templates
 
 
@@ -759,7 +758,8 @@ class HeroPlugin(object):
                 state = state0.copy()
                 state.clear()
 
-            if isinstance(state0, type(state)):
+            if isinstance(state0, type(state)) \
+            or isinstance(state0, (list, set)) and isinstance(state, (list, set)):
                 new_states[category] = state
             else:
                 logger.warning("Invalid data type in hero data %r for %s: %s",

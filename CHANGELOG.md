@@ -11,6 +11,7 @@ CHANGELOG
 - fix showing hero as changed upon opening for some game versions
 - fix showing hero as unchanged on undo or redo after multiple changes
 - fix file extension filter in files list getting narrowed after deleting file
+- fix rejecting spells when pasting hero data
 - retain button focus on skills page properly over removing or reordering
 - start with a larger default window size
 
