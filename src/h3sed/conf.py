@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "3.1.dev16"
+Version = "3.1.dev17"
 VersionDate = "20.08.2025"
 
 Frozen = getattr(sys, "frozen", False)
@@ -107,7 +107,7 @@ UpdateCheckLast = None
 WindowPosition = None
 
 """Main window size in pixels, [w, h] or [-1, -1] for maximized."""
-WindowSize = (650, 700)
+WindowSize = (700, 820)
 
 """---------------------------- /FileDirectives ----------------------------"""
 

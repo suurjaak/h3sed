@@ -12,6 +12,7 @@ CHANGELOG
 - fix showing hero as unchanged on undo or redo after multiple changes
 - fix file extension filter in files list getting narrowed after deleting file
 - retain button focus on skills page properly over removing or reordering
+- start with a larger default window size
 
 
 3.0, 2025-04-09
