@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    05.04.2025
+@modified    22.08.2025
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -274,6 +274,9 @@ class OrderedSet(set):
 
     def __eq__(self, other):
         return isinstance(other, type(self)) and set(self._vals) == set(other._vals)
+
+    def __ne__(self, other):
+        return not (self == other)
 
     def __len__(self): return len(self._data)
 

@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.1, 2025-08-20
+3.1, 2025-08-22
 ---------------
 - show duplicate hero names with a counter suffix
 - add save-as option to files list context menu
