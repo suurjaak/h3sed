@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    07.08.2025
+@modified    22.08.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -672,7 +672,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         logger.info("Saving %s as %s.", filename1, filename2)
         try:
             shutil.copy(filename1, filename2)
-        except Exception as e:
+        except Exception:
             logger.exception("Error saving %s as %s.", filename1, filename2)
             return
 
