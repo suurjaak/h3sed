@@ -3,6 +3,7 @@ CHANGELOG
 
 3.1, 2025-08-22
 ---------------
+- order equipment slots always by position not alphabet
 - show duplicate hero names with a counter suffix
 - add save-as option to files list context menu
 - remove files from recent files and heroes lists upon deleting

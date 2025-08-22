@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  20.08.2025
+@modified  22.08.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -168,8 +168,8 @@ class Army(TypedArray, DataClass):
 class Equipment(SlotsDict, DataClass):
     """Hero equipment property."""
     __slots__ = {k: make_artifact_cast(k) for k in (
-        "armor", "cloak", "feet", "helm", "lefthand", "neck", "righthand",
-        "shield", "side1", "side2", "side3", "side4", "side5", "weapon"
+        "helm", "neck", "armor", "weapon", "shield", "lefthand", "righthand", "cloak", "feet",
+        "side1", "side2", "side3", "side4", "side5",
     )}
 
     def validate_update(self, *args, **kwargs):
