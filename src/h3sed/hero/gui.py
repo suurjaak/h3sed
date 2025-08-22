@@ -56,7 +56,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  20.08.2025
+@modified  22.08.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -105,7 +105,7 @@ class HeroPlugin(object):
         self._heropanel  = None    # Container for hero components
         self._hero_yamls = {}      # {hero: {full, originals, currents}}
         self._pages_visited = []   # Visited tabs, as [hero index in self._heroes or None if index page]
-        self._ignore_events = False  # For ignoring change events from programmatic selections
+        self._ignore_events = False  # For ignoring change events from programmatic selections et al
         self._index = {
             "herotexts": [],       # [hero contents to search in, as [{category: plaintext}] ]
             "html":      "",       # Current hero search results HTML
@@ -185,6 +185,7 @@ class HeroPlugin(object):
         tb = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
 
         combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
+        combo.Bind(wx.EVT_KEY_DOWN, self.on_key_select)
 
         CTRL = "Cmd" if "darwin" == sys.platform else "Ctrl"
         bmp1 = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR, (20, 20))
@@ -604,6 +605,16 @@ class HeroPlugin(object):
                           conf.Title, wx.OK | wx.ICON_ERROR)
             return
         self.select_hero(index, status=index not in self._pages.values())
+
+
+    def on_key_select(self, event):
+        """Handler for keypress in hero combobox, queues restoring selection if Escape pressed."""
+        event.Skip()
+        if event.KeyCode == wx.WXK_ESCAPE: # Workaround for Escape selecting keyboard-focused item
+            prev_index = self._ctrls["hero"].Selection
+            self._ignore_events = True
+            wx.CallAfter(self._ctrls["hero"].Select, prev_index)
+            wx.CallAfter(setattr, self, "_ignore_events", False)
 
 
     def on_export_heroes(self, event):
