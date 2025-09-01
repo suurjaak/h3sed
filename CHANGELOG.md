@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.1, 2025-08-22
+3.1, 2025-09-01
 ---------------
 - order equipment slots always by position not alphabet
 - show duplicate hero names with a counter suffix
