@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  22.08.2025
+@modified  13.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -179,33 +179,16 @@ class Equipment(SlotsDict, DataClass):
         SlotsDict.validate_update() override.
         """
         errors = []
-
-        location_to_slot = metadata.Store.get("equipment_slots", version=self.get_version())
-        artifact_to_slots = metadata.Store.get("artifact_slots", version=self.get_version())
-
         data = dict(args[0], **kwargs) if args else kwargs
-        combined = dict(self, **data)
-        slots_free, slots_content = collections.defaultdict(int), collections.defaultdict(list)
-        for location in self:
-            slot = location_to_slot[location]
-            slots_free[slot] += 1
-        for artifact in combined.values():
-            for slot in artifact_to_slots.get(artifact, ()):
-                slots_free[slot] -= 1
-                slots_content[slot].append(artifact)
-
-        for location, artifact in data.items():
-            slot_conflicts = {} # {slot: [other artifacts]}
-            for slot in artifact_to_slots.get(artifact, ()):
-                if slots_free[slot] < 0:
-                    others = list(slots_content[slot])
-                    others.remove(artifact)
-                    slot_conflicts[slot] = others
+        eq2 = dict(self)
+        eq2.update((location, None) for location in data)
+        for location in filter(data.get, self):
+            artifact = data[location]
+            selected_locations, slot_conflicts = self.solve_locations(artifact, location, eq2)
             if slot_conflicts:
-                lines = ["- %s (by %s)" % (slot, ", ".join(others))
-                         for slot, others in slot_conflicts.items()]
-                errors.append("Cannot don %s, required slot taken:\n\n%s" % 
-                              (artifact, "\n".join(lines)))
+                errors.append(self.format_conflict(artifact, location, slot_conflicts, eq2))
+            else:
+                eq2[location] = artifact
         return "\n\n".join(errors) if errors else None
 
 
@@ -224,6 +207,111 @@ class Equipment(SlotsDict, DataClass):
             v1, v2 = hero.stats[attribute], min(max(MIN, hero.basestats[attribute] + value), MAX)
             if v1 != v2: hero.stats[attribute] = v2
 
+
+    def solve_locations(self, artifact, location=None, equipment=None):
+        """
+        Analyzes whether and how artifact can be donned, either at any suitable free location,
+        or on given location replacing current artifact if any, returns (locations, conflicts).
+
+        @param   equipment  optional Equipment or data dictionary to use if not self
+        @return             [primary location and other selected locations for artifact on success],
+                            {slot: [primary location of all conflicting artifacts in slot on error]}
+        """
+        selected_locations, conflicts = {}, {}
+
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.get_version())
+        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.get_version())
+        SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
+                             for slot in LOCATION_TO_SLOT.values()}
+
+        if location and location not in SLOT_TO_LOCATIONS[ARTIFACT_TO_SLOTS[artifact][0]]:
+            raise ValueError("Cannot equip %s at %s slot" % (artifact, location)) # Wrong location
+        if any(slot not in SLOT_TO_LOCATIONS for slot in ARTIFACT_TO_SLOTS[artifact]):
+            raise ValueError("Cannot equip %s" % artifact) # Like The Grail: only in inventory
+
+        eq = dict(self if equipment is None else equipment)
+        if location is not None: eq[location] = None
+
+        conflict_locations = {} # {location: primary location of conflicting artifact}
+        reserved_locations = self.get_reserved_locations(desired_location=location, equipment=eq)
+        for i, artifact_slot in enumerate(ARTIFACT_TO_SLOTS[artifact]):
+            matched = False
+            slot_locations = [location] if location and not i else SLOT_TO_LOCATIONS[artifact_slot]
+            # Reverse, as secondary side slots get reserved from last free to first
+            for location_candidate in slot_locations[::-1 if i else 1]:
+                if eq[location_candidate] is None \
+                and location_candidate not in selected_locations \
+                and location_candidate not in reserved_locations:
+                    selected_locations[location_candidate] = artifact_slot
+                    matched = True
+                    break # for location_candidate
+            if matched: continue # for i, artifact_slot
+
+            for location_candidate in slot_locations:
+                if eq[location_candidate] is not None:
+                    conflict_locations[location_candidate] = location_candidate
+                elif location_candidate in reserved_locations:
+                    conflict_locations[location_candidate] = reserved_locations[location_candidate]
+                    
+        if len(selected_locations) != len(ARTIFACT_TO_SLOTS[artifact]):
+            for conflicting_location, artifact_primary_slot in conflict_locations.items():
+                slot = LOCATION_TO_SLOT[conflicting_location]
+                conflicts.setdefault(slot, []).append(artifact_primary_slot)
+
+        return ([] if conflicts else list(selected_locations)), conflicts
+
+
+    def get_reserved_locations(self, desired_location=None, equipment=None):
+        """
+        Returns locations taken by combination artifacts, as {reserved location: primary location}.
+
+        @param   desired_location  optional location to keep free if alternatives possible
+        @param   equipment         optional Equipment or data dictionary to use if not self
+        """
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.get_version())
+        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.get_version())
+        SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
+                             for slot in LOCATION_TO_SLOT.values()}
+
+        reserved_locations = {} # {reserved location: primary location holding combo item}
+        eq = dict(self if equipment is None else equipment)
+        for primary_location, artifact in eq.items():
+            slots = ARTIFACT_TO_SLOTS.get(artifact, [])
+            for slot in slots[1:]: # Skip artifact first slot as primary
+                reserved = False
+                # Reverse, as secondary side slots get reserved from last free to first
+                for combo_location in SLOT_TO_LOCATIONS[slot][::-1]:
+                    if eq[combo_location] is None and combo_location not in reserved_locations:
+                        if desired_location is None or combo_location != desired_location:
+                            reserved_locations[combo_location] = primary_location
+                            reserved = True
+                            break # for combo_location
+                if not reserved and desired_location and desired_location in SLOT_TO_LOCATIONS[slot]:
+                    # Desired location is reserved by existing artifact without alternative
+                    reserved_locations[desired_location] = primary_location
+        return reserved_locations
+
+
+    def format_conflict(self, artifact, location, slot_conflicts, equipment=None):
+        """
+        Returns error string for slot conflict on equipping given artifact in given location.
+
+        @param   equipment  optional Equipment or data dictionary to use if not self
+        """
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.get_version())
+        eq = dict(self if equipment is None else equipment)
+        lines = []
+        for slot, others in slot_conflicts.items():
+            needed_count = sum(s == slot for s in ARTIFACT_TO_SLOTS[artifact][1:])
+            countstr = "; need %s free" % needed_count if needed_count > 1 else ""
+            items, conflict_counts = [], collections.Counter(others)
+            for location in others:
+                count = conflict_counts.pop(location, None)
+                if count:
+                    items.append("%s%s" % (eq[location], " x %s" % count if count > 1 else ""))
+            lines.append("- %s (by %s)%s" % (slot, ", ".join(items), countstr))
+        return "Cannot equip %s on %s, required slot taken:\n\n%s" % \
+               (artifact, location, "\n".join(lines))
 
 
 class Attributes(SlotsDict, DataClass):
@@ -275,7 +363,7 @@ class Inventory(TypedArray, DataClass):
                 elif "slot" == name:
                     sortkeys.append(lambda x: SLOT_ORDER.index(get_primary_slot(x)))
             items.sort(key=lambda x: tuple(f(x) for f in sortkeys))
-        if reverse:  items = items[::-1]
+        if reverse: items = items[::-1]
         result = type(self)()
         result.extend(items)
         return result
@@ -372,8 +460,8 @@ class Hero(object):
         if self.basestats and not force: return
         ARTIFACT_STATS = metadata.Store.get("artifact_stats", version=self.version)
         diff = [0] * len(metadata.PRIMARY_ATTRIBUTES)
-        for artifact_name in filter(ARTIFACT_STATS.get, self.equipment.values()):
-            diff = [a + b for a, b in zip(diff, ARTIFACT_STATS[artifact_name])]
+        for artifact in filter(ARTIFACT_STATS.get, self.equipment.values()):
+            diff = [a + b for a, b in zip(diff, ARTIFACT_STATS[artifact])]
         for attribute_name, value in zip(metadata.PRIMARY_ATTRIBUTES, diff):
             self.basestats[attribute_name] = self.stats[attribute_name] - value
 
@@ -459,7 +547,7 @@ class Hero(object):
 
         @param   texts     texts to match in any property value
         @param   keywords  specific keywords to match, like "army" or "skill" or "spell";
-                           each valu may be a collection of values like list or tuple
+                           each value may be a collection of values like list or tuple
         """
         matches = set() # {patterns that found match}
         text_regexes = [re.compile(re.escape(str(t)), re.IGNORECASE) for t in texts]
