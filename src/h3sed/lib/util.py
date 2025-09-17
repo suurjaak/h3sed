@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    22.08.2025
+@modified    17.09.2025
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -315,12 +315,14 @@ class SlotsDict(dict):
         bad = next((key for key in data if key not in self.__slots__), None)
         if bad: raise TypeError("%r is an invalid argument for %s()" % (bad, type(self).__name__))
         if not self.__required__: # Populate all keys with default values
-            self.update(((k, None) for k in self.__slots__))
+            dict.update(self, ((key, cast()) for key, cast in self.__slots__.items()))
         if data: self.update(data)
 
     def copy(self):
         """Returns a deep copy of this."""
-        return type(self)(self)
+        result = type(self)()
+        result._update(self.items())
+        return result
 
     def clear(self):
         """Clears all items, or populates with defaults if blanks allowed."""
@@ -385,24 +387,29 @@ class SlotsDict(dict):
                     value = cast(value)
                 items.append((key, value))
 
-        error = self.validate_update(items)
-        if error: raise ValueError(error)
-
-        for key, value in items:
-            dict.__setitem__(self, key, value)
-
-        if not self.__required__: return
-        if any(self.get(k) is None for k in self.__required__) \
-        or any(self.get(k, self) is None for k in self.__slots__):
-            dict.clear(self)
-            return
-        for key in self.__slots__:
-            if key not in self:
-                dict.__setitem__(self, key, self.__slots__[key]())
+        self._update(items, validate=True)
 
     def validate_update(self, *args, **kwargs):
         """Returns error string if given update would be invalid (stub for subclass)."""
         return None
+
+    def _update(self, items, validate=False):
+        """Inner update() taking an iterable of keys and values, with optional validation."""
+        items = list(items)
+        error = self.validate_update(items) if validate else None
+        if error: raise ValueError(error)
+
+        for key, value in items:
+            dict.__setitem__(self, key, value)
+        if not self.__required__: return
+
+        if any(self.get(k) is None for k in self.__required__) \
+        or any(self.get(k, self) is None for k in self.__slots__):
+            dict.clear(self) # Clear all if update cleared a required key
+            return
+        for key in self.__slots__:
+            if key not in self: # Populate all missing keys with defaults
+                dict.__setitem__(self, key, self.__slots__[key]())
 
     def __getattr__(self, name):
         """Returns value if name in slots else attribute; raises AttributeError if unknown name."""
@@ -547,7 +554,7 @@ class TypedArray(list):
                           if all(getattr(x, k, None) == v for k, v in attributes.items())), None)
             if index is None: raise ValueError("%s is not in list" % attributes)
             return index
-        return list.index(self, value[0]) # Raises valueerror
+        return list.index(self, value[0]) # Raises ValueError
 
     def insert(self, index, *value, **attributes):
         """Inserts value before index, drops last array element if overflow."""
