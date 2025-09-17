@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  13.09.2025
+@modified  17.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -582,6 +582,162 @@ class Hero(object):
         process_keywords(dict(self.properties, name=self.name))
         return all(r in matches for r in text_regexes) and \
                all((k, r) in matches for k, rr in kw_regexes.items() for r in rr)
+
+
+    def make_artifact_swap(self, location, inventory_index=None):
+        """
+        Returns result of swapping contents of equipment location with inventory index,
+        as a new pair of (Equipment, Inventory).
+
+        @param   inventory_index  if None, equipped artifact at location is sent to top of inventory
+        """
+        eq2, inv2 = self.equipment.copy(), self.inventory.copy()
+        inventory_filled_size = sum(map(bool, inv2))
+        noop = False
+        if eq2[location]: noop = (inventory_index is None and inventory_filled_size >= len(inv2))
+        else:             noop = (inventory_index is None or  inv2[inventory_index] is None)
+        if noop:
+            return (eq2, inv2)
+
+        if inventory_index is None:
+            inventory_index = 0
+            inv2 = inv2.make_compact()
+            inv2.insert(inventory_index, None)
+
+        artifact1, artifact2 = eq2[location], inv2[inventory_index]
+        if artifact2:
+            artifact_locations, slot_conflicts = eq2.solve_locations(artifact2, location)
+            if slot_conflicts:
+                raise ValueError(eq2.format_conflict(artifact2, location, slot_conflicts))
+        eq2[location] = artifact2
+        inv2[inventory_index] = artifact1
+        return (eq2, inv2)
+
+
+
+    def make_artifacts_transfer(self, to_inventory=True):
+        """
+        Returns result of either sending all possible equipped artifacts to inventory,
+        or equipping all possible inventory artifacts, as a new pair of (Equipment, Inventory).
+        """
+        eq2, inv2 = self.equipment.copy(), self.inventory.copy()
+        inventory_filled_size = sum(map(bool, inv2))
+        noop = False
+        if to_inventory:
+            noop = (inventory_filled_size >= len(inv2) or not any(eq2.values()))
+        else: noop = all(eq2.values())
+        if noop:
+            return (eq2, inv2)
+
+        if to_inventory:
+            inv2 = inv2.make_compact()
+            artifacts_to_inventory, locations_emptied = [], []
+            for location, artifact in list(eq2.items()):
+                if not artifact: continue # for location,
+                locations_emptied.append(location)
+                artifacts_to_inventory.append(artifact)
+                if inventory_filled_size + len(artifacts_to_inventory) >= len(inv2):
+                    break # for location,
+            inv2[:0] = artifacts_to_inventory
+            for location in locations_emptied: eq2[location] = None
+            return (eq2, inv2)
+
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
+        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
+        SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
+                             for slot in LOCATION_TO_SLOT.values()}
+
+        artifacts_to_equipment = []
+        for inventory_index, artifact in enumerate(list(inv2)):
+            if artifact is None: continue # for inventory_index,
+            if any(slot not in SLOT_TO_LOCATIONS for slot in ARTIFACT_TO_SLOTS[artifact]):
+                 continue # for inventory_index,
+            artifact_locations, slot_conflicts = eq2.solve_locations(artifact)
+            if not slot_conflicts:
+                eq2[artifact_locations[0]] = artifact
+                inv2[inventory_index] = None
+                artifacts_to_equipment.append(artifact)
+        if artifacts_to_equipment:
+            inv2 = inv2.make_compact()
+        return (eq2, inv2)
+
+
+    def make_equipment_swap(self):
+        """
+        Returns result of swapping current equipment artifacts with suitable inventory artifacts,
+        as a new pair of (Equipment, Inventory).
+        """
+        eq2, inv2 = self.equipment.copy(), self.inventory.copy()
+
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
+        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
+        SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
+                             for slot in LOCATION_TO_SLOT.values()}
+        inventory_slots = {slot: [] for slot in set(LOCATION_TO_SLOT.values())} # {slot: [index, ]}
+        for inventory_index, artifact in enumerate(inv2):
+            if artifact is None: continue # for inventory_index,
+            inventory_slots[ARTIFACT_TO_SLOTS[artifact][0]].append(inventory_index)
+        reserved_locations = eq2.get_reserved_locations()
+
+        locations_handled = set()
+        artifacts_to_equipment, artifacts_to_inventory = [], []
+        inventory_filled_size = sum(map(bool, inv2))
+        for location in list(eq2):
+            if location in locations_handled: continue # for location
+            candidates = inventory_slots[LOCATION_TO_SLOT[location]]
+            if not candidates: continue # for location
+
+            artifact1, artifacts_removed, inventory_index2 = eq2[location], [], None
+            locations_emptied = set()
+            for inventory_index in candidates:
+                artifact2 = inv2[inventory_index]
+                if artifact1 == artifact2: continue # for inventory_index
+
+                artifact_locations = [] # Locations selected, like ["lefthand", "neck", "cloak"]
+                for artifact_slot in ARTIFACT_TO_SLOTS[artifact2]:
+                    # Like ["hand", "neck", "cloak"] for "Ring of the Magi"
+                    for location_candidate in SLOT_TO_LOCATIONS[artifact_slot]:
+                        # Like [["lefthand", "righthand"], ["neck"], ["cloak"]]
+                        if location_candidate not in locations_handled \
+                        and location_candidate not in artifact_locations:
+                            artifact_locations.append(location_candidate)
+                            break # for location_candidate
+                if len(artifact_locations) != len(ARTIFACT_TO_SLOTS[artifact2]):
+                    continue # for inventory_index
+
+                for location_selected in artifact_locations:
+                    if eq2[location_selected] is not None: locations_emptied.add(location_selected)
+                    elif location_selected in reserved_locations:
+                        locations_emptied.add(reserved_locations[location_selected])
+                artifacts_removed = [eq2[loc] for loc in locations_emptied]
+                if inventory_filled_size + len(artifacts_removed) - 1 < len(inv2):
+                    inventory_index2 = inventory_index
+                    break # for inventory_index
+
+            if inventory_index2 is None:
+                continue # for location
+
+            locations_affected = set(artifact_locations) | locations_emptied
+            for location_to_empty in locations_emptied:
+                eq2[location_to_empty] = None
+            eq2[location] = artifact2
+            inv2[inventory_index2] = None
+
+            candidates.remove(inventory_index2)
+            for reserved, primary in list(reserved_locations.items()):
+                if primary in locations_affected or reserved in locations_affected:
+                    reserved_locations.pop(reserved, None)
+            locations_handled.update(artifact_locations)
+            artifacts_to_equipment.append(artifact2)
+            artifacts_to_inventory.extend(artifacts_removed)
+            inventory_filled_size += len(artifacts_removed) - 1
+
+        if artifacts_to_equipment or artifacts_to_inventory:
+            inv2 = inv2.make_compact()
+        if artifacts_to_inventory:
+            inv2[:0] = artifacts_to_inventory
+
+        return (eq2, inv2)
 
 
     def __eq__(self, other):
