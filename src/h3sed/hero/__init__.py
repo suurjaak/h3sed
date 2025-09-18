@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  17.09.2025
+@modified  18.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -139,7 +139,65 @@ class DataClass(object):
         pass
 
 
-class ArmyStack(SlotsDict, DataClass):
+class SlotCheckerMixin(object):
+    """SlotsDict/TypedArray mixin for __contains__() by nested property, e.g. "orc" in hero.army."""
+
+    def __contains__(self, elem):
+        """Returns whether value is present as element or in any structured property."""
+        cls = type(self) if isinstance(self, SlotsDict) else self.cls
+        if isinstance(self, TypedArray) and isinstance(elem, cls):
+            return list.__contains__(self, elem)
+
+        if isinstance(elem, str) and elem in cls.__slots__:
+            items = self if isinstance(self, TypedArray) else [self]
+            return any(dict.__contains__(x, elem) for x in items)
+
+        data = {}
+        for key, cast in cls.__slots__.items():
+            try: data[key] = cast(elem)
+            except Exception: pass
+        if not data: return False
+        for item in (self if isinstance(self, TypedArray) else [self]):
+            if any(data[k] == item.get(k, item) for k in data): return True
+        return False
+
+
+class TypedArrayCheckerMixin(SlotCheckerMixin):
+    """TypedArray mixin for index() by nested property, e.g. "luck" in hero.skills."""
+
+    def index(self, *value, **attributes):
+        """
+        Returns index of value; raises ValueError if not present.
+
+        @param   value       value to find, if not using attributes
+        @param   attributes  attributes to match in structured properties
+        """
+        if not value and not attributes:
+            raise TypeError("index expected at least 1 argument, got 0")
+        if attributes:
+            if any(k not in self.cls.__slots__ for k in attributes):
+                raise ValueError("%s is not in list" % attributes)
+            try: data = {k: self.cls.__slots__[k](v) for k, v in attributes.items()}
+            except Exception: raise ValueError("%s is not in list" % attributes)
+            return next(i for i, x in enumerate(self) if all(data[k] == x.get(k, x) for k in data))
+
+        elem = value[0]
+        if isinstance(elem, self.cls):
+            return list.index(self, elem)
+        if isinstance(elem, str) and elem in self.cls.__slots__:
+            return any(dict.__contains__(x, elem) for x in self)
+
+        data = {}
+        for key, cast in self.cls.__slots__.items():
+            try: data[key] = cast(elem)
+            except Exception: pass
+        if not data: raise ValueError("%s is not in list" % (elem, ))
+        for i, item in enumerate(self):
+            if any(data[k] == item.get(k, item) for k in data): return i
+        raise ValueError("%s is not in list" % (elem, ))
+
+
+class ArmyStack(SlotCheckerMixin, SlotsDict, DataClass):
     """Hero army single entry."""
     __slots__ = {"name":  make_string_cast("creatures"),
                  "count": make_integer_cast("army.count")}
@@ -147,7 +205,7 @@ class ArmyStack(SlotsDict, DataClass):
     __required__ = ("name", )
 
 
-class Skill(SlotsDict, DataClass):
+class Skill(SlotCheckerMixin, SlotsDict, DataClass):
     """Hero skill single entry."""
     __slots__ = {"name":  make_string_cast("skills"),
                  "level": make_string_cast("skill_levels", default=True)}
@@ -155,7 +213,7 @@ class Skill(SlotsDict, DataClass):
     __required__ = ("name", )
 
 
-class Army(TypedArray, DataClass):
+class Army(TypedArrayCheckerMixin, TypedArray, DataClass):
     """Hero army property."""
 
     def __init__(self):
@@ -165,7 +223,7 @@ class Army(TypedArray, DataClass):
         TypedArray.__init__(self, cls=dataclass, size=minmax[1], default=dataclass)
 
 
-class Equipment(SlotsDict, DataClass):
+class Equipment(SlotCheckerMixin, SlotsDict, DataClass):
     """Hero equipment property."""
     __slots__ = {k: make_artifact_cast(k) for k in (
         "helm", "neck", "armor", "weapon", "shield", "lefthand", "righthand", "cloak", "feet",
@@ -191,7 +249,6 @@ class Equipment(SlotsDict, DataClass):
                 eq2[location] = artifact
         return "\n\n".join(errors) if errors else None
 
-
     def realize(self, hero=None):
         """Updates hero primary attributes from changed equipment, if hero given."""
         if not hero: return
@@ -206,7 +263,6 @@ class Equipment(SlotsDict, DataClass):
             MIN, MAX = HERO_RANGES[attribute]
             v1, v2 = hero.stats[attribute], min(max(MIN, hero.basestats[attribute] + value), MAX)
             if v1 != v2: hero.stats[attribute] = v2
-
 
     def solve_locations(self, artifact, location=None, equipment=None):
         """
@@ -260,7 +316,6 @@ class Equipment(SlotsDict, DataClass):
 
         return ([] if conflicts else list(selected_locations)), conflicts
 
-
     def get_reserved_locations(self, desired_location=None, equipment=None):
         """
         Returns locations taken by combination artifacts, as {reserved location: primary location}.
@@ -290,7 +345,6 @@ class Equipment(SlotsDict, DataClass):
                     # Desired location is reserved by existing artifact without alternative
                     reserved_locations[desired_location] = primary_location
         return reserved_locations
-
 
     def format_conflict(self, artifact, location, slot_conflicts, equipment=None):
         """
@@ -369,7 +423,7 @@ class Inventory(TypedArray, DataClass):
         return result
 
 
-class Skills(TypedArray, DataClass):
+class Skills(TypedArrayCheckerMixin, TypedArray, DataClass):
     """Hero skills property."""
 
     def __init__(self):
@@ -614,7 +668,6 @@ class Hero(object):
         return (eq2, inv2)
 
 
-
     def make_artifacts_transfer(self, to_inventory=True):
         """
         Returns result of either sending all possible equipped artifacts to inventory,
@@ -651,7 +704,7 @@ class Hero(object):
         for inventory_index, artifact in enumerate(list(inv2)):
             if artifact is None: continue # for inventory_index,
             if any(slot not in SLOT_TO_LOCATIONS for slot in ARTIFACT_TO_SLOTS[artifact]):
-                 continue # for inventory_index,
+                continue # for inventory_index,
             artifact_locations, slot_conflicts = eq2.solve_locations(artifact)
             if not slot_conflicts:
                 eq2[artifact_locations[0]] = artifact
