@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    17.09.2025
+@modified    18.09.2025
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -365,8 +365,8 @@ class SlotsDict(dict):
         If blanks not allowed and the only required key given, populates other keys with defaults.
         If blanks not allowed and a non-required key given, does nothing.
         """
-        if key not in self: self[key] = value
-        return self[key] if key in self else value
+        if not dict.__contains__(self, key): self[key] = value
+        return self[key] if dict.__contains__(self, key) else value
 
     def update(self, iterable=None, **kwargs):
         """
@@ -408,13 +408,13 @@ class SlotsDict(dict):
             dict.clear(self) # Clear all if update cleared a required key
             return
         for key in self.__slots__:
-            if key not in self: # Populate all missing keys with defaults
+            if not dict.__contains__(self, key): # Populate all missing keys with defaults
                 dict.__setitem__(self, key, self.__slots__[key]())
 
     def __getattr__(self, name):
         """Returns value if name in slots else attribute; raises AttributeError if unknown name."""
         if name in self.__slots__:
-            if name not in self:
+            if not dict.__contains__(self, name):
                 raise AttributeError("%r attribute %r is unset" % (type(self).__name__, name))
             return self[name]
         return self.__getattribute__(name)
@@ -477,7 +477,7 @@ class SlotsDict(dict):
 
         if not self.__required__: return
         for key2 in self.__slots__:
-            if key2 in self: continue # for key2
+            if dict.__contains__(self, key2): continue # for key2
             if key2 in self.__required__:
                 dict.clear(self)
                 break # for key2
@@ -549,12 +549,17 @@ class TypedArray(list):
         @param   value       value to find, if not using structured attributes
         @param   attributes  attributes to match in structured elements
         """
+        if not value and not attributes:
+            raise TypeError("index expected at least 1 argument, got 0")
         if attributes:
-            index = next((i for i, x in enumerate(self)
-                          if all(getattr(x, k, None) == v for k, v in attributes.items())), None)
-            if index is None: raise ValueError("%s is not in list" % attributes)
-            return index
-        return list.index(self, value[0]) # Raises ValueError
+            try:
+                item = self._cls(**attributes)
+                return next(i for i, x in enumerate(self)
+                            if all(getattr(x, k, None) == getattr(item, k) for k in attributes))
+            except Exception: raise ValueError("%s is not in list" % attributes)
+        try: item = self._cls(value[0])
+        except Exception: raise ValueError("%s is not in list" % (value[0], ))
+        return list.index(self, item) # Raises ValueError
 
     def insert(self, index, *value, **attributes):
         """Inserts value before index, drops last array element if overflow."""
@@ -618,9 +623,17 @@ class TypedArray(list):
         if value and value[0] != blank: return self._cls(value[0])
         return blank
 
+    @property
+    def cls(self): return self._cls
+
     def __add__(self, other):
         """Returns new array with empty elements populated from iterable."""
         return self.spawn(other)
+
+    def __contains__(self, item):
+        """Returns whether element is in list."""
+        try: return bool(self.index(item)) or True # Raises ValueError
+        except Exception: return False
 
     def __delitem__(self, index):
         """Clears element value at index or slice."""
