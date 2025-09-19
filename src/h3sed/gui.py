@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.09.2025
+@modified    19.09.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1979,7 +1979,7 @@ def build(plugin, panel):
 
 
         elif "checklist" == prop.get("type"):
-            dx, dy = (1, 0) if prop.get("vertical") else (0, 1)
+            drow, dcol = (1, 0) if prop.get("vertical") else (0, 1)
             maxrows, maxcols = math.ceil(len(prop["choices"]) / prop["columns"]), prop["columns"]
             row, column = row0, col0 = count, 0
             for value in prop["choices"]:
@@ -1988,9 +1988,9 @@ def build(plugin, panel):
                 c.Bind(wx.EVT_CHECKBOX, make_check_handler(c, prop, value))
                 sizer.Add(c, pos=(row, column), border=10, flag=wx.TOP if row == row0 else 0)
                 build_result.append(c)
-                row, column = row + dx, column + dy
-                if   dx and row    > maxrows:  row, column = row0,    column + 1
-                elif dy and column >= maxcols: row, column = row + 1, col0
+                row, column = row + drow, column + dcol
+                if   drow and row    > maxrows:  row, column = row0,    column + 1
+                elif dcol and column >= maxcols: row, column = row + 1, col0
             count += maxrows
 
 

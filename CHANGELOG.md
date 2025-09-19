@@ -6,6 +6,7 @@ CHANGELOG
 - add button with mass change options menu to hero property tabs
 - add individual row options menu to hero skills, army, equipment, and inventory
 - add option to refill hero movement points
+- add info text to spells on missing spellbook
 
 
 3.1, 2025-09-01

@@ -12,6 +12,7 @@ Released under the MIT License.
 """
 import functools
 import logging
+import math
 
 try: import wx
 except ImportError: wx = None
@@ -94,9 +95,21 @@ class SpellsPlugin(object):
 
     def render(self):
         """Creates controls from state, disabling all if no spellbook. Returns True."""
-        h3sed.gui.build(self, self._panel)
+        checkboxes = h3sed.gui.build(self, self._panel)
         if not self._hero.stats.spellbook:
-            for c in self._panel.Children: c.Disable()
+            for c in checkboxes: c.Disable()
+
+            prop = DATAPROPS[0]
+            sizer = checkboxes[-1].ContainingSizer
+            drow, dcol = (1, 0) if prop.get("vertical") else (0, 1)
+            maxrows, maxcols = math.ceil(len(checkboxes) / prop["columns"]), prop["columns"]
+            lastrow, lastcolumn = sizer.GetItemPosition(checkboxes[-1])
+            row, column = lastrow + drow * 2, lastcolumn + dcol
+            if   drow and row    > maxrows:  row, column = 0, column + 1
+            elif dcol and column >= maxcols: row, column = row + 1, 0
+            infolabel = wx.StaticText(self._panel, label="Hero has no spellbook.")
+            sizer.Add(infolabel, pos=(row, column), border=10)
+            sizer.Layout()
         return True
 
 
