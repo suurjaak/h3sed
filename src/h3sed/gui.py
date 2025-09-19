@@ -1717,7 +1717,8 @@ def build(plugin, panel):
             if None not in (key, target) and util.get(target, key) == value:
                 return result
             if callable(getattr(plugin, "on_change", None)):
-                result = plugin.on_change(myprops, row, ctrl, value)
+                changeargs = {} if rowindex is None else dict(rowindex=rowindex)
+                result = plugin.on_change(myprops, row, ctrl, value, **changeargs)
             elif None not in (key, target):
                 target[key], result = value, True
             if result: plugin.parent.patch()
@@ -1814,7 +1815,8 @@ def build(plugin, panel):
                 return False
             value = {} if isinstance(value0, dict) else None
             if callable(getattr(plugin, "on_change", None)):
-                plugin.on_change(myprops, target, ctrl, value)
+                changeargs = {} if rowindex is None else dict(rowindex=rowindex)
+                plugin.on_change(myprops, target, ctrl, value, **changeargs)
             else:
                 target[key] = value
             wx.PostEvent(panel, PluginEvent(panel.Id, action="render", name=plugin.name))
@@ -1860,14 +1862,19 @@ def build(plugin, panel):
             event.EventObject.PopupMenu(menu, pos=(event.EventObject.Size.Width, 0))
         return handler
 
-    def make_info(prop, sizer, pos):
-        value = prop["info"](plugin, prop, state) if callable(prop["info"]) else prop["info"]
+    def make_info(prop, sizer, pos=None, rowindex=None):
+        value = prop["info"]
+        if callable(value):
+            valueargs = {} if rowindex is None else dict(rowindex=rowindex)
+            value = value(plugin, prop, state, **valueargs)
         value, tooltip = (value * 2)[:2] if isinstance(value, (list, tuple)) else (value, value)
         c = wx.StaticText(panel, label=value)
         ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         c.ToolTip = tooltip
-        sizer.Add(c, pos=pos, flag=wx.ALIGN_CENTER_VERTICAL)
-        build_result["%s-info" % prop["name"]] = c
+        if isinstance(sizer, wx.GridBagSizer): sizerargs = dict(pos=pos, flag=wx.ALIGN_CENTER_VERTICAL)
+        else: sizerargs = dict(border=10, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(c, **sizerargs)
+        if prop.get("name"): build_result["%s-info" % prop["name"]] = c
 
     def make_extra(prop, sizer, pos):
         opts = prop["extra"]
@@ -1932,7 +1939,7 @@ def build(plugin, panel):
                         else: resultitem = c
                 if resultitem: resultitems.append(resultitem)
 
-                if any(prop.get(k) for k in ("menu", "orderable", "removable", "nullable")):
+                if any(prop.get(k) for k in ("menu", "orderable", "removable", "nullable", "info")):
                     bsizer.AddSpacer(10)
                 if prop.get("menu"):
                     c = wx.Button(panel, label="..", size=(20 + BTN_WPLUS, -1), name="options")
@@ -1957,6 +1964,8 @@ def build(plugin, panel):
                     c.ToolTip = "Clear item"
                     c.Bind(wx.EVT_BUTTON, make_clear_handler(c, prop, rowindex=i))
                     bsizer.Add(c)
+                if prop.get("info"):
+                    make_info(prop, bsizer, rowindex=i)
                 if bsizer.Children: sizer.Add(bsizer, pos=(count, 1))
                 else: sizer.AddSpacer(10)
                 count += 1
