@@ -7,12 +7,17 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  05.04.2025
+@modified  17.09.2025
 ------------------------------------------------------------------------------
 """
+import functools
 import logging
 
+try: import wx
+except ImportError: wx = None
+
 import h3sed
+from .. import conf
 from .. import metadata
 
 
@@ -93,6 +98,42 @@ class SpellsPlugin(object):
         if not self._hero.stats.spellbook:
             for c in self._panel.Children: c.Disable()
         return True
+
+
+    def make_common_menu(self):
+        """Returns wx.Menu with plugin-specific actions, like selecting or clearing all spells."""
+        menu = wx.Menu()
+        item_select = menu.Append(wx.ID_ANY, "Add all spells")
+        item_clear  = menu.Append(wx.ID_ANY, "Remove all spells")
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, clear=False), item_select)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, clear=True),  item_clear)
+        if not self._hero or not self._hero.stats.spellbook:
+            menu.Enable(item_select.Id, False)
+            menu.Enable(item_clear.Id, False)
+        return menu
+
+
+    def on_change_all(self, event, clear=False):
+        """Handler for selecting or clearing all spells, carries out and propagates change."""
+        def on_do(self, clear):
+            if clear: self._state.clear()
+            else: self._state.update(metadata.Store.get("spells", version=self.version))
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        acting, action = ("Clearing", "clear") if clear else ("Selecting", "select")
+        if clear: skip = not self._state
+        else:
+            skip = all(x in self._state for x in metadata.Store.get("spells", version=self.version))
+        if skip:
+            return
+
+        label = "change %s spells: %s all" % (self._hero.name, action)
+        h3sed.guibase.status("%s all spells" % acting, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, clear)
+        self.parent.command(callable, name=label)
 
 
     def on_add(self, prop, value):

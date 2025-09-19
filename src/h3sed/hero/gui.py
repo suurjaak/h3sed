@@ -39,6 +39,9 @@ Subplugin instances are expected to have the following API:
         if subplugin not renderable with gui.build().
         '''
 
+    def make_common_menu(self):
+        '''Optional. Returns wx.Menu with plugin-specific actions.'''
+
     def on_add(self, prop, value):
         '''
         Optional. Handler for adding something in subplugin
@@ -56,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  22.08.2025
+@modified  17.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -165,7 +168,7 @@ class HeroPlugin(object):
             self._index["toggles"][category] = conf.HeroToggles.get(category, True)
         tb_index.Realize()
 
-        html = wx.html.HtmlWindow(self._indexpanel)
+        html = wx.html.HtmlWindow(indexpanel)
         tabs.AddPage(wx.Window(tabs), " INDEX ")
 
         search.SetDescriptiveText("Search heroes")
@@ -207,6 +210,10 @@ class HeroPlugin(object):
         tb.Disable()
         tb.Hide()
 
+        menubutton = wx.Button(self._panel, label="Change all ..")
+        menubutton.ToolTip = "Change multiple properties on page"
+        menubutton.Bind(wx.EVT_BUTTON, self.on_hero_subtab_button)
+
         tabs.MinSize = -1, tabs.GetTabArea().MinSize[1]
         tabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_page, tabs)
         tabs.Bind(wx.lib.agw.flatnotebook.EVT_FLATNOTEBOOK_PAGE_CLOSING,
@@ -243,10 +250,14 @@ class HeroPlugin(object):
         sizer_top.AddStretchSpacer()
         sizer_top.Add(search, border=5, flag=wx.ALL, proportion=1)
         sizer_top.AddSpacer(5)
-        sizer.Add(sizer_top,  border=10, flag=wx.LEFT | wx.GROW)
-        sizer.Add(tabs,       border=5,  flag=wx.BOTTOM | wx.GROW)
-        sizer.Add(indexpanel, border=5, flag=wx.GROW, proportion=1)
-        sizer.Add(tb,         border=10, flag=wx.LEFT)
+        sizer_tabtop = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_tabtop.Add(tb)
+        sizer_tabtop.AddStretchSpacer()
+        sizer_tabtop.Add(menubutton)
+        sizer.Add(sizer_top,    border=10, flag=wx.LEFT | wx.GROW)
+        sizer.Add(tabs,         border=5,  flag=wx.BOTTOM | wx.GROW)
+        sizer.Add(indexpanel,   border=5,  flag=wx.GROW, proportion=1)
+        sizer.Add(sizer_tabtop, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
         sizer.Add(self._heropanel, border=5, flag=wx.TOP | wx.GROW, proportion=1)
         self._panel.Bind(wx.EVT_CHAR_HOOK, self.on_key)
         wx_accel.accelerate(self._panel, accelerators=[(wx.ACCEL_CMD, ord("I"), wx.ID_INFO)])
@@ -259,6 +270,7 @@ class HeroPlugin(object):
         self._ctrls["count"] = info
         self._ctrls["html"] = html
         self._ctrls["toolbar"] = tb
+        self._ctrls["menubutton"] = menubutton
         controls.ColourManager.Patch(self._panel)
 
 
@@ -272,23 +284,28 @@ class HeroPlugin(object):
 
         nb = wx.Notebook(self._heropanel)
         self._plugins = [dict(m.props(), module=m) for m in h3sed.hero.PROPERTIES.values()]
-        for props in self._plugins:
+        for i, props in enumerate(self._plugins):
             subpanel = props["panel"] = wx.ScrolledWindow(nb)
             title = props.get("label", props["name"])
             nb.AddPage(subpanel, title)
             controls.ColourManager.Manage(subpanel, "BackgroundColour", wx.SYS_COLOUR_BTNFACE)
-            props["instance"] = props["module"].factory(self, subpanel, self.savefile.version)
+            plugin = props["module"].factory(self, subpanel, self.savefile.version)
+            has_menu = hasattr(plugin, "make_common_menu") and bool(plugin.make_common_menu())
+            props["instance"] = plugin
+            props["has_menu"] = has_menu
 
         self._heropanel.Sizer.Add(nb, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW, proportion=1)
 
         if conf.Positions.get("herotab_index") \
         and conf.Positions["herotab_index"] < len(self._plugins):
             nb.SetSelection(conf.Positions["herotab_index"])
-        nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
-                lambda e: conf.Positions.update(herotab_index=e.Selection))
+        self._ctrls["menubutton"].Enable(self._plugins[nb.Selection]["has_menu"])
+
+        nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_hero_subtab)
 
         self._heropanel.Hide()
         self._panel.Thaw()
+        self._ctrls["properties"] = nb
         with controls.BusyPanel(self._panel, "Loading heroes."):
             self.populate_index()
 
@@ -525,6 +542,20 @@ class HeroPlugin(object):
         else: self.select_hero(self._pages[page], status=False)
 
 
+    def on_change_hero_subtab(self, event):
+        """Handler for changing a page in the hero properties notebook, updates UI and settings."""
+        conf.Positions.update(herotab_index=event.Selection)
+        self._ctrls["menubutton"].Enable(self._plugins[event.Selection]["has_menu"])
+
+
+    def on_hero_subtab_button(self, event):
+        """Handler for clicking plugin top menu button, opens plugin menu."""
+        plugin = self._plugins[self._ctrls["properties"].Selection]["instance"]
+        menu = hasattr(plugin, "make_common_menu") and plugin.make_common_menu()
+        if not menu: return
+        self._ctrls["menubutton"].PopupMenu(menu, pos=(0, self._ctrls["menubutton"].Size.Height))
+
+
     def on_close_page(self, event):
         """Handler for closing a hero page, selects a previous hero page, if any."""
         if self._ignore_events: return
@@ -687,6 +718,7 @@ class HeroPlugin(object):
         self._heropanel.Show()
         tb.Enable()
         tb.Show()
+        self._ctrls["menubutton"].Show()
         try:
             if self._hero: self.patch()
             if not page_existed:
@@ -718,6 +750,7 @@ class HeroPlugin(object):
         if not self._heropanel.Shown:
             tb.Enable()
             tb.Show()
+            self._ctrls["menubutton"].Show()
             self._indexpanel.Hide()
             self._heropanel.Show()
             self._panel.Layout()
@@ -736,6 +769,7 @@ class HeroPlugin(object):
         if not self._indexpanel.Shown:
             tb.Hide()
             tb.Disable()
+            self._ctrls["menubutton"].Hide()
             self._heropanel.Hide()
             self._indexpanel.Show()
             self._panel.Layout()

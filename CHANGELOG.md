@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.2, 2025-09-19
+---------------
+- add button with mass change options menu to hero property tabs
+
+
 3.1, 2025-09-01
 ---------------
 - order equipment slots always by position not alphabet

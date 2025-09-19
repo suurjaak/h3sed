@@ -7,16 +7,18 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  06.04.2025
+@modified  14.09.2025
 ------------------------------------------------------------------------------
 """
 import logging
+import functools
 
 try: import wx
 except ImportError: wx = None
 
 import h3sed
 from .. lib import util
+from .. import conf
 from .. import metadata
 
 
@@ -163,6 +165,85 @@ class ArmyPlugin(object):
         return result
 
 
+    def make_common_menu(self):
+        """Returns wx.Menu with plugin-specific actions, like removing all army stacks."""
+        menu = wx.Menu()
+        item_clear = menu.Append(wx.ID_ANY, "Remove all army")
+        item_reset = menu.Append(wx.ID_ANY, "Set army counts to 1")
+        menu.AppendSubMenu(self.make_rounding_menu(), "Round army counts to ..")
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_round_army, number=-1), item_reset)
+        menu.Bind(wx.EVT_MENU, self.on_remove_all, item_clear)
+        return menu
+
+
+    def make_rounding_menu(self, rowindex=None):
+        """Returns wx.Menu with options to round army counts, all if not specific index."""
+        menu = wx.Menu()
+        for number in (-10, -100, -1000, None, 10, 100, 1000):
+            if number is None:
+                menu.AppendSeparator()
+                continue # for number
+            label = "Lower %s" % abs(number) if number < 0 else "Upper %s" % number
+            item = menu.Append(wx.ID_ANY, label)
+            kwargs = dict(number=number, rowindex=rowindex)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_round_army, **kwargs), item)
+        return menu
+
+
+    def on_round_army(self, event, number, rowindex=None):
+        """
+        Handler for rounding army stacks to nearest number, carries out and propagates change.
+
+        @param   rowindex  index of single army stack to round if not all
+        """
+        down, number = (number < 0), abs(number)
+        def on_do(self, state2):
+            self._state[:] = state2
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        if not self._state: return
+        state2 = self._state.copy()
+        MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["army.count"]
+        for i, army in enumerate(state2):
+            if not army or rowindex is not None and i != rowindex: continue # for i, army
+            if number == 1: army.count = 1
+            elif army.count % number and (not down or army.count > number):
+                army.count += (0 if down else number) - (army.count % number)
+                army.count = min(MAX, max(MIN, army.count))
+
+        label = "%s army " % self._hero.name
+        label += "counts " if rowindex is None else "slot %s count " % (rowindex + 1)
+        label += "%s to %s" % ("down " if down else "up", number)
+        if state2 == self._state:
+            h3sed.guibase.status("No change from rounding %s" % label,
+                                 flash=conf.StatusShortFlashLength)
+            return
+
+        h3sed.guibase.status("Rounding %s" % label, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, state2)
+        self.parent.command(callable, name="round %s" % label)
+
+
+    def on_remove_all(self, event):
+        """Handler for removing all hero army stacks, carries out and propagates change."""
+        def on_do(self):
+            self._state.clear()
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        if not self._state:
+            return
+        h3sed.guibase.status("Removing all %s army stacks" % self._hero.name,
+                             flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self)
+        self.parent.command(callable, name="remove %s army" % self._hero.name)
+
+
     def on_change(self, prop, row, ctrl, value):
         """
         Handler for army change, enables or disables creature count.
@@ -172,7 +253,7 @@ class ArmyPlugin(object):
         namectrl  = next(x for x in ctrls if isinstance(x, wx.ComboBox))
         countctrl = namectrl.GetNextSibling()
         placectrl = countctrl.GetNextSibling()
-        if prop.get("nullable") and ctrl and "remove" == ctrl.Label:  # Clearing army slot
+        if prop.get("nullable") and ctrl and "clear" == ctrl.Name:  # Clearing army slot
             idx = next(i for i, cc in enumerate(self._ctrls) if namectrl in cc.values())
             row[idx].clear()
             namectrl.Value = ""

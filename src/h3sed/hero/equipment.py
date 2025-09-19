@@ -7,9 +7,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  26.07.2025
+@modified  17.09.2025
 ------------------------------------------------------------------------------
 """
+import functools
 import logging
 
 try: import wx
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def format_stats(plugin, prop, state, artifact_stats=None):
-    """Return item primaty stats modifier text like "+1 Attack, +1 Defense", or "" if no effect."""
+    """Returns item primaty stats modifier text like "+1 Attack, +1 Defense", or "" if no effect."""
     value = state.get(prop.get("name"))
     if not value: return ""
     STATS = artifact_stats or metadata.Store.get("artifact_stats", version=plugin.version)
@@ -230,21 +231,45 @@ class EquipmentPlugin(object):
                 infoctrl.Label = infoctrl.ToolTip = format_stats(self, prop, self._state, STATS)
         else:
             self._ctrls, result = h3sed.gui.build(self, self._panel), True
-        self.update_slots()
+        self.update_reserved_slots()
         return result
 
 
-    def update_slots(self):
+    def make_common_menu(self):
+        """Returns wx.Menu with plugin-specific actions, like removing all equipment."""
+        menu = wx.Menu()
+        item_clear = menu.Append(wx.ID_ANY, "Remove all equipment")
+        item_send  = menu.Append(wx.ID_ANY, "Send all equipment to inventory")
+        item_recv  = menu.Append(wx.ID_ANY, "Equip all possible equipment from inventory")
+        item_swap  = menu.Append(wx.ID_ANY, "Swap all possible equipment with inventory")
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all),                       item_clear)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, send=True),            item_send)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, recv=True),            item_recv)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, send=True, recv=True), item_swap)
+        return menu
+
+
+    def change_artifacts(self, equipment, inventory):
+        """Carries out change of equipment and inventory, propagates change to hero and savefile."""
+        changes = {} # {property name: whether changed from action}
+        if equipment != self._state:
+            self._hero.equipment.update(equipment), changes.update(equipment=True)
+        if inventory != self._hero.inventory:
+            self._hero.inventory[:], changes["inventory"] = inventory, True
+        changes["stats"] = (self._hero.stats != self._hero.realized.stats)
+        if not any(changes.values()): return True
+        self._hero.realize()
+        self.parent.patch()
+        for name in (name for name, changed in changes.items() if changed):
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=name)
+            wx.PostEvent(self._panel, evt)
+        return True
+
+
+    def update_reserved_slots(self):
         """Updates slots availability in UI."""
-        ARTIFACT_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
         LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
-
-        slot_owners = {} # {slot: [artifact, ]}
-        for location, artifact in self._state.items():
-            slots = ARTIFACT_SLOTS.get(artifact, [])
-            for slot in slots[1:]: # Artifact first slot is primary
-                slot_owners.setdefault(slot, []).append(artifact)
-
+        reserved_locations = self._state.get_reserved_locations()
         self._panel.Freeze()
         try:
             for location, artifact in self._state.items():
@@ -259,9 +284,8 @@ class EquipmentPlugin(object):
                     ctrl.Value = artifact or ""
                     ctrl.Enable()
 
-                if not artifact and slot_owners.get(slot):
-                    owner_artifact = slot_owners[slot].pop()
-                    label = "<taken by %s>" % owner_artifact
+                if not artifact and location in reserved_locations:
+                    label = "<taken by %s>" % self._state[reserved_locations[location]]
                     ctrl.SetItems([label])
                     ctrl.Value = label
                     ctrl.Disable()
@@ -279,8 +303,8 @@ class EquipmentPlugin(object):
 
         try: self._state[prop["name"]] = v2
         except Exception as e:
-            wx.MessageBox(str(e), conf.Title, wx.OK | wx.ICON_WARNING)
             ctrl.Value = v1 or ""
+            wx.MessageBox(str(e), conf.Title, wx.OK | wx.ICON_WARNING)
             return False
 
         stats0 = self._hero.stats.copy()
@@ -288,9 +312,37 @@ class EquipmentPlugin(object):
         if stats0 != self._hero.stats:
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name="stats")
             wx.PostEvent(self._panel, evt)
-        self.update_slots()
+        self.update_reserved_slots()
         self._ctrls["%s-info" % prop["name"]].Label = format_stats(self, prop, self._state)
         return True
+
+
+    def on_change_all(self, event, send=False, recv=False):
+        """
+        Handler for removing or donning or doffing or swapping all equipment,
+        carries out and propagates change.
+        """
+        if send and recv:
+            eq2, inv2 = self._hero.make_equipment_swap()
+            acting, action = "Swapping all equipment with inventory", "swap all with inventory"
+        elif not send and not recv:
+            eq2, inv2 = h3sed.hero.Equipment.factory(self.version), None
+            acting, action = "Removing all equipment", "remove all"
+        elif recv:
+            eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=False)
+            acting, action = "Equipping all from inventory", "equip all from inventory"
+        else:
+            eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=True)
+            acting, action = "Sending all equipment to inventory", "send all to inventory"
+
+        if (eq2, inv2) == (self._state, self._hero.inventory):
+            h3sed.guibase.status("No change from %s" % acting.lower(),
+                                 flash=conf.StatusShortFlashLength, log=True)
+            return
+        label = "change %s equipment: %s" % (self._hero.name, action)
+        h3sed.guibase.status(acting, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(self.change_artifacts, eq2, inv2)
+        self.parent.command(callable, name=label)
 
 
 def parse(hero_bytes, version):

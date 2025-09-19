@@ -7,9 +7,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  20.08.2025
+@modified  17.09.2025
 ------------------------------------------------------------------------------
 """
+import functools
 import logging
 
 try: import wx
@@ -18,6 +19,7 @@ except ImportError: wx = None
 import h3sed
 from .. lib import controls
 from .. import metadata
+from .. import conf
 
 
 logger = logging.getLogger(__package__)
@@ -119,14 +121,6 @@ class SkillsPlugin(object):
         return state0 != self._state
 
 
-    def on_add(self, prop, value):
-        """Adds skill at first level."""
-        if any(value == x["name"] for x in self._state):
-            return False
-        self._state.append(name=value)
-        return True
-
-
     def render(self):
         """Builds plugin controls into panel. Returns True."""
         focused_index = -1 # Remember focused position, as all controls get destroyed and rebuilt
@@ -147,6 +141,63 @@ class SkillsPlugin(object):
             self._panel.Children[focused_index].SetFocus()
 
         return True
+
+
+    def make_common_menu(self):
+        """Returns wx.Menu with plugin-specific actions, like removing all skills."""
+        SKILL_LEVELS = metadata.Store.get("skill_levels", version=self.version)
+
+        menu = wx.Menu()
+        menu_level = wx.Menu()
+        item_clear = menu.Append(wx.ID_ANY, "Remove all skills")
+        menu.AppendSubMenu(menu_level, "Set skill levels to ..")
+        for level_name in SKILL_LEVELS:
+            item = menu_level.Append(wx.ID_ANY, level_name)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_set_level, level_name=level_name), item)
+        menu.Bind(wx.EVT_MENU, self.on_remove_all, item_clear)
+        return menu
+
+
+    def on_add(self, prop, value):
+        """Adds skill at first level."""
+        if any(value == x["name"] for x in self._state):
+            return False
+        self._state.append(name=value)
+        return True
+
+
+    def on_remove_all(self, event):
+        """Handler for removing all hero skills, carries out and propagates change."""
+        def on_do(self):
+            self._state.clear()
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        if not self._state:
+            return
+        h3sed.guibase.status("Removing all %s skills" % self._hero.name,
+                             flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self)
+        self.parent.command(callable, name="remove %s skills" % self._hero.name)
+
+
+    def on_set_level(self, event, level_name):
+        """Handler for removing all hero skills, carries out and propagates change."""
+        def on_do(self, level_name):
+            for skill in self._state: skill.level = level_name
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        if not self._state or all(x.level == level_name for x in self._state):
+            return
+        label = "%s skills to %s" % (self._hero.name, level_name)
+        h3sed.guibase.status("Setting %s" % label, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, level_name)
+        self.parent.command(callable, name="set %s" % label)
 
 
 def parse(hero_bytes, version):

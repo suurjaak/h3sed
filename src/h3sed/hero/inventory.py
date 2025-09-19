@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  06.04.2025
+@modified  16.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -109,22 +109,57 @@ class InventoryPlugin(object):
         return state0 != self._state
 
 
-    def on_compact_menu(self, event):
-        """Handler for clicking the Compact button, opens popup menu."""
+    def render(self):
+        """
+        Populates controls from state, using existing if already built.
+
+        Returns whether new controls were created.
+        """
+        if self._ctrls and all(self._ctrls):
+            for i, value in enumerate(self._state):
+                self._ctrls[i].Value = value or ""
+            return False
+        self._ctrls = h3sed.gui.build(self, self._panel)[0]
+        return True
+
+
+    def make_common_menu(self):
+        """Returns wx.Menu with plugin-specific actions, like removing all inventory."""
         menu = wx.Menu()
-        item_current   = wx.MenuItem(menu, -1, "In &current order")
-        item_name      = wx.MenuItem(menu, -1, "In &name order")
-        item_slot_name = wx.MenuItem(menu, -1, "In &slot and name order")
-        item_reverse   = wx.MenuItem(menu, -1, "In &reverse order")
-        menu.Append(item_current)
-        menu.Append(item_name)
-        menu.Append(item_slot_name)
-        menu.Append(item_reverse)
-        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(),                 item_current)
-        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(reverse=True),     item_reverse)
-        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(["name"]),         item_name)
-        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(["slot", "name"]), item_slot_name)
-        event.EventObject.PopupMenu(menu, (0, event.EventObject.Size.Height))
+        menu_compact = wx.Menu()
+        item_clear = menu.Append(wx.ID_ANY, "Remove all inventory")
+        item_send  = menu.Append(wx.ID_ANY, "Equip all possible inventory")
+        item_swap  = menu.Append(wx.ID_ANY, "Swap all possible inventory with equipment")
+        menu.AppendSubMenu(menu_compact,    "Compact inventory ..")
+        item_current   = menu_compact.Append(wx.ID_ANY, "In &current order")
+        item_name      = menu_compact.Append(wx.ID_ANY, "In &name order")
+        item_slot_name = menu_compact.Append(wx.ID_ANY, "In &slot and name order")
+        item_reverse   = menu_compact.Append(wx.ID_ANY, "In &reverse order")
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, swap=None),  item_clear)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, swap=False), item_send)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, swap=True),  item_swap)
+        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(),                    item_current)
+        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(reverse=True),        item_reverse)
+        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(["name"]),            item_name)
+        menu.Bind(wx.EVT_MENU, lambda e: self.compact_items(["slot", "name"]),    item_slot_name)
+        return menu
+
+
+    def change_artifacts(self, equipment, inventory):
+        """Carries out change of equipment and inventory, propagates change to hero and savefile."""
+        changes = {} # {property name: whether changed from action}
+        if equipment != self._hero.equipment:
+            self._hero.equipment.update(equipment), changes.update(equipment=True)
+        if inventory != self._state:
+            self._state[:], changes["inventory"] = inventory, True
+        changes["stats"] = (self._hero.stats != self._hero.realized.stats)
+        if not any(changes.values()): return True
+        self._hero.realize()
+        self.parent.patch()
+        for name in (name for name, changed in changes.items() if changed):
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=name)
+            wx.PostEvent(self._panel, evt)
+        return True
 
 
     def compact_items(self, order=(), reverse=False):
@@ -148,25 +183,30 @@ class InventoryPlugin(object):
         self.parent.command(callable, name="compact inventory in %s order" % label)
 
 
-    def render(self):
+    def on_change_all(self, event, swap):
         """
-        Populates controls from state, using existing if already built.
+        Handler for removing or donning or swapping all inventory, carries out and propagates change.
 
-        Returns whether new controls were created.
+        @param   swap  None to remove all, False to send to equipment, True to swap with equipment
         """
-        if self._ctrls and all(self._ctrls):
-            for i, value in enumerate(self._state):
-                self._ctrls[i].Value = value or ""
-            return False
+        if not any(self._state):
+            return
+        acting, action = ("Swapping", "swap") if swap else ("Removing", "remove") if swap is None \
+                         else ("Equipping", "equip")
+        if swap:
+            eq2, inv2 = self._hero.make_equipment_swap()
+        elif swap is None:
+            eq2, inv2 = self._hero.equipment.copy(), h3sed.hero.Inventory.factory(self.version)
         else:
-            self._ctrls = h3sed.gui.build(self, self._panel)[0]
-            button = wx.Button(self._panel, label="Compact ..")
-            button.Bind(wx.EVT_BUTTON, self.on_compact_menu)
-            button.ToolTip = "Pack inventory artifacts to top"
-            self._panel.Sizer.Add(button, border=20, flag=wx.TOP | wx.LEFT)
-            self._panel.Sizer.AddStretchSpacer()
-            self._panel.Layout()
-            return True
+            eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=False)
+        if (eq2, inv2) == (self._hero.equipment, self._state):
+            h3sed.guibase.status("No change from %s all inventory" % acting.lower(),
+                                 flash=conf.StatusShortFlashLength, log=True)
+            return
+        label = "change %s inventory: %s all" % (self._hero.name, action)
+        h3sed.guibase.status("%s all inventory" % acting, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(self.change_artifacts, eq2, inv2)
+        self.parent.command(callable, name=label)
 
 
 def parse(hero_bytes, version):
