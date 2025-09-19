@@ -25,16 +25,6 @@ from .. import metadata
 logger = logging.getLogger(__name__)
 
 
-def format_stats(plugin, prop, state, artifact_stats=None):
-    """Returns item primaty stats modifier text like "+1 Attack, +1 Defense", or "" if no effect."""
-    value = state.get(prop.get("name"))
-    if not value: return ""
-    STATS = artifact_stats or metadata.Store.get("artifact_stats", version=plugin.version)
-    if value not in STATS: return ""
-    return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
-                     for k, v in zip(metadata.PRIMARY_ATTRIBUTES.values(), STATS[value]) if v)
-
-
 PROPS = {"name": "equipment", "label": "Equipment", "index": 3}
 DATAPROPS = [{
     "name":     "helm",
@@ -43,7 +33,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None, # Populated later
     "menu":     None, # Populated later
-    "info":     format_stats,
+    "info":     None, # Populated later
 }, {
     "name":     "neck",
     "label":    "Neck slot",
@@ -51,7 +41,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "armor",
     "label":    "Armor slot",
@@ -59,7 +49,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "weapon",
     "label":    "Weapon slot",
@@ -67,7 +57,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "shield",
     "label":    "Shield slot",
@@ -75,7 +65,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "lefthand",
     "label":    "Left hand slot",
@@ -84,7 +74,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "righthand",
     "label":    "Right hand slot",
@@ -93,7 +83,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "cloak",
     "label":    "Cloak slot",
@@ -101,7 +91,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "feet",
     "label":    "Feet slot",
@@ -109,7 +99,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "side1",
     "label":    "Side slot 1",
@@ -118,7 +108,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "side2",
     "label":    "Side slot 2",
@@ -127,7 +117,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "side3",
     "label":    "Side slot 3",
@@ -136,7 +126,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "side4",
     "label":    "Side slot 4",
@@ -145,7 +135,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }, {
     "name":     "side5",
     "label":    "Side slot 5",
@@ -154,7 +144,7 @@ DATAPROPS = [{
     "nullable": True,
     "choices":  None,
     "menu":     None,
-    "info":     format_stats,
+    "info":     None,
 }]
 
 
@@ -192,7 +182,8 @@ class EquipmentPlugin(object):
             slot = LOCATION_TO_SLOT.get(prop["name"])
             if slot is None: continue # for prop
             choices = metadata.Store.get("artifacts", category=slot, version=self.version)
-            result.append(dict(prop, choices=[""] + choices, menu=self.make_item_menu))
+            result.append(dict(prop, choices=[""] + choices, menu=self.make_item_menu,
+                               info=self.format_stats_bonus))
         return h3sed.version.adapt("hero.equipment.DATAPROPS", result, version=self.version)
 
 
@@ -242,7 +233,8 @@ class EquipmentPlugin(object):
                 if choices != ctrl.GetItems(): ctrl.SetItems(choices)
                 ctrl.Value = value or ""
                 infoctrl = self._ctrls["%s-info" % name]
-                infoctrl.Label = infoctrl.ToolTip = format_stats(self, prop, self._state, STATS)
+                infoctrl.Label = self.format_stats_bonus(self, prop, self._state, STATS)
+                infoctrl.ToolTip = infoctrl.Label
         else:
             self._ctrls, result = h3sed.gui.build(self, self._panel), True
         self.update_reserved_slots()
@@ -315,6 +307,16 @@ class EquipmentPlugin(object):
         return menu
 
 
+    def format_stats_bonus(self, plugin, prop, state, artifact_stats=None):
+        """Returns item primaty stats modifier text like "+1 Attack, +1 Defense", or "" if no effect."""
+        value = state.get(prop.get("name"))
+        if not value: return ""
+        STATS = artifact_stats or metadata.Store.get("artifact_stats", version=self.version)
+        if value not in STATS: return ""
+        return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
+                         for k, v in zip(metadata.PRIMARY_ATTRIBUTES.values(), STATS[value]) if v)
+
+
     def change_artifacts(self, equipment, inventory):
         """Carries out change of equipment and inventory, propagates change to hero and savefile."""
         changes = {} # {property name: whether changed from action}
@@ -379,7 +381,8 @@ class EquipmentPlugin(object):
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name="stats")
             wx.PostEvent(self._panel, evt)
         self.update_reserved_slots()
-        self._ctrls["%s-info" % prop["name"]].Label = format_stats(self, prop, self._state)
+        ctrl_info = self._ctrls["%s-info" % prop["name"]]
+        ctrl_info.Label = self.format_stats_bonus(self, prop, self._state)
         return True
 
 
