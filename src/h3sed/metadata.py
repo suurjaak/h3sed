@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  06.08.2025
+@modified  19.09.2025
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -59,7 +59,7 @@ SKILLS = [
 SKILL_LEVELS = ["Basic", "Advanced", "Expert"]
 
 
-"""Slots for hero artifact locations, mapping equivalents like "side1" and "side" to "side"."""
+"""Slots for hero artifact locations, mapping equivalents like "side1" and "side2" to "side"."""
 EQUIPMENT_SLOTS = {"armor": "armor", "cloak": "cloak", "feet": "feet", "helm": "helm",
                    "lefthand": "hand", "neck": "neck", "righthand": "hand", "shield": "shield",
                    "side1": "side", "side2": "side", "side3": "side", "side4": "side",
@@ -604,6 +604,28 @@ SPELLS = [
     "View Earth",
     "Visions",
 ]
+
+
+"""Spells by magic school."""
+SPELL_SCHOOLS = {
+    "Air Magic":   ["Air Shield", "Chain Lightning", "Counterstrike", "Destroy Undead",
+                    "Dimension Door", "Disguise", "Disrupting Ray", "Fly", "Fortune", "Haste",
+                    "Hypnotize", "Lightning Bolt", "Magic Arrow", "Magic Mirror", "Precision",
+                    "Protection from Air", "Summon Air Elemental", "View Air", "Visions"],
+    "Earth Magic": ["Animate Dead", "Anti-Magic", "Death Ripple", "Earthquake", "Force Field",
+                    "Implosion", "Magic Arrow", "Meteor Shower", "Protection from Earth",
+                    "Quicksand", "Resurrection", "Shield", "Slow", "Sorrow", "Stone Skin",
+                    "Summon Earth Elemental", "Town Portal", "View Earth", "Visions"],
+    "Fire Magic":  ["Bloodlust", "Curse", "Magic Arrow", "Protection from Fire", "Blind",
+                    "Fire Wall", "Visions", "Fireball", "Land Mine", "Misfortune", "Armageddon",
+                    "Berserk", "Fire Shield", "Frenzy", "Inferno", "Slayer", "Sacrifice",
+                    "Summon Fire Elemental"],
+    "Water Magic": ["Bless", "Cure", "Dispel", "Magic Arrow", "Protection from Water",
+                    "Summon Boat", "Ice Bolt", "Remove Obstacle", "Scuttle Boat", "Visions",
+                    "Weakness", "Forgetfulness", "Frost Ring", "Mirth", "Teleport", "Clone",
+                    "Prayer", "Water Walk", "Summon Water Elemental"],
+}
+
 
 
 """IDs of all items in savefile."""
@@ -1493,6 +1515,7 @@ Store.add("skills",              SKILLS)
 Store.add("skill_levels",        SKILL_LEVELS)
 Store.add("special_artifacts",   SPECIAL_ARTIFACTS)
 Store.add("spells",              SPELLS)
+Store.add("spell_schools",       SPELL_SCHOOLS)
 Store.add("bannable_spells",     []) # Initialize empty array for version modules to update
 for artifact, spells in ARTIFACT_SPELLS.items():
     Store.add("spells", spells, category=artifact)

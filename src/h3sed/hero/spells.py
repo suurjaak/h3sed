@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  17.09.2025
+@modified  19.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -103,36 +103,52 @@ class SpellsPlugin(object):
     def make_common_menu(self):
         """Returns wx.Menu with plugin-specific actions, like selecting or clearing all spells."""
         menu = wx.Menu()
+        menu_schools = wx.Menu()
         item_select = menu.Append(wx.ID_ANY, "Add all spells")
         item_clear  = menu.Append(wx.ID_ANY, "Remove all spells")
+        item_school = menu.AppendSubMenu(menu_schools, "Toggle all ..")
+        for school_name in sorted(metadata.Store.get("spell_schools", version=self.version)):
+            item = menu_schools.Append(wx.ID_ANY, "%s spells" % school_name)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, school=school_name), item)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, clear=False), item_select)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, clear=True),  item_clear)
         if not self._hero or not self._hero.stats.spellbook:
             menu.Enable(item_select.Id, False)
             menu.Enable(item_clear.Id, False)
+            menu.Enable(item_school.Id, False)
         return menu
 
 
-    def on_change_all(self, event, clear=False):
-        """Handler for selecting or clearing all spells, carries out and propagates change."""
-        def on_do(self, clear):
-            if clear: self._state.clear()
-            else: self._state.update(metadata.Store.get("spells", version=self.version))
+    def on_change_all(self, event, clear=False, school=None):
+        """
+        Handler for selecting or clearing all spells, carries out and propagates change.
+
+        @param   school  if given, toggles all given school spells on or off instead (off if all on)
+        """
+        def on_do(self, spells2):
+            self._state.clear()
+            self._state.update(spells2)
             self.parent.patch()
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
             wx.PostEvent(self._panel, evt)
             return True
 
-        acting, action = ("Clearing", "clear") if clear else ("Selecting", "select")
-        if clear: skip = not self._state
-        else:
-            skip = all(x in self._state for x in metadata.Store.get("spells", version=self.version))
-        if skip:
+        acting, action = ("Toggling all %s" % school, "toggle all %s" % school) if school else \
+                         ("Removing all", "remove all") if clear else ("Adding all", "add all")
+        spells2 = self._state.copy()
+        if school:
+            school_spells = metadata.Store.get("spell_schools", version=self.version)[school]
+            if all(s in spells2 for s in school_spells): spells2.difference_update(school_spells)
+            else: spells2.update(school_spells)
+        elif not clear:
+            spells2.update(metadata.Store.get("spells", version=self.version))
+        else: spells2.clear()
+        if spells2 == self._state:
             return
 
-        label = "change %s spells: %s all" % (self._hero.name, action)
-        h3sed.guibase.status("%s all spells" % acting, flash=conf.StatusShortFlashLength, log=True)
-        callable = functools.partial(on_do, self, clear)
+        label = "change %s spells: %s" % (self._hero.name, action)
+        h3sed.guibase.status("%s spells" % acting, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, spells2)
         self.parent.command(callable, name=label)
 
 
