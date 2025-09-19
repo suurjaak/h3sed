@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.08.2025
+@modified    14.09.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1853,6 +1853,13 @@ def build(plugin, panel):
             plugin.parent.command(functools.partial(on_do, ctrl.Value), cname)
         return handler
 
+    def make_menu_handler(ctrl, myprops, rowindex=None):
+        def handler(event):
+            menu = myprops["menu"](plugin, myprops, rowindex)
+            if not menu: return
+            event.EventObject.PopupMenu(menu, pos=(event.EventObject.Size.Width, 0))
+        return handler
+
     def make_info(prop, sizer, pos):
         value = prop["info"](plugin, prop, state) if callable(prop["info"]) else prop["info"]
         value, tooltip = (value * 2)[:2] if isinstance(value, (list, tuple)) else (value, value)
@@ -1925,19 +1932,29 @@ def build(plugin, panel):
                         else: resultitem = c
                 if resultitem: resultitems.append(resultitem)
 
+                if any(prop.get(k) for k in ("menu", "orderable", "removable", "nullable")):
+                    bsizer.AddSpacer(10)
+                if prop.get("menu"):
+                    c = wx.Button(panel, label="..", size=(20 + BTN_WPLUS, -1), name="options")
+                    c.ToolTip = "Open options menu"
+                    c.Bind(wx.EVT_BUTTON, make_menu_handler(c, prop, rowindex=i))
+                    bsizer.Add(c)
                 if prop.get("orderable"):
-                    c1, c2 = (wx.Button(panel, label=x, size=(40 + BTN_WPLUS, -1))
-                              for x in ("down", "up"))
+                    c1, c2 = (wx.Button(panel, label=l, name=n, size=(20 + BTN_WPLUS, -1))
+                              for l, n in zip(("∨", "∧"), ("down", "up")))
+                    c1.ToolTip, c2.ToolTip = "Move down", "Move up"
                     c1.Enabled, c2.Enabled = (i < len(state) - 1), bool(i)
-                    c1.Bind(wx.EVT_BUTTON, make_move_handler(c1, i, +1, ("down", "up")))
-                    c2.Bind(wx.EVT_BUTTON, make_move_handler(c2, i, -1, ("down", "up")))
-                    bsizer.Add(c1, border=10, flag=wx.LEFT), bsizer.Add(c2)
+                    c1.Bind(wx.EVT_BUTTON, make_move_handler(c1, i, +1, ("v", "∧")))
+                    c2.Bind(wx.EVT_BUTTON, make_move_handler(c2, i, -1, ("v", "∧")))
+                    bsizer.Add(c1), bsizer.Add(c2)
                 if prop.get("removable"):
-                    c = wx.Button(panel, label="remove", size=(50 + BTN_WPLUS, -1))
+                    c = wx.Button(panel, label="x", name="remove", size=(20 + BTN_WPLUS, -1))
+                    c.ToolTip = "Remove item"
                     c.Bind(wx.EVT_BUTTON, make_remove_handler(c, i))
                     bsizer.Add(c)
                 if prop.get("nullable"):
-                    c = wx.Button(panel, label="remove", size=(50 + BTN_WPLUS, -1))
+                    c = wx.Button(panel, label="x", name="clear", size=(20 + BTN_WPLUS, -1))
+                    c.ToolTip = "Clear item"
                     c.Bind(wx.EVT_BUTTON, make_clear_handler(c, prop, rowindex=i))
                     bsizer.Add(c)
                 if bsizer.Children: sizer.Add(bsizer, pos=(count, 1))
@@ -1950,7 +1967,7 @@ def build(plugin, panel):
                 if prop.get("exclusive"):
                     choices = [x for x in choices if x not in values_present]
                 c1 = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-                c2 = wx.Button(panel, label="Add")
+                c2 = wx.Button(panel, label="Add", name="add")
                 c1.SetItems(choices)
                 c2.Bind(wx.EVT_BUTTON, make_add_handler(c1, prop))
 
@@ -2021,10 +2038,18 @@ def build(plugin, panel):
             sizer.Add(c1, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
             col = 2
-            if prop.get("nullable"):
-                c3 = wx.Button(panel, label="remove", size=(50 + BTN_WPLUS, -1))
-                c3.Bind(wx.EVT_BUTTON, make_clear_handler(c3, prop))
-                sizer.Add(c3, pos=(count, col))
+            if any(prop.get(k) for k in ("menu", "nullable")):
+                bsizer = wx.BoxSizer(wx.HORIZONTAL)
+                if prop.get("menu"):
+                    c = wx.Button(panel, label="..", size=(20 + BTN_WPLUS, -1), name="options")
+                    c.ToolTip = "Open options menu"
+                    c.Bind(wx.EVT_BUTTON, make_menu_handler(c, prop))
+                    bsizer.Add(c)
+                if prop.get("nullable"):
+                    c3 = wx.Button(panel, label="x", name="clear", size=(20 + BTN_WPLUS, -1))
+                    c3.Bind(wx.EVT_BUTTON, make_clear_handler(c3, prop))
+                    bsizer.Add(c3)
+                sizer.Add(bsizer, pos=(count, col))
                 col += 1
             build_result[prop["name"]] = c2
             if "extra" in prop: col, _ = col + 1, make_extra(prop, sizer, (count, col))
