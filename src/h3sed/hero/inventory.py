@@ -33,6 +33,7 @@ DATAPROPS = [{
     "nullable":    True,
     "min":         None, # Populated later
     "max":         None, # Populated later
+    "menu":        None, # Populated later
     "item": [{
         "type":    "label",
         "label":   "Inventory slot",
@@ -75,7 +76,7 @@ class InventoryPlugin(object):
         MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
         CHOICES = sorted(metadata.Store.get("artifacts", category="inventory", version=self.version))
         for prop in DATAPROPS:
-            myprop = dict(prop, item=[], min=MIN, max=MAX)
+            myprop = dict(prop, item=[], min=MIN, max=MAX, menu=self.make_item_menu)
             for item in prop["item"]:
                 if "choices" in item: item = dict(item, choices=CHOICES)
                 myprop["item"].append(item)
@@ -145,6 +146,80 @@ class InventoryPlugin(object):
         return menu
 
 
+    def make_item_menu(self, plugin, prop, rowindex):
+        """Returms wx.Menu for inventory item options."""
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
+        SCROLL_ARTIFACTS = metadata.Store.get("artifacts", category="scroll", version=self.version)
+        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
+        SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
+                             for slot in LOCATION_TO_SLOT.values()}
+
+        menu = wx.Menu()
+        menu_equip = wx.Menu()
+        menu_set   = wx.Menu()
+        menu_swap  = wx.Menu()
+        menu_move  = wx.Menu()
+        item_set   = menu.AppendSubMenu(menu_set,   "Set artifact by category ..")
+        item_equip = menu.AppendSubMenu(menu_equip, "Swap with equipment slot ..")
+        menu.AppendSeparator()
+        item_blank = menu.Append(wx.ID_ANY, "Insert blank")
+        item_drop  = menu.Append(wx.ID_ANY, "Remove row")
+        item_move  = menu.AppendSubMenu(menu_move,  "Move to inventory ..")
+        item_swap  = menu.AppendSubMenu(menu_swap,  "Swap with inventory slot ..")
+
+        for category in list(SLOT_TO_LOCATIONS) + ["scroll", "inventory"]:
+            menu_category = wx.Menu()
+            item_category = menu_set.AppendSubMenu(menu_category, category)
+            candidates = metadata.Store.get("artifacts", category=category, version=self.version)
+            if "inventory" == category:
+                candidates = [x for x in candidates
+                              if ARTIFACT_TO_SLOTS.get(x, [])[:1] == ["inventory"]]
+            elif "side" == category:
+                candidates = [x for x in candidates if x not in SCROLL_ARTIFACTS]
+            for artifact_candidate in candidates or []:
+                item_candidate = menu_category.Append(wx.ID_ANY, artifact_candidate)
+                kwargs = dict(rowindex=rowindex, artifact=artifact_candidate)
+                menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_candidate)
+
+        artifact_on_row = self._state[rowindex]
+        reserved_locations = self._hero.equipment.get_reserved_locations()
+        candidate_locations = []
+        if artifact_on_row in ARTIFACT_TO_SLOTS:
+            candidate_locations = SLOT_TO_LOCATIONS.get(ARTIFACT_TO_SLOTS[artifact_on_row][0], [])
+        elif artifact_on_row is None:
+            candidate_locations = list(self._hero.equipment)
+        for location in candidate_locations:
+            if location not in self._hero.equipment: continue # for location
+            artifact_equipped = self._hero.equipment[location]
+            if artifact_equipped is None and location in reserved_locations:
+                label = "<taken by %s>" % self._hero.equipment[reserved_locations[location]]
+            else: label = "<blank>" if artifact_equipped is None else artifact_equipped
+            item_location = menu_equip.Append(wx.ID_ANY, "%s:\t%s" % (location, label))
+            kwargs = dict(rowindex=rowindex, location=location)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_location)
+
+        for direction, label in [(-1, "top"), (1, "bottom")]:
+                item = menu_move.Append(wx.ID_ANY, label)
+                kwargs = dict(rowindex=rowindex, direction=direction)
+                menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item)
+
+        for i, artifact in enumerate(self._state):
+            item_slot = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (i + 1, artifact or "<blank>"))
+            kwargs = dict(rowindex=rowindex, rowindex2=i)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_slot)
+            if i == rowindex:
+                menu_swap.Enable(item_slot.Id, False)
+
+        if not menu_set.MenuItemCount:
+            menu.Enable(item_set.Id, False)
+        if not menu_equip.MenuItemCount:
+            menu.Enable(item_equip.Id, False)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, rowindex=rowindex), item_blank)
+        kwargs = dict(rowindex=rowindex, delete=True)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_drop)
+        return menu
+
+
     def change_artifacts(self, equipment, inventory):
         """Carries out change of equipment and inventory, propagates change to hero and savefile."""
         changes = {} # {property name: whether changed from action}
@@ -205,6 +280,57 @@ class InventoryPlugin(object):
             return
         label = "change %s inventory: %s all" % (self._hero.name, action)
         h3sed.guibase.status("%s all inventory" % acting, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(self.change_artifacts, eq2, inv2)
+        self.parent.command(callable, name=label)
+
+
+    def on_change_row(self, event, rowindex,
+                      rowindex2=None, artifact=None, location=None, direction=None, delete=False):
+        """
+        Handler for inventory item options menu, carries out and propagates change.
+
+        @param   rowindex   index of inventory item operated on
+        @param   rowindex2  index of inventory item to swap with
+        @param   artifact   artifact to change inventory item to; None will insert blank instead
+        @param   location   equipment location to swap out for current inventory it3m
+        @param   direction  -1 to move to inventory top, +1 to move to inventory bottom
+        @param   delete     whether to delete inventory row instead
+        """
+        if location is not None:
+            try: eq2, inv2 = self._hero.make_artifact_swap(location, rowindex)
+            except Exception as e:
+                wx.MessageBox(str(e), conf.Title, wx.OK | wx.ICON_WARNING)
+                return
+            action, detail = "change", "swap with equipment %s" % location
+        elif rowindex2 is not None:
+            eq2, inv2 = self._hero.equipment.copy(), self._state.copy()
+            inv2[rowindex], inv2[rowindex2] = inv2[rowindex2], inv2[rowindex]
+            action, detail = "change", "swap with slot %s" % (rowindex2 + 1)
+        elif direction:
+            eq2, inv2 = self._hero.equipment.copy(), self._state.copy()
+            moved = [inv2[rowindex]]
+            inv2[rowindex:rowindex + 1] = []
+            if direction > 0:
+                lastindex = next(len(inv2) - i for i, x in enumerate(inv2[::-1], 1) if x)
+                inv2[lastindex + 1:] = moved
+            else: inv2[:0] = moved
+            action, detail = ("change", "move to %s" % ("top" if direction < 0 else "bottom"))
+        elif delete:
+            eq2, inv2 = self._hero.equipment.copy(), self._state.copy()
+            inv2[rowindex:rowindex + 1] = []
+            action, detail = ("change", "delete")
+        elif artifact:
+            eq2, inv2 = self._hero.equipment.copy(), self._state.copy()
+            action, detail = ("set", artifact)
+            inv2[rowindex] = artifact
+        else:
+            eq2, inv2 = self._hero.equipment.copy(), self._state.copy()
+            action, detail = ("change", "insert <blank>")
+            inv2.insert(rowindex, None)
+
+        if (eq2, inv2) == (self._hero.equipment, self._state):
+            return
+        label = "%s %s inventory: slot %s %s" % (action, self._hero.name, rowindex + 1, detail)
         callable = functools.partial(self.change_artifacts, eq2, inv2)
         self.parent.command(callable, name=label)
 

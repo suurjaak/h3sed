@@ -42,6 +42,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None, # Populated later
+    "menu":     None, # Populated later
     "info":     format_stats,
 }, {
     "name":     "neck",
@@ -49,6 +50,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "armor",
@@ -56,6 +58,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "weapon",
@@ -63,6 +66,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "shield",
@@ -70,6 +74,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "lefthand",
@@ -78,6 +83,7 @@ DATAPROPS = [{
     "slot":     "hand",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "righthand",
@@ -86,6 +92,7 @@ DATAPROPS = [{
     "slot":     "hand",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "cloak",
@@ -93,6 +100,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "feet",
@@ -100,6 +108,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "side1",
@@ -108,6 +117,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "side2",
@@ -116,6 +126,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "side3",
@@ -124,6 +135,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "side4",
@@ -132,6 +144,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }, {
     "name":     "side5",
@@ -140,6 +153,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "menu":     None,
     "info":     format_stats,
 }]
 
@@ -178,7 +192,7 @@ class EquipmentPlugin(object):
             slot = LOCATION_TO_SLOT.get(prop["name"])
             if slot is None: continue # for prop
             choices = metadata.Store.get("artifacts", category=slot, version=self.version)
-            result.append(dict(prop, choices=[""] + choices))
+            result.append(dict(prop, choices=[""] + choices, menu=self.make_item_menu))
         return h3sed.version.adapt("hero.equipment.DATAPROPS", result, version=self.version)
 
 
@@ -246,6 +260,58 @@ class EquipmentPlugin(object):
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, send=True),            item_send)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, recv=True),            item_recv)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, send=True, recv=True), item_swap)
+        return menu
+
+
+    def make_item_menu(self, plugin, prop, rowindex):
+        """Returms wx.Menu for equipment location options."""
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
+        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
+        SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
+                             for slot in LOCATION_TO_SLOT.values()}
+
+        location, slot = prop["name"], LOCATION_TO_SLOT[prop["name"]]
+        swap_label = "Swap with" if self._state[location] else "Equip from"
+        menu = wx.Menu()
+        menu_equip = wx.Menu()
+        item_send  = menu.Append(wx.ID_ANY, "Send to inventory")
+        item_equip = menu.AppendSubMenu(menu_equip, "%s inventory .." % swap_label)
+
+        sorted_inv = sorted(enumerate(self._hero.inventory),
+                            key=lambda x: ("" if x[1] is None else x[1], x[0]))
+        for inventory_index, artifact_name in sorted_inv:
+            if artifact_name is None: continue # for inventory_index,
+            artifact_slot = ARTIFACT_TO_SLOTS[artifact_name][0]
+            if artifact_slot != slot: continue # for inventory_index,
+
+            label = "%s:\t%s" % (inventory_index + 1, artifact_name)
+            item = menu_equip.Append(wx.ID_ANY, label)
+            kwargs = dict(location=location, inventory_index=inventory_index)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_send_to_inventory, **kwargs), item)
+
+        if len(SLOT_TO_LOCATIONS[slot]) > 1:
+            menu_swap = wx.Menu()
+            reserved_locations = self._hero.equipment.get_reserved_locations()
+            for location2 in SLOT_TO_LOCATIONS[slot]:
+                artifact_equipped = self._hero.equipment[location2]
+                if artifact_equipped is None and location2 in reserved_locations:
+                    label = "<taken by %s>" % self._hero.equipment[reserved_locations[location2]]
+                else: label = "<blank>" if artifact_equipped is None else artifact_equipped
+                item = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (location2, label))
+                kwargs = dict(location=location, location2=location2)
+                menu.Bind(wx.EVT_MENU, functools.partial(self.on_swap_location, **kwargs), item)
+                if location == location2:
+                    menu_swap.Enable(item.Id, False)
+            item_swap = menu.AppendSubMenu(menu_swap, "Swap with location ..")
+            if not any(self._state[l] for l in SLOT_TO_LOCATIONS[slot]):
+                menu.Enable(item_swap.Id, False)
+
+        if not self._state[location]:
+            menu.Enable(item_send.Id, False)
+        if not menu_equip.MenuItemCount:
+            menu.Enable(item_equip.Id, False)
+        kwargs = dict(location=location)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_send_to_inventory, **kwargs), item_send)
         return menu
 
 
@@ -343,6 +409,36 @@ class EquipmentPlugin(object):
         h3sed.guibase.status(acting, flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(self.change_artifacts, eq2, inv2)
         self.parent.command(callable, name=label)
+
+
+    def on_send_to_inventory(self, event, location, inventory_index=None):
+        """Handler for swapping artifact with inventory, carries out and propagates change."""
+        try: eq2, inv2 = self._hero.make_artifact_swap(location, inventory_index)
+        except Exception as e:
+            wx.MessageBox(str(e), conf.Title, wx.OK | wx.ICON_WARNING)
+            return
+        if (eq2, inv2) == (self._state, self._hero.inventory):
+            return
+        artifact_name1 = self._state[location]
+        artifact_name2 = None if inventory_index is None else self._hero.inventory[inventory_index]
+        action = "send %s" % artifact_name1 if inventory_index is None else \
+                 "swap %s with" % artifact_name1 if artifact_name1 else "equip %s from" % location
+        label = "%s equipment: %s inventory %s" % (self._hero.name, action, artifact_name2)
+        h3sed.guibase.status("Changing %s" % label, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(self.change_artifacts, eq2, inv2)
+        self.parent.command(callable, name="change %s" % label)
+
+
+    def on_swap_location(self, event, location, location2):
+        """Handler for swapping artifact between locations, carries out and propagates change."""
+        if self._state[location] == self._state[location2]: return
+
+        eq2, inv2 = self._state.copy(), self._hero.inventory.copy()
+        eq2.update({location: eq2[location2], location2: eq2[location]})
+        label = "%s equipment: swap %s with %s" % (self._hero.name, location, location2)
+        h3sed.guibase.status("Changing %s" % label, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(self.change_artifacts, eq2, inv2)
+        self.parent.command(callable, name="change %s" % label)
 
 
 def parse(hero_bytes, version):

@@ -35,6 +35,7 @@ DATAPROPS = [{
     "min":          None, # Populated later
     "max":          None, # Populated later
     "choices":      None, # Populated later
+    "menu":         None, # Populated later
     "item":         [{
         "name":     "name",
         "type":     "label",
@@ -83,7 +84,7 @@ class SkillsPlugin(object):
         for prop in DATAPROPS:
             myprop = dict(prop)
             if "itemlist" == prop["type"]:
-                myprop.update(item=[], choices=SKILLS, min=MIN, max=MAX)
+                myprop.update(item=[], choices=SKILLS, min=MIN, max=MAX, menu=self.make_item_menu)
                 for item in prop["item"]:
                     if "choices" in item: item = dict(item, choices=SKILL_LEVELS)
                     myprop["item"].append(item)
@@ -158,12 +159,65 @@ class SkillsPlugin(object):
         return menu
 
 
+    def make_item_menu(self, plugin, prop, rowindex):
+        """Returms wx.Menu for a skills-row options."""
+        SKILLS = sorted(metadata.Store.get("skills", version=self.version))
+
+        menu = wx.Menu()
+        menu_change = wx.Menu()
+        menu_swap   = wx.Menu()
+        item_change = menu.AppendSubMenu(menu_change, "Change skill to ..")
+        item_swap   = menu.AppendSubMenu(menu_swap,   "Swap skill slot with ..")
+        for skill_name in SKILLS:
+            #if skill_name in self._state: continue # for skill_name
+            item = menu_change.Append(wx.ID_ANY, skill_name)
+            kwargs = dict(rowindex=rowindex, skill_name2=skill_name)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_item_menu_option, **kwargs), item)
+            if skill_name in self._state:
+                menu_change.Enable(item.Id, False)
+        for index, skill in enumerate(self._state):
+            label = "%s. %s\t(%s)" % (index + 1, skill.name, skill.level)
+            item = menu_swap.Append(wx.ID_ANY, label)
+            kwargs = dict(rowindex=rowindex, rowindex2=index)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_item_menu_option, **kwargs), item)
+            if index == rowindex:
+                menu_swap.Enable(item.Id, False)
+        if not menu_change.MenuItemCount:
+            menu.Enable(item_change.Id, False)
+        if not menu_swap.MenuItemCount:
+            menu.Enable(item_swap.Id, False)
+        return menu
+
+
     def on_add(self, prop, value):
         """Adds skill at first level."""
         if any(value == x["name"] for x in self._state):
             return False
         self._state.append(name=value)
         return True
+
+
+    def on_item_menu_option(self, event, rowindex, rowindex2=None, skill_name2=None):
+        """Handler for selection in row options-menu, carries out and propagates change."""
+        def on_do(self, rowindex, rowindex2, skill_name2):
+            state = self._state
+            if rowindex2 is not None:
+                state[rowindex], state[rowindex2] = state[rowindex2], state[rowindex]
+            else:
+                state[rowindex].name = skill_name2
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        skill_name1 = self._state[rowindex].name
+        skill_name2 = skill_name2 if rowindex2 is None else self._state[rowindex2].name
+        if rowindex2 is None: acting, action, adverb = ("Changing", "change", "to")
+        else: acting, action, adverb = ("Swapping", "swap", "with")
+        label = "%s skills: %s %s %s" % (self._hero.name, skill_name1, adverb, skill_name2)
+        h3sed.guibase.status("%s %s" % (acting, label), flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, rowindex, rowindex2, skill_name2)
+        self.parent.command(callable, name="%s %s" % (action, label))
 
 
     def on_remove_all(self, event):

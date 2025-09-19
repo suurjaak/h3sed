@@ -4,6 +4,7 @@ CHANGELOG
 3.2, 2025-09-19
 ---------------
 - add button with mass change options menu to hero property tabs
+- add individual row options menu to hero skills, army, equipment, and inventory
 
 
 3.1, 2025-09-01

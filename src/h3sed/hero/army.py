@@ -32,6 +32,7 @@ DATAPROPS = [{
     "nullable":    True,
     "min":         None,  # Populated later
     "max":         None,  # Populated later
+    "menu":        None, # Populated later
     "item": [{
         "type":    "label",
         "label":   "Army slot",
@@ -84,7 +85,8 @@ class ArmyPlugin(object):
         HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
         CHOICES = sorted(metadata.Store.get("creatures", version=self.version))
         for prop in DATAPROPS:
-            myprop = dict(prop, item=[], min=HERO_RANGES["army"][0], max=HERO_RANGES["army"][1])
+            myprop = dict(prop, item=[], min=HERO_RANGES["army"][0], max=HERO_RANGES["army"][1],
+                          menu=self.make_item_menu)
             for item in prop["item"]:
                 if "choices" in item: item = dict(item, choices=CHOICES)
                 if "min"     in item: item = dict(item, min=HERO_RANGES["army." + item["name"]][0])
@@ -176,6 +178,23 @@ class ArmyPlugin(object):
         return menu
 
 
+    def make_item_menu(self, plugin, prop, rowindex):
+        """Returms wx.Menu for army row options."""
+        menu = wx.Menu()
+        menu_swap = wx.Menu()
+        menu.AppendSubMenu(menu_swap, "Swap army slot with ..")
+        for stack_index, army_stack in enumerate(self._state):
+            label = "%s: %s" % (army_stack.name, army_stack.count) if army_stack else "<blank>"
+            item = menu_swap.Append(wx.ID_ANY, "%s. %s" % (stack_index + 1, label))
+            kwargs = dict(index1=rowindex, index2=stack_index)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_swap_stack, **kwargs), item)
+            if stack_index == rowindex:
+                menu_swap.Enable(item.Id, False)
+        item_round = menu.AppendSubMenu(self.make_rounding_menu(rowindex), "Round army count to ..")
+        if not self._state[rowindex]: menu.Enable(item_round.Id, False)
+        return menu
+
+
     def make_rounding_menu(self, rowindex=None):
         """Returns wx.Menu with options to round army counts, all if not specific index."""
         menu = wx.Menu()
@@ -225,6 +244,23 @@ class ArmyPlugin(object):
         h3sed.guibase.status("Rounding %s" % label, flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, state2)
         self.parent.command(callable, name="round %s" % label)
+
+
+    def on_swap_stack(self, event, index1, index2):
+        """Handler for swapping two arny positions, carries out and propagates change."""
+        def on_do(self, index1, index2):
+            self._state[index1], self._state[index2] = self._state[index2], self._state[index1]
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        if not self._state or (not self._state[index1] and not self._state[index2]):
+            return
+        label = "%s army slot %s and %s" % (self._hero.name, index1 + 1, index2 + 1)
+        h3sed.guibase.status("Swapping %s" % label, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, index1, index2)
+        self.parent.command(callable, name="swap %s" % label)
 
 
     def on_remove_all(self, event):
