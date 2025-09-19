@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  05.04.2025
+@modified  19.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -105,6 +105,12 @@ DATAPROPS = [{
     "len":    4,
     "min":    None,  # Populated later
     "max":    None,  # Populated later
+    "extra":  {
+        "type":     "button",
+        "label":    "Refill to total",
+        "tooltip":  "Top up remaining movement points to hero total",
+        "handler":  None,  # Populated later
+    },
 }, {
     "name":   "mana_left",
     "label":  "Spell points remaining",
@@ -173,6 +179,8 @@ class StatsPlugin(object):
                 prop = dict(prop, info=self.format_stat_bonus)
             if prop["name"] in ("exp", "level") and "extra" in prop:
                 prop = dict(prop, extra=dict(prop["extra"], handler=self.on_experience_level))
+            if prop["name"] == "movement_left" and "extra" in prop:
+                prop = dict(prop, extra=dict(prop["extra"], handler=self.on_refill_movement))
             result.append(prop)
         return h3sed.version.adapt("hero.stats.DATAPROPS", result, version=self.version)
 
@@ -222,7 +230,7 @@ class StatsPlugin(object):
 
 
     def on_experience_level(self, plugin, prop, state, event=None):
-        """Handler for "Set from level|experience" buttons, updates hero attribute."""
+        """Handler for "Set from level|experience" buttons, updates hero attribute and propagates."""
         SOURCE, TARGET = ("level", "exp") if "exp" == prop["name"] else ("exp", "level")
         source_prop = next(x for x in self.props() if x["name"] == SOURCE)
         value = None
@@ -247,6 +255,22 @@ class StatsPlugin(object):
         h3sed.guibase.status("Setting %s from %s", label, source_prop["label"].lower(),
                              flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, {TARGET: value})
+        self.parent.command(callable, name="set %s" % label)
+
+
+    def on_refill_movement(self, plugin, prop, state, event=None):
+        """Handler for setting hero movement points to total, updates attribute and propagates."""
+        def on_do(self, state):
+            self._state.update(state)
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        if self._state.movement_left >= self._state.movement_total: return
+        label = "%s stats: refill movement points" % self._hero.name
+        h3sed.guibase.status("Setting %s", label, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, {"movement_left": self._state.movement_total})
         self.parent.command(callable, name="set %s" % label)
 
 
