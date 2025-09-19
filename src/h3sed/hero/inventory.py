@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  16.09.2025
+@modified  19.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -34,6 +34,7 @@ DATAPROPS = [{
     "min":         None, # Populated later
     "max":         None, # Populated later
     "menu":        None, # Populated later
+    "info":        None, # Populated later
     "item": [{
         "type":    "label",
         "label":   "Inventory slot",
@@ -76,7 +77,8 @@ class InventoryPlugin(object):
         MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
         CHOICES = sorted(metadata.Store.get("artifacts", category="inventory", version=self.version))
         for prop in DATAPROPS:
-            myprop = dict(prop, item=[], min=MIN, max=MAX, menu=self.make_item_menu)
+            myprop = dict(prop, item=[], min=MIN, max=MAX, menu=self.make_item_menu,
+                          info=self.format_stats_bonus)
             for item in prop["item"]:
                 if "choices" in item: item = dict(item, choices=CHOICES)
                 myprop["item"].append(item)
@@ -119,6 +121,12 @@ class InventoryPlugin(object):
         if self._ctrls and all(self._ctrls):
             for i, value in enumerate(self._state):
                 self._ctrls[i].Value = value or ""
+                sibling = self._ctrls[i].GetNextSibling()
+                while sibling and not isinstance(sibling, wx.StaticText):
+                    sibling = sibling.GetNextSibling()
+                if isinstance(sibling, wx.StaticText):
+                    sibling.Label = self.format_stats_bonus(self, DATAPROPS[0], self._state, i)
+                    sibling.ToolTip = sibling.Label
             return False
         self._ctrls = h3sed.gui.build(self, self._panel)[0]
         return True
@@ -220,6 +228,16 @@ class InventoryPlugin(object):
         return menu
 
 
+    def format_stats_bonus(self, plugin, prop, state, rowindex):
+        """Returns item primaty stats modifier text like "+1 Attack, +1 Defense", or "" if no effect."""
+        artifact = state[rowindex]
+        if not artifact: return ""
+        STATS = metadata.Store.get("artifact_stats", version=self.version)
+        if artifact not in STATS: return ""
+        return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
+                         for k, v in zip(metadata.PRIMARY_ATTRIBUTES.values(), STATS[artifact]) if v)
+
+
     def change_artifacts(self, equipment, inventory):
         """Carries out change of equipment and inventory, propagates change to hero and savefile."""
         changes = {} # {property name: whether changed from action}
@@ -256,6 +274,21 @@ class InventoryPlugin(object):
                              flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, items)
         self.parent.command(callable, name="compact inventory in %s order" % label)
+
+
+    def on_change(self, prop, row, ctrl, value, rowindex):
+        """
+        Handler for equipment slot change, updates state, returns whether action succeeded.
+
+        Rolls back change if lacking free slot due to a combination artifact.
+        """
+        self._state[rowindex] = value
+        sibling = ctrl.GetNextSibling()
+        while sibling and not isinstance(sibling, wx.StaticText): sibling = sibling.GetNextSibling()
+        if isinstance(sibling, wx.StaticText):
+            sibling.Label = self.format_stats_bonus(self, prop, self._state, rowindex)
+            sibling.ToolTip = sibling.Label
+        return True
 
 
     def on_change_all(self, event, swap):
