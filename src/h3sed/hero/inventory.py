@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  19.09.2025
+@modified  20.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -175,9 +175,15 @@ class InventoryPlugin(object):
         item_move  = menu.AppendSubMenu(menu_move,  "Move to inventory ..")
         item_swap  = menu.AppendSubMenu(menu_swap,  "Swap with inventory slot ..")
 
+        artifact_on_row = self._state[rowindex]
         for category in list(SLOT_TO_LOCATIONS) + ["scroll", "inventory"]:
             menu_category = wx.Menu()
-            item_category = menu_set.AppendSubMenu(menu_category, category)
+            item_category = wx.MenuItem(menu_set, wx.ID_ANY, category, subMenu=menu_category)
+            if artifact_on_row in ARTIFACT_TO_SLOTS:
+                if ARTIFACT_TO_SLOTS[artifact_on_row][0] == category \
+                or "scroll" == category and artifact_on_row in SCROLL_ARTIFACTS:
+                    item_category.Font = item_category.Font.Bold()
+            menu_set.Append(item_category)
             candidates = metadata.Store.get("artifacts", category=category, version=self.version)
             if "inventory" == category:
                 candidates = [x for x in candidates
@@ -185,11 +191,13 @@ class InventoryPlugin(object):
             elif "side" == category:
                 candidates = [x for x in candidates if x not in SCROLL_ARTIFACTS]
             for artifact_candidate in candidates or []:
-                item_candidate = menu_category.Append(wx.ID_ANY, artifact_candidate)
+                item_candidate = wx.MenuItem(menu_category, wx.ID_ANY, artifact_candidate)
+                if artifact_candidate == artifact_on_row:
+                    item_candidate.Font = item_candidate.Font.Bold()
+                menu_category.Append(item_candidate)
                 kwargs = dict(rowindex=rowindex, artifact=artifact_candidate)
                 menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_candidate)
 
-        artifact_on_row = self._state[rowindex]
         reserved_locations = self._hero.equipment.get_reserved_locations()
         candidate_locations = []
         if artifact_on_row in ARTIFACT_TO_SLOTS:
@@ -207,9 +215,9 @@ class InventoryPlugin(object):
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_location)
 
         for direction, label in [(-1, "top"), (1, "bottom")]:
-                item = menu_move.Append(wx.ID_ANY, label)
-                kwargs = dict(rowindex=rowindex, direction=direction)
-                menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item)
+            item = menu_move.Append(wx.ID_ANY, label)
+            kwargs = dict(rowindex=rowindex, direction=direction)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item)
 
         for i, artifact in enumerate(self._state):
             item_slot = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (i + 1, artifact or "<blank>"))
