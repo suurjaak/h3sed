@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  19.09.2025
+@modified  20.09.2025
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1502,20 +1502,21 @@ Store.add("artifacts", SCROLL_ARTIFACTS, category="scroll")
 for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
     Store.add("artifacts", [k for k, v in ARTIFACT_SLOTS.items() if v[0] == slot], category=slot)
 
-Store.add("artifact_slots",      ARTIFACT_SLOTS)
-Store.add("artifact_spells",     ARTIFACT_SPELLS)
-Store.add("artifact_stats",      ARTIFACT_STATS)
-Store.add("creatures",           CREATURES)
-Store.add("equipment_slots",     EQUIPMENT_SLOTS, separate=True)  # Versions without side5 e.g. RoE
-Store.add("experience_levels",   EXPERIENCE_LEVELS, separate=True) # Versions can cap level e.g. HoTA
-Store.add("hero_byte_positions", HERO_BYTE_POSITIONS)
-Store.add("hero_ranges",         HERO_RANGES)
-Store.add("ids",                 IDS)
-Store.add("skills",              SKILLS)
-Store.add("skill_levels",        SKILL_LEVELS)
-Store.add("special_artifacts",   SPECIAL_ARTIFACTS)
-Store.add("spells",              SPELLS)
-Store.add("spell_schools",       SPELL_SCHOOLS)
-Store.add("bannable_spells",     []) # Initialize empty array for version modules to update
+Store.add("artifact_slots",        ARTIFACT_SLOTS)
+Store.add("artifact_spells",       ARTIFACT_SPELLS)
+Store.add("artifact_stats",        ARTIFACT_STATS)
+Store.add("creatures",             CREATURES)
+Store.add("equipment_slots",       EQUIPMENT_SLOTS, separate=True)  # Versions without side5 e.g. RoE
+Store.add("experience_levels",     EXPERIENCE_LEVELS, separate=True) # Versions can cap level e.g. HoTA
+Store.add("hero_byte_positions",   HERO_BYTE_POSITIONS)
+Store.add("hero_ranges",           HERO_RANGES)
+Store.add("ids",                   IDS)
+Store.add("skills",                SKILLS)
+Store.add("skill_levels",          SKILL_LEVELS)
+Store.add("special_artifacts",     SPECIAL_ARTIFACTS)
+Store.add("spells",                SPELLS)
+Store.add("spell_schools",         SPELL_SCHOOLS)
+Store.add("bannable_spells",       []) # Initialize empty array for version modules to update
+Store.add("combination_artifacts", {}) # Initialize empty dict for version modules to update
 for artifact, spells in ARTIFACT_SPELLS.items():
     Store.add("spells", spells, category=artifact)

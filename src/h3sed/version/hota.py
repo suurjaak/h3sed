@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  20.08.2025
+@modified  21.09.2025
 ------------------------------------------------------------------------------
 """
 import re
@@ -280,7 +280,7 @@ ARTIFACT_SLOTS = {
     "Golden Goose":                      ["side", "side", "side"],
     "Hideous Mask":                      ["side"],
     "Horn of the Abyss":                 ["side"],
-    "Ironfist of the Ogre":              ["weapon", "helm", "armor", "shield",],
+    "Ironfist of the Ogre":              ["weapon", "helm", "armor", "shield"],
     "Pendant of Downfall":               ["neck"],
     "Pendant of Reflection":             ["neck", "cloak", "feet"],
     "Plate of Dying Light":              ["armor"],
@@ -322,6 +322,41 @@ ARTIFACT_STATS = {
 ARTIFACT_SPELLS = {
     "Armageddon's Blade":                ["Armageddon"],
     "Titan's Thunder":                   ["Titan's Lightning Bolt"],
+}
+
+
+"""Combination artifact components, as {artifact: [component artifacts in slot order]}."""
+COMBINATION_ARTIFACTS = {
+    "Admiral's Hat":              ["Sea Captain's Hat", "Necklace of Ocean Guidance"],
+    "Angelic Alliance":           ["Sword of Judgement", "Helm of Heavenly Enlightenment",
+                                   "Celestial Necklace of Bliss", "Armor of Wonder",
+                                   "Lion's Shield of Courage", "Sandals of the Saint"],
+    "Armor of the Damned":        ["Rib Cage", "Skull Helmet", "Blackshard of the Dead Knight",
+                                   "Shield of the Yawning Dead"],
+    "Bow of the Sharpshooter":    ["Bow of Elven Cherrywood", "Bowstring of the Unicorn's Mane",
+                                   "Angel Feather Arrows"],
+    "Cloak of the Undead King":   ["Vampire's Cowl", "Amulet of the Undertaker", "Dead Man's Boots"],
+    "Cornucopia":                 ["Everpouring Vial of Mercury", "Eversmoking Ring of Sulfur",
+                                   "Ring of Infinite Gems", "Everflowing Crystal Cloak"],
+    "Diplomat's Cloak":           ["Ambassador's Sash", "Statesman's Medal", "Diplomat's Ring"],
+    "Elixir of Life":             ["Vial of Lifeblood", "Ring of Life", "Ring of Vitality"],
+    "Golden Goose":               ["Endless Bag of Gold", "Endless Purse of Gold",
+                                   "Endless Sack of Gold"],
+    "Ironfist of the Ogre":       ["Ogre's Club of Havoc", "Crown of the Supreme Magi",
+                                   "Tunic of the Cyclops King", "Targ of the Rampaging Ogre"],
+    "Pendant of Reflection":      ["Garniture of Interference", "Surcoat of Counterpoise",
+                                   "Boots of Polarity"],
+    "Power of the Dragon Father": ["Dragon Scale Armor", "Crown of Dragontooth",
+                                   "Necklace of Dragonteeth", "Red Dragon Flame Tongue",
+                                   "Dragon Scale Shield", "Quiet Eye of the Dragon",
+                                   "Still Eye of the Dragon", "Dragon Wing Tabard",
+                                   "Dragonbone Greaves"],
+    "Ring of the Magi":           ["Ring of Conjuring", "Collar of Conjuring", "Cape of Conjuring"],
+    "Statue of Legion":           ["Head of Legion", "Arms of Legion", "Torso of Legion",
+                                   "Loins of Legion", "Legs of Legion"],
+    "Titan's Thunder":            ["Titan's Gladius", "Thunder Helmet", "Titan's Cuirass",
+                                   "Sentinel's Shield"],
+    "Wizard's Well":              ["Charm of Mana", "Mystic Orb of Mana", "Talisman of Mana"],
 }
 
 
@@ -431,16 +466,17 @@ def init():
 
     LEVELS = {k: v for k, v in metadata.EXPERIENCE_LEVELS.items() if k <= HERO_RANGES["level"][1]}
 
-    metadata.Store.add("artifact_slots",    ARTIFACT_SLOTS,    version=NAME)
-    metadata.Store.add("artifact_spells",   ARTIFACT_SPELLS,   version=NAME)
-    metadata.Store.add("artifact_stats",    ARTIFACT_STATS,    version=NAME)
-    metadata.Store.add("creatures",         CREATURES,         version=NAME)
-    metadata.Store.add("experience_levels", LEVELS,            version=NAME)
-    metadata.Store.add("hero_ranges",       HERO_RANGES,       version=NAME)
-    metadata.Store.add("ids",               IDS,               version=NAME)
-    metadata.Store.add("skills",            SKILLS,            version=NAME)
-    metadata.Store.add("special_artifacts", SPECIAL_ARTIFACTS, version=NAME)
-    metadata.Store.add("bannable_spells",   BANNABLE_SPELLS,   version=NAME)
+    metadata.Store.add("artifact_slots",        ARTIFACT_SLOTS,        version=NAME)
+    metadata.Store.add("artifact_spells",       ARTIFACT_SPELLS,       version=NAME)
+    metadata.Store.add("artifact_stats",        ARTIFACT_STATS,        version=NAME)
+    metadata.Store.add("combination_artifacts", COMBINATION_ARTIFACTS, version=NAME)
+    metadata.Store.add("creatures",             CREATURES,             version=NAME)
+    metadata.Store.add("experience_levels",     LEVELS,                version=NAME)
+    metadata.Store.add("hero_ranges",           HERO_RANGES,           version=NAME)
+    metadata.Store.add("ids",                   IDS,                   version=NAME)
+    metadata.Store.add("skills",                SKILLS,                version=NAME)
+    metadata.Store.add("special_artifacts",     SPECIAL_ARTIFACTS,     version=NAME)
+    metadata.Store.add("bannable_spells",       BANNABLE_SPELLS,       version=NAME)
     for artifact, spells in ARTIFACT_SPELLS.items():
         metadata.Store.add("spells", spells, category=artifact, version=NAME)
 

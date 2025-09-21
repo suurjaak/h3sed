@@ -1,11 +1,12 @@
 CHANGELOG
 =========
 
-3.2, 2025-09-19
+3.2, 2025-09-21
 ---------------
 - add button with mass change options menu to hero property tabs
 - add individual row options menu to hero skills, army, equipment, and inventory
 - add option to refill hero movement points
+- add option to assemble and disassemble combination artifacts
 - add info text to inventory artifacts with hero main stats bonuses
 - add info text to spells on missing spellbook
 

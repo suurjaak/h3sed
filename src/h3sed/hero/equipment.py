@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  17.09.2025
+@modified  21.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -258,11 +258,13 @@ class EquipmentPlugin(object):
     def make_item_menu(self, plugin, prop, rowindex):
         """Returms wx.Menu for equipment location options."""
         ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
+        COMBINATION_ARTIFACTS = metadata.Store.get("combination_artifacts", version=self.version)
         LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
         SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
                              for slot in LOCATION_TO_SLOT.values()}
-
         location, slot = prop["name"], LOCATION_TO_SLOT[prop["name"]]
+        reserved_locations = self._state.get_reserved_locations()
+
         swap_label = "Swap with" if self._state[location] else "Equip from"
         menu = wx.Menu()
         menu_equip = wx.Menu()
@@ -283,7 +285,6 @@ class EquipmentPlugin(object):
 
         if len(SLOT_TO_LOCATIONS[slot]) > 1:
             menu_swap = wx.Menu()
-            reserved_locations = self._hero.equipment.get_reserved_locations()
             for location2 in SLOT_TO_LOCATIONS[slot]:
                 artifact_equipped = self._hero.equipment[location2]
                 if artifact_equipped is None and location2 in reserved_locations:
@@ -297,6 +298,20 @@ class EquipmentPlugin(object):
             item_swap = menu.AppendSubMenu(menu_swap, "Swap with location ..")
             if not any(self._state[l] for l in SLOT_TO_LOCATIONS[slot]):
                 menu.Enable(item_swap.Id, False)
+
+        if location in reserved_locations or self._state[location] in COMBINATION_ARTIFACTS:
+            item_combo = menu.Append(wx.ID_ANY, "Disassemble combination artifact")
+            kwargs = dict(location=location)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item_combo)
+        elif self._state[location]:
+            combo, others = next(((a, bb) for a, bb in COMBINATION_ARTIFACTS.items()
+                                  if self._state[location] in bb), (None, None))
+            if combo and all(x in self._state for x in others):
+                menu_combo = wx.Menu()
+                menu.AppendSubMenu(menu_combo, "Assemble combination artifact")
+                item = menu_combo.Append(wx.ID_ANY, combo)
+                kwargs = dict(location=location)
+                menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item)
 
         if not self._state[location]:
             menu.Enable(item_send.Id, False)
@@ -317,12 +332,12 @@ class EquipmentPlugin(object):
                          for k, v in zip(metadata.PRIMARY_ATTRIBUTES.values(), STATS[value]) if v)
 
 
-    def change_artifacts(self, equipment, inventory):
+    def change_artifacts(self, equipment, inventory=None):
         """Carries out change of equipment and inventory, propagates change to hero and savefile."""
         changes = {} # {property name: whether changed from action}
         if equipment != self._state:
             self._hero.equipment.update(equipment), changes.update(equipment=True)
-        if inventory != self._hero.inventory:
+        if inventory is not None and inventory != self._hero.inventory:
             self._hero.inventory[:], changes["inventory"] = inventory, True
         changes["stats"] = (self._hero.stats != self._hero.realized.stats)
         if not any(changes.values()): return True
@@ -414,6 +429,50 @@ class EquipmentPlugin(object):
         self.parent.command(callable, name=label)
 
 
+    def on_combo_artifact(self, event, location):
+        """Handler for assembling or disassembling a combination artifact, propagates change."""
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
+        COMBINATION_ARTIFACTS = metadata.Store.get("combination_artifacts", version=self.version)
+        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
+        SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
+                             for slot in LOCATION_TO_SLOT.values()}
+
+        eq2 = self._state.copy()
+        combo_artifact = None
+        reserved_locations = self._state.get_reserved_locations()
+        if location in reserved_locations or self._state[location] in COMBINATION_ARTIFACTS:
+            action, acting = "disassemble", "Disassembling"
+            combo_artifact = self._state[location] or self._state[reserved_locations[location]]
+            components = COMBINATION_ARTIFACTS[combo_artifact]
+            primary_location = reserved_locations.get(location, location)
+            locations = [a for a in eq2 if reserved_locations.get(a) == primary_location]
+            locations.insert(0, primary_location)
+            eq2[primary_location] = None
+            for component_artifact in components:
+                location_candidates = SLOT_TO_LOCATIONS[ARTIFACT_TO_SLOTS[component_artifact][0]]
+                component_location = next(l for l in location_candidates if l in locations)
+                eq2[component_location] = component_artifact
+                locations.remove(component_location)
+        else:
+            action, acting = "assemble", "Assembling"
+            combo_artifact = next(a for a, bb in COMBINATION_ARTIFACTS.items()
+                                  if self._state[location] in bb)
+            components = COMBINATION_ARTIFACTS[combo_artifact]
+            locations = [location]
+            component_candidates = [x for x in components if x != self._state[location]]
+            locations.extend(l for l, c in eq2.items() if c in component_candidates)
+            primary_location_candidates = SLOT_TO_LOCATIONS[ARTIFACT_TO_SLOTS[combo_artifact][0]]
+            primary_location = next(l for l in locations if l in primary_location_candidates)
+            eq2.update({l: None for l in locations})
+            eq2[primary_location] = combo_artifact
+
+        label = "change %s equipment: %s %s" % (self._hero.name, action, combo_artifact)
+        h3sed.guibase.status("%s equipment %s" % (acting, combo_artifact),
+                             flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(self.change_artifacts, eq2)
+        self.parent.command(callable, name=label)
+
+
     def on_send_to_inventory(self, event, location, inventory_index=None):
         """Handler for swapping artifact with inventory, carries out and propagates change."""
         try: eq2, inv2 = self._hero.make_artifact_swap(location, inventory_index)
@@ -436,11 +495,11 @@ class EquipmentPlugin(object):
         """Handler for swapping artifact between locations, carries out and propagates change."""
         if self._state[location] == self._state[location2]: return
 
-        eq2, inv2 = self._state.copy(), self._hero.inventory.copy()
+        eq2 = self._state.copy()
         eq2.update({location: eq2[location2], location2: eq2[location]})
         label = "%s equipment: swap %s with %s" % (self._hero.name, location, location2)
         h3sed.guibase.status("Changing %s" % label, flash=conf.StatusShortFlashLength, log=True)
-        callable = functools.partial(self.change_artifacts, eq2, inv2)
+        callable = functools.partial(self.change_artifacts, eq2)
         self.parent.command(callable, name="change %s" % label)
 
 
