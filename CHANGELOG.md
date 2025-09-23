@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.2, 2025-09-21
+3.2, 2025-09-23
 ---------------
 - add button with mass change options menu to hero property tabs
 - add individual row options menu to hero skills, army, equipment, and inventory
@@ -9,6 +9,7 @@ CHANGELOG
 - add option to assemble and disassemble combination artifacts
 - add info text to inventory artifacts with hero main stats bonuses
 - add info text to spells on missing spellbook
+- fix opening savefiles from Armageddon's Blade (issue #18)
 
 
 3.1, 2025-09-01

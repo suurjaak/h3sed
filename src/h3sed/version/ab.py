@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  27.07.2025
+@modified  23.09.2025
 ------------------------------------------------------------------------------
 """
 import re
@@ -204,6 +204,7 @@ class Spells(DataClass, hero.Spells):         pass
 
 def init():
     """Adds Armageddon's Blade data to metadata stores."""
+    EQUIPMENT_SLOTS = {k: v for k, v in metadata.EQUIPMENT_SLOTS.items() if "side5" != k}
     metadata.Store.add("artifacts", ARTIFACTS, version=NAME)
     metadata.Store.add("artifacts", ARTIFACTS, version=NAME, category="inventory")
     for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
@@ -213,8 +214,9 @@ def init():
     metadata.Store.add("artifact_slots",  ARTIFACT_SLOTS,  version=NAME)
     metadata.Store.add("artifact_spells", ARTIFACT_SPELLS, version=NAME)
     metadata.Store.add("artifact_stats",  ARTIFACT_STATS,  version=NAME)
-    metadata.Store.add("creatures",       Creatures,      version=NAME)
-    metadata.Store.add("ids",             IDS,            version=NAME)
+    metadata.Store.add("creatures",       Creatures,       version=NAME)
+    metadata.Store.add("equipment_slots", EQUIPMENT_SLOTS, version=NAME)
+    metadata.Store.add("ids",             IDS,             version=NAME)
     for artifact, spells in ARTIFACT_SPELLS.items():
         metadata.Store.add("spells", spells, version=NAME, category=artifact)
 
