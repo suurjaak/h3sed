@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  21.09.2025
+@modified  23.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -521,7 +521,7 @@ def parse(hero_bytes, version):
     equipment = h3sed.hero.Equipment.factory(version)
     for location in EQUIPMENT_LOCATIONS:
         artifact_id = parse_id(hero_bytes, BYTEPOS[location])
-        if artifact_id: equipment[location] = ARTIFACT_NAMES[artifact_id]
+        equipment[location] = ARTIFACT_NAMES.get(artifact_id)
     return equipment
 
 
