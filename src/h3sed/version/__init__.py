@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  06.04.2025
+@modified  23.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -16,7 +16,6 @@ from . import ab
 from . import hc
 from . import hota
 from . import roe
-from . import roe_gog
 from . import sod
 
 
@@ -27,7 +26,6 @@ VERSIONS = collections.OrderedDict([
     ("sod",     sod),     # Shadow of Death
     ("hc",      hc),      # Heroes Chronicles
     ("hota",    hota),    # Horn of The Abyss
-    ("roe_gog", roe_gog), # Restoration of Erathia (GOG Complete)
 ])
 
 ADAPT_CACHE = {} # {(name, value, version): value}

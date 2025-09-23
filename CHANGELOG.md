@@ -10,6 +10,7 @@ CHANGELOG
 - add info text to inventory artifacts with hero main stats bonuses
 - add info text to spells on missing spellbook
 - fix opening savefiles from Armageddon's Blade (issue #18)
+- fix opening savefiles from GOG Heroes 3 Complete (issue #19)
 
 
 3.1, 2025-09-01

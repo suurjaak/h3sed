@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  20.09.2025
+@modified  23.09.2025
 ------------------------------------------------------------------------------
 """
 from .. import hero
@@ -22,7 +22,7 @@ TITLE = "Shadow of Death"
 """Game major and minor version byte ranges, as (min, max)."""
 VERSION_BYTE_RANGES = {
     "version_major":  (42, 43),
-    "version_minor":  ( 2,  4),
+    "version_minor":  ( 0,  4),
 }
 
 
@@ -199,7 +199,6 @@ class ArmyStack(DataClass, hero.ArmyStack):
                  "count": make_integer_cast("army.count", version=NAME)}
 
 
-
 class Equipment(DataClass, hero.Equipment):
     __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Equipment.__slots__}
                  
@@ -219,7 +218,7 @@ class Spells(DataClass, hero.Spells):         pass
 
 
 def init():
-    """Initializes artifacts and creatures for Shadow of Death."""
+    """Adds Shadow of Death data to metadata stores."""
     metadata.Store.add("artifacts", ARTIFACTS, version=NAME)
     metadata.Store.add("artifacts", ARTIFACTS, category="inventory", version=NAME)
     for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
