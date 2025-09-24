@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  20.09.2025
+@modified  24.09.2025
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1347,7 +1347,7 @@ class Savefile(object):
 
     def parse_metadata(self):
         """Populates savefile map name and description."""
-        RGX_HEADER = h3sed.version.adapt("savefile_header_regex", self.RGX_HEADER)
+        RGX_HEADER = h3sed.version.adapt("savefile_header_regex", self.RGX_HEADER, self.version)
         match = RGX_HEADER.match(self.raw[:2048])
         if not match:
             logger.warning("Failed to parse map name and description from %s.", self.filename)

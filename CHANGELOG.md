@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.2, 2025-09-23
+3.2, 2025-09-24
 ---------------
 - add button with mass change options menu to hero property tabs
 - add individual row options menu to hero skills, army, equipment, and inventory
@@ -11,6 +11,7 @@ CHANGELOG
 - add info text to spells on missing spellbook
 - fix opening savefiles from Armageddon's Blade (issue #18)
 - fix opening savefiles from GOG Heroes 3 Complete (issue #19)
+- fix not saving Ballista in versions other than Horn of the Abyss (issue #20)
 
 
 3.1, 2025-09-01
