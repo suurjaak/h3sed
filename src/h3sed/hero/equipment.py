@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  23.09.2025
+@modified  24.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -339,9 +339,9 @@ class EquipmentPlugin(object):
             self._hero.equipment.update(equipment), changes.update(equipment=True)
         if inventory is not None and inventory != self._hero.inventory:
             self._hero.inventory[:], changes["inventory"] = inventory, True
-        changes["stats"] = (self._hero.stats != self._hero.realized.stats)
-        if not any(changes.values()): return True
         self._hero.realize()
+        changes["stats"] = (self._hero.stats != self._hero.serialed.stats)
+        if not any(changes.values()): return True
         self.parent.patch()
         for name in (name for name, changed in changes.items() if changed):
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=name)
