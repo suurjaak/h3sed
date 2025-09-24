@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    18.09.2025
+@modified    24.09.2025
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -536,6 +536,16 @@ class TypedArray(list):
         """Returns a deep copy of this array."""
         return self.spawn(self)
 
+    def count(self, *value, **attributes):
+        """
+        Returns number of occurrences of value.
+
+        @param   value       value to find, if not using structured attributes
+        @param   attributes  attributes to match in structured elements
+        """
+        try: return len(list(self.iterindex(*value, **attributes)))
+        except ValueError: return 0
+
     def extend(self, other):
         """Populates empty elements in array with values from iterable while not full."""
         for value in other:
@@ -549,17 +559,7 @@ class TypedArray(list):
         @param   value       value to find, if not using structured attributes
         @param   attributes  attributes to match in structured elements
         """
-        if not value and not attributes:
-            raise TypeError("index expected at least 1 argument, got 0")
-        if attributes:
-            try:
-                item = self._cls(**attributes)
-                return next(i for i, x in enumerate(self)
-                            if all(getattr(x, k, None) == getattr(item, k) for k in attributes))
-            except Exception: raise ValueError("%s is not in list" % attributes)
-        try: item = self._cls(value[0])
-        except Exception: raise ValueError("%s is not in list" % (value[0], ))
-        return list.index(self, item) # Raises ValueError
+        return next(self.iterindex(*value, **attributes))
 
     def insert(self, index, *value, **attributes):
         """Inserts value before index, drops last array element if overflow."""
@@ -589,13 +589,7 @@ class TypedArray(list):
 
         If index within minimum required length, populates index with a new empty element.
         """
-        if attributes:
-            index = next((i for i, x in enumerate(self)
-                          if all(getattr(x, k, None) == v for k, v in attributes.items())), None)
-            if index is None: raise ValueError("%s is not in list" % attributes)
-        else:
-            index = list.index(self, value[0]) # Raises ValueError
-        self.pop(index)
+        self.pop(self.index(*value, **attributes)) # Raises ValueError if not present
 
     def spawn(self, other=(), size=None):
         """
@@ -622,6 +616,41 @@ class TypedArray(list):
         blank = self._default() if callable(self._default) else self._default
         if value and value[0] != blank: return self._cls(value[0])
         return blank
+
+    def iterindex(self, *value, **attributes):
+        """
+        Yields indexes of items matching value; raises ValueError if nothing matches.
+
+        @param   value       value to find, if not using structured attributes
+        @param   attributes  attributes to match in structured elements
+        """
+        if not value and not attributes:
+            raise TypeError("expected at least 1 argument, got 0")
+        if value and attributes:
+            raise TypeError("expected either positional or keyword arguments, got both")
+        if value and len(value) > 1:
+            raise TypeError("expected a single positional argument, got %s" % len(value))
+
+        found = False
+        if not attributes:
+            try: example = self._cls(value[0])
+            except Exception: example = None
+            for index, item in enumerate(self) if example is not None else ():
+                if example == item:
+                    found = True
+                    yield index
+            if not found: raise ValueError("%s is not in list" % (value[0], ))
+            return
+
+        try:
+            example = self._cls(**attributes) # Validate and cast attributes; may be empty
+            for index, item in enumerate(self):
+                if all(hasattr(item, k) and getattr(item, k) in [v, getattr(example, k, v)]
+                       for k, v in attributes.items()):
+                    found = True
+                    yield index
+        except Exception: pass
+        if not found: raise ValueError("%s is not in list" % attributes)
 
     @property
     def cls(self): return self._cls

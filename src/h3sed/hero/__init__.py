@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  18.09.2025
+@modified  24.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -165,36 +165,49 @@ class SlotCheckerMixin(object):
 class TypedArrayCheckerMixin(SlotCheckerMixin):
     """TypedArray mixin for index() by nested property, e.g. "luck" in hero.skills."""
 
-    def index(self, *value, **attributes):
+    def iterindex(self, *value, **attributes):
         """
-        Returns index of value; raises ValueError if not present.
+        Yields indexes of items matching value; raises ValueError if nothing matches.
 
         @param   value       value to find, if not using attributes
         @param   attributes  attributes to match in structured properties
         """
         if not value and not attributes:
-            raise TypeError("index expected at least 1 argument, got 0")
-        if attributes:
-            if any(k not in self.cls.__slots__ for k in attributes):
-                raise ValueError("%s is not in list" % attributes)
+            raise TypeError("expected at least 1 argument, got 0")
+        if value and attributes:
+            raise TypeError("expected either positional or keyword arguments, got both")
+        if value and len(value) > 1:
+            raise TypeError("expected a single positional argument, got %s" % len(value))
+
+        found = False
+        if attributes: # Match items having same attribute values
             try: data = {k: self.cls.__slots__[k](v) for k, v in attributes.items()}
-            except Exception: raise ValueError("%s is not in list" % attributes)
-            return next(i for i, x in enumerate(self) if all(data[k] == x.get(k, x) for k in data))
+            except Exception: data = None
+            for index, item in enumerate(self) if data is not None else ():
+                if all(data[k] == item.get(k, item) for k in data):
+                    found = True
+                    yield index
+            if not found: raise ValueError("%s is not in list" % attributes)
+            return
 
         elem = value[0]
-        if isinstance(elem, self.cls):
-            return list.index(self, elem)
-        if isinstance(elem, str) and elem in self.cls.__slots__:
-            return any(dict.__contains__(x, elem) for x in self)
+        try: check_key = elem in self.cls.__slots__
+        except Exception: check_key = False
+        for index, item in enumerate(self): # Match items equaling value or having it as key
+            if elem == item or (check_key and dict.__contains__(item, elem)):
+                found = True
+                yield index
+        if found: return
 
-        data = {}
-        for key, cast in self.cls.__slots__.items():
+        data = {} # Match any item having this cast value in any attribute
+        for key, cast in self.cls.__slots__.items() if hasattr(self.cls, "__slots__") else ():
             try: data[key] = cast(elem)
             except Exception: pass
-        if not data: raise ValueError("%s is not in list" % (elem, ))
-        for i, item in enumerate(self):
-            if any(data[k] == item.get(k, item) for k in data): return i
-        raise ValueError("%s is not in list" % (elem, ))
+        for index, item in enumerate(self) if data else ():
+            if any(data[k] == item.get(k, item) for k in data):
+                found = True
+                yield index
+        if not found: raise ValueError("%s is not in list" % (elem, ))
 
 
 class ArmyStack(SlotCheckerMixin, SlotsDict, DataClass):
