@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    24.09.2025
+@modified    25.09.2025
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -340,7 +340,8 @@ class SlotsDict(dict):
             raise TypeError("pop expected at most 2 arguments, got %s" % (len(args) + 1))
         if key in self.__slots__:
             value = self[key] if not args or key in self else args[0] # KeyError if no default given
-            dict.clear(self) if self.__required__ else dict.pop(self, key)
+            if self.__required__: dict.clear(self)
+            else: dict.__setitem__(self, key, self.__slots__[key]())
             return value
         elif args: return args[0]
         else: raise KeyError(key)
@@ -353,7 +354,8 @@ class SlotsDict(dict):
         """
         if not self: raise KeyError("popitem(): dictionary is empty")
         key, value = next(reversed(self.items()))
-        dict.clear(self) if self.__required__ else dict.pop(self, key)
+        if self.__required__: dict.clear(self)
+        else: dict.__setitem__(self, key, self.__slots__[key]())
         return key, value
 
     def setdefault(self, key, value):
