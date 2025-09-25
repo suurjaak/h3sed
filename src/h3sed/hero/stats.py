@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  24.09.2025
+@modified  25.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -211,7 +211,7 @@ class StatsPlugin(object):
         return state0 != self._state
 
 
-    def on_change(self, prop, row, ctrl, value):
+    def on_change(self, prop, value, ctrl, rowindex=None):
         """
         Handler for stats change, updates state, notifies other plugins if spellbook was toggled.
         Returns whether anything changed in stats.

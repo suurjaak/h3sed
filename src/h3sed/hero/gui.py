@@ -48,7 +48,7 @@ Subplugin instances are expected to have the following API:
         (like a secondary skill), returning operation success.
         '''
 
-    def on_change(self, prop, row, ctrl, value):
+    def on_change(self, prop, value, ctrl, rowindex=None):
         '''
         Optional. Handler for changing something in subplugin
         (like secondary skill level), returning operation success.
@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  17.09.2025
+@modified  25.09.2025
 ------------------------------------------------------------------------------
 """
 import collections

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  24.09.2025
+@modified  25.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -375,7 +375,7 @@ class EquipmentPlugin(object):
         finally: self._panel.Thaw()
 
 
-    def on_change(self, prop, row, ctrl, value):
+    def on_change(self, prop, value, ctrl, rowindex=None):
         """
         Handler for equipment slot change, updates state, returns whether action succeeded.
 
@@ -390,9 +390,8 @@ class EquipmentPlugin(object):
             wx.MessageBox(str(e), conf.Title, wx.OK | wx.ICON_WARNING)
             return False
 
-        stats0 = self._hero.stats.copy()
         self._hero.realize()
-        if stats0 != self._hero.stats:
+        if self._hero.stats != self._hero.serialed.stats:
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name="stats")
             wx.PostEvent(self._panel, evt)
         self.update_reserved_slots()

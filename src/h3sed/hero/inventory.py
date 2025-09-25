@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  24.09.2025
+@modified  25.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -300,7 +300,7 @@ class InventoryPlugin(object):
         self.parent.command(callable, name="compact inventory in %s order" % label)
 
 
-    def on_change(self, prop, row, ctrl, value, rowindex):
+    def on_change(self, prop, value, ctrl, rowindex):
         """
         Handler for equipment slot change, updates state, returns whether action succeeded.
 

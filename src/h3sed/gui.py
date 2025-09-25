@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    24.09.2025
+@modified    25.09.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1717,8 +1717,7 @@ def build(plugin, panel):
             if None not in (key, target) and util.get(target, key) == value:
                 return result
             if callable(getattr(plugin, "on_change", None)):
-                changeargs = {} if rowindex is None else dict(rowindex=rowindex)
-                result = plugin.on_change(myprops, row, ctrl, value, **changeargs)
+                result = plugin.on_change(myprops, value, ctrl, rowindex)
             elif None not in (key, target):
                 target[key], result = value, True
             if result: plugin.parent.patch()
@@ -1815,8 +1814,7 @@ def build(plugin, panel):
                 return False
             value = {} if isinstance(value0, dict) else None
             if callable(getattr(plugin, "on_change", None)):
-                changeargs = {} if rowindex is None else dict(rowindex=rowindex)
-                plugin.on_change(myprops, target, ctrl, value, **changeargs)
+                plugin.on_change(myprops, value, ctrl, rowindex)
             else:
                 target[key] = value
             wx.PostEvent(panel, PluginEvent(panel.Id, action="render", name=plugin.name))

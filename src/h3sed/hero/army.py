@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  14.09.2025
+@modified  25.09.2025
 ------------------------------------------------------------------------------
 """
 import logging
@@ -280,7 +280,7 @@ class ArmyPlugin(object):
         self.parent.command(callable, name="remove %s army" % self._hero.name)
 
 
-    def on_change(self, prop, row, ctrl, value):
+    def on_change(self, prop, value, ctrl, rowindex):
         """
         Handler for army change, enables or disables creature count.
         Returns True.
@@ -289,20 +289,15 @@ class ArmyPlugin(object):
         namectrl  = next(x for x in ctrls if isinstance(x, wx.ComboBox))
         countctrl = namectrl.GetNextSibling()
         placectrl = countctrl.GetNextSibling()
-        if prop.get("nullable") and ctrl and "clear" == ctrl.Name:  # Clearing army slot
-            idx = next(i for i, cc in enumerate(self._ctrls) if namectrl in cc.values())
-            row[idx].clear()
-            namectrl.Value = ""
-            countctrl.Show(False)
-            placectrl.Show(True)
-            return True
 
-        row[prop["name"]] = value
-        if "name" == prop["name"]:
-            if value and not row.get("count"):
-                row["count"] = countctrl.Value = 1
-            countctrl.Show(bool(value))
-            placectrl.Show(not value)
+        if value:
+            if not self._state[rowindex]: countctrl.Value = 1
+            self._state[rowindex][prop["name"]] = value
+        else:
+            namectrl.Value = ""
+            self._state[rowindex].clear()
+        countctrl.Show(bool(value))
+        placectrl.Show(not value)
         return True
 
 
