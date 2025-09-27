@@ -1119,8 +1119,7 @@ ARTIFACT_SLOTS = {
 ARTIFACT_SPELLS = {
     "Spellbinder's Hat":                 ["Dimension Door", "Fly", "Implosion",
                                           "Sacrifice", "Summon Air Elemental",
-                                          "Summon Earth Elemental",
-                                          "Summon Fire Elemental",
+                                          "Summon Earth Elemental", "Summon Fire Elemental",
                                           "Summon Water Elemental"],
 
     "Tome of Air":                       ["Air Shield", "Chain Lightning", "Counterstrike",
@@ -1459,14 +1458,17 @@ class Store(object):
     
     SEPARATES = set() # {data names to not combine over versions}
 
+    SORTABLES = set() # {data names of lists to sort}
+
     @staticmethod
-    def add(name, data, category=None, version=None, separate=False):
+    def add(name, data, category=None, version=None, separate=False, sortable=False):
         stype = list if isinstance(data, tuple) else type(data)
         store = Store.DATA[name][version].setdefault(category, stype())
         if isinstance(store, list):
             store.extend(x for x in copy.deepcopy(data) if x not in store)
         elif isinstance(store, dict): store.update(copy.deepcopy(data))
         if separate: Store.SEPARATES.add(name)
+        if sortable: Store.SORTABLES.add(name)
 
     @staticmethod
     def get(name, category=None, version=None):
@@ -1490,12 +1492,15 @@ class Store(object):
             elif isinstance(result, list):
                 result.extend(x for x in copy.deepcopy(r) if x not in result)
             elif isinstance(result, dict): result.update(copy.deepcopy(r))
+        if name in Store.SORTABLES and isinstance(result, list):
+            try: result.sort()
+            except Exception: pass
         Store.CACHE[(name, category, version)] = result
         return result
 
 
 
-Store.add("artifacts", ARTIFACTS)
+Store.add("artifacts", ARTIFACTS, sortable=True)
 Store.add("artifacts", ARTIFACTS, category="inventory")
 Store.add("artifacts", ["Spellbook", "The Grail"], category="inventory")
 Store.add("artifacts", SCROLL_ARTIFACTS, category="scroll")
@@ -1505,7 +1510,7 @@ for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
 Store.add("artifact_slots",        ARTIFACT_SLOTS)
 Store.add("artifact_spells",       ARTIFACT_SPELLS)
 Store.add("artifact_stats",        ARTIFACT_STATS)
-Store.add("creatures",             CREATURES)
+Store.add("creatures",             CREATURES, sortable=True)
 Store.add("equipment_slots",       EQUIPMENT_SLOTS, separate=True)  # Versions without side5 e.g. RoE
 Store.add("experience_levels",     EXPERIENCE_LEVELS, separate=True) # Versions can cap level e.g. HoTA
 Store.add("hero_byte_positions",   HERO_BYTE_POSITIONS)
@@ -1514,7 +1519,7 @@ Store.add("ids",                   IDS)
 Store.add("skills",                SKILLS)
 Store.add("skill_levels",          SKILL_LEVELS)
 Store.add("special_artifacts",     SPECIAL_ARTIFACTS)
-Store.add("spells",                SPELLS)
+Store.add("spells",                SPELLS, sortable=True)
 Store.add("spell_schools",         SPELL_SCHOOLS)
 Store.add("bannable_spells",       []) # Initialize empty array for version modules to update
 Store.add("combination_artifacts", {}) # Initialize empty dict for version modules to update

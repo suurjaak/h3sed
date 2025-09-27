@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  19.09.2025
+@modified  27.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -62,8 +62,7 @@ class SpellsPlugin(object):
         """Returns UI props for spells-tab, as [{type: "checklist", ..}]."""
         result = []
         for prop in DATAPROPS:
-            choices = metadata.Store.get("spells", version=self.version)
-            result.append(dict(prop, choices=sorted(choices)))
+            result.append(dict(prop, choices=metadata.Store.get("spells", version=self.version)))
         return result
 
 

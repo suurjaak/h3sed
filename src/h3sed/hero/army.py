@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  25.09.2025
+@modified  27.09.2025
 ------------------------------------------------------------------------------
 """
 import logging
@@ -83,7 +83,7 @@ class ArmyPlugin(object):
         """Returns props for army-tab, as [{type: "itemlist", ..}]."""
         result = []
         HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
-        CHOICES = sorted(metadata.Store.get("creatures", version=self.version))
+        CHOICES = metadata.Store.get("creatures", version=self.version)
         for prop in DATAPROPS:
             myprop = dict(prop, item=[], min=HERO_RANGES["army"][0], max=HERO_RANGES["army"][1],
                           menu=self.make_item_menu)
@@ -133,7 +133,7 @@ class ArmyPlugin(object):
         """
         result, MYPROPS = False, self.props()
         if self._ctrls and all(all(x.values()) for x in self._ctrls): # All built and still valid
-            CHOICES = [""] + sorted(metadata.Store.get("creatures", version=self.version))
+            CHOICES = [""] + metadata.Store.get("creatures", version=self.version)
             for i in range(len(self._state)):
                 creature = None
                 for prop in MYPROPS[0]["item"]:

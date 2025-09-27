@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  25.09.2025
+@modified  27.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -75,7 +75,7 @@ class InventoryPlugin(object):
         """Returns props for inventory-tab, as [{type: "itemlist", ..}]."""
         result = []
         MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
-        CHOICES = sorted(metadata.Store.get("artifacts", category="inventory", version=self.version))
+        CHOICES = metadata.Store.get("artifacts", category="inventory", version=self.version)
         for prop in DATAPROPS:
             myprop = dict(prop, item=[], min=MIN, max=MAX, menu=self.make_item_menu,
                           info=self.format_stats_bonus)
