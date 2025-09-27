@@ -41,6 +41,7 @@ DATAPROPS = [{
       }, {
         "type":    "combo",
         "choices": None, # Populated later
+        "convert": None, # Populated later
     }]
 }]
 
@@ -75,12 +76,15 @@ class InventoryPlugin(object):
         """Returns props for inventory-tab, as [{type: "itemlist", ..}]."""
         result = []
         MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
-        CHOICES = metadata.Store.get("artifacts", category="inventory", version=self.version)
+        ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=self.version)
+        unformat_artifact = functools.partial(h3sed.hero.format_artifacts, reverse=True)
+        choices = h3sed.hero.format_artifacts(ARTIFACTS)
         for prop in DATAPROPS:
             myprop = dict(prop, item=[], min=MIN, max=MAX, menu=self.make_item_menu,
                           info=self.format_stats_bonus)
             for item in prop["item"]:
-                if "choices" in item: item = dict(item, choices=CHOICES)
+                if "choices" in item: item = dict(item, choices=choices)
+                if "convert" in item: item = dict(item, convert=unformat_artifact)
                 myprop["item"].append(item)
             result.append(myprop)
         return result
@@ -120,7 +124,7 @@ class InventoryPlugin(object):
         """
         if self._ctrls and all(self._ctrls):
             for i, value in enumerate(self._state):
-                self._ctrls[i].Value = value or ""
+                self._ctrls[i].Value = h3sed.hero.format_artifacts(value or "")
                 sibling = self._ctrls[i].GetNextSibling()
                 while sibling and not isinstance(sibling, wx.StaticText):
                     sibling = sibling.GetNextSibling()
@@ -207,7 +211,8 @@ class InventoryPlugin(object):
             elif "side" == category:
                 candidates = [x for x in candidates if x not in SCROLL_ARTIFACTS]
             for artifact_candidate in candidates or []:
-                item_candidate = wx.MenuItem(menu_category, wx.ID_ANY, artifact_candidate)
+                label = h3sed.hero.format_artifacts(artifact_candidate)
+                item_candidate = wx.MenuItem(menu_category, wx.ID_ANY, label)
                 if artifact_candidate == artifact_on_row:
                     item_candidate.Font = item_candidate.Font.Bold()
                 menu_category.Append(item_candidate)

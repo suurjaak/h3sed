@@ -1710,6 +1710,7 @@ def build(plugin, panel):
         def handler(event):
             value = event.EventObject.Value
             if isinstance(ctrl, wx.SpinCtrlDouble): value = int(value)
+            if callable(myprops.get("convert")): value = myprops["convert"](value)
             state  = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             row    = state[rowindex] if rowindex is not None and isinstance(state, list) else state
             target = next((x for x in (row, state) if isinstance(x, (list, dict))), None)

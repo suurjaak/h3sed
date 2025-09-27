@@ -9,6 +9,7 @@ CHANGELOG
 - add option to assemble and disassemble combination artifacts
 - add info text to inventory artifacts with hero main stats bonuses
 - add info text to spells on missing spellbook
+- add info text to combination artifacts in selection lists (issue #20)
 - fix opening savefiles from Armageddon's Blade (issue #18)
 - fix opening savefiles from GOG Heroes 3 Complete (issue #19)
 - fix not saving Ballista in versions other than Horn of the Abyss (issue #20)

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  25.09.2025
+@modified  27.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -32,6 +32,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None, # Populated later
+    "convert":  None, # Populated later
     "menu":     None, # Populated later
     "info":     None, # Populated later
 }, {
@@ -40,6 +41,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -48,6 +50,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -56,6 +59,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -64,6 +68,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -73,6 +78,7 @@ DATAPROPS = [{
     "slot":     "hand",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -82,6 +88,7 @@ DATAPROPS = [{
     "slot":     "hand",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -90,6 +97,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -98,6 +106,7 @@ DATAPROPS = [{
     "type":     "combo",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -107,6 +116,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -116,6 +126,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -125,6 +136,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -134,6 +146,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }, {
@@ -143,6 +156,7 @@ DATAPROPS = [{
     "slot":     "side",
     "nullable": True,
     "choices":  None,
+    "convert":  None,
     "menu":     None,
     "info":     None,
 }]
@@ -178,12 +192,14 @@ class EquipmentPlugin(object):
         """Returns UI props for equipment-tab, as [{type: "combo", ..}]."""
         result = []
         LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
+        unformat_artifact = functools.partial(h3sed.hero.format_artifacts, reverse=True)
         for prop in DATAPROPS:
             slot = LOCATION_TO_SLOT.get(prop["name"])
             if slot is None: continue # for prop
             choices = metadata.Store.get("artifacts", category=slot, version=self.version)
-            result.append(dict(prop, choices=[""] + choices, menu=self.make_item_menu,
-                               info=self.format_stats_bonus))
+            choices = [""] + h3sed.hero.format_artifacts(choices)
+            result.append(dict(prop, choices=choices, convert=unformat_artifact,
+                               menu=self.make_item_menu, info=self.format_stats_bonus))
         return h3sed.version.adapt("hero.equipment.DATAPROPS", result, version=self.version)
 
 
@@ -227,11 +243,12 @@ class EquipmentPlugin(object):
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
                 cc = [""] + metadata.Store.get("artifacts", category=slot, version=self.version)
+                cc = h3sed.hero.format_artifacts(cc)
 
                 ctrl, value, choices = self._ctrls[name], self._state.get(name), cc
                 if value and value not in choices: choices = [value] + cc
                 if choices != ctrl.GetItems(): ctrl.SetItems(choices)
-                ctrl.Value = value or ""
+                ctrl.Value = h3sed.hero.format_artifacts(value or "")
                 infoctrl = self._ctrls["%s-info" % name]
                 infoctrl.Label = self.format_stats_bonus(self, prop, self._state, STATS)
                 infoctrl.ToolTip = infoctrl.Label
@@ -278,7 +295,7 @@ class EquipmentPlugin(object):
             artifact_slot = ARTIFACT_TO_SLOTS[artifact_name][0]
             if artifact_slot != slot: continue # for inventory_index,
 
-            label = "%s:\t%s" % (inventory_index + 1, artifact_name)
+            label = "%s:\t%s" % (inventory_index + 1, h3sed.hero.format_artifacts(artifact_name))
             item = menu_equip.Append(wx.ID_ANY, label)
             kwargs = dict(location=location, inventory_index=inventory_index)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_send_to_inventory, **kwargs), item)
@@ -357,7 +374,9 @@ class EquipmentPlugin(object):
         try:
             for location, artifact in self._state.items():
                 slot = LOCATION_TO_SLOT[location]
-                choices = [""] + metadata.Store.get("artifacts", category=slot, version=self.version)
+                choices = metadata.Store.get("artifacts", category=slot, version=self.version)
+                choices = [""] + h3sed.hero.format_artifacts(choices)
+                artifact = h3sed.hero.format_artifacts(artifact)
                 ctrl = self._ctrls[location]
 
                 if not ctrl.Enabled:
