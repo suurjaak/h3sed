@@ -12,7 +12,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    20.08.2025
+@modified    27.09.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -96,6 +96,7 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
 
         self.Bind(wx.EVT_CLOSE, self.on_exit)
 
+        self.flags = {} # {name: various flags for UI flow}
         self.console_commands = set() # Commands from run_console()
         self.frame_console = wx.py.shell.ShellFrame(parent=self,
             title=u"%s Console" % conf.Title, size=conf.ConsoleSize)
@@ -159,6 +160,8 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
         self.Bind(wx.EVT_MENU, self.on_toggle_console, menu_console)
         self.Bind(wx.EVT_MENU, self.on_open_widget_inspector, menu_inspect)
         self.Bind(wx.EVT_MENU, self.on_exit, m_exit)
+        self.Bind(wx.EVT_MENU_OPEN,  self.on_menu_open,  menu)
+        self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close, menu)
         self.SetMenuBar(menu)
 
 
@@ -175,6 +178,29 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
         and not event.ShiftDown() and self.console.history):
             # Defer saving until command is inserted into console history
             wx.CallAfter(self.save_last_command)
+
+
+    def on_menu_open(self, event):
+        """Handler for opening main menu, stops status bar clearer if any."""
+        event.Skip()
+        try: self.flags["statusclearer"].Stop()
+        except Exception: pass
+
+
+    def on_menu_close(self, event):
+        """Handler for closing main menu, restarts status bar clearer if any."""
+        event.Skip() # Default handler needs to restore previous status text
+        try: self.flags["statusclearer"].Restart()
+        except Exception: pass
+
+
+    def on_toolbar_mouse(self, event):
+        """Handler for toolbar mouse events, stops-restarts status bar clearer on enter-exit."""
+        event.Skip()
+        try:
+            if event.Entering():  self.flags["statusclearer"].Stop()
+            elif event.Leaving(): self.flags["statusclearer"].Restart()
+        except Exception: pass
 
 
     def run_console(self, command):
@@ -200,12 +226,14 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
 
     def set_status(self, text, timeout=False):
         """Sets main window status bar text, optionally clears after timeout."""
+        try: self.flags.pop("statusclearer").Stop()
+        except Exception: pass
         self.SetStatusText(text)
         if not timeout or not text: return
 
         if timeout is True: timeout = conf.StatusFlashLength
-        clear = lambda sb: sb and sb.StatusText == text and self.SetStatusText("")
-        wx.CallLater(timeout * 1000, clear, self.StatusBar)
+        clear = lambda self: self and (self.SetStatusText(""), self.flags.pop("statusclearer", 0))
+        self.flags["statusclearer"] = wx.CallLater(timeout * 1000, clear, self)
 
 
     def log_message(self, text):

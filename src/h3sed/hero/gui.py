@@ -166,6 +166,7 @@ class HeroPlugin(object):
             tb_index.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
             self._index["ids"][category] = b.Id
             self._index["toggles"][category] = conf.HeroToggles.get(category, True)
+        tb_index.Bind(wx.EVT_MOUSE_EVENTS, tb_index.TopLevelParent.on_toolbar_mouse)
         tb_index.Realize()
 
         html = wx.html.HtmlWindow(indexpanel)
@@ -205,6 +206,7 @@ class HeroPlugin(object):
         tb.Bind(wx.EVT_TOOL, self.on_copy_hero,  id=wx.ID_COPY)
         tb.Bind(wx.EVT_TOOL, self.on_paste_hero, id=wx.ID_PASTE)
         tb.Bind(wx.EVT_TOOL, self.on_save_hero,  id=wx.ID_SAVE)
+        tb.Bind(wx.EVT_MOUSE_EVENTS, tb.TopLevelParent.on_toolbar_mouse)
         self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
         tb.Realize()
         tb.Disable()

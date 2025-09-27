@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    25.09.2025
+@modified    26.09.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -361,25 +361,27 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU_RANGE, self.on_recent_hero, id=self.history_hero.BaseId,
                   id2=self.history_hero.BaseId + conf.MaxRecentHeroes)
 
-        self.Bind(wx.EVT_MENU, self.on_open_savefile,    menu_open)
-        self.Bind(wx.EVT_MENU, self.on_close_savefile,   menu_close)
-        self.Bind(wx.EVT_MENU, self.on_reload_savefile,  menu_reload)
-        self.Bind(wx.EVT_MENU, self.on_save_savefile,    menu_save)
-        self.Bind(wx.EVT_MENU, self.on_save_savefile_as, menu_save_as)
-        self.Bind(wx.EVT_MENU, self.on_menu_autoupdate,  menu_autoupdate_check)
-        self.Bind(wx.EVT_MENU, self.on_menu_backup,      menu_backup)
-        self.Bind(wx.EVT_MENU, self.on_menu_confirm,     menu_confirm)
-        self.Bind(wx.EVT_MENU, self.on_menu_newformat,   menu_newformat)
-        self.Bind(wx.EVT_MENU, self.on_clear_recent,     menu_clear)
-        self.Bind(wx.EVT_MENU, self.on_exit,             menu_exit)
-        self.Bind(wx.EVT_MENU, self.on_undo_savefile,    menu_undo)
-        self.Bind(wx.EVT_MENU, self.on_redo_savefile,    menu_redo)
-        self.Bind(wx.EVT_MENU, self.on_check_update,     menu_update)
-        self.Bind(wx.EVT_MENU, self.on_showhide_log,     menu_log)
-        self.Bind(wx.EVT_MENU, self.on_toggle_console,   menu_console)
-        self.Bind(wx.EVT_MENU, self.on_about,            menu_about)
-        self.Bind(wx.EVT_MENU, self.on_show_changes,     menu_changes)
-        self.Bind(wx.EVT_MENU, self.on_open_history,     menu_history)
+        self.Bind(wx.EVT_MENU_OPEN,  self.on_menu_open,        menu)
+        self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close,       menu)
+        self.Bind(wx.EVT_MENU,       self.on_open_savefile,    menu_open)
+        self.Bind(wx.EVT_MENU,       self.on_close_savefile,   menu_close)
+        self.Bind(wx.EVT_MENU,       self.on_reload_savefile,  menu_reload)
+        self.Bind(wx.EVT_MENU,       self.on_save_savefile,    menu_save)
+        self.Bind(wx.EVT_MENU,       self.on_save_savefile_as, menu_save_as)
+        self.Bind(wx.EVT_MENU,       self.on_menu_autoupdate,  menu_autoupdate_check)
+        self.Bind(wx.EVT_MENU,       self.on_menu_backup,      menu_backup)
+        self.Bind(wx.EVT_MENU,       self.on_menu_confirm,     menu_confirm)
+        self.Bind(wx.EVT_MENU,       self.on_menu_newformat,   menu_newformat)
+        self.Bind(wx.EVT_MENU,       self.on_clear_recent,     menu_clear)
+        self.Bind(wx.EVT_MENU,       self.on_exit,             menu_exit)
+        self.Bind(wx.EVT_MENU,       self.on_undo_savefile,    menu_undo)
+        self.Bind(wx.EVT_MENU,       self.on_redo_savefile,    menu_redo)
+        self.Bind(wx.EVT_MENU,       self.on_check_update,     menu_update)
+        self.Bind(wx.EVT_MENU,       self.on_showhide_log,     menu_log)
+        self.Bind(wx.EVT_MENU,       self.on_toggle_console,   menu_console)
+        self.Bind(wx.EVT_MENU,       self.on_about,            menu_about)
+        self.Bind(wx.EVT_MENU,       self.on_show_changes,     menu_changes)
+        self.Bind(wx.EVT_MENU,       self.on_open_history,     menu_history)
 
 
     def create_toolbar(self):
@@ -413,6 +415,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             tb.EnableTool(toolid, False)
             tb.Bind(wx.EVT_TOOL, handler, id=toolid)
 
+        tb.Bind(wx.EVT_MOUSE_EVENTS, self.on_toolbar_mouse)
         tb.EnableTool(wx.ID_OPEN, True)
         tb.EnableTool(wx.ID_HARDDISK, True)
         tb.Realize()
