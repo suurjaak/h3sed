@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  24.09.2025
+@modified  27.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -492,11 +492,11 @@ class Hero(object):
 
         ## All properties in one structure
         self.properties = AttrDict((k, getattr(self, k)) for k in list(PROPERTIES))
-        ## Deep copy of initial or saved properties
+        ## Deep copy of initial or saved properties, for tracking unsaved changes
         self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
-        ## Deep copy of initial or realized properties
+        ## Deep copy of initial or realized properties, for tracking unrealized changes
         self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
-        ## Deep copy of initial or serialized properties
+        ## Deep copy of initial or serialized properties, for tracking unpatched changes
         self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
         self.ensure_basestats()
 
@@ -505,6 +505,7 @@ class Hero(object):
         """Returns a copy of this hero."""
         hero = Hero(self.name, self.version)
         hero.update(self)
+        hero.original = AttrDict((k, v.copy()) for k, v in self.original.items())
         hero.set_file_data(self.bytes, self.index, self.span)
         hero.name_counter = self.name_counter
         return hero
@@ -517,8 +518,7 @@ class Hero(object):
             prop2 = hero.properties[section].copy()
             self.properties[section] = prop2
             setattr(self, section, prop2)
-        self.original = AttrDict((k, v.copy()) for k, v in self.original.items())
-        self.realized = AttrDict((k, v.copy()) for k, v in self.realized.items())
+        self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
         self.ensure_basestats(force=True)
 
 
