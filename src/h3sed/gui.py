@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    26.09.2025
+@modified    27.09.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1632,25 +1632,6 @@ class SavefilePage(wx.Panel):
         changed = self.savefile.is_changed()
         evt = SavefilePageEvent(self.Id, **dict(args, source=self, modified=changed))
         wx.PostEvent(self.Parent, evt)
-
-
-
-class GenericCommand(wx.Command):
-    """Undoable-redoable action."""
-
-    def __init__(self, do, undo, name=""):
-        super(GenericCommand, self).__init__(canUndo=True, name=name)
-        self._do, self._undo = do, undo
-        self._timestamp = time.time()
-
-    def Do(self):   return bool(self._do())
-
-    def Undo(self): return bool(self._undo())
-
-    @property
-    def Timestamp(self):
-        """Returns command creation timestamp, as UNIX epoch."""
-        return self._timestamp
 
 
 
