@@ -15,6 +15,7 @@ CHANGELOG
 - fix not saving Ballista in versions other than Horn of the Abyss (issue #20)
 - fix artifacts not being sorted by name in all lists
 - fix stats bonuses for Dragon Wing Tabard and Dragon Scale Shield
+- fix not updating equipment artifact stats bonus tooltip on changing artifact
 
 
 3.1, 2025-09-01

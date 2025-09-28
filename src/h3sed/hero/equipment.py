@@ -415,7 +415,7 @@ class EquipmentPlugin(object):
             wx.PostEvent(self._panel, evt)
         self.update_reserved_slots()
         ctrl_info = self._ctrls["%s-info" % prop["name"]]
-        ctrl_info.Label = self.format_stats_bonus(self, prop, self._state)
+        ctrl_info.Label = ctrl_info.ToolTip = self.format_stats_bonus(self, prop, self._state)
         return True
 
 
