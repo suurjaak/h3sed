@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  24.09.2025
+@modified  28.09.2025
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1174,7 +1174,7 @@ ARTIFACT_STATS = {
     "Titan's Gladius":                   (12, -3,  0,  0),
 
     "Buckler of the Gnoll King":         ( 0, +4,  0,  0),
-    "Dragon Scale Shield":               ( 0,  0, +3, +3),
+    "Dragon Scale Shield":               (+3, +3,  0,  0),
     "Lion's Shield of Courage":          (+4, +4, +4, +4),
     "Sentinel's Shield":                 (-3, 12,  0,  0),
     "Shield of the Damned":              ( 0, +6,  0,  0),
@@ -1193,6 +1193,8 @@ ARTIFACT_STATS = {
 
     "Quiet Eye of the Dragon":           (+1, +1,  0,  0),
 
+    "Dragon Wing Tabard":                ( 0,  0, +2, +2),
+    
     "Dragonbone Greaves":                ( 0,  0, +1, +1),
     "Sandals of the Saint":              (+2, +2, +2, +2),
 }

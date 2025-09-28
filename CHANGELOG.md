@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.2, 2025-09-27
+3.2, 2025-09-28
 ---------------
 - add button with mass change options menu to hero property tabs
 - add individual row options menu to hero skills, army, equipment, and inventory
@@ -14,6 +14,7 @@ CHANGELOG
 - fix opening savefiles from GOG Heroes 3 Complete (issue #19)
 - fix not saving Ballista in versions other than Horn of the Abyss (issue #20)
 - fix artifacts not being sorted by name in all lists
+- fix stats bonuses for Dragon Wing Tabard and Dragon Scale Shield
 
 
 3.1, 2025-09-01
