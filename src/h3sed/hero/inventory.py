@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  27.09.2025
+@modified  28.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -336,7 +336,7 @@ class InventoryPlugin(object):
             eq2, inv2 = None, h3sed.hero.Inventory.factory(self.version)
         else:
             eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=False)
-        if (eq2, inv2) == (self._hero.equipment, self._state):
+        if inv2 == self._state and eq2 in (None, self._hero.equipment):
             h3sed.guibase.status("No change from %s all inventory" % acting.lower(),
                                  flash=conf.StatusShortFlashLength, log=True)
             return
@@ -373,7 +373,7 @@ class InventoryPlugin(object):
             moved = [inv2[rowindex]]
             inv2[rowindex:rowindex + 1] = []
             if direction > 0:
-                lastindex = next(len(inv2) - i for i, x in enumerate(inv2[::-1], 1) if x)
+                lastindex = next((len(inv2) - i for i, x in enumerate(inv2[::-1], 1) if x), -1)
                 inv2[lastindex + 1:] = moved
             else: inv2[:0] = moved
             action, detail = ("change", "move to %s" % ("top" if direction < 0 else "bottom"))
@@ -390,7 +390,7 @@ class InventoryPlugin(object):
             action, detail = ("change", "insert <blank>")
             inv2.insert(rowindex, None)
 
-        if (eq2, inv2) == (self._hero.equipment, self._state):
+        if inv2 == self._state and eq2 in (None, self._hero.equipment):
             return
         label = "%s %s inventory: slot %s %s" % (action, self._hero.name, rowindex + 1, detail)
         callable = functools.partial(self.change_artifacts, inv2, eq2)

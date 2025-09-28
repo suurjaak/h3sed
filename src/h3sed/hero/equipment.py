@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  27.09.2025
+@modified  28.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -437,7 +437,7 @@ class EquipmentPlugin(object):
             eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=True)
             acting, action = "Sending all equipment to inventory", "send all to inventory"
 
-        if (eq2, inv2) == (self._state, self._hero.inventory):
+        if eq2 == self._state and inv2 in (None, self._hero.inventory):
             h3sed.guibase.status("No change from %s" % acting.lower(),
                                  flash=conf.StatusShortFlashLength, log=True)
             return
