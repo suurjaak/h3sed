@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  25.09.2025
+@modified  29.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -166,7 +166,6 @@ class HeroPlugin(object):
             tb_index.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
             self._index["ids"][category] = b.Id
             self._index["toggles"][category] = conf.HeroToggles.get(category, True)
-        tb_index.Bind(wx.EVT_MOUSE_EVENTS, tb_index.TopLevelParent.on_toolbar_mouse)
         tb_index.Realize()
 
         html = wx.html.HtmlWindow(indexpanel)
@@ -206,7 +205,6 @@ class HeroPlugin(object):
         tb.Bind(wx.EVT_TOOL, self.on_copy_hero,  id=wx.ID_COPY)
         tb.Bind(wx.EVT_TOOL, self.on_paste_hero, id=wx.ID_PASTE)
         tb.Bind(wx.EVT_TOOL, self.on_save_hero,  id=wx.ID_SAVE)
-        tb.Bind(wx.EVT_MOUSE_EVENTS, tb.TopLevelParent.on_toolbar_mouse)
         self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
         tb.Realize()
         tb.Disable()
@@ -274,6 +272,7 @@ class HeroPlugin(object):
         self._ctrls["toolbar"] = tb
         self._ctrls["menubutton"] = menubutton
         controls.ColourManager.Patch(self._panel)
+        self._panel.TopLevelParent.bind_status_clearer(self._panel)
 
 
     def build(self):

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    27.09.2025
+@modified    29.09.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -119,6 +119,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         sizer.Add(notebook, proportion=1, flag=wx.GROW)
         self.create_menu()
         self.create_toolbar()
+        self.bind_status_clearer()
         self.populate_statusbar()
 
         # Memory file system for showing images in wx.HtmlWindow
@@ -361,8 +362,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU_RANGE, self.on_recent_hero, id=self.history_hero.BaseId,
                   id2=self.history_hero.BaseId + conf.MaxRecentHeroes)
 
-        self.Bind(wx.EVT_MENU_OPEN,  self.on_menu_open,        menu)
-        self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close,       menu)
         self.Bind(wx.EVT_MENU,       self.on_open_savefile,    menu_open)
         self.Bind(wx.EVT_MENU,       self.on_close_savefile,   menu_close)
         self.Bind(wx.EVT_MENU,       self.on_reload_savefile,  menu_reload)
@@ -415,7 +414,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             tb.EnableTool(toolid, False)
             tb.Bind(wx.EVT_TOOL, handler, id=toolid)
 
-        tb.Bind(wx.EVT_MOUSE_EVENTS, self.on_toolbar_mouse)
         tb.EnableTool(wx.ID_OPEN, True)
         tb.EnableTool(wx.ID_HARDDISK, True)
         tb.Realize()

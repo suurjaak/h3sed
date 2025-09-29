@@ -25,7 +25,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    05.08.2025
+@modified    29.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -692,13 +692,19 @@ class Patch(object):
 
 
 
-def get_all_children(ctrl):
-    """Returns a list of all nested children of given wx component."""
+def get_all_children(ctrl, keep=(), skip=()):
+    """
+    Returns a list of all nested children of given wx component.
+
+    @param   keep  specific classes to return if not all
+    @param   skip  specific classes to skip processing
+    """
     result, stack = [], [ctrl]
     while stack:
         ctrl = stack.pop(0)
         for child in ctrl.GetChildren() if hasattr(ctrl, "GetChildren") else []:
-            result.append(child)
+            if skip and isinstance(child, skip): continue # for child
+            if not keep or isinstance(child, keep): result.append(child)
             stack.append(child)
     return result
 

@@ -12,7 +12,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    27.09.2025
+@modified    29.09.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -26,7 +26,7 @@ import wx.lib.inspection
 import wx.lib.newevent
 import wx.py
 
-from . lib.controls import ColourManager, NewId
+from . lib.controls import ColourManager, NewId, get_all_children
 from . lib import util, wx_accel
 from . import conf
 
@@ -201,6 +201,21 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
             if event.Entering():  self.flags["statusclearer"].Stop()
             elif event.Leaving(): self.flags["statusclearer"].Restart()
         except Exception: pass
+
+
+    def bind_status_clearer(self, window=None):
+        """
+        Binds status bar clearing handlers to wx.MenuBar/wx.Toolbar children of given window or self.
+
+        These classes use the status bar for their own texts, restoring the original status later,
+        which interferes with the temporary status text logic.
+        """
+        window = window or self
+        if getattr(window, "MenuBar", None):
+            self.Bind(wx.EVT_MENU_OPEN,  self.on_menu_open,  window.MenuBar)
+            self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close, window.MenuBar)
+        for tb in get_all_children(window, keep=wx.ToolBar, skip=wx.Frame):
+            tb.Bind(wx.EVT_MOUSE_EVENTS, self.on_toolbar_mouse)
 
 
     def run_console(self, command):
