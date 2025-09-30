@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  28.09.2025
+@modified  30.09.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -354,7 +354,7 @@ class InventoryPlugin(object):
         @param   rowindex   index of inventory item operated on
         @param   rowindex2  index of inventory item to swap with
         @param   artifact   artifact to change inventory item to; None will insert blank instead
-        @param   location   equipment location to swap out for current inventory it3m
+        @param   location   equipment location to swap out for current inventory item
         @param   direction  -1 to move to inventory top, +1 to move to inventory bottom
         @param   delete     whether to delete inventory row instead
         """
@@ -370,25 +370,25 @@ class InventoryPlugin(object):
             action, detail = "change", "swap with slot %s" % (rowindex2 + 1)
         elif direction:
             eq2, inv2 = None, self._state.copy()
-            moved = [inv2[rowindex]]
-            inv2[rowindex:rowindex + 1] = []
+            current_value = inv2[rowindex]
+            inv2.pop(rowindex)
             if direction > 0:
                 lastindex = next((len(inv2) - i for i, x in enumerate(inv2[::-1], 1) if x), -1)
-                inv2[lastindex + 1:] = moved
-            else: inv2[:0] = moved
+                inv2[lastindex + 1] = current_value
+            else: inv2.insert(0, current_value)
             action, detail = ("change", "move to %s" % ("top" if direction < 0 else "bottom"))
         elif delete:
             eq2, inv2 = None, self._state.copy()
-            inv2[rowindex:rowindex + 1] = []
+            inv2.pop(rowindex)
             action, detail = ("change", "delete")
         elif artifact:
             eq2, inv2 = None, self._state.copy()
-            action, detail = ("set", artifact)
             inv2[rowindex] = artifact
+            action, detail = ("set", artifact)
         else:
             eq2, inv2 = None, self._state.copy()
-            action, detail = ("change", "insert <blank>")
             inv2.insert(rowindex, None)
+            action, detail = ("change", "insert <blank>")
 
         if inv2 == self._state and eq2 in (None, self._hero.equipment):
             return

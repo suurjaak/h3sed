@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.09.2025
+@modified  30.09.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -452,7 +452,7 @@ class Inventory(TypedArray, DataClass):
             items.sort(key=lambda x: tuple(f(x) for f in sortkeys))
         if reverse: items = items[::-1]
         result = type(self)()
-        result.extend(items)
+        for i, item in enumerate(items): list.__setitem__(result, i, item)
         return result
 
 

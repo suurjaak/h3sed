@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    25.09.2025
+@modified    30.09.2025
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -573,7 +573,7 @@ class TypedArray(list):
         """
         Removes and returns item at index, by default last; raises IndexError if out of range.
 
-        If index within minimum required length, populates index with a new empty element.
+        If index within minimum required length, appends new empty element.
         """
         if not self: raise IndexError("pop from empty list")
         if index is None: index = len(self) - 1
@@ -581,15 +581,15 @@ class TypedArray(list):
         if index < 0 or index > len(self) - 1:
             raise IndexError("list index out of range")
 
-        if len(self) > self._minlen: value = list.pop(self, index)
-        else: value, self[index] = self[index], self.new()
+        value = list.pop(self, index)
+        if len(self) < self._minlen: list.append(self, self.new())
         return value
 
     def remove(self, *value, **attributes):
         """
         Removes first occurrence of value; raises ValueError if not present.
 
-        If index within minimum required length, populates index with a new empty element.
+        If value within minimum required length, appends new empty element.
         """
         self.pop(self.index(*value, **attributes)) # Raises ValueError if not present
 
