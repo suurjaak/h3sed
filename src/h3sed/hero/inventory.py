@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  30.09.2025
+@modified  01.10.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -196,12 +196,13 @@ class InventoryPlugin(object):
         item_move  = menu.AppendSubMenu(menu_move,  "Move to inventory ..")
         item_swap  = menu.AppendSubMenu(menu_swap,  "Swap with inventory slot ..")
 
-        for category in list(SLOT_TO_LOCATIONS) + ["scroll", "inventory"]:
+        for category in list(SLOT_TO_LOCATIONS) + ["scroll", "inventory", "combined"]:
             menu_category = wx.Menu()
             item_category = wx.MenuItem(menu_set, wx.ID_ANY, category, subMenu=menu_category)
             if artifact_on_row in ARTIFACT_TO_SLOTS:
                 if ARTIFACT_TO_SLOTS[artifact_on_row][0] == category \
-                or "scroll" == category and artifact_on_row in SCROLL_ARTIFACTS:
+                or "scroll" == category and artifact_on_row in SCROLL_ARTIFACTS \
+                or "combined" == category and artifact_on_row in COMBINATION_ARTIFACTS:
                     item_category.Font = item_category.Font.Bold()
             menu_set.Append(item_category)
             candidates = metadata.Store.get("artifacts", category=category, version=self.version)
@@ -210,6 +211,8 @@ class InventoryPlugin(object):
                               if ARTIFACT_TO_SLOTS.get(x, [])[:1] == ["inventory"]]
             elif "side" == category:
                 candidates = [x for x in candidates if x not in SCROLL_ARTIFACTS]
+            elif "combined" == category:
+                candidates = sorted(COMBINATION_ARTIFACTS)
             for artifact_candidate in candidates or []:
                 label = h3sed.hero.format_artifacts(artifact_candidate)
                 item_candidate = wx.MenuItem(menu_category, wx.ID_ANY, label)
