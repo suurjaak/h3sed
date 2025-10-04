@@ -40,8 +40,8 @@ BYTE_POSITIONS = {
 
 """Hero primary attributes, in file order, as {name: label}."""
 PRIMARY_ATTRIBUTES = OrderedDict([
-    ('attack', 'Attack'),      ('defense',   'Defense'),
-    ('power',  'Spell Power'), ('knowledge', 'Knowledge')
+    ("attack", "Attack"),      ("defense",   "Defense"),
+    ("power",  "Spell Power"), ("knowledge", "Knowledge")
 ])
 
 
