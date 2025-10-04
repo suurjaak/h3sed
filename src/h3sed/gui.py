@@ -1708,7 +1708,7 @@ def build(plugin, panel):
         def handler(event):
             value = event.EventObject.Value
             if isinstance(ctrl, wx.SpinCtrlDouble): value = int(value)
-            if callable(myprops.get("convert")): value = myprops["convert"](value)
+            if callable(myprops.get("convert")): value = myprops["convert"](myprops, value)
             state  = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             row    = state[rowindex] if rowindex is not None and isinstance(state, list) else state
             target = next((x for x in (row, state) if isinstance(x, (list, dict))), None)
@@ -1847,7 +1847,7 @@ def build(plugin, panel):
         value = prop["info"]
         if callable(value):
             valueargs = {} if rowindex is None else dict(rowindex=rowindex)
-            value = value(plugin, prop, state, **valueargs)
+            value = value(prop, **valueargs)
         value, tooltip = (value * 2)[:2] if isinstance(value, (list, tuple)) else (value, value)
         c = wx.StaticText(panel, label=value)
         ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
@@ -1860,7 +1860,7 @@ def build(plugin, panel):
     def make_extra(prop, sizer, pos):
         opts, c = prop["extra"], None
         if callable(opts):
-            c = opts(plugin, prop, state)
+            c = opts(prop)
         elif "button" == opts["type"]:
             c = wx.Button(panel, label=opts["label"])
             c.Bind(wx.EVT_BUTTON, functools.partial(opts["handler"], plugin, prop, state))

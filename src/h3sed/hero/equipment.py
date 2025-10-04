@@ -192,7 +192,7 @@ class EquipmentPlugin(object):
         """Returns UI props for equipment-tab, as [{type: "combo", ..}]."""
         result = []
         LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
-        unformat_artifact = functools.partial(h3sed.hero.format_artifacts, reverse=True)
+        unformat_artifact = lambda props, value: h3sed.hero.format_artifacts(value, reverse=True)
         for prop in DATAPROPS:
             slot = LOCATION_TO_SLOT.get(prop["name"])
             if slot is None: continue # for prop
@@ -239,7 +239,6 @@ class EquipmentPlugin(object):
         """
         result = False
         if self._ctrls and all(self._ctrls.values()): # All built and still valid
-            STATS = metadata.Store.get("artifact_stats", version=self.version)
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
                 cc = [""] + metadata.Store.get("artifacts", category=slot, version=self.version)
@@ -250,7 +249,7 @@ class EquipmentPlugin(object):
                 if choices != ctrl.GetItems(): ctrl.SetItems(choices)
                 ctrl.Value = h3sed.hero.format_artifacts(value or "")
                 infoctrl = self._ctrls["%s-info" % name]
-                infoctrl.Label = self.format_stats_bonus(self, prop, self._state, STATS)
+                infoctrl.Label = self.format_stats_bonus(prop)
                 infoctrl.ToolTip = infoctrl.Label
         else:
             self._ctrls, result = h3sed.gui.build(self, self._panel), True
@@ -339,11 +338,11 @@ class EquipmentPlugin(object):
         return menu
 
 
-    def format_stats_bonus(self, plugin, prop, state, artifact_stats=None):
+    def format_stats_bonus(self, prop):
         """Returns item primaty stats modifier text like "+1 Attack, +1 Defense", or "" if no effect."""
-        value = state.get(prop.get("name"))
+        value = self._state.get(prop.get("name"))
         if not value: return ""
-        STATS = artifact_stats or metadata.Store.get("artifact_stats", version=self.version)
+        STATS = metadata.Store.get("artifact_stats", version=self.version)
         if value not in STATS: return ""
         return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
                          for k, v in zip(metadata.PRIMARY_ATTRIBUTES.values(), STATS[value]) if v)
@@ -413,7 +412,7 @@ class EquipmentPlugin(object):
         wx.PostEvent(self._panel, evt)
         self.update_reserved_slots()
         ctrl_info = self._ctrls["%s-info" % prop["name"]]
-        ctrl_info.Label = ctrl_info.ToolTip = self.format_stats_bonus(self, prop, self._state)
+        ctrl_info.Label = ctrl_info.ToolTip = self.format_stats_bonus(prop)
         return True
 
 

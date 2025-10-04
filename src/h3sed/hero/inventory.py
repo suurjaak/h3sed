@@ -77,7 +77,7 @@ class InventoryPlugin(object):
         result = []
         MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
         ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=self.version)
-        unformat_artifact = functools.partial(h3sed.hero.format_artifacts, reverse=True)
+        unformat_artifact = lambda props, value: h3sed.hero.format_artifacts(value, reverse=True)
         choices = h3sed.hero.format_artifacts(ARTIFACTS)
         for prop in DATAPROPS:
             myprop = dict(prop, item=[], min=MIN, max=MAX, menu=self.make_item_menu,
@@ -129,7 +129,7 @@ class InventoryPlugin(object):
                 while sibling and not isinstance(sibling, wx.StaticText):
                     sibling = sibling.GetNextSibling()
                 if isinstance(sibling, wx.StaticText):
-                    sibling.Label = self.format_stats_bonus(self, DATAPROPS[0], self._state, i)
+                    sibling.Label = self.format_stats_bonus(DATAPROPS[0], i)
                     sibling.ToolTip = sibling.Label
             return False
         self._ctrls = h3sed.gui.build(self, self._panel)[0]
@@ -260,9 +260,9 @@ class InventoryPlugin(object):
         return menu
 
 
-    def format_stats_bonus(self, plugin, prop, state, rowindex):
+    def format_stats_bonus(self, prop, rowindex):
         """Returns item primaty stats modifier text like "+1 Attack, +1 Defense", or "" if no effect."""
-        artifact = state[rowindex]
+        artifact = self._state[rowindex]
         if not artifact: return ""
         STATS = metadata.Store.get("artifact_stats", version=self.version)
         if artifact not in STATS: return ""
@@ -317,7 +317,7 @@ class InventoryPlugin(object):
         sibling = ctrl.GetNextSibling()
         while sibling and not isinstance(sibling, wx.StaticText): sibling = sibling.GetNextSibling()
         if isinstance(sibling, wx.StaticText):
-            sibling.Label = self.format_stats_bonus(self, prop, self._state, rowindex)
+            sibling.Label = self.format_stats_bonus(prop, rowindex)
             sibling.ToolTip = sibling.Label
         return True
 

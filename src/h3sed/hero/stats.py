@@ -281,7 +281,7 @@ class StatsPlugin(object):
         self.parent.command(callable, name="set %s" % label)
 
 
-    def make_primary_extra(self, plugin, prop, state):
+    def make_primary_extra(self, prop):
         """Returns wx.Sizer with additional UI components for primary attribute."""
         GAME_RANGES = metadata.Store.get("primary_attribute_game_ranges", version=self.version)
         MINV, MAXV, OVERFLOW = GAME_RANGES[prop["name"]]
