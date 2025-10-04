@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  28.09.2025
+@modified  04.10.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -353,11 +353,10 @@ class EquipmentPlugin(object):
         """Carries out change of equipment and inventory, propagates change to hero and savefile."""
         changes = {} # {property name: whether changed from action}
         if equipment != self._state:
-            self._hero.equipment.update(equipment), changes.update(equipment=True)
+            self._hero.equipment.update(equipment), changes.update(equipment=True, stats=True)
         if inventory is not None and inventory != self._hero.inventory:
             self._hero.inventory[:], changes["inventory"] = inventory, True
         self._hero.realize()
-        changes["stats"] = (self._hero.stats != self._hero.serialed.stats)
         if not any(changes.values()): return True
         self.parent.patch()
         for name in (name for name, changed in changes.items() if changed):
@@ -410,9 +409,8 @@ class EquipmentPlugin(object):
             return False
 
         self._hero.realize()
-        if self._hero.stats != self._hero.serialed.stats:
-            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name="stats")
-            wx.PostEvent(self._panel, evt)
+        evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name="stats")
+        wx.PostEvent(self._panel, evt)
         self.update_reserved_slots()
         ctrl_info = self._ctrls["%s-info" % prop["name"]]
         ctrl_info.Label = ctrl_info.ToolTip = self.format_stats_bonus(self, prop, self._state)
