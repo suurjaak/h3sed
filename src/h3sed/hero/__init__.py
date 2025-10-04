@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  30.09.2025
+@modified  04.10.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -282,21 +282,6 @@ class Equipment(SlotCheckerMixin, SlotsDict, DataClass):
                 eq2[location] = artifact
         return "\n\n".join(errors) if errors else None
 
-    def realize(self, hero=None):
-        """Updates hero primary attributes from changed equipment, if hero given."""
-        if not hero: return
-
-        ARTIFACT_STATS = metadata.Store.get("artifact_stats", version=self.get_version())
-        HERO_RANGES = metadata.Store.get("hero_ranges", version=self.get_version())
-        diff = [0] * len(metadata.PRIMARY_ATTRIBUTES)
-        for item in filter(bool, hero.equipment.values()):
-            if item in ARTIFACT_STATS: diff = [a + b for a, b in zip(diff, ARTIFACT_STATS[item])]
-        hero.ensure_basestats()
-        for attribute, value in zip(metadata.PRIMARY_ATTRIBUTES, diff):
-            MIN, MAX = HERO_RANGES[attribute]
-            v1, v2 = hero.stats[attribute], min(max(MIN, hero.basestats[attribute] + value), MAX)
-            if v1 != v2: hero.stats[attribute] = v2
-
     def solve_locations(self, artifact, location=None, equipment=None):
         """
         Analyzes whether and how artifact can be donned, either at any suitable free location,
@@ -424,6 +409,19 @@ class Attributes(SlotsDict, DataClass):
             value = 0
         return value
 
+    def wrap_primary_attribute(self, value):
+        """Returns primary attribute wrapped to legal byte range."""
+        return value % (metadata.PRIMARY_ATTRIBUTE_RANGE[1] + 1) # Wrap around if overflow
+
+    def make_game_value(self, attribute_name, value):
+        """Returns attribute value as used in-game, like knowledge constrained to 1-99."""
+        if attribute_name not in metadata.PRIMARY_ATTRIBUTES: return value
+        RANGES = metadata.Store.get("primary_attribute_game_ranges", version=self.get_version())
+        MINV, MAXV, OVERFLOW = RANGES[attribute_name]
+        if value < MINV or value > MAXV:
+            value = MINV if value < MINV or value >= OVERFLOW else MAXV
+        return value
+
 
 class Inventory(TypedArray, DataClass):
     """Hero inventory property."""
@@ -509,6 +507,8 @@ class Hero(object):
         self.spells    = Spells    .factory(version)
         ## Primary attributes without artifact bonuses, to track changes beyond attribute range
         self.basestats = {}
+        ## Primary attributes as used in-game, constrained below 100
+        self.gamestats = {}
 
         ## All properties in one structure
         self.properties = AttrDict((k, getattr(self, k)) for k in list(PROPERTIES))
@@ -518,7 +518,7 @@ class Hero(object):
         self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
         ## Deep copy of initial or serialized properties, for tracking unpatched changes
         self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
-        self.ensure_basestats()
+        self.ensure_primary_stats()
 
 
     def copy(self):
@@ -539,18 +539,42 @@ class Hero(object):
             self.properties[section] = prop2
             setattr(self, section, prop2)
         self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
-        self.ensure_basestats(force=True)
+        self.ensure_primary_stats(force=True)
 
 
-    def ensure_basestats(self, force=False):
-        """Populates internal hero stats without artifact bonuses, if not already populated."""
-        if self.basestats and not force: return
+    def ensure_primary_stats(self, force=False):
+        """Populates hero primary attributes as base and as used in-game, if not already done."""
+        if self.gamestats and self.basestats and not force: return
         ARTIFACT_STATS = metadata.Store.get("artifact_stats", version=self.version)
         diff = [0] * len(metadata.PRIMARY_ATTRIBUTES)
         for artifact in filter(ARTIFACT_STATS.get, self.equipment.values()):
             diff = [a + b for a, b in zip(diff, ARTIFACT_STATS[artifact])]
-        for attribute_name, value in zip(metadata.PRIMARY_ATTRIBUTES, diff):
-            self.basestats[attribute_name] = self.stats[attribute_name] - value
+        for attribute_name, artifacts_bonus in zip(metadata.PRIMARY_ATTRIBUTES, diff):
+            base_value = self.stats[attribute_name] - artifacts_bonus
+            self.basestats[attribute_name] = self.stats.wrap_primary_attribute(base_value)
+            self.gamestats[attribute_name] = self.stats.make_game_value(attribute_name, self.stats[attribute_name])
+
+
+    def update_primary_stats(self):
+        """Updates hero primary attributes, from base stats and current equipment."""
+        ARTIFACT_STATS = metadata.Store.get("artifact_stats", version=self.version)
+        diff = [0] * len(metadata.PRIMARY_ATTRIBUTES)
+        for artifact in filter(ARTIFACT_STATS.get, self.equipment.values()):
+            diff = [a + b for a, b in zip(diff, ARTIFACT_STATS[artifact])]
+        for attribute_name, artifacts_bonus in zip(metadata.PRIMARY_ATTRIBUTES, diff):
+            value = self.basestats[attribute_name] + artifacts_bonus
+            self.stats[attribute_name] = self.stats.wrap_primary_attribute(value)
+            self.gamestats[attribute_name] = self.stats.make_game_value(attribute_name, self.stats[attribute_name])
+
+
+    def update_primary_attribute(self, attribute_name, value):
+        """Updates hero primary attribute and its base and in-game value."""
+        if attribute_name not in metadata.PRIMARY_ATTRIBUTES: return
+        diff = value - self.stats[attribute_name]
+        base_value = self.basestats[attribute_name] + diff
+        self.stats    [attribute_name] = value
+        self.basestats[attribute_name] = self.stats.wrap_primary_attribute(base_value)
+        self.gamestats[attribute_name] = self.stats.make_game_value(attribute_name, value)
 
 
     def get_name_ident(self):
@@ -576,7 +600,7 @@ class Hero(object):
             else:
                 prop.clear()
                 prop.update(state)
-        self.ensure_basestats(force=True)
+        self.ensure_primary_stats(force=True)
         self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
         self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
         self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
@@ -595,7 +619,7 @@ class Hero(object):
         if not self.is_changed(): return
 
         errors = [] # [error message, ]
-        self.ensure_basestats()
+        self.ensure_primary_stats()
         for section in PROPERTIES:
             prop = getattr(self, section)
             if prop == self.realized[section]: continue # for section
@@ -606,6 +630,7 @@ class Hero(object):
         if errors:
             raise ValueError("Invalid data in hero %s:\n- %s" %
                              (self.get_name_ident(), "\n- ".join(errors)))
+        self.update_primary_stats()
         self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 

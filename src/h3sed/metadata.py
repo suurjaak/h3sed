@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  28.09.2025
+@modified  04.10.2025
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -66,8 +66,12 @@ EQUIPMENT_SLOTS = {"armor": "armor", "cloak": "cloak", "feet": "feet", "helm": "
                    "side5": "side", "weapon": "weapon"}
 
 
-"""Hero primary attribute value range, as (min, max)."""
-PRIMARY_ATTRIBUTE_RANGE = (0, 127)
+"""Hero primary attribute value full ranges as supported in serialization, as (min, max)."""
+PRIMARY_ATTRIBUTE_RANGE = (0, 255)
+
+"""Hero primary attribute value ranges as used in-game, as (min, max, overflow handicap)."""
+PRIMARY_ATTRIBUTE_GAME_RANGES = {"attack": (0, 99, 128), "defense":   (0, 99, 128),
+                                 "power":  (1, 99, 128), "knowledge": (1, 99, 128)}
 
 
 """Allowed (min, max) ranges for various hero properties."""
@@ -1518,6 +1522,7 @@ Store.add("experience_levels",     EXPERIENCE_LEVELS, separate=True) # Versions 
 Store.add("hero_byte_positions",   HERO_BYTE_POSITIONS)
 Store.add("hero_ranges",           HERO_RANGES)
 Store.add("ids",                   IDS)
+Store.add("primary_attribute_game_ranges", PRIMARY_ATTRIBUTE_GAME_RANGES)
 Store.add("skills",                SKILLS)
 Store.add("skill_levels",          SKILL_LEVELS)
 Store.add("special_artifacts",     SPECIAL_ARTIFACTS)

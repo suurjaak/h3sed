@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  21.09.2025
+@modified  04.10.2025
 ------------------------------------------------------------------------------
 """
 import re
@@ -30,6 +30,12 @@ VERSION_BYTERANGES = {
 
 """Hero skills, in file order, added to default skills."""
 SKILLS = ["Interference"]
+
+
+"""Hero primary attribute value ranges as used in-game, as (min, max, overflow handicap)."""
+PRIMARY_ATTRIBUTE_GAME_RANGES = {"attack": (0, 99, 231), "defense":   (0, 99, 231),
+                                 "power":  (1, 99, 231), "knowledge": (1, 99, 231)}
+
 
 
 """Allowed (min, max) ranges for various hero properties."""
@@ -474,6 +480,8 @@ def init():
     metadata.Store.add("experience_levels",     LEVELS,                version=NAME)
     metadata.Store.add("hero_ranges",           HERO_RANGES,           version=NAME)
     metadata.Store.add("ids",                   IDS,                   version=NAME)
+    metadata.Store.add("primary_attribute_game_ranges",
+                       PRIMARY_ATTRIBUTE_GAME_RANGES,                  version=NAME)
     metadata.Store.add("skills",                SKILLS,                version=NAME)
     metadata.Store.add("special_artifacts",     SPECIAL_ARTIFACTS,     version=NAME)
     metadata.Store.add("bannable_spells",       BANNABLE_SPELLS,       version=NAME)

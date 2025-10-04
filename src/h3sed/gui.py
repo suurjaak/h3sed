@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    29.09.2025
+@modified    04.10.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1859,12 +1859,16 @@ def build(plugin, panel):
 
     def make_extra(prop, sizer, pos):
         opts, c = prop["extra"], None
-        if "button" == opts["type"]:
+        if callable(opts):
+            c = opts(plugin, prop, state)
+        elif "button" == opts["type"]:
             c = wx.Button(panel, label=opts["label"])
             c.Bind(wx.EVT_BUTTON, functools.partial(opts["handler"], plugin, prop, state))
         if c:
-            if opts.get("tooltip"): c.ToolTip = opts["tooltip"]
-            sizer.Add(c, pos=pos)
+            if isinstance(opts, dict) and opts.get("tooltip") and hasattr(c, "ToolTip"):
+                c.ToolTip = opts["tooltip"]
+            sizerargs = dict(flag=wx.ALIGN_CENTER_VERTICAL) if isinstance(c, wx.Sizer) else {}
+            sizer.Add(c, pos=pos, **sizerargs)
             build_result["%s-extra" % prop["name"]] = c
 
 

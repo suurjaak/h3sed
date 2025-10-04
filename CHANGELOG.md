@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.2, 2025-09-28
+3.2, 2025-10-04
 ---------------
 - add button with mass change options menu to hero property tabs
 - add individual row options menu to hero skills, army, equipment, and inventory
@@ -10,9 +10,12 @@ CHANGELOG
 - add info text to inventory artifacts with hero main stats bonuses
 - add info text to spells on missing spellbook
 - add info text to combination artifacts in selection lists (issue #20)
+- allow changing hero primary attribute full byte range and display info on in-game value,
+  fix value loaded from savefile being auto-forced to a maximum of 127 (issue #21)
 - fix opening savefiles from Armageddon's Blade (issue #18)
 - fix opening savefiles from GOG Heroes 3 Complete (issue #19)
 - fix not saving Ballista in versions other than Horn of the Abyss (issue #20)
+- fix spell power and knowledge minimum valid value being 0 not 1 as in game
 - fix artifacts not being sorted by name in all lists
 - fix stats bonuses for Dragon Wing Tabard and Dragon Scale Shield
 - fix not updating equipment artifact stats bonus tooltip on changing artifact

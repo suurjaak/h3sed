@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  25.09.2025
+@modified  04.10.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -19,7 +19,7 @@ try: import wx
 except ImportError: wx = None
 
 import h3sed
-from .. lib import util
+from .. lib import controls, util
 from .. import conf
 from .. import metadata
 
@@ -28,10 +28,10 @@ logger = logging.getLogger(__package__)
 
 
 PROPS = {"name": "stats", "label": "Main attributes", "index": 0}
-## Valid raw values for primary stats range from 0..127.
-## 100..127 is probably used as a buffer for artifact boosts;
-## game will only show and use a maximum of 99.
-## 128 or higher will cause overflow wraparound to 0.
+## Normal values for primary stats range from 0..99 for might and 1..99 for magic attributes.
+## Values from 100 get capped to 99, and from 128 upwards become a handicap (from 231 in HoTA),
+## with game showing and using minimum, but still increasing the value upon gaining points
+## until it overflows and wraps around to actual minimum.
 DATAPROPS = [{
     "name":   "attack",
     "label":  "Attack",
@@ -39,7 +39,7 @@ DATAPROPS = [{
     "len":    1,
     "min":    None,  # Populated later
     "max":    None,  # Populated later
-    "info":   None,  # Populated later
+    "extra":  None,  # Populated later
 }, {
     "name":   "defense",
     "label":  "Defense",
@@ -47,7 +47,7 @@ DATAPROPS = [{
     "len":    1,
     "min":    None,  # Populated later
     "max":    None,  # Populated later
-    "info":   None,  # Populated later
+    "extra":  None,  # Populated later
 }, {
     "name":   "power",
     "label":  "Spell Power",
@@ -55,7 +55,7 @@ DATAPROPS = [{
     "len":    1,
     "min":    None,  # Populated later
     "max":    None,  # Populated later
-    "info":   None,  # Populated later
+    "extra":  None,  # Populated later
 }, {
     "name":   "knowledge",
     "label":  "Knowledge",
@@ -63,7 +63,7 @@ DATAPROPS = [{
     "len":    1,
     "min":    None,  # Populated later
     "max":    None,  # Populated later
-    "info":   None,  # Populated later
+    "extra":  None,  # Populated later
 }, {
     "name":   "exp",
     "label":  "Experience",
@@ -164,6 +164,7 @@ class StatsPlugin(object):
         self._panel  = panel # Plugin contents panel
         self._state  = h3sed.hero.Attributes.factory(version)
         self._hero   = None
+        self._ctrls  = {}    # {"helm": wx.ComboBox, "helm-info": wx.StaticText, }
 
 
     def props(self):
@@ -175,8 +176,8 @@ class StatsPlugin(object):
             if "value" in prop: prop = dict(prop, value=IDS[prop["label"]])
             if "min"   in prop: prop = dict(prop, min=HERO_RANGES[prop["name"]][0])
             if "max"   in prop: prop = dict(prop, max=HERO_RANGES[prop["name"]][1])
-            if prop["name"] in metadata.PRIMARY_ATTRIBUTES and prop.get("info", prop) is None:
-                prop = dict(prop, info=self.format_stat_bonus)
+            if prop["name"] in metadata.PRIMARY_ATTRIBUTES and "extra" in prop:
+                prop = dict(prop, extra=self.make_primary_extra)
             if prop["name"] in ("exp", "level") and "extra" in prop:
                 prop = dict(prop, extra=dict(prop["extra"], handler=self.on_experience_level))
             if prop["name"] == "movement_left" and "extra" in prop:
@@ -211,6 +212,12 @@ class StatsPlugin(object):
         return state0 != self._state
 
 
+    def render(self):
+        """Creates controls from state. Returns True."""
+        self._ctrls.update(h3sed.gui.build(self, self._panel))
+        return True
+
+
     def on_change(self, prop, value, ctrl, rowindex=None):
         """
         Handler for stats change, updates state, notifies other plugins if spellbook was toggled.
@@ -219,10 +226,10 @@ class StatsPlugin(object):
         v1, v2 = self._state[prop["name"]], None if value == "" else value
         if v1 == v2: return False
 
-        self._state[prop["name"]] = v2
-
-        if prop["name"] in self._hero.basestats:
-            self._hero.basestats[prop["name"]] += v2 - v1
+        if prop["name"] in metadata.PRIMARY_ATTRIBUTES:
+            self.update_primary_attribute(prop, v2)
+        else:
+            self._state[prop["name"]] = v2
         if "spellbook" == prop["name"]:
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name="spells")
             wx.PostEvent(self._panel, evt)
@@ -274,25 +281,84 @@ class StatsPlugin(object):
         self.parent.command(callable, name="set %s" % label)
 
 
-    def format_stat_bonus(self, plugin, prop, state, artifact_stats=None):
+    def make_primary_extra(self, plugin, prop, state):
+        """Returns wx.Sizer with additional UI components for primary attribute."""
+        GAME_RANGES = metadata.Store.get("primary_attribute_game_ranges", version=self.version)
+        MINV, MAXV, OVERFLOW = GAME_RANGES[prop["name"]]
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        stat = wx.TextCtrl(self._panel, style=wx.TE_RIGHT)
+        info = wx.StaticText(self._panel)
+        stat.ToolTip = "Value shown and used in game.\n\n" \
+                       "Values from %s display and function as %s, and from %s upwards " \
+                       "become a handicap, keeping effective %s at %s.\n\n" \
+                       "Gaining new points still increases the hidden value, " \
+                       "until it overflows and wraps around to the actual minimum, " \
+                       "after which it starts acting normally again." % \
+                       (MAXV + 1, MAXV, OVERFLOW, metadata.PRIMARY_ATTRIBUTES[prop["name"]], MINV)
+        stat.MinSize = stat.MaxSize = (25, -1)
+        stat.SetEditable(False)
+        controls.ColourManager.Manage(stat, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
+        controls.ColourManager.Manage(info, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
+
+        game_value = self._hero.gamestats[prop["name"]]
+        infotext = infotip = self.format_stat_info(self, prop, self._state) or ""
+        if isinstance(infotext, (list, tuple)): infotext, infotip = infotext
+        stat.Value = str(game_value)
+        info.Label, info.ToolTip = infotext, infotip
+        stat.Show(game_value != self._state[prop["name"]])
+
+        sizer.Add(stat)
+        sizer.Add(info, border=5, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
+        self._ctrls["%s-game" % prop["name"]] = stat
+        self._ctrls["%s-info" % prop["name"]] = info
+        return sizer
+
+    def update_primary_attribute(self, prop, value):
+        """Refreshes  UI components for primary attribute in-game value and artifact bonus info."""
+        self._hero.update_primary_attribute(prop["name"], value)
+        infotext = infotip = self.format_stat_info(self, prop, self._state) or ""
+        if isinstance(infotext, (list, tuple)): infotext, infotip = infotext
+        stat, info = self._ctrls["%s-game" % prop["name"]], self._ctrls["%s-info" % prop["name"]]
+        stat.Value = str(self._hero.gamestats[prop["name"]])
+        stat.Show(self._hero.gamestats[prop["name"]] != self._state[prop["name"]])
+        info.Label, info.ToolTip = infotext, infotip
+        self._panel.Layout()
+
+
+    def format_stat_info(self, plugin, prop, state, artifact_stats=None):
         """
-        Return (text, tooltip) for primaty attribute bonuses or "" if no bonus,
+        Return (text, tooltip) for primaty attribute bonuses and caps, or "" if no effects in play,
         like ("base 3 +1 Armo.. +2 Cent..", "base 3\n+1 Armor of Wonder\n+2 Centaur's Axe").
         """
-        if not self._hero.equipment: return None
+        if not self._hero.equipment \
+        and self._hero.stats[prop["name"]] == self._hero.gamestats[prop["name"]]: return ""
+
         MAXLEN = 65
         STATS = artifact_stats or metadata.Store.get("artifact_stats", version=self.version)
+        GAME_RANGES = metadata.Store.get("primary_attribute_game_ranges", version=self.version)
         INDEX = list(metadata.PRIMARY_ATTRIBUTES).index(prop["name"])
+        MINV, _, OVERFLOW = GAME_RANGES[prop["name"]]
+        MAXRANGE = metadata.PRIMARY_ATTRIBUTE_RANGE[1] + 1
         base = self._hero.basestats[prop["name"]]
+        if base >= OVERFLOW: base = base - MAXRANGE
         artifacts = list(self._hero.equipment.values())
         artifacts = [n for n in artifacts if n in STATS and STATS[n][INDEX]]
-        if not artifacts:
+
+        captext = ""
+        if self._hero.stats[prop["name"]] != self._hero.gamestats[prop["name"]]:
+            action = "handicapped" if self._hero.gamestats[prop["name"]] == MINV else "capped"
+            captext = "%s to %s" % (action, self._hero.gamestats[prop["name"]])
+
+        if not artifacts and not captext:
             return ""
 
         pairs = [(("%s" if v < 0 else "+%s") % v, k) for k in artifacts for v in [STATS[k][INDEX]]]
         textpairs, toolpairs = ([(v, k[:i] + ".." if i else k) for v, k in pairs] for i in (4, 0))
-        text    = "base %s %s"  % (base, " " .join(map(" ".join, textpairs)))
-        tooltip = "base %s\n%s" % (base, "\n".join(map(" ".join, toolpairs)))
+        text = tooltip = "base %s" % base
+        text    += " %s"  % " " .join(map(" ".join, textpairs)) if artifacts else ""
+        tooltip += "\n%s" % "\n".join(map(" ".join, toolpairs)) if artifacts else ""
+        if captext: text, tooltip = "%s %s" % (text, captext), "%s\n%s" % (tooltip, captext)
         if len(tooltip) <= MAXLEN: text = tooltip.replace("\n", " ")  # Show full text if fits
         if len(text) > MAXLEN + 4: text = text[:MAXLEN] + " ..."  # Shorten further if too long
         return text, tooltip
