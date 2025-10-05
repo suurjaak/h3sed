@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  04.10.2025
+@modified  05.10.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -297,7 +297,7 @@ class EquipmentPlugin(object):
             label = "%s:\t%s" % (inventory_index + 1, h3sed.hero.format_artifacts(artifact_name))
             item = menu_equip.Append(wx.ID_ANY, label)
             kwargs = dict(location=location, inventory_index=inventory_index)
-            menu.Bind(wx.EVT_MENU, functools.partial(self.on_send_to_inventory, **kwargs), item)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_transact_inventory, **kwargs), item)
 
         if len(SLOT_TO_LOCATIONS[slot]) > 1:
             menu_swap = wx.Menu()
@@ -334,7 +334,7 @@ class EquipmentPlugin(object):
         if not menu_equip.MenuItemCount:
             menu.Enable(item_equip.Id, False)
         kwargs = dict(location=location)
-        menu.Bind(wx.EVT_MENU, functools.partial(self.on_send_to_inventory, **kwargs), item_send)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_transact_inventory, **kwargs), item_send)
         return menu
 
 
@@ -488,7 +488,7 @@ class EquipmentPlugin(object):
         self.parent.command(callable, name=label)
 
 
-    def on_send_to_inventory(self, event, location, inventory_index=None):
+    def on_transact_inventory(self, event, location, inventory_index=None):
         """Handler for swapping artifact with inventory, carries out and propagates change."""
         try: eq2, inv2 = self._hero.make_artifact_swap(location, inventory_index)
         except Exception as e:
@@ -496,6 +496,7 @@ class EquipmentPlugin(object):
             return
         if (eq2, inv2) == (self._state, self._hero.inventory):
             return
+        inv2 = inv2.make_compact()
         artifact_name1 = self._state[location]
         artifact_name2 = None if inventory_index is None else self._hero.inventory[inventory_index]
         action = "send %s" % artifact_name1 if inventory_index is None else \
