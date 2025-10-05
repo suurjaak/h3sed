@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  04.10.2025
+@modified  05.10.2025
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
@@ -27,7 +27,7 @@ import sys
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
 Version = "3.2.dev37"
-VersionDate = "04.10.2025"
+VersionDate = "05.10.2025"
 
 Frozen = getattr(sys, "frozen", False)
 if Frozen:

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  04.10.2025
+@modified  05.10.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -150,9 +150,7 @@ class DataClass(object):
     def factory(cls, version):
         return h3sed.version.adapt("hero.%s" % cls.__name__, cls, version)()
 
-    def get_version(self):
-        """Returns game version."""
-        return None
+    version = property(lambda self: None, doc="Game version in use")
 
     def realize(self, hero=None):
         """Checks and finalizes changes to data, possibly modifying other hero properies."""
@@ -250,9 +248,8 @@ class Army(TypedArrayCheckerMixin, TypedArray, DataClass):
     """Hero army property."""
 
     def __init__(self):
-        version = self.get_version()
-        dataclass = h3sed.version.adapt("hero.%s" % ArmyStack.__name__, ArmyStack, version)
-        minmax = metadata.Store.get("hero_ranges", version=version)["army"]
+        dataclass = h3sed.version.adapt("hero.%s" % ArmyStack.__name__, ArmyStack, self.version)
+        minmax = metadata.Store.get("hero_ranges", version=self.version)["army"]
         TypedArray.__init__(self, cls=dataclass, size=minmax[1], default=dataclass)
 
 
@@ -293,8 +290,8 @@ class Equipment(SlotCheckerMixin, SlotsDict, DataClass):
         """
         selected_locations, conflicts = {}, {}
 
-        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.get_version())
-        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.get_version())
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots",  version=self.version)
+        LOCATION_TO_SLOT  = metadata.Store.get("equipment_slots", version=self.version)
         SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
                              for slot in LOCATION_TO_SLOT.values()}
 
@@ -341,8 +338,8 @@ class Equipment(SlotCheckerMixin, SlotsDict, DataClass):
         @param   desired_location  optional location to keep free if alternatives possible
         @param   equipment         optional Equipment or data dictionary to use if not self
         """
-        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.get_version())
-        LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.get_version())
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots",  version=self.version)
+        LOCATION_TO_SLOT  = metadata.Store.get("equipment_slots", version=self.version)
         SLOT_TO_LOCATIONS = {slot: [l for l, slot2 in LOCATION_TO_SLOT.items() if slot == slot2]
                              for slot in LOCATION_TO_SLOT.values()}
 
@@ -370,7 +367,7 @@ class Equipment(SlotCheckerMixin, SlotsDict, DataClass):
 
         @param   equipment  optional Equipment or data dictionary to use if not self
         """
-        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.get_version())
+        ARTIFACT_TO_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
         eq = dict(self if equipment is None else equipment)
         lines = []
         for slot, others in slot_conflicts.items():
@@ -395,13 +392,13 @@ class Attributes(SlotsDict, DataClass):
 
     def get_experience_level(self):
         """Returns hero level that ought to match current experience."""
-        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.get_version())
+        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.version)
         orderlist = sorted(EXP_LEVELS.items(), reverse=True)
         return next((k for k, v in orderlist if v <= self.exp), None)
 
     def get_level_experience(self):
         """Returns hero experience that ought to match current level."""
-        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.get_version())
+        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.version)
         value = EXP_LEVELS.get(self.level)
         if value is not None and value <= self.exp < EXP_LEVELS.get(self.level + 1, sys.maxsize):
             value = self.exp  # Do not reset experience if already at level
@@ -416,7 +413,7 @@ class Attributes(SlotsDict, DataClass):
     def make_game_value(self, attribute_name, value):
         """Returns attribute value as used in-game, like knowledge constrained to 1-99."""
         if attribute_name not in metadata.PRIMARY_ATTRIBUTES: return value
-        RANGES = metadata.Store.get("primary_attribute_game_ranges", version=self.get_version())
+        RANGES = metadata.Store.get("primary_attribute_game_ranges", version=self.version)
         MINV, MAXV, OVERFLOW = RANGES[attribute_name]
         if value < MINV or value > MAXV:
             value = MINV if value < MINV or value >= OVERFLOW else MAXV
@@ -427,17 +424,16 @@ class Inventory(TypedArray, DataClass):
     """Hero inventory property."""
 
     def __init__(self):
-        version = self.get_version()
-        minmax = metadata.Store.get("hero_ranges", version=version)["inventory"]
-        TypedArray.__init__(self, cls=make_artifact_cast("inventory", version), size=minmax[1])
+        minmax = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
+        TypedArray.__init__(self, cls=make_artifact_cast("inventory", self.version), size=minmax[1])
 
     def make_compact(self, order=(), reverse=False):
         """Returns new inventory with items compacted to top, in specified order if any."""
         items = [x for x in self if x]
         if order:
-            ARTIFACT_SLOTS = metadata.Store.get("artifact_slots", version=self.get_version())
-            LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.get_version())
-            EQUIPMENT_LOCATIONS = list(Equipment.factory(self.get_version()).__slots__)
+            ARTIFACT_SLOTS = metadata.Store.get("artifact_slots", version=self.version)
+            LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
+            EQUIPMENT_LOCATIONS = list(Equipment.factory(self.version).__slots__)
             SLOT_ORDER = [LOCATION_TO_SLOT[location] for location in EQUIPMENT_LOCATIONS]
             SLOT_ORDER.extend(("inventory", "unknown")) # "unknown" just in case
             get_primary_slot = lambda x: ARTIFACT_SLOTS.get(x, SLOT_ORDER[-1:])[0]
@@ -458,9 +454,8 @@ class Skills(TypedArrayCheckerMixin, TypedArray, DataClass):
     """Hero skills property."""
 
     def __init__(self):
-        version = self.get_version()
-        dataclass = h3sed.version.adapt("hero.%s" % Skill.__name__, Skill, version)
-        minmax = metadata.Store.get("hero_ranges", version=version)["skills"]
+        dataclass = h3sed.version.adapt("hero.%s" % Skill.__name__, Skill, self.version)
+        minmax = metadata.Store.get("hero_ranges", version=self.version)["skills"]
         TypedArray.__init__(self, cls=dataclass, size=minmax, default=dataclass)
 
     def realize(self, hero=None):

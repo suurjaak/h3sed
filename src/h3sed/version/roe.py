@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  27.07.2025
+@modified  05.10.2025
 ------------------------------------------------------------------------------
 """
 import re
@@ -67,9 +67,7 @@ HERO_REGEX = re.compile(b"""
 
 class DataClass(hero.DataClass):
 
-    def get_version(self):
-        """Returns game version."""
-        return NAME
+    version = property(lambda self: NAME, doc="Game version in use")
 
 
 class Equipment(DataClass, hero.Equipment):
