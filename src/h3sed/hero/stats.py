@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  04.10.2025
+@modified  06.10.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -207,7 +207,9 @@ class StatsPlugin(object):
         state0 = self._state.copy()
         for attribute, value in state.items():
             if attribute not in self._state or self._state[attribute] == value: continue # for
-            try: self._state[attribute] = value
+            try:
+                if attribute not in metadata.PRIMARY_ATTRIBUTES: self._state[attribute] = value
+                else: self._hero.update_primary_attribute(attribute, value)
             except Exception as e: logger.warning(str(e))
         return state0 != self._state
 

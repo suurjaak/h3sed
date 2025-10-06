@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  05.10.2025
+@modified  06.10.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -565,6 +565,7 @@ class Hero(object):
     def update_primary_attribute(self, attribute_name, value):
         """Updates hero primary attribute and its base and in-game value."""
         if attribute_name not in metadata.PRIMARY_ATTRIBUTES: return
+        value = self.stats.__slots__[attribute_name](value) # Ensure valid range and type; raises
         diff = value - self.stats[attribute_name]
         base_value = self.basestats[attribute_name] + diff
         self.stats    [attribute_name] = value

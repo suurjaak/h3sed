@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  29.09.2025
+@modified  06.10.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -820,6 +820,8 @@ class HeroPlugin(object):
                     changeds.append(category)
             self._hero.realize()
             self._hero_yamls[self._hero] = templates.make_hero_yamls(self._hero)
+            if "equipment" in changeds and "stats" not in changeds:
+                changeds.append("stats") # Artifact bonus texts may need refreshing
             if changeds:
                 self.patch()
                 for name in changeds:
