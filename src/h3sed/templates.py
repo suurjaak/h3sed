@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    20.08.2025
+@modified    06.10.2025
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -195,8 +195,7 @@ def serialize_property_yaml(state, indent="  "):
     """Returns hero property data as ([(formatted prefix, formatted value)], max key length)."""
     pairs, maxlen = [], 0
     fmt = lambda v: "" if v in (None, {}) else \
-                    next((x[1:-1] if isinstance(v, util.text_types)
-                          and re.match(r"[\x20-\x7e]+$", x) else x for x in [json.dumps(v)]))
+                    yaml.safe_dump([v], default_flow_style=True).strip()[1:-1] # Strip []
 
     if isinstance(state, (list, set)):
         state = list(state)

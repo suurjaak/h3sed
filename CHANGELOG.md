@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.2, 2025-10-04
+3.2, 2025-10-06
 ---------------
 - add button with mass change options menu to hero property tabs
 - add individual row options menu to hero skills, army, equipment, and inventory
@@ -19,6 +19,7 @@ CHANGELOG
 - fix artifacts not being sorted by name in all lists
 - fix stats bonuses for Dragon Wing Tabard and Dragon Scale Shield
 - fix not updating equipment artifact stats bonus tooltip on changing artifact
+- fix hero YAML data being invalid if containing spell scrolls
 
 
 3.1, 2025-09-01
