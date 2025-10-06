@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  04.10.2025
+@modified  06.10.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -197,14 +197,6 @@ class InventoryPlugin(object):
         item_swap  = menu.AppendSubMenu(menu_swap,  "Swap with inventory slot ..")
 
         for category in list(SLOT_TO_LOCATIONS) + ["scroll", "inventory", "combined"]:
-            menu_category = wx.Menu()
-            item_category = wx.MenuItem(menu_set, wx.ID_ANY, category, subMenu=menu_category)
-            if artifact_on_row in ARTIFACT_TO_SLOTS:
-                if ARTIFACT_TO_SLOTS[artifact_on_row][0] == category \
-                or "scroll" == category and artifact_on_row in SCROLL_ARTIFACTS \
-                or "combined" == category and artifact_on_row in COMBINATION_ARTIFACTS:
-                    item_category.Font = item_category.Font.Bold()
-            menu_set.Append(item_category)
             candidates = metadata.Store.get("artifacts", category=category, version=self.version)
             if "inventory" == category:
                 candidates = [x for x in candidates
@@ -213,7 +205,17 @@ class InventoryPlugin(object):
                 candidates = [x for x in candidates if x not in SCROLL_ARTIFACTS]
             elif "combined" == category:
                 candidates = sorted(COMBINATION_ARTIFACTS)
-            for artifact_candidate in candidates or []:
+            if not candidates: continue # for category
+
+            menu_category = wx.Menu()
+            item_category = wx.MenuItem(menu_set, wx.ID_ANY, category, subMenu=menu_category)
+            if artifact_on_row in ARTIFACT_TO_SLOTS:
+                if ARTIFACT_TO_SLOTS[artifact_on_row][0] == category \
+                or "scroll" == category and artifact_on_row in SCROLL_ARTIFACTS \
+                or "combined" == category and artifact_on_row in COMBINATION_ARTIFACTS:
+                    item_category.Font = item_category.Font.Bold()
+            menu_set.Append(item_category)
+            for artifact_candidate in candidates:
                 label = h3sed.hero.format_artifacts(artifact_candidate)
                 item_candidate = wx.MenuItem(menu_category, wx.ID_ANY, label)
                 if artifact_candidate == artifact_on_row:

@@ -130,9 +130,9 @@ def format_artifacts(value, version=None, reverse=False):
     @param   version  game version like "sod", if any
     @param   reverse  strip combination artifact text instead of adding
     """
-    if not value: return value
     COMBINATION_ARTIFACTS = metadata.Store.get("combination_artifacts", version=version)
     COMBINATION_SUFFIX = "  (combined artifact)"
+    if not value or not COMBINATION_ARTIFACTS: return value
     result = []
     for v in (value if isinstance(value, list) else [value]):
         if reverse:
