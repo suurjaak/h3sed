@@ -247,7 +247,7 @@ class StatsPlugin(object):
         return True
 
 
-    def on_experience_level(self, plugin, prop, state, event=None):
+    def on_experience_level(self, prop, event=None):
         """Handler for "Set from level|experience" buttons, updates hero attribute and propagates."""
         SOURCE, TARGET = ("level", "exp") if "exp" == prop["name"] else ("exp", "level")
         source_prop = next(x for x in self.props() if x["name"] == SOURCE)
@@ -276,7 +276,7 @@ class StatsPlugin(object):
         self.parent.command(callable, name="set %s" % label)
 
 
-    def on_refill_movement(self, plugin, prop, state, event=None):
+    def on_refill_movement(self, prop, event=None):
         """Handler for setting hero movement points to total, updates attribute and propagates."""
         def on_do(self, state):
             self._state.update(state)
@@ -292,7 +292,7 @@ class StatsPlugin(object):
         self.parent.command(callable, name="set %s" % label)
 
 
-    def on_refill_mana(self, plugin, prop, state, event=None):
+    def on_refill_mana(self, prop, event=None):
         """Handler for setting hero spell points to maximum, updates attribute and propagates."""
         def on_do(self, state):
             self._state.update(state)
