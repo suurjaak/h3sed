@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  04.10.2025
+@modified  06.10.2025
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -74,7 +74,7 @@ PRIMARY_ATTRIBUTE_GAME_RANGES = {"attack": (0, 99, 128), "defense":   (0, 99, 12
                                  "power":  (1, 99, 128), "knowledge": (1, 99, 128)}
 
 
-"""Allowed (min, max) ranges for various hero properties."""
+"""Allowed (min, max) ranges and other configuration for various hero properties."""
 HERO_RANGES = {
     "attack":          PRIMARY_ATTRIBUTE_RANGE,
     "defense":         PRIMARY_ATTRIBUTE_RANGE,
@@ -91,6 +91,7 @@ HERO_RANGES = {
     "army.count":      ( 1, 2**32 - 1),
     "inventory":       ( 0, 64),
     "skills":          ( 0, 28),
+    "Intelligence":    (1.25, 1.5, 2), # Hero maximum spell points multiplier by skill level
 }
 
 

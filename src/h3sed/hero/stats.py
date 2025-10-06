@@ -118,6 +118,13 @@ DATAPROPS = [{
     "len":    2,
     "min":    None,  # Populated later
     "max":    None,  # Populated later
+    "extra":  {
+        "type":     "button",
+        "label":    "Refill to total",
+        "tooltip":  "Top up remaining spell points to hero maximum.\n\n"
+                    "Does not account for hero having Intelligence specialty.",
+        "handler":  None,  # Populated later
+    },
 }, {
     "name":   "spellbook",
     "type":   "check",
@@ -182,6 +189,8 @@ class StatsPlugin(object):
                 prop = dict(prop, extra=dict(prop["extra"], handler=self.on_experience_level))
             if prop["name"] == "movement_left" and "extra" in prop:
                 prop = dict(prop, extra=dict(prop["extra"], handler=self.on_refill_movement))
+            if prop["name"] == "mana_left" and "extra" in prop:
+                prop = dict(prop, extra=dict(prop["extra"], handler=self.on_refill_mana))
             result.append(prop)
         return h3sed.version.adapt("hero.stats.DATAPROPS", result, version=self.version)
 
@@ -280,6 +289,28 @@ class StatsPlugin(object):
         label = "%s stats: refill movement points" % self._hero.name
         h3sed.guibase.status("Setting %s", label, flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, {"movement_left": self._state.movement_total})
+        self.parent.command(callable, name="set %s" % label)
+
+
+    def on_refill_mana(self, plugin, prop, state, event=None):
+        """Handler for setting hero spell points to maximum, updates attribute and propagates."""
+        def on_do(self, state):
+            self._state.update(state)
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        mana_total = 10 * self._hero.gamestats["knowledge"]
+        if "Intelligence" in self._hero.skills:
+            HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
+            SKILL_LEVELS = metadata.Store.get("skill_levels", version=self.version)
+            current_level = self._hero.skills[self._hero.skills.index("Intelligence")].level
+            mana_total *= HERO_RANGES["Intelligence"][LEVELS.index(current_level)]
+        if self._state.mana_left >= mana_total: return
+        label = "%s stats: refill spell points" % self._hero.name
+        h3sed.guibase.status("Setting %s", label, flash=conf.StatusShortFlashLength, log=True)
+        callable = functools.partial(on_do, self, {"mana_left": mana_total})
         self.parent.command(callable, name="set %s" % label)
 
 
