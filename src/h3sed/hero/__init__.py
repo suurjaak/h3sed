@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  06.10.2025
+@modified  07.10.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -374,10 +374,10 @@ class Equipment(SlotCheckerMixin, SlotsDict, DataClass):
             needed_count = sum(s == slot for s in ARTIFACT_TO_SLOTS[artifact][1:])
             countstr = "; need %s free" % needed_count if needed_count > 1 else ""
             items, conflict_counts = [], collections.Counter(others)
-            for location in others:
-                count = conflict_counts.pop(location, None)
+            for location2 in others:
+                count = conflict_counts.pop(location2, None)
                 if count:
-                    items.append("%s%s" % (eq[location], " x %s" % count if count > 1 else ""))
+                    items.append("%s%s" % (eq[location2], " x %s" % count if count > 1 else ""))
             lines.append("- %s (by %s)%s" % (slot, ", ".join(items), countstr))
         return "Cannot equip %s on %s, required slot taken:\n\n%s" % \
                (artifact, location, "\n".join(lines))
