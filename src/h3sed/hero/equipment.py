@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  05.10.2025
+@modified  07.10.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -192,14 +192,19 @@ class EquipmentPlugin(object):
         """Returns UI props for equipment-tab, as [{type: "combo", ..}]."""
         result = []
         LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
-        unformat_artifact = lambda props, value: h3sed.hero.format_artifacts(value, reverse=True)
+        def format_artifact(props, value, reverse=False):
+            return h3sed.hero.format_artifacts(value, version=self.version, reverse=reverse)
         for prop in DATAPROPS:
             slot = LOCATION_TO_SLOT.get(prop["name"])
             if slot is None: continue # for prop
-            choices = metadata.Store.get("artifacts", category=slot, version=self.version)
-            choices = [""] + h3sed.hero.format_artifacts(choices)
-            result.append(dict(prop, choices=choices, convert=unformat_artifact,
-                               menu=self.make_item_menu, info=self.format_stats_bonus))
+            myprop = dict(prop)
+            if "choices" in prop:
+                choices = metadata.Store.get("artifacts", category=slot, version=self.version)
+                myprop["choices"] = [""] + h3sed.hero.format_artifacts(choices)
+            if "convert" in prop: myprop["convert"] = format_artifact
+            if "menu"    in prop: myprop["menu"]    = self.make_item_menu
+            if "info"    in prop: myprop["info"]    = self.format_stats_bonus
+            result.append(myprop)
         return h3sed.version.adapt("hero.equipment.DATAPROPS", result, version=self.version)
 
 
@@ -244,10 +249,11 @@ class EquipmentPlugin(object):
                 cc = [""] + metadata.Store.get("artifacts", category=slot, version=self.version)
                 cc = h3sed.hero.format_artifacts(cc)
 
-                ctrl, value, choices = self._ctrls[name], self._state.get(name), cc
+                ctrl, choices = self._ctrls[name], cc
+                value = h3sed.hero.format_artifacts(self._state.get(name)) or ""
                 if value and value not in choices: choices = [value] + cc
                 if choices != ctrl.GetItems(): ctrl.SetItems(choices)
-                ctrl.Value = h3sed.hero.format_artifacts(value or "")
+                ctrl.Value = value
                 infoctrl = self._ctrls["%s-info" % name]
                 infoctrl.Label = self.format_stats_bonus(prop)
                 infoctrl.ToolTip = infoctrl.Label
@@ -305,7 +311,8 @@ class EquipmentPlugin(object):
                 artifact_equipped = self._hero.equipment[location2]
                 if artifact_equipped is None and location2 in reserved_locations:
                     label = "<taken by %s>" % self._hero.equipment[reserved_locations[location2]]
-                else: label = "<blank>" if artifact_equipped is None else artifact_equipped
+                elif artifact_equipped is None: label = "<blank>"
+                else: label = h3sed.hero.format_artifacts(artifact_equipped)
                 item = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (location2, label))
                 kwargs = dict(location=location, location2=location2)
                 menu.Bind(wx.EVT_MENU, functools.partial(self.on_swap_location, **kwargs), item)
@@ -403,7 +410,7 @@ class EquipmentPlugin(object):
 
         try: self._state[prop["name"]] = v2
         except Exception as e:
-            ctrl.Value = v1 or ""
+            ctrl.Value = h3sed.hero.format_artifacts(v1 or "")
             wx.MessageBox(str(e), conf.Title, wx.OK | wx.ICON_WARNING)
             return False
 

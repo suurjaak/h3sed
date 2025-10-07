@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.10.2025
+@modified    07.10.2025
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1708,7 +1708,8 @@ def build(plugin, panel):
         def handler(event):
             value = event.EventObject.Value
             if isinstance(ctrl, wx.SpinCtrlDouble): value = int(value)
-            if callable(myprops.get("convert")): value = myprops["convert"](myprops, value)
+            if callable(myprops.get("convert")):
+                value = myprops["convert"](myprops, value, reverse=True)
             state  = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             row    = state[rowindex] if rowindex is not None and isinstance(state, list) else state
             target = next((x for x in (row, state) if isinstance(x, (list, dict))), None)
@@ -1884,6 +1885,7 @@ def build(plugin, panel):
                 resultitem = {}
                 for itemprop in prop["item"]:
                     c, v = None, row.get(itemprop.get("name")) if isinstance(row, dict) else row
+                    if callable(itemprop.get("convert")): v = itemprop["convert"](itemprop, v)
                     if "label" == itemprop.get("type"):
                         values_present.append(v)
                         if itemprop.get("label"): v = itemprop["label"]
@@ -2018,6 +2020,7 @@ def build(plugin, panel):
             c2 = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY, name=prop["name"])
 
             v = state[prop["name"]]
+            if callable(prop.get("convert")): v = prop["convert"](prop, v)
             choices = prop["choices"]
             if isinstance(choices, dict):
                 choices = list(choices.values())

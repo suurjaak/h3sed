@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  06.10.2025
+@modified  07.10.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -77,14 +77,15 @@ class InventoryPlugin(object):
         result = []
         MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
         ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=self.version)
-        unformat_artifact = lambda props, value: h3sed.hero.format_artifacts(value, reverse=True)
+        def format_artifact(props, value, reverse=False):
+            return h3sed.hero.format_artifacts(value, version=self.version, reverse=reverse)
         choices = h3sed.hero.format_artifacts(ARTIFACTS)
         for prop in DATAPROPS:
             myprop = dict(prop, item=[], min=MIN, max=MAX, menu=self.make_item_menu,
                           info=self.format_stats_bonus)
             for item in prop["item"]:
                 if "choices" in item: item = dict(item, choices=choices)
-                if "convert" in item: item = dict(item, convert=unformat_artifact)
+                if "convert" in item: item = dict(item, convert=format_artifact)
                 myprop["item"].append(item)
             result.append(myprop)
         return result
@@ -235,7 +236,8 @@ class InventoryPlugin(object):
             artifact_equipped = self._hero.equipment[location]
             if artifact_equipped is None and location in reserved_locations:
                 label = "<taken by %s>" % self._hero.equipment[reserved_locations[location]]
-            else: label = "<blank>" if artifact_equipped is None else artifact_equipped
+            elif artifact_equipped is None: label = "<blank>"
+            else: label = h3sed.hero.format_artifacts(artifact_equipped)
             item_location = menu_equip.Append(wx.ID_ANY, "%s:\t%s" % (location, label))
             kwargs = dict(rowindex=rowindex, location=location)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_location)
@@ -246,7 +248,8 @@ class InventoryPlugin(object):
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item)
 
         for i, artifact in enumerate(self._state):
-            item_slot = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (i + 1, artifact or "<blank>"))
+            label = h3sed.hero.format_artifacts(artifact) or "<blank>"
+            item_slot = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (i + 1, label))
             kwargs = dict(rowindex=rowindex, rowindex2=i)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_slot)
             if i == rowindex:
