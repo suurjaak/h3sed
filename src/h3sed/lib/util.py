@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    30.09.2025
+@modified    08.10.2025
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -134,7 +134,7 @@ class OrderedSet(set):
 
     def isdisjoint(self, other):
         """Returns whether this set and the other set have no common elements."""
-        return bool(self.intersection(other))
+        return not bool(self.intersection(other))
 
     def issubset(self, other):
         """Returns whether this set is a subset of the other (fully contained in the other)."""
@@ -150,7 +150,7 @@ class OrderedSet(set):
         if not self._data: raise KeyError("pop from an empty set")
         key = next(iter(self._data))
         elem = self._data.pop(key)
-        self._vals.remove(key)
+        self._vals.remove(elem)
         return elem
 
     def remove(self, elem):
@@ -680,9 +680,7 @@ class TypedArray(list):
         """Returns element at given position or slice in given range."""
         if isinstance(y, slice):
             other = list.__getitem__(self, y)
-            #result = self.spawn(size=(min(self._minlen, len(other)), self._maxlen))
             result = self.spawn(other, size=(min(self._minlen, len(other)), self._maxlen))
-            #for value in other: list.append(result, value)
             return result
         else:
             return list.__getitem__(self, y) 
@@ -731,7 +729,7 @@ class TypedArray(list):
 
 
 class csv_writer(object):
-    """Convenience wrapper for csv.Writer, with Python2/3 compatbility."""
+    """Convenience wrapper for csv.writer, with Python2/3 compatibility."""
 
     def __init__(self, file_or_name):
         if isinstance(file_or_name, text_types):
