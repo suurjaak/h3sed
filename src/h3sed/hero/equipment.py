@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  07.10.2025
+@modified  08.10.2025
 ------------------------------------------------------------------------------
 """
 import functools
@@ -294,7 +294,8 @@ class EquipmentPlugin(object):
         item_equip = menu.AppendSubMenu(menu_equip, "%s inventory .." % swap_label)
 
         sorted_inv = sorted(enumerate(self._hero.inventory),
-                            key=lambda x: ("" if x[1] is None else x[1], x[0]))
+                            key=lambda x: ("" if x[1] is None else x[1], x[0])) \
+                     if location not in reserved_locations else []
         for inventory_index, artifact_name in sorted_inv:
             if artifact_name is None: continue # for inventory_index,
             artifact_slot = ARTIFACT_TO_SLOTS[artifact_name][0]
