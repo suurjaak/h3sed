@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  07.10.2025
+@modified  08.10.2025
 ------------------------------------------------------------------------------
 """
 import collections
@@ -801,9 +801,10 @@ class Hero(object):
                 if artifact1 == artifact2: continue # for inventory_index
 
                 artifact_locations = [] # Locations selected, like ["lefthand", "neck", "cloak"]
-                for artifact_slot in ARTIFACT_TO_SLOTS[artifact2]:
+                for i, artifact_slot in enumerate(ARTIFACT_TO_SLOTS[artifact2]):
                     # Like ["hand", "neck", "cloak"] for "Ring of the Magi"
-                    for location_candidate in SLOT_TO_LOCATIONS[artifact_slot]:
+                    # Reverse, as secondary side slots get reserved from last free to first
+                    for location_candidate in SLOT_TO_LOCATIONS[artifact_slot][::-1 if i else 1]:
                         # Like [["lefthand", "righthand"], ["neck"], ["cloak"]]
                         if location_candidate not in locations_handled \
                         and location_candidate not in artifact_locations:
