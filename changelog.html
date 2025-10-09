@@ -34,9 +34,9 @@
           <a href="https://github.com/suurjaak/h3sed">View the Project on GitHub <small>suurjaak/h3sed</small></a>
 
           <ul>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.1_setup.exe" title="Setup for Windows">Download <strong>Setup</strong></a></li>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.1.exe" title="Stand-alone program for Windows">Download <strong>Executable</strong></a></li>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.1-src.zip" title="Source distribution">Download <strong>Source</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.2_setup.exe" title="Setup for Windows">Download <strong>Setup</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.2.exe" title="Stand-alone program for Windows">Download <strong>Executable</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.2-src.zip" title="Source distribution">Download <strong>Source</strong></a></li>
           </ul>
         </p>
 
@@ -44,6 +44,29 @@
       <section>
 
         <h2>Changelog</h2>
+
+        <h4>v3.2, 2025-10-09:</h4>
+        <ul>
+          <li>add button with mass change options menu to hero property tabs</li>
+          <li>add individual row options menu to hero skills, army, equipment, and inventory</li>
+          <li>add option to refill hero movement points</li>
+          <li>add option to refill hero spell points</li>
+          <li>add option to assemble and disassemble combination artifacts</li>
+          <li>add info text to inventory artifacts with hero main stats bonuses</li>
+          <li>add info text to spells on missing spellbook</li>
+          <li>add info text to combination artifacts in selection lists (issue #20)</li>
+          <li>allow changing hero primary attribute full byte range and display info on in-game value,
+              fix value loaded from savefile being auto-forced to a maximum of 127 (issue #21)</li>
+          <li>fix opening savefiles from Armageddon's Blade (issue #18)</li>
+          <li>fix opening savefiles from GOG Heroes 3 Complete (issue #19)</li>
+          <li>fix not saving Ballista in versions other than Horn of the Abyss (issue #20)</li>
+          <li>fix spell power and knowledge minimum valid value being 0 not 1 as in game</li>
+          <li>fix artifacts not being sorted by name in all lists</li>
+          <li>fix stats bonuses for Dragon Wing Tabard and Dragon Scale Shield</li>
+          <li>fix not updating equipment artifact stats bonus tooltip on changing artifact</li>
+          <li>fix hero YAML data being invalid if containing spell scrolls</li>
+        </ul>
+        <br />
 
         <h4>v3.1, 2025-09-01:</h4>
         <ul>
