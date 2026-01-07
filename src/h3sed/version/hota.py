@@ -99,6 +99,7 @@ SPECIAL_ARTIFACTS = [
 
 """Creatures for hero army slots."""
 CREATURES = [
+    "Argali",
     "Armadillo",
     "Automaton",
     "Ayssid",
@@ -118,19 +119,26 @@ CREATURES = [
     "Faerie Dragon",
     "Fangarm",
     "Firebird",
+    "Great Shaman",
     "Gunslinger",
-    "Halfling Grenadier",
     "Halfling",
+    "Halfling Grenadier",
     "Haspid",
     "Ice Elemental",
+    "Jotunn",
+    "Jotunn Warlord",
     "Juggernaut",
+    "Kobold",
+    "Kobold Foreman",
     "Leprechaun",
     "Magic Elemental",
     "Magma Elemental",
+    "Mammoth",
     "Mechanic",
+    "Mountain Ram",
     "Mummy",
-    "Nix Warrior",
     "Nix",
+    "Nix Warrior",
     "Nomad",
     "Nymph",
     "Oceanid",
@@ -149,13 +157,19 @@ CREATURES = [
     "Sea Witch",
     "Seaman",
     "Sentinel Automaton",
+    "Shaman",
     "Sharpshooter",
+    "Snow Elf",
     "Sorceress",
     "Sprite",
+    "Steel Elf",
     "Steel Golem",
     "Storm Elemental",
     "Stormbird",
     "Troll",
+    "War Mammoth",
+    "Yeti",
+    "Yeti Runemaster",
 ]
 
 
@@ -202,64 +216,78 @@ IDS = {
     # Special artifacts
     "Cannon":                            0x92,
 
-    # Creatures
-    "Armadillo":                         0xAE,
-    "Automaton":                         0xB0,
-    "Ayssid":                            0xA0,
-    "Azure Dragon":                      0x84,
-    "Bellwether Armadillo":              0xAF,
-    "Boar":                              0x8C,
-    "Bounty Hunter":                     0xB5,
-    "Corsair":                           0x9E,
-    "Couatl":                            0xB6,
-    "Crew Mate":                         0x9B,
-    "Crimson Couatl":                    0xB7,
-    "Crystal Dragon":                    0x85,
-    "Dreadnought":                       0xB8,
-    "Enchanter":                         0x88,
-    "Energy Elemental":                  0x81,
-    "Engineer":                          0xAD,
-    "Faerie Dragon":                     0x86,
-    "Fangarm":                           0xA8,
-    "Firebird":                          0x82,
-    "Gunslinger":                        0xB4,
-    "Halfling Grenadier":                0xAB,
-    "Halfling":                          0x8A,
-    "Haspid":                            0xA6,
-    "Ice Elemental":                     0x7B,
-    "Juggernaut":                        0xB9,
-    "Leprechaun":                        0xA9,
-    "Magic Elemental":                   0x79,
-    "Magma Elemental":                   0x7D,
-    "Mechanic":                          0xAC,
-    "Mummy":                             0x8D,
-    "Nix Warrior":                       0xA4,
-    "Nix":                               0xA3,
-    "Nomad":                             0x8E,
-    "Nymph":                             0x99,
-    "Oceanid":                           0x9A,
-    "Olgoi-Khorkhoi":                    0xB3,
-    "Peasant":                           0x8B,
-    "Phoenix":                           0x83,
-    "Pirate":                            0x9D,
-    "Pixie":                             0x76,
-    "Psychic Elemental":                 0x78,
-    "Rogue":                             0x8F,
-    "Rust Dragon":                       0x87,
-    "Sandworm":                          0xB2,
-    "Satyr":                             0xA7,
-    "Sea Dog":                           0x97,
-    "Sea Serpent":                       0xA5,
-    "Sea Witch":                         0xA1,
-    "Seaman":                            0x9C,
-    "Sentinel Automaton":                0xB1,
-    "Sharpshooter":                      0x89,
-    "Sorceress":                         0xA2,
-    "Sprite":                            0x77,
-    "Steel Golem":                       0xAA,
-    "Storm Elemental":                   0x7F,
-    "Stormbird":                         0x9F,
-    "Troll":                             0x90,
+# Creatures
+    "Argali":                           0xBD
+    "Armadillo":                        0xAE
+    "Automaton":                        0xB0
+    "Ayssid":                           0xA0
+    "Azure Dragon":                     0x84
+    "Bellwether Armadillo":             0xAF
+    "Boar":                             0x8C
+    "Bounty Hunter":                    0xB5
+    "Corsair":                          0x9E
+    "Couatl":                           0xB6
+    "Crew Mate":                        0x9B
+    "Crimson Couatl":                   0xB7
+    "Crystal Dragon":                   0x85
+    "Dreadnought":                      0xB8
+    "Enchanter":                        0x88
+    "Energy Elemental":                 0x81
+    "Engineer":                         0xAD
+    "Faerie Dragon":                    0x86
+    "Fangarm":                          0xA8
+    "Firebird":                         0x82
+    "Great Shaman":                     0xC3
+    "Gunslinger":                       0xB4
+    "Halfling":                         0x8A
+    "Halfling Grenadier":               0xAB
+    "Haspid":                           0xA6
+    "Ice Elemental":                    0x7B
+    "Jotunn":                           0xC6
+    "Jotunn Warlord":                   0xC7
+    "Juggernaut":                       0xB9
+    "Kobold":                           0xBA
+    "Kobold Foreman":                   0xBB
+    "Leprechaun":                       0xA9
+    "Magic Elemental":                  0x79
+    "Magma Elemental":                  0x7D
+    "Mammoth":                          0xC4
+    "Mechanic":                         0xAC
+    "Mountain Ram":                     0xBC
+    "Mummy":                            0x8D
+    "Nix":                              0xA3
+    "Nix Warrior":                      0xA4
+    "Nomad":                            0x8E
+    "Nymph":                            0x99
+    "Oceanid":                          0x9A
+    "Olgoi-Khorkhoi":                   0xB3
+    "Peasant":                          0x8B
+    "Phoenix":                          0x83
+    "Pirate":                           0x9D
+    "Pixie":                            0x76
+    "Psychic Elemental":                0x78
+    "Rogue":                            0x8F
+    "Rust Dragon":                      0x87
+    "Sandworm":                         0xB2
+    "Satyr":                            0xA7
+    "Sea Dog":                          0x97
+    "Sea Serpent":                      0xA5
+    "Sea Witch":                        0xA1
+    "Seaman":                           0x9C
+    "Sentinel Automaton":               0xB1
+    "Shaman":                           0xC2
+    "Sharpshooter":                     0x89
+    "Snow Elf":                         0xBE
+    "Sorceress":                        0xA2
+    "Sprite":                           0x77
+    "Steel Elf":                        0xBF
+    "Steel Golem":                      0xAA
+    "Storm Elemental":                  0x7F
+    "Stormbird":                        0x9F
+    "Troll":                            0x90
+    "War Mammoth":                      0xC5
+    "Yeti":                             0xC0
+    "Yeti Runemaster":                  0xC1
 
     # Skills
     "Interference":                      0x1C,
@@ -540,3 +568,4 @@ def adapt(name, value):
 def detect(savefile):
     """Returns whether savefile bytes match Horn of the Abyss."""
     return savefile.match_byte_ranges(metadata.BYTE_POSITIONS, VERSION_BYTERANGES)
+
