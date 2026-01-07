@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  06.10.2025
+@modified  07.01.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -290,7 +290,7 @@ class HeroPlugin(object):
             title = props.get("label", props["name"])
             nb.AddPage(subpanel, title)
             controls.ColourManager.Manage(subpanel, "BackgroundColour", wx.SYS_COLOUR_BTNFACE)
-            plugin = props["module"].factory(self, subpanel, self.savefile.version)
+            plugin = props["module"].factory(self, subpanel, self.savefile.version_id)
             has_menu = hasattr(plugin, "make_common_menu") and bool(plugin.make_common_menu())
             props["instance"] = plugin
             props["has_menu"] = has_menu

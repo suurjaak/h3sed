@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  23.09.2025
+@modified  07.01.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -44,23 +44,29 @@ def adapt(name, value, version=None):
         if cachekey in ADAPT_CACHE: return ADAPT_CACHE[cachekey]
     except Exception: pass # TypeError if value in cachekey is not hashable
 
+    version_id = version
+    if isinstance(version, tuple) and len(version): version = version[0]
     if version:
         if hasattr(VERSIONS[version], "adapt"):
-            value = VERSIONS[version].adapt(name, value)
+            value = VERSIONS[version].adapt(name, value, version_id)
     else:
         for module in VERSIONS.values():
             if hasattr(module, "adapt"):
-                value = module.adapt(name, value)
+                value = module.adapt(name, value, version_id)
     try: ADAPT_CACHE[cachekey] = value
     except Exception: pass # TypeError if value in cachekey is not hashable
     return value
 
 
 def detect(savefile):
-    """Returns savefile game version, like "sod" for Shadow of Death. Raises if unknown."""
+    """
+    Returns savefile game version, as string or tuple, like "sod" for Shadow of Death
+    or ("hota", 0x0A) for Horn of the Abyss v1.80+. Raises if unknown.
+    """
     for version, module in VERSIONS.items():
-        if module.detect(savefile):
-            return version
+        result = module.detect(savefile)
+        if result:
+            return version if isinstance(result, bool) else result
     raise ValueError("Not recognized as Heroes3 savefile of any supported game version.")
 
 

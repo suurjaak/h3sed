@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.3, 2026-01-07
+---------------
+- add support for Bulwark town in Horn of the Abyss v1.80 (issue #22)
+
+
 3.2, 2025-10-09
 ---------------
 - add button with mass change options menu to hero property tabs

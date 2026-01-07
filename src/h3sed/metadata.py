@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  06.10.2025
+@modified  07.01.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1267,15 +1267,16 @@ class Savefile(object):
 
 
     def __init__(self, filename, parse_heroes=True):
-        self.filename = filename
-        self.raw      = None
-        self.raw0     = None
-        self.version  = None
-        self.dt       = None
-        self.mapdata  = {}
-        self.size     = 0
-        self.usize    = 0
-        self.heroes   = []
+        self.filename   = filename
+        self.raw        = None
+        self.raw0       = None
+        self.version    = None # Single name like "hota"
+        self.version_id = None # Single name, or tuple (name, version_minor)
+        self.dt         = None
+        self.mapdata    = {}
+        self.size       = 0
+        self.usize      = 0
+        self.heroes     = []
         self.read(parse_heroes)
 
 
@@ -1344,7 +1345,8 @@ class Savefile(object):
         RGX_MAGIC = h3sed.version.adapt("savefile_magic_regex", self.RGX_MAGIC)
         if not RGX_MAGIC.match(self.raw):
             raise ValueError("Not recognized as Heroes3 savefile.")
-        self.version = h3sed.version.detect(self) # Raises ValueError if not detected
+        self.version_id = h3sed.version.detect(self) # Raises ValueError if not detected
+        self.version = util.tuplefy(self.version_id)[0] # May be tuple like ("hota", 0x05)
         self.mapdata["game"] = self.version
         if self.version in h3sed.version.VERSIONS:
             self.mapdata["game"] = h3sed.version.VERSIONS[self.version].TITLE
@@ -1353,7 +1355,7 @@ class Savefile(object):
 
     def parse_metadata(self):
         """Populates savefile map name and description."""
-        RGX_HEADER = h3sed.version.adapt("savefile_header_regex", self.RGX_HEADER, self.version)
+        RGX_HEADER = h3sed.version.adapt("savefile_header_regex", self.RGX_HEADER, self.version_id)
         match = RGX_HEADER.match(self.raw[:2048])
         if not match:
             logger.warning("Failed to parse map name and description from %s.", self.filename)
@@ -1384,7 +1386,7 @@ class Savefile(object):
 
         rgx_strip = re.compile(br"^(?!\xFF+\x00+$)([^\x00-\x19]+)\x00+$")
         rgx_nulls = re.compile(br"^(\x00+)|(\x00{4}\xFF{4})+$")
-        REGEX = h3sed.version.adapt("hero_regex", HERO_REGEX, version=self.version)
+        REGEX = h3sed.version.adapt("hero_regex", HERO_REGEX, version=self.version_id)
 
         # Jump over potential campaign carry-over heroes, stored in savefile with their
         # original armies+artifacts; the structs used by game come later.
@@ -1395,7 +1397,7 @@ class Savefile(object):
             if rgx_strip.match(m.group("name")) and not rgx_nulls.match(m.group("equipment")):
                 blob = bytearray(self.raw[pos + start:pos + end])
                 name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
-                hero = h3sed.hero.Hero(name, version=self.version)
+                hero = h3sed.hero.Hero(name, version=self.version_id)
                 hero.set_file_data(blob, len(heroes), (start + pos, end + pos)) #, self)
                 heroes.append(hero)
                 pos += end
@@ -1461,7 +1463,7 @@ class Store(object):
     # {typename: {version: {category: {None: all, category1: filtered, ..}, ..}}}
     DATA = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
-    CACHE = {} # {(name, category, verdion): prepared result}
+    CACHE = {} # {(name, category, version): prepared result}
     
     SEPARATES = set() # {data names to not combine over versions}
 
@@ -1489,10 +1491,19 @@ class Store(object):
         result = Store.CACHE.get((name, category, version))
         if result is not None: return result
 
+        version_id = version
+        if isinstance(version, tuple) and len(version): version = version[0]
+
         vv = [None, version] if version else [None] + list(Store.DATA.get(name, {}))
-        if name in Store.SEPARATES:
+        if isinstance(version_id, tuple) and len(version_id) > 1:
+            fuse_versions = sorted(k for k in Store.DATA.get(name, []) if isinstance(k, tuple)
+                                   and len(k) > 1 and k[0] == version and k <= version_id)
+            if fuse_versions:
+                vv = fuse_versions if name in Store.SEPARATES else [None] + fuse_versions
+        elif name in Store.SEPARATES:
             vv = [version] if version and version in Store.DATA.get(name, {}) else [None]
-        for v in sorted(set(vv), key=lambda x: x or ""):
+
+        for v in sorted(set(vv), key=lambda x: util.tuplefy(x or "")):
             r = Store.DATA.get(name, {}).get(v, {}).get(category)
             if r is None: continue # for v
             if result is None: result = copy.deepcopy(r)
@@ -1502,7 +1513,7 @@ class Store(object):
         if name in Store.SORTABLES and isinstance(result, list):
             try: result.sort()
             except Exception: pass
-        Store.CACHE[(name, category, version)] = result
+        Store.CACHE[(name, category, version_id)] = result
         return result
 
 

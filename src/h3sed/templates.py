@@ -6,8 +6,8 @@ Content and export templates.
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
-@created     14.03.2020
-@modified    06.10.2025
+@created   14.03.2020
+@modified  07.01.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -479,7 +479,7 @@ HTML text shown in heroes index.
 HERO_INDEX_HTML = """<%
 import h3sed
 from h3sed import conf, metadata
-stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=savefile.version)
+stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=savefile.version_id)
 deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACTS]
 categories = get("categories")
 categories, herotexts, sort_col, sort_asc = (get(k) for k in ("categories", "herotexts", "sort_col", "sort_asc"))
@@ -662,7 +662,7 @@ import datetime, json
 import h3sed
 from h3sed.lib import util
 from h3sed import conf, images, metadata
-stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=savefile.version)
+stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=savefile.version_id)
 deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACTS]
 %><!DOCTYPE HTML><html lang="en">
 <head>

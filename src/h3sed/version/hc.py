@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   13.09.2024
-@modified  05.10.2025
+@modified  06.01.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -47,7 +47,7 @@ class Spells(DataClass, hero.Spells):         pass
 
 
 
-def adapt(name, value):
+def adapt(name, value, version=None):
     """
     Adapts certain categories:
 

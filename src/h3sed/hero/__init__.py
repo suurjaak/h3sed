@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  08.10.2025
+@modified  07.01.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -150,7 +150,7 @@ class DataClass(object):
     def factory(cls, version):
         return h3sed.version.adapt("hero.%s" % cls.__name__, cls, version)()
 
-    version = property(lambda self: None, doc="Game version in use")
+    version = property(lambda self: None, doc="Game version, optionally as tuple (name, minor)")
 
     def realize(self, hero=None):
         """Checks and finalizes changes to data, possibly modifying other hero properies."""

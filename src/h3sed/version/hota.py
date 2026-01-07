@@ -7,9 +7,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  06.10.2025
+@modified  07.01.2026
 ------------------------------------------------------------------------------
 """
+import copy
 import re
 
 from .. import hero
@@ -29,7 +30,7 @@ VERSION_BYTERANGES = {
 
 
 """Hero skills, in file order, added to default skills."""
-SKILLS = ["Interference"]
+SKILLS = ["Interference", "Runes"]
 
 
 """Hero primary attribute value ranges as used in-game, as (min, max, overflow handicap)."""
@@ -99,6 +100,7 @@ SPECIAL_ARTIFACTS = [
 
 """Creatures for hero army slots."""
 CREATURES = [
+    "Argali",
     "Armadillo",
     "Automaton",
     "Ayssid",
@@ -118,16 +120,23 @@ CREATURES = [
     "Faerie Dragon",
     "Fangarm",
     "Firebird",
+    "Great Shaman",
     "Gunslinger",
     "Halfling Grenadier",
     "Halfling",
     "Haspid",
     "Ice Elemental",
+    "Jotunn",
+    "Jotunn Warlord",
     "Juggernaut",
+    "Kobold",
+    "Kobold Foreman",
     "Leprechaun",
     "Magic Elemental",
     "Magma Elemental",
+    "Mammoth",
     "Mechanic",
+    "Mountain Ram",
     "Mummy",
     "Nix Warrior",
     "Nix",
@@ -149,13 +158,19 @@ CREATURES = [
     "Sea Witch",
     "Seaman",
     "Sentinel Automaton",
+    "Shaman",
     "Sharpshooter",
+    "Snow Elf",
     "Sorceress",
     "Sprite",
+    "Steel Elf",
     "Steel Golem",
     "Storm Elemental",
     "Stormbird",
     "Troll",
+    "War Mammoth",
+    "Yeti",
+    "Yeti Runemaster",
 ]
 
 
@@ -203,6 +218,7 @@ IDS = {
     "Cannon":                            0x92,
 
     # Creatures
+    "Argali":                            0xBD,
     "Armadillo":                         0xAE,
     "Automaton":                         0xB0,
     "Ayssid":                            0xA0,
@@ -222,16 +238,23 @@ IDS = {
     "Faerie Dragon":                     0x86,
     "Fangarm":                           0xA8,
     "Firebird":                          0x82,
+    "Great Shaman":                      0xC3,
     "Gunslinger":                        0xB4,
     "Halfling Grenadier":                0xAB,
     "Halfling":                          0x8A,
     "Haspid":                            0xA6,
     "Ice Elemental":                     0x7B,
+    "Jotunn":                            0xC6,
+    "Jotunn Warlord":                    0xC7,
     "Juggernaut":                        0xB9,
+    "Kobold":                            0xBA,
+    "Kobold Foreman":                    0xBB,
     "Leprechaun":                        0xA9,
     "Magic Elemental":                   0x79,
     "Magma Elemental":                   0x7D,
+    "Mammoth":                           0xC4,
     "Mechanic":                          0xAC,
+    "Mountain Ram":                      0xBC,
     "Mummy":                             0x8D,
     "Nix Warrior":                       0xA4,
     "Nix":                               0xA3,
@@ -253,16 +276,23 @@ IDS = {
     "Sea Witch":                         0xA1,
     "Seaman":                            0x9C,
     "Sentinel Automaton":                0xB1,
+    "Shaman":                            0xC2,
     "Sharpshooter":                      0x89,
+    "Snow Elf":                          0xBE,
     "Sorceress":                         0xA2,
     "Sprite":                            0x77,
+    "Steel Elf":                         0xBF,
     "Steel Golem":                       0xAA,
     "Storm Elemental":                   0x7F,
     "Stormbird":                         0x9F,
     "Troll":                             0x90,
+    "War Mammoth":                       0xC5,
+    "Yeti":                              0xC0,
+    "Yeti Runemaster":                   0xC1,
 
     # Skills
     "Interference":                      0x1C,
+    "Runes":                             0x1D,
 
     # Spells
     "Titan's Lightning Bolt":            0x39,
@@ -398,8 +428,8 @@ HERO_REGEX = re.compile(b"""
 
                              #  13 bytes: hero name, null-padded               138-150
     (?P<name>[^\x00-\x20].{11}\x00)
-    [\x00-\x03]{29}          #  29 bytes: skill levels (Interference last)     151-179
-    .{27}                    #  27 bytes: skill slots (legacy, unused)         180-206
+    [\x00-\x03]{30}          #  30 bytes: skill levels (Runes last)            151-180
+    .{26}                    #  26 bytes: skill slots (legacy, unused)         181-206
     .{4}                     #   4 bytes: primary stats                        207-210
 
     [\x00-\x01]{70}          #  70 bytes: spells in book                       211-280
@@ -421,8 +451,56 @@ HERO_REGEX = re.compile(b"""
     .{10}                    # but HotA appears to encode additional information here.
 
     .{36}                    #  36 bytes: unknown                             1025-1060
-    [\x00-\x1C]{29}          #  29 bytes: skill slots                         1061-1089
+    [\x00-\x1C]{29,30}       #  30 bytes: skill slots (29 for legacy hota)    1061-1090
 """, re.VERBOSE | re.DOTALL)
+
+
+"""Game minor version for HotA v1.80, from December 2025, adding Bulwark town and Runes skill."""
+BULWARK_MINOR = 0x0A
+
+
+"""Additions from later minor versions, as {version_minor: {name in store: values}}."""
+EXTRAS_BY_MINOR = {
+    BULWARK_MINOR: {
+        "skills": ["Runes"],
+        "creatures": [
+            "Argali",
+            "Great Shaman",
+            "Jotunn",
+            "Jotunn Warlord",
+            "Kobold",
+            "Kobold Foreman",
+            "Mammoth",
+            "Mountain Ram",
+            "Shaman",
+            "Snow Elf",
+            "Steel Elf",
+            "War Mammoth",
+            "Yeti",
+            "Yeti Runemaster",
+        ],
+        "ids": {
+            # Creatures
+            "Argali":                            0xBD,
+            "Great Shaman":                      0xC3,
+            "Jotunn":                            0xC6,
+            "Jotunn Warlord":                    0xC7,
+            "Kobold":                            0xBA,
+            "Kobold Foreman":                    0xBB,
+            "Mammoth":                           0xC4,
+            "Mountain Ram":                      0xBC,
+            "Shaman":                            0xC2,
+            "Snow Elf":                          0xBE,
+            "Steel Elf":                         0xBF,
+            "War Mammoth":                       0xC5,
+            "Yeti":                              0xC0,
+            "Yeti Runemaster":                   0xC1,
+            
+            # Skills
+            "Runes":                             0x1D,
+        },
+    },
+}
 
 
 
@@ -460,6 +538,31 @@ class Skills(DataClass, hero.Skills):       pass
 class Spells(DataClass, hero.Spells):       pass
 
 
+PRE_BULWARK_VERSION_ID = (NAME, VERSION_BYTERANGES["version_minor"][0])
+
+class PreBulwarkLegacy:
+    """Overrides for versions before the Bulwark town addition.."""
+
+    class DataClass(hero.DataClass):
+        version = property(lambda self: PRE_BULWARK_VERSION_ID, doc="Game version in use")
+
+    class ArmyStack(DataClass, hero.ArmyStack):
+        __slots__ = {"name":  make_string_cast("creatures", version=PRE_BULWARK_VERSION_ID),
+                     "count": make_integer_cast("army.count", version=NAME)}
+
+    class Skill(DataClass, hero.Skill):
+        __slots__ = {"name":  make_string_cast("skills", version=PRE_BULWARK_VERSION_ID),
+                     "level": make_string_cast("skill_levels", default=True, version=NAME)}
+
+    class Army(DataClass, hero.Army):     pass
+
+    class Skills(DataClass, hero.Skills): pass
+
+
+"""Adaptation overrides for earlier minor versions, as {highest version_minor: namespace}."""
+LEGACY_OVERRIDES = {BULWARK_MINOR - 1: PreBulwarkLegacy}
+
+
 
 def init():
     """Adds Armageddon's Blade data to metadata stores."""
@@ -487,24 +590,32 @@ def init():
     for artifact, spells in ARTIFACT_SPELLS.items():
         metadata.Store.add("spells", spells, category=artifact, version=NAME)
 
+    ns = {name: copy.deepcopy(metadata.Store.get(name, version=NAME))
+          for names in EXTRAS_BY_MINOR.values() for name in names}
+    for version_minor in sorted(EXTRAS_BY_MINOR, reverse=True):
+        for name, value in ns.items():
+            if name not in EXTRAS_BY_MINOR[version_minor]: continue # for name, value
+            metadata.Store.add(name, value, version=(NAME, version_minor))
+            if isinstance(value, list):
+                value[:] = [x for x in value if x not in EXTRAS_BY_MINOR[version_minor][name]]
+            elif isinstance(value, dict):
+                for key in EXTRAS_BY_MINOR[version_minor][name]: value.pop(key, None)
+    for name, value in ns.items():
+        metadata.Store.add(name, value, version=(NAME, VERSION_BYTERANGES["version_minor"][0]))
 
-def adapt(name, value):
+
+def adapt(name, value, version=None):
     """
     Adapts certain categories:
 
-    - "hero_regex":           adding support for Interference-skill
-    - "hero_byte_positions":  adding support for Interference-skill
-
+    - "hero_regex":           adding support for new skills
+    - "hero_byte_positions":  adding support for new skills
+    - "hero.stats.DATAPROPS": adding cannon support
     - "hero.PropertyName" classes:  returning version-specific data class,
                                     with support for new artifacts/creatures/skills/spells,
                                     attributes having cannon support and level capped at 74
 
-
-    - "hero.ArmyStack":       adding support for new creatures
-    - "hero.Army":            adding version
-    - "hero.Attributes":      adding cannon support, capping level at 74
-    - "hero.Equipment":       adding support for new artifacts
-    - "hero.Skill":           adding support for Interference-skill
+    @param   version   returns minor version specific classes if tuple for minor with extras
     """
     result = value
     if "hero_byte_positions" == name:
@@ -534,9 +645,23 @@ def adapt(name, value):
         result = Skills
     elif "hero.Spells" == name:
         result = Spells
+
+    if isinstance(version, tuple) and len(version) > 1 and name.startswith("hero"):
+        version_minor = version[1]
+        if version_minor <= min(LEGACY_OVERRIDES):
+            basename = name[4:].lstrip("._").replace(".", "_")
+            matching_minors = [x for x in LEGACY_OVERRIDES if x <= version_minor]
+            for matching_minor in sorted(matching_minors, reverse=True):
+                if hasattr(LEGACY_OVERRIDES[matching_minor], basename):
+                    result = getattr(LEGACY_OVERRIDES[matching_minor], basename)
+                    break # for matching_minor
     return result
 
 
 def detect(savefile):
-    """Returns whether savefile bytes match Horn of the Abyss."""
-    return savefile.match_byte_ranges(metadata.BYTE_POSITIONS, VERSION_BYTERANGES)
+    """Returns game version as string or tuple if savefile bytes match Horn of the Abyss, or None."""
+    if not savefile.match_byte_ranges(metadata.BYTE_POSITIONS, VERSION_BYTERANGES): return None
+    version_minor = savefile.raw[metadata.BYTE_POSITIONS["version_minor"]]
+    if version_minor < max(EXTRAS_BY_MINOR):
+        return (NAME, version_minor)
+    return NAME

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  05.10.2025
+@modified  06.01.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -219,7 +219,7 @@ def init():
         metadata.Store.add("spells", spells, version=NAME, category=artifact)
 
 
-def adapt(name, value):
+def adapt(name, value, version=None):
     """
     Adapts certain categories:
 
