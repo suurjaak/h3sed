@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  07.01.2026
+@modified  08.01.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1360,17 +1360,19 @@ class Savefile(object):
         if not match:
             logger.warning("Failed to parse map name and description from %s.", self.filename)
             return
+        labels = ["name", "description"]
         cpos = match.start(next(iter(self.HEADER_TEXTS)))  # Start of field length count
         for n, clen in self.HEADER_TEXTS.items():  # Parse consecutive length-value fields
+            label = labels.pop(0)
             try:
                 nlen = util.bytoi(self.raw[cpos:cpos + clen])
                 nraw = self.raw[cpos + clen:cpos + clen + nlen]
-                if not re.match(b"^[^\x00]+$", nraw):
-                    raise ValueError("Unexpected content in map %s: %r" % (n, nraw))
-                self.mapdata[n] = util.to_unicode(nraw)
                 cpos += clen + nlen
+                if nraw and not re.match(b"^[^\x00]+$", nraw):
+                    raise ValueError("Unexpected content in map %s: %r" % (label, nraw))
+                self.mapdata[n] = util.to_unicode(nraw)
             except Exception:
-                logger.exception("Failed to parse map name and description from %s.", self.filename)
+                logger.exception("Failed to parse map %s from %s.", label, self.filename)
         if "game" in self.mapdata: self.mapdata["game"] = self.mapdata.pop("game") # Order last
 
 
