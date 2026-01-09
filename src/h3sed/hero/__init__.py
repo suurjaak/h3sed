@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  07.01.2026
+@modified  08.01.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -51,22 +51,29 @@ def make_artifact_cast(location, version=None):
     @param   version   game version like "sod", if any
     @param   default   whether function returns first possible choice if empty value given
     """
-    error_template = [] # List for mutability from cast()
+    slot = []
     choices = [] # [artifact, ]
     lower_to_cased = {} # {lowercase artifact: artifact}
 
     def cast(value=None):
-        if not lower_to_cased: # First run: populate cache
-            if "inventory" == location: slot = location
-            else: slot = metadata.Store.get("equipment_slots", version=version)[location]
-            error_template[:] = ["Invalid value for %s artifacts: %%r" % slot]
-            choices[:] = metadata.Store.get("artifacts", category=slot, version=version)
-            lower_to_cased.update((x.lower(), x) for x in choices)
-
         if not value: return None
+
+        if not slot: # First run: populate cache
+            if "inventory" == location: slot[:] = [location]
+            else: slot[:] = [metadata.Store.get("equipment_slots", version=version)[location]]
+            choices[:] = metadata.Store.get("artifacts", category=slot[0], version=version)
+            lower_to_cased.update((x.lower(), x) for x in choices)
+        else: # Check for cache change
+            choices2 = metadata.Store.get("artifacts", category=slot[0], version=version)
+            if choices2 != choices:
+                choices[:] = choices2
+                lower_to_cased.clear()
+                lower_to_cased.update((x.lower(), x) for x in choices)
+
         if value in choices: return value
         match = lower_to_cased.get(str(value).lower())
-        if match is None: raise ValueError(error_template[0] % value)
+        if match is None:
+            raise ValueError("Invalid value for %s artifacts: %r" % (slot[0], value))
         return match
     return cast
 
@@ -101,23 +108,27 @@ def make_string_cast(name, version=None, nullable=True, default=False, choices=(
     @param   default   whether to return first choice as default for empty value
     @param   choices   pre-defined choices if not taking from metadata.Store
     """
+    is_fixed = bool(choices)
     choices = list(choices)
     lower_to_cased = {} # {lowercase value: value}
-    error_template = "Invalid value for %s: %%r" % name
 
     def cast(*value):
-        if not lower_to_cased: # First run: populate cache
-            if not choices: choices[:] = metadata.Store.get(name, version=version)
+        if not choices or not is_fixed:
+            choices2 = metadata.Store.get(name, version=version)
+            if choices2 != choices:
+                choices[:] = choices2
+                lower_to_cased.clear()
+        if not lower_to_cased:
             lower_to_cased.update((x.lower(), x) for x in choices)
 
         if not value and default: return choices[0]
         value = value[0] if value else None
         if value in (None, ""):
             if nullable: return None
-            else: raise ValueError(error_template % value)
+            else: raise ValueError("Invalid value for %s: %r" % (name, value))
         if value in choices: return value
         match = lower_to_cased.get(str(value).lower())
-        if match is None: raise ValueError(error_template % value)
+        if match is None: raise ValueError("Invalid value for %s: %r" % (name, value))
         return match
     return cast
 

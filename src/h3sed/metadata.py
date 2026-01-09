@@ -1473,6 +1473,8 @@ class Store(object):
 
     @staticmethod
     def add(name, data, category=None, version=None, separate=False, sortable=False):
+        for (n, c, v) in list(Store.CACHE):
+            if ((n, c) == (name, category) and v in (version, None)): Store.CACHE.pop((n, c, v))
         stype = list if isinstance(data, tuple) else type(data)
         store = Store.DATA[name][version].setdefault(category, stype())
         if isinstance(store, list):
