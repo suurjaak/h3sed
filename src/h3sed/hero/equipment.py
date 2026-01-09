@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  08.01.2026
+@modified  09.01.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -578,13 +578,14 @@ def serialize(equipment, hero_bytes, version, hero=None):
     for location in EQUIPMENT_LOCATIONS:
         artifact_name = equipment.get(location)
         artifact_id, location_pos = IDS.get(artifact_name), BYTEPOS[location]
-        if artifact_name in SCROLL_ARTIFACTS:
+        artifact_name0 = hero.original.get("equipment", {}).get(location) if hero else None
+        if artifact_name == artifact_name0 and hero:
+            # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
+            binary = hero.bytes0[location_pos:location_pos + 8]
+        elif artifact_name in SCROLL_ARTIFACTS:
             binary = util.itoby(artifact_id, 8) # XY 00 00 00 00 00 00 00
         elif artifact_id:
             binary = util.itoby(artifact_id, 4) + metadata.BLANK * 4 # XY 00 00 00 FF FF FF FF
-        elif hero and not hero.original.get("equipment", {}).get(location):
-            # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
-            binary = hero.bytes0[location_pos:location_pos + 8]
         else:
             binary = metadata.BLANK * 8 # FF FF FF FF FF FF FF FF
         new_bytes[location_pos:location_pos + len(binary)] = binary
