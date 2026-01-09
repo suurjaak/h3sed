@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  08.01.2026
+@modified  09.01.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1314,7 +1314,9 @@ class Savefile(object):
         filename = filename or self.filename
         try: os.makedirs(os.path.dirname(filename))
         except Exception: pass
-        with gzip.GzipFile(filename, "wb") as f: f.write(bytes(self.raw))
+        with open(filename, "wb") as fileobj, \
+             gzip.GzipFile(filename="", mode=fileobj.mode, fileobj=fileobj) as f:
+            f.write(bytes(self.raw))
         self.raw0 = self.raw
         self.update_info(filename)
         for hero in self.heroes:
@@ -1328,7 +1330,9 @@ class Savefile(object):
         filename = filename or self.filename
         raw = self.raw0
         for start, end in spans: raw = raw[0:start] + self.raw[start:end] + raw[end:]
-        with gzip.GzipFile(filename, "wb") as f: f.write(bytes(raw))
+        with open(self.filename, "wb") as fileobj, \
+             gzip.GzipFile(filename="", mode=fileobj.mode, fileobj=fileobj) as f:
+            f.write(bytes(raw))
         self.raw0 = raw
         self.update_info(filename)
         for hero in self.heroes:
