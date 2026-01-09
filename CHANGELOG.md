@@ -7,6 +7,7 @@ CHANGELOG
 - support parsing unknown artifacts and army creatures (pull request #23)
 - improve parsing map name and description from savefile
 - write savefiles without filename in ZIP header, just as the game does
+- fix error on refilling spell points if hero has Intelligence skill
 
 
 3.2, 2025-10-09

@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  06.10.2025
+@modified  09.01.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -306,7 +306,7 @@ class StatsPlugin(object):
             HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
             SKILL_LEVELS = metadata.Store.get("skill_levels", version=self.version)
             current_level = self._hero.skills[self._hero.skills.index("Intelligence")].level
-            mana_total *= HERO_RANGES["Intelligence"][LEVELS.index(current_level)]
+            mana_total *= HERO_RANGES["Intelligence"][SKILL_LEVELS.index(current_level)]
         if self._state.mana_left >= mana_total: return
         label = "%s stats: refill spell points" % self._hero.name
         h3sed.guibase.status("Setting %s", label, flash=conf.StatusShortFlashLength, log=True)
