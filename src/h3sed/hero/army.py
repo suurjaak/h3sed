@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  27.09.2025
+@modified  08.01.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -324,12 +324,17 @@ def parse(hero_bytes, version):
 
     army = h3sed.hero.Army.factory(version)
     for i in range(HERO_RANGES["army"][1]):
-        stack = h3sed.hero.ArmyStack.factory(version)
-        creature_id = util.bytoi(hero_bytes[NAMES_POS + i*4:NAMES_POS + i*4 + 4])
-        count       = util.bytoi(hero_bytes[COUNT_POS + i*4:COUNT_POS + i*4 + 4])
-        if count and creature_id in ID_TO_NAME:
-            stack.update(name=ID_TO_NAME[creature_id], count=count)
-        army[i] = stack
+        id_bytes, count_bytes = (hero_bytes[n + i*4:n + i*4 + 4] for n in (NAMES_POS, COUNT_POS))
+        creature_id, count = util.bytoi(id_bytes), util.bytoi(count_bytes)
+        if not count or all(x == ord(metadata.BLANK) for x in id_bytes): continue # for i
+
+        if creature_id not in ID_TO_NAME:
+            logger.warning("Unknown army creature for version %r: 0x%X.", version, creature_id)
+            creature_name = "<unknown 0x%X>" % creature_id
+            metadata.Store.add("creatures", [creature_name], version=version)
+            metadata.Store.add("ids", {creature_name: creature_id}, version=version)
+            ID_TO_NAME[creature_id] = creature_name
+        army[i].update(name=ID_TO_NAME[creature_id], count=count)
     return army
 
 

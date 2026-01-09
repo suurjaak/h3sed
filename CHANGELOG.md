@@ -4,6 +4,7 @@ CHANGELOG
 3.3, 2026-01-08
 ---------------
 - add support for Bulwark town in Horn of the Abyss v1.80 (issue #22)
+- support parsing unknown artifacts and army creatures (pull request #23)
 - improve parsing map name and description from savefile
 
 

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  07.10.2025
+@modified  08.01.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -23,7 +23,6 @@ from .. import metadata
 
 
 logger = logging.getLogger(__package__)
-
 
 
 PROPS = {"name": "inventory", "label": "Inventory", "index": 4}
@@ -449,13 +448,19 @@ def parse(hero_bytes, version):
 
     def parse_id(hero_bytes, pos):
         binary, integer = hero_bytes[pos:pos + 4], util.bytoi(hero_bytes[pos:pos + 4])
-        if all(x == metadata.BLANK for x in binary): return None # Blank
+        if all(x == ord(metadata.BLANK) for x in binary): return None # Blank
         if integer == IDS["Spell Scroll"]: return util.bytoi(hero_bytes[pos:pos + 8])
         return integer
 
     inventory = h3sed.hero.Inventory.factory(version)
     for i in range(HERO_RANGES["inventory"][1]):
         artifact_id = parse_id(hero_bytes, BYTEPOS["inventory"] + i*8)
+        if artifact_id and artifact_id not in ID_TO_NAME:
+            logger.warning("Unknown artifact for version %r: 0x%X.", version, artifact_id)
+            artifact_name = "<unknown 0x%X>" % artifact_id
+            metadata.Store.add("artifacts", [artifact_name], category="inventory", version=version)
+            metadata.Store.add("ids", {artifact_name: artifact_id}, version=version)
+            ID_TO_NAME[artifact_id] = artifact_name
         inventory[i] = ID_TO_NAME.get(artifact_id)
     return inventory
 

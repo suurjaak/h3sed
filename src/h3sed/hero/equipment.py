@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  08.10.2025
+@modified  08.01.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -545,6 +545,15 @@ def parse(hero_bytes, version):
     equipment = h3sed.hero.Equipment.factory(version)
     for location in EQUIPMENT_LOCATIONS:
         artifact_id = parse_id(hero_bytes, BYTEPOS[location])
+        if artifact_id and artifact_id not in ARTIFACT_NAMES:
+            logger.warning("Unknown artifact for version %r: 0x%X.", version, artifact_id)
+            artifact_name = "<unknown 0x%X>" % artifact_id
+            slot = metadata.Store.get("equipment_slots", version=version)[location]
+            metadata.Store.add("artifacts", [artifact_name], category="inventory", version=version)
+            metadata.Store.add("artifacts", [artifact_name], category=slot, version=version)
+            metadata.Store.add("artifact_slots", {artifact_name: [slot]}, version=version)
+            metadata.Store.add("ids", {artifact_name: artifact_id}, version=version)
+            ARTIFACT_NAMES[artifact_id] = artifact_name
         equipment[location] = ARTIFACT_NAMES.get(artifact_id)
     return equipment
 
