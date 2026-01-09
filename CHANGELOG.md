@@ -5,6 +5,7 @@ CHANGELOG
 ---------------
 - add support for Bulwark town in Horn of the Abyss v1.80 (issue #22)
 - support parsing unknown artifacts and army creatures (pull request #23)
+- add missing support to Heroes Chronicles savefiles for Shadow of Death creatures and artifacts and spells
 - improve parsing map name and description from savefile
 - write savefiles without filename in ZIP header, just as the game does
 - fix error on refilling spell points if hero has Intelligence skill
