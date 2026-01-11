@@ -644,6 +644,8 @@ class HeroPlugin(object):
 
     def on_key_select(self, event):
         """Handler for keypress in hero combobox, queues restoring selection if Escape pressed."""
+        if event.CmdDown(): # Avoid combobox selecting hero on keyboard shortcuts like Ctrl-F
+            return
         event.Skip()
         if event.KeyCode == wx.WXK_ESCAPE: # Workaround for Escape selecting keyboard-focused item
             prev_index = self._ctrls["hero"].Selection
