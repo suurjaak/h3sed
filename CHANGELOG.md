@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.4, 2026-01-11
+---------------
+- fix Magic Mirror missing from artifact spells of Spellbinder's Hat
+
+
 3.3, 2026-01-09
 ---------------
 - add support for Bulwark town in Horn of the Abyss v1.80 (issue #22)

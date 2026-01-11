@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  09.01.2026
+@modified  11.01.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1122,7 +1122,7 @@ ARTIFACT_SLOTS = {
 
 """Spells that artifacts make available to hero."""
 ARTIFACT_SPELLS = {
-    "Spellbinder's Hat":                 ["Dimension Door", "Fly", "Implosion",
+    "Spellbinder's Hat":                 ["Dimension Door", "Fly", "Implosion", "Magic Mirror",
                                           "Sacrifice", "Summon Air Elemental",
                                           "Summon Earth Elemental", "Summon Fire Elemental",
                                           "Summon Water Elemental"],
