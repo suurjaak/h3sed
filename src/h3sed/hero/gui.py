@@ -507,6 +507,7 @@ class HeroPlugin(object):
 
     def on_charsheet(self, event=None):
         """Opens popup with full hero profile."""
+        if not self._heropanel.Shown: return
         tpl = step.Template(templates.HERO_CHARSHEET_HTML, escape=True)
         texts, texts0 = self._hero_yamls[self._hero]["currents"], None
         if self._hero.is_changed(): texts0 = self._hero_yamls[self._hero]["originals"]
