@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  09.01.2026
+@modified  11.01.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -121,8 +121,7 @@ DATAPROPS = [{
     "extra":  {
         "type":     "button",
         "label":    "Refill to total",
-        "tooltip":  "Top up remaining spell points to hero maximum.\n\n"
-                    "Does not account for hero having Intelligence specialty.",
+        "tooltip":  "Top up remaining spell points to hero maximum",
         "handler":  None,  # Populated later
     },
 }, {
