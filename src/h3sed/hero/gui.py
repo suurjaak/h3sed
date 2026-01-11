@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  07.01.2026
+@modified  11.01.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -614,7 +614,7 @@ class HeroPlugin(object):
     def on_key(self, event):
         """Handler for pressing a key, focuses filter on Ctrl-F."""
         event.Skip()
-        if event.KeyCode in [ord("F")] and event.CmdDown():
+        if event.KeyCode == ord("F") and event.CmdDown():
             self._ctrls["search"].SetFocus()
 
 
@@ -636,7 +636,10 @@ class HeroPlugin(object):
             wx.MessageBox("Hero '%s' not found." % event.EventObject.Value,
                           conf.Title, wx.OK | wx.ICON_ERROR)
             return
+        focusctrl = self._panel.FindFocus()
         self.select_hero(index, status=index not in self._pages.values())
+        if focusctrl is self._ctrls["hero"] and not self._ctrls["hero"].HasFocus():
+            self._ctrls["hero"].SetFocus()
 
 
     def on_key_select(self, event):
