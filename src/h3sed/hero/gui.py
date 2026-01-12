@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  11.01.2026
+@modified  12.01.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -108,6 +108,7 @@ class HeroPlugin(object):
         self._heropanel  = None    # Container for hero components
         self._hero_yamls = {}      # {hero: {full, originals, currents}}
         self._pages_visited = []   # Visited tabs, as [hero index in self._heroes or None if index page]
+        self._subtab_focus = {}    # {hero index in self._heroes: focused subtab index}
         self._ignore_events = False  # For ignoring change events from programmatic selections et al
         self._index = {
             "herotexts": [],       # [hero contents to search in, as [{category: plaintext}] ]
@@ -548,6 +549,8 @@ class HeroPlugin(object):
         """Handler for changing a page in the hero properties notebook, updates UI and settings."""
         conf.Positions.update(herotab_index=event.Selection)
         self._ctrls["menubutton"].Enable(self._plugins[event.Selection]["has_menu"])
+        index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
+        self._subtab_focus[index] = event.Selection
 
 
     def on_hero_subtab_button(self, event):
@@ -736,6 +739,10 @@ class HeroPlugin(object):
                 self.render_plugin(p["name"], reload=True, log=not page_existed)
 
         finally:
+            if index in self._subtab_focus:
+                self._ctrls["properties"].SetSelection(self._subtab_focus[index])
+            else:
+                self._subtab_focus[index] = self._ctrls["properties"].Selection
             if self._pages_visited[-1:] != [index]: self._pages_visited.append(index)
             self._panel.Layout()
             self._panel.Thaw()
@@ -751,9 +758,11 @@ class HeroPlugin(object):
         combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
         page = next(p for p, i in self._pages.items() if i == index)
         idx  = next(i for i in range(tabs.GetPageCount()) if page is tabs.GetPage(i))
-        if tabs.GetSelection() != idx: tabs.SetSelection(idx)
+        if tabs.GetSelection() != idx:
+            tabs.SetSelection(idx)
         style = tabs.GetAGWWindowStyleFlag() | wx.lib.agw.flatnotebook.FNB_X_ON_TAB
-        if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
+        if tabs.GetAGWWindowStyleFlag() != style:
+            tabs.SetAGWWindowStyleFlag(style)
         if not self._heropanel.Shown:
             tb.Enable()
             tb.Show()
@@ -761,7 +770,8 @@ class HeroPlugin(object):
             self._indexpanel.Hide()
             self._heropanel.Show()
             self._panel.Layout()
-        if combo.Selection != index: combo.SetSelection(index)
+        if combo.Selection != index:
+            combo.SetSelection(index)
 
 
     def select_index(self):

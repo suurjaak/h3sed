@@ -1,9 +1,10 @@
 CHANGELOG
 =========
 
-3.4, 2026-01-11
+3.4, 2026-01-12
 ---------------
 - fix Magic Mirror missing from artifact spells of Spellbinder's Hat
+- restore previously active subtab on switching between hero tabs
 
 
 3.3, 2026-01-09
