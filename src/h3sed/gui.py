@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    09.01.2026
+@modified    12.01.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -963,9 +963,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         if all(getattr(event, k, None) for k in ("plugin", "load")) and "hero" == event.plugin:
             inputs = event.load
-            if isinstance(inputs, str) or any(isinstance(x, int) for x in inputs): inputs = [inputs]
+            if isinstance(inputs, util.text_types) or any(isinstance(x, int) for x in inputs):
+                inputs = [inputs]
             for entry in inputs: # May be hero name, or (hero name, index)
-                hero_name, name_counter = (entry, 1) if isinstance(entry, str) else entry[:2]
+                if isinstance(entry, util.text_types): hero_name, name_counter = (entry, 1)
+                else: hero_name, name_counter = entry[:2]
                 item = [hero_name, page.filename]
                 if name_counter > 1: item.append(name_counter)
                 self.history_hero.AddItem(item)
