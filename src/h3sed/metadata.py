@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  11.01.2026
+@modified  13.01.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1374,7 +1374,8 @@ class Savefile(object):
                 cpos += clen + nlen
                 if nraw and not re.match(b"^[^\x00]+$", nraw):
                     raise ValueError("Unexpected content in map %s: %r" % (label, nraw))
-                self.mapdata[n] = util.to_unicode(nraw)
+                text = util.to_unicode(nraw)
+                self.mapdata[n] = re.sub("[\x01-\x08\x0B-\x0C\x0E-\x1F]", "", text)
             except Exception:
                 logger.exception("Failed to parse map %s from %s.", label, self.filename)
         if "game" in self.mapdata: self.mapdata["game"] = self.mapdata.pop("game") # Order last
