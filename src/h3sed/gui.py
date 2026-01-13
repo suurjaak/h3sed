@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    12.01.2026
+@modified    13.01.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -2124,7 +2124,7 @@ def check_newest_version(callback=None):
 
 def make_wildcards():
     """Returns savegame wildcard strings for file controls, as ["label (*.ext)|*.ext", ]."""
-    result = ["All files (*.*)|*.*"]
+    result = ["All files (*.*)|*"]
     for name, exts in conf.FileExtensions:
         exts1 = exts2 = ";".join("*" + x for x in exts)
         if "linux" in sys.platform:  # Case-sensitive operating system
