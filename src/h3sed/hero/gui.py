@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  12.01.2026
+@modified  18.01.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -513,13 +513,15 @@ class HeroPlugin(object):
         texts, texts0 = self._hero_yamls[self._hero]["currents"], None
         if self._hero.is_changed(): texts0 = self._hero_yamls[self._hero]["originals"]
         tplargs = dict(name=str(self._hero), texts=texts, texts0=texts0)
-        normal, changes = tpl.expand(**tplargs), tpl.expand(changes=True, **tplargs)
-        content = changes if texts0 and "normal" != conf.Positions.get("charsheet_view") else normal
+        normal, changes = tpl.expand(**tplargs), tpl.expand(mode="changes", **tplargs)
+        changesonly = tpl.expand(mode="changesonly", **tplargs) if texts0 else None
+        htmls = {"normal": normal, "changes": changes, "changesonly": changesonly}
+        content = htmls.get(conf.Positions.get("charsheet_view"), normal) if texts0 else normal
         dlg = None
         def on_link(mode):
             if dlg: conf.Positions["charsheet_view"] = mode
-            return changes if "normal" != mode else normal
-        links = {k: on_link for k in (["normal", "changes"] if texts0 else ["normal"])}
+            return htmls.get(mode, htmls["normal"])
+        links = {k: on_link for k in htmls} if texts0 else None
         buttons = {"Copy data": self.on_copy_hero}
         dlg = controls.HtmlDialog(self._panel.TopLevelParent, "Hero character sheet", content,
                                   links, buttons, autowidth_links=True, style=wx.RESIZE_BORDER)

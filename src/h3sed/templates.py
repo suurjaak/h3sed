@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  07.01.2026
+@modified  18.01.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -277,27 +277,27 @@ HTML text shown for hero full character sheet, toggleable between unsaved change
 @param   name     hero name
 @param   texts    [category current content, ]
 @param  ?texts0   [category original content, ] if any, to show changes against current
-@param  ?changes  show changes against current
+@param  ?mode     view mode, "normal" or "changes" or "changesonly"
 
 """
 HERO_CHARSHEET_HTML = """<%
 import step
 from h3sed import conf, templates
 texts0 = get("texts0") or []
-changes = get("changes")
+mode = get("mode")
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
 <table cellpadding="0" cellspacing="0" width="100%"><tr>
-  <td><b>{{ name }}{{ " unsaved changes" if changes else "" }}</b></td>
+  <td><b>{{ name }}{{ " unsaved changes" if "changes" == mode else " unsaved changes only" if "changesonly" == mode else "" }}</b></td>
 %if texts0:
   <td align="right">
-    <a href="{{ "normal" if changes else "changes" }}"><font color="{{ conf.LinkColour }}">{{ "Normal view" if changes else "Unsaved changes" }}</font></a>
+    <a href="{{ "normal" if "changesonly" == mode else "changesonly" if "changes" == mode else "changes" }}"><font color="{{ conf.LinkColour }}">{{ "Normal view" if "changesonly" == mode else "Unsaved changes only" if "changes" == mode else "Unsaved changes" }}</font></a>
   </td>
 %endif
 </tr></table>
 <font size="2">
-%if changes:
-{{! step.Template(templates.HERO_DIFF_HTML, escape=True).expand(changes=list(zip(texts0, texts))) }}
+%if mode and "normal" != mode:
+{{! step.Template(templates.HERO_DIFF_HTML, escape=True).expand(mode=mode, changes=list(zip(texts0, texts))) }}
 %else:
 <table cellpadding="0" cellspacing="0">
     %for text in texts:
@@ -317,9 +317,11 @@ HTML text shown for hero unsaved changes diff.
 
 @param  ?name     hero name, if any
 @param   changes  [(category content1, category content2), ]
+@param  ?mode     view mode, "changes" or "changesonly" (default)
 """
 HERO_DIFF_HTML = """<%
 from h3sed import conf, templates
+mode = get("mode") or "changesonly"
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
 %if get("name"):
@@ -329,21 +331,31 @@ from h3sed import conf, templates
 %for v1, v2 in changes:
 <%
 entries = templates.make_category_diff(v1, v2)
+if "changesonly" == mode:
+    # Discard unchanged parts, retain surrounding context for some categories
+    category = entries[0][0].strip(" :") if entries else None
+    do_context = category not in ("stats", "equipment", "spells")
+    entries, allentries = [], entries
+    for i, (l1, l2) in enumerate(allentries):
+        if not i or l1 != l2 or do_context and (len(set(allentries[i-1])) != 1
+        or i + 1 < len(allentries) and len(set(allentries[i+1])) != 1):
+            entries.append((l1, l2))
+    if len(entries) == 1: entries = []
 entries = [[escape(l).replace(" ", "&nbsp;") for l in ll] for ll in entries]
 %>
     %for i, (l1, l2) in enumerate(entries):
         %if not i:
     <tr><td colspan="2"><code>{{! l1 }}</code></td></tr>
         %elif l1 == l2:
-    <tr><td><code>{{! l1 }}</code></td><td><code>{{! l2 }}</code></td></tr>
+    <tr><td width="50%"><code>{{! l1 }}</code></td><td width="50%"><code>{{! l2 }}</code></td></tr>
         %elif l1 != l2 and ":" not in l1 + l2:
-    <tr><td bgcolor="{{ conf.DiffOldColour }}"><code>{{! l1 }}</code></td>
-        <td><code></code></td></tr>
+    <tr><td bgcolor="{{ conf.DiffOldColour }}" width="50%"><code>{{! l1 }}</code></td>
+        <td width="50%"><code></code></td></tr>
     <tr><td><code></code></td>
-        <td bgcolor="{{ conf.DiffNewColour }}"><code>{{! l2 }}</code></td></tr>
+        <td bgcolor="{{ conf.DiffNewColour }}" width="50%"><code>{{! l2 }}</code></td></tr>
         %else:
-    <tr><td bgcolor="{{ conf.DiffOldColour if l1 else "" }}"><code>{{! l1 }}</code></td>
-        <td bgcolor="{{ conf.DiffNewColour if l2 else "" }}"><code>{{! l2 }}</code></td></tr>
+    <tr><td bgcolor="{{ conf.DiffOldColour if l1 else "" }}" width="50%"><code>{{! l1 }}</code></td>
+        <td bgcolor="{{ conf.DiffNewColour if l2 else "" }}" width="50%"><code>{{! l2 }}</code></td></tr>
         %endif
     %endfor
 %endfor
