@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  18.01.2026
+@modified  22.01.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -28,7 +28,8 @@ from . lib import util
 
 
 ## Hero property categories for hero index and exports
-HERO_PROPERTY_CATEGORIES = ["stats", "devices", "skills", "army", "equipment", "inventory", "spells"]
+HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army",
+                            "equipment", "inventory", "spells"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -45,9 +46,8 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
 
     if "csv" == format:
         COLS = ["name"]
-        if categories.get("stats"): COLS.append("level")
         for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
-            if "stats" == category: COLS.extend(h3sed.metadata.PRIMARY_ATTRIBUTES)
+            if "stats" == category: COLS.extend(["level"] + list(h3sed.metadata.PRIMARY_ATTRIBUTES))
             else: COLS.append(category)
         tpl = step.Template(HERO_EXPORT_CSV, strip=False)
         with util.csv_writer(filename) as f:
@@ -73,6 +73,10 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
         for hero in heroes:
             hero_data = dict(name=hero.name)
             for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
+                if "faction" == category:
+                    state = dict(hero.profile, faction=hero.profile.format_faction())
+                    hero_data["profile"] = state
+                    continue # for category
                 if "devices" == category: category = "stats"
                 state = hero.properties[category]
                 if isinstance(state, (list, set)):
@@ -153,6 +157,7 @@ def make_hero_yamls(hero, categories=None, as_list=False):
     """
     if categories is None: categories = {k: True for k in HERO_PROPERTY_CATEGORIES}
     if categories.get("devices"): categories = dict(categories, stats=True)
+    if categories.get("faction"): categories = dict(categories, profile=True)
     LF, INDENT = os.linesep, "  "
 
     result = {}
@@ -214,7 +219,10 @@ def serialize_property_yaml(state, indent="  "):
     else:
         for key in state.__slots__:
             maxlen = max(maxlen, len(key))
-            pairs += [("%s%s:" % (indent, key), fmt(state[key]))]
+            value = state[key]
+            if "faction" == key and isinstance(state, h3sed.hero.Profile):
+                value = state.format_faction()
+            pairs += [("%s%s:" % (indent, key), fmt(value))]
     return pairs, maxlen
 
 
@@ -334,7 +342,7 @@ entries = templates.make_category_diff(v1, v2)
 if "changesonly" == mode:
     # Discard unchanged parts, retain surrounding context for some categories
     category = entries[0][0].strip(" :") if entries else None
-    do_context = category not in ("stats", "equipment", "spells")
+    do_context = category not in ("profile", "stats", "equipment", "spells")
     entries, allentries = [], entries
     for i, (l1, l2) in enumerate(allentries):
         if not i or l1 != l2 or do_context and (len(set(allentries[i-1])) != 1
@@ -434,6 +442,9 @@ category = get("category")
 %if category is None or "name" == category:
 {{ hero.name }}
 %endif
+%if category is None or "faction" == category:
+{{ hero.profile.format_faction() }}
+%endif
 %if category is None or "stats" == category:
 {{ hero.stats["level"] }}
     %for name in metadata.PRIMARY_ATTRIBUTES:
@@ -515,6 +526,9 @@ def sortarrow(col):
   <tr>
     <th align="right" valign="bottom" nowrap><a href="sort:index"><font color="{{ conf.FgColour }}">#</font></a></th>
     <th align="left" valign="bottom" nowrap><a href="sort:name"><font color="{{ conf.FgColour }}">Name{{! sortarrow("name") }}</font></a></th>
+%if not categories or categories["faction"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:faction"><font color="{{ conf.FgColour }}">Faction{{! sortarrow("faction") }}</font></a></th>
+%endif
 %if not categories or categories["stats"]:
     <th align="left" valign="bottom" nowrap><a href="sort:level"><font color="{{ conf.FgColour }}">Level{{! sortarrow("level") }}</font></a></th>
     %for name, label in metadata.PRIMARY_ATTRIBUTES.items():
@@ -556,6 +570,9 @@ def sortarrow(col):
  ({{ hero.name_counter }})
 %endif
     </td>
+%if not categories or categories["faction"]:
+    <td align="left" valign="top" nowrap>{{ hero.profile.format_faction() }}</td>
+%endif
 %if not categories or categories["stats"]:
     <td align="left" valign="top" nowrap>{{ hero.stats["level"] }}</td>
     %for name in metadata.PRIMARY_ATTRIBUTES:
@@ -628,6 +645,8 @@ deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_AR
 %>
 %if "name" == column:
 {{ hero.name }}
+%elif "faction" == column:
+{{ hero.profile.format_faction() }}
 %elif column in hero.stats:
 {{ hero.stats[column] }}
 %elif "devices" == column:
@@ -966,6 +985,9 @@ colptr += state
   <tr>
     <th class="index asc"><a class="sort asc" title="Sort by index" onclick="onSort(this)">#</a></th>
     <th><a class="sort" title="Sort by name" onclick="onSort(this)">Name</a></th>
+%if not categories or categories["faction"]:
+    <th><a class="sort" title="Sort by faction" onclick="onSort(this)">Faction</a></th>
+%endif
 %if not categories or categories["stats"]:
     <th><a class="sort" title="Sort by level" onclick="onSort(this)">Level</a></th>
     %for label in metadata.PRIMARY_ATTRIBUTES.values():
@@ -1001,6 +1023,9 @@ colptr += state
  ({{ hero.name_counter }})
 %endif
     </td>
+%if not categories or categories["faction"]:
+    <td>{{ hero.profile.format_faction() }}</td>
+%endif
 %if not categories or categories["stats"]:
     <td>{{ hero.stats["level"] }}</td>
     %for name in metadata.PRIMARY_ATTRIBUTES:

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   13.09.2024
-@modified  09.01.2026
+@modified  22.01.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -200,6 +200,8 @@ class Attributes(DataClass, hero.Attributes): pass
 
 class Inventory(DataClass, hero.Inventory):   pass
 
+class Profile(DataClass, hero.Profile):       pass
+
 class Skill(DataClass, hero.Skill):           pass
 
 class Skills(DataClass, hero.Skills):         pass
@@ -247,6 +249,8 @@ def adapt(name, value, version=None):
         result = Inventory
     elif "hero.Skill" == name:
         result = Skill
+    elif "hero.Profile" == name:
+        result = Profile
     elif "hero.Skills" == name:
         result = Skills
     elif "hero.Spells" == name:

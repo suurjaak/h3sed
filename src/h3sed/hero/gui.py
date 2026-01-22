@@ -3,7 +3,7 @@
 UI plugin for managing heroes in a savefile.
 
 
-Subplugin modules are expected to have the following API (all methods mandatory):
+Subplugin modules are expected to have the following API (all methods either mandatory or missing):
 
     def props():
         '''
@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  18.01.2026
+@modified  22.01.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -104,8 +104,9 @@ class HeroPlugin(object):
         self._ctrls      = {}      # {name: wx.Control, }
         self._pages      = {}      # {wx.Window from self._ctrls["tabs"]: hero index in self._heroes}
         self._indexpanel = None    # Heroes index panel
+        self._heropanel  = None    # Container for all components of selected hero
+        self._propspanel = None    # Container for hero property components
         self._hero       = None    # Currently selected Hero instance
-        self._heropanel  = None    # Container for hero components
         self._hero_yamls = {}      # {hero: {full, originals, currents}}
         self._pages_visited = []   # Visited tabs, as [hero index in self._heroes or None if index page]
         self._subtab_focus = {}    # {hero index in self._heroes: focused subtab index}
@@ -186,7 +187,10 @@ class HeroPlugin(object):
         html.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.on_index_link)
         html.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_sys_colour_change)
 
-        tb = wx.ToolBar(self._panel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
+        heropanel = self._heropanel = wx.Panel(self._panel)
+        heropanel.Sizer = wx.BoxSizer(wx.VERTICAL)
+
+        tb = wx.ToolBar(heropanel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
 
         combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
         combo.Bind(wx.EVT_KEY_DOWN, self.on_key_select)
@@ -208,10 +212,9 @@ class HeroPlugin(object):
         tb.Bind(wx.EVT_TOOL, self.on_save_hero,  id=wx.ID_SAVE)
         self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
         tb.Realize()
-        tb.Disable()
-        tb.Hide()
 
-        menubutton = wx.Button(self._panel, label="Change all ..")
+        faction = wx.StaticText(heropanel)
+        menubutton = wx.Button(heropanel, label="Change all ..")
         menubutton.ToolTip = "Change multiple properties on page"
         menubutton.Bind(wx.EVT_BUTTON, self.on_hero_subtab_button)
 
@@ -241,8 +244,8 @@ class HeroPlugin(object):
         indexpanel.Sizer.Add(html, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW, proportion=1)
         indexpanel.Sizer.Add(sizer_opts, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
 
-        self._heropanel = wx.Panel(self._panel)
-        self._heropanel.Sizer = wx.BoxSizer(wx.VERTICAL)
+        propspanel = self._propspanel = wx.Panel(heropanel)
+        propspanel.Sizer = wx.BoxSizer(wx.VERTICAL)
 
         sizer = self._panel.Sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_top = wx.BoxSizer(wx.HORIZONTAL)
@@ -253,13 +256,18 @@ class HeroPlugin(object):
         sizer_top.AddSpacer(5)
         sizer_tabtop = wx.BoxSizer(wx.HORIZONTAL)
         sizer_tabtop.Add(tb)
+        sizer_tabtop.Add(faction, border=30, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
         sizer_tabtop.AddStretchSpacer()
         sizer_tabtop.Add(menubutton)
         sizer.Add(sizer_top,    border=10, flag=wx.LEFT | wx.GROW)
         sizer.Add(tabs,         border=5,  flag=wx.BOTTOM | wx.GROW)
         sizer.Add(indexpanel,   border=5,  flag=wx.GROW, proportion=1)
-        sizer.Add(sizer_tabtop, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
-        sizer.Add(self._heropanel, border=5, flag=wx.TOP | wx.GROW, proportion=1)
+        heropanel.Sizer.Add(sizer_tabtop, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
+        heropanel.Sizer.Add(propspanel, border=5, flag=wx.TOP | wx.GROW, proportion=1)
+        sizer.Add(heropanel, flag=wx.TOP | wx.GROW, proportion=1)
+        heropanel.Disable()
+        heropanel.Hide()
+
         self._panel.Bind(wx.EVT_CHAR_HOOK, self.on_key)
         wx_accel.accelerate(self._panel, accelerators=[(wx.ACCEL_CMD, ord("I"), wx.ID_INFO)])
         self._panel.Layout()
@@ -271,6 +279,7 @@ class HeroPlugin(object):
         self._ctrls["count"] = info
         self._ctrls["html"] = html
         self._ctrls["toolbar"] = tb
+        self._ctrls["faction"] = faction
         self._ctrls["menubutton"] = menubutton
         controls.ColourManager.Patch(self._panel)
         self._panel.TopLevelParent.bind_status_clearer(self._panel)
@@ -279,13 +288,16 @@ class HeroPlugin(object):
     def build(self):
         """Builds hero UI components."""
         self._panel.Freeze()
-        self._heropanel.DestroyChildren()
-        self._heropanel.Sizer.Clear()
+        self._heropanel.Enable()
+        self._heropanel.Show()
+        self._propspanel.DestroyChildren()
+        self._propspanel.Sizer.Clear()
         del self._plugins[:]
         self._ctrls["hero"].SetItems([str(x) for x in self._heroes])
 
-        nb = wx.Notebook(self._heropanel)
-        self._plugins = [dict(m.props(), module=m) for m in h3sed.hero.PROPERTIES.values()]
+        nb = wx.Notebook(self._propspanel)
+        self._plugins = [dict(m.props(), module=m) for m in h3sed.hero.PROPERTIES.values()
+                         if callable(getattr(m, "props", None))]
         for i, props in enumerate(self._plugins):
             subpanel = props["panel"] = wx.ScrolledWindow(nb)
             title = props.get("label", props["name"])
@@ -296,7 +308,7 @@ class HeroPlugin(object):
             props["instance"] = plugin
             props["has_menu"] = has_menu
 
-        self._heropanel.Sizer.Add(nb, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW, proportion=1)
+        self._propspanel.Sizer.Add(nb, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW, proportion=1)
 
         if conf.Positions.get("herotab_index") \
         and conf.Positions["herotab_index"] < len(self._plugins):
@@ -305,6 +317,7 @@ class HeroPlugin(object):
 
         nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_hero_subtab)
 
+        self._heropanel.Disable()
         self._heropanel.Hide()
         self._panel.Thaw()
         self._ctrls["properties"] = nb
@@ -331,7 +344,7 @@ class HeroPlugin(object):
 
         if reparse:
             self.refresh_file()
-        elif self._hero and self._heropanel.Children:
+        elif self._hero and self._propspanel.Children:
             for p in self._plugins:
                 self.render_plugin(p["name"], reload=reload, log=log)
         else: self.build()
@@ -708,7 +721,7 @@ class HeroPlugin(object):
             self.select_hero_tab(index)
             return
 
-        combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
+        combo, tabs = self._ctrls["hero"], self._ctrls["tabs"]
         busy = controls.BusyPanel(self._panel, "Loading %s." % hero2) if status else None
         if status: guibase.status("Loading %s.", hero2, flash=True)
 
@@ -727,16 +740,15 @@ class HeroPlugin(object):
             self.select_hero_tab(index)
 
         self._indexpanel.Hide()
+        self._heropanel.Enable()
         self._heropanel.Show()
-        tb.Enable()
-        tb.Show()
-        self._ctrls["menubutton"].Show()
         try:
             if self._hero: self.patch()
             if not page_existed:
                 logger.info("Loading hero %s (bytes %s-%s in savefile).",
                             hero2, hero2.span[0], hero2.span[1] - 1)
             self._hero = hero2
+            self._ctrls["faction"].Label = "Faction: %s" % hero2.profile.format_faction()
             for p in self._plugins:
                 self.render_plugin(p["name"], reload=True, log=not page_existed)
 
@@ -757,7 +769,7 @@ class HeroPlugin(object):
 
     def select_hero_tab(self, index):
         """Ensures hero tab is selected and hero panel shown."""
-        combo, tabs, tb = self._ctrls["hero"], self._ctrls["tabs"], self._ctrls["toolbar"]
+        combo, tabs = self._ctrls["hero"], self._ctrls["tabs"]
         page = next(p for p, i in self._pages.items() if i == index)
         idx  = next(i for i in range(tabs.GetPageCount()) if page is tabs.GetPage(i))
         if tabs.GetSelection() != idx:
@@ -766,10 +778,8 @@ class HeroPlugin(object):
         if tabs.GetAGWWindowStyleFlag() != style:
             tabs.SetAGWWindowStyleFlag(style)
         if not self._heropanel.Shown:
-            tb.Enable()
-            tb.Show()
-            self._ctrls["menubutton"].Show()
             self._indexpanel.Hide()
+            self._heropanel.Enable()
             self._heropanel.Show()
             self._panel.Layout()
         if combo.Selection != index:
@@ -778,7 +788,7 @@ class HeroPlugin(object):
 
     def select_index(self):
         """Switches to index page if not already there."""
-        combo, tabs, tb, search = (self._ctrls[k] for k in ("hero", "tabs", "toolbar", "search"))
+        combo, tabs, search = (self._ctrls[k] for k in ("hero", "tabs", "search"))
         searchsel = search.GetSelection()
         focusctrl = self._panel.FindFocus()
         self.populate_index()
@@ -786,10 +796,8 @@ class HeroPlugin(object):
         style = tabs.GetAGWWindowStyleFlag() & (~wx.lib.agw.flatnotebook.FNB_X_ON_TAB)
         if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
         if not self._indexpanel.Shown:
-            tb.Hide()
-            tb.Disable()
-            self._ctrls["menubutton"].Hide()
             self._heropanel.Hide()
+            self._heropanel.Disable()
             self._indexpanel.Show()
             self._panel.Layout()
         if combo.Selection >= 0: combo.SetSelection(-1)

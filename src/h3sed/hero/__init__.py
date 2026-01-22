@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  08.01.2026
+@modified  22.01.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -22,6 +22,7 @@ from .. import metadata
 from . import army
 from . import equipment
 from . import inventory
+from . import profile
 from . import skills
 from . import spells
 from . import stats
@@ -32,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 ## Modules for hero properties in order of showing
 PROPERTIES = collections.OrderedDict([
+    ("profile",   profile),
     ("stats",     stats),
     ("skills",    skills),
     ("army",      army),
@@ -78,18 +80,19 @@ def make_artifact_cast(location, version=None):
     return cast
 
 
-def make_integer_cast(name, version=None):
+def make_integer_cast(name, version=None, nullable=False):
     """
     Returns function(value=None) for casting value to integer in allowed range.
 
-    @param   name  thing to cast, like "attack" or "army.count"
+    @param   name      thing to cast, like "attack" or "army.count"
+    @param   nullable  whether empty value is allowed
     """
     minmax = []
     def inner(value=None):
         if not minmax: # First run: populate cache
             minmax[:] = metadata.Store.get("hero_ranges", version=version)[name]
 
-        if value is None: return minmax[0]
+        if value is None: return None if nullable else minmax[0]
         return min(minmax[1], max(int(value), minmax[0]))
     return inner
 
@@ -264,6 +267,43 @@ class Army(TypedArrayCheckerMixin, TypedArray, DataClass):
         TypedArray.__init__(self, cls=dataclass, size=minmax[1], default=dataclass)
 
 
+class Attributes(SlotsDict, DataClass):
+    """Hero main attributes property."""
+    __slots__ = dict({k: make_integer_cast(k) for k in (
+        "attack", "defense", "power", "knowledge", "exp",
+        "level", "movement_left", "movement_total", "mana_left",
+    )}, **{k: bool for k in ("spellbook", "ballista", "ammo", "tent")})
+
+    def get_experience_level(self):
+        """Returns hero level that ought to match current experience."""
+        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.version)
+        orderlist = sorted(EXP_LEVELS.items(), reverse=True)
+        return next((k for k, v in orderlist if v <= self.exp), None)
+
+    def get_level_experience(self):
+        """Returns hero experience that ought to match current level."""
+        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.version)
+        value = EXP_LEVELS.get(self.level)
+        if value is not None and value <= self.exp < EXP_LEVELS.get(self.level + 1, sys.maxsize):
+            value = self.exp  # Do not reset experience if already at level
+        elif value is None and self.level == 0:
+            value = 0
+        return value
+
+    def wrap_primary_attribute(self, value):
+        """Returns primary attribute wrapped to legal byte range."""
+        return value % (metadata.PRIMARY_ATTRIBUTE_RANGE[1] + 1) # Wrap around if overflow
+
+    def make_game_value(self, attribute_name, value):
+        """Returns attribute value as used in-game, like knowledge constrained to 1-99."""
+        if attribute_name not in metadata.PRIMARY_ATTRIBUTES: return value
+        RANGES = metadata.Store.get("primary_attribute_game_ranges", version=self.version)
+        MINV, MAXV, OVERFLOW = RANGES[attribute_name]
+        if value < MINV or value > MAXV:
+            value = MINV if value < MINV or value >= OVERFLOW else MAXV
+        return value
+
+
 class Equipment(SlotCheckerMixin, SlotsDict, DataClass):
     """Hero equipment property."""
     __slots__ = {k: make_artifact_cast(k) for k in (
@@ -394,43 +434,6 @@ class Equipment(SlotCheckerMixin, SlotsDict, DataClass):
                (artifact, location, "\n".join(lines))
 
 
-class Attributes(SlotsDict, DataClass):
-    """Hero main attributes property."""
-    __slots__ = dict({k: make_integer_cast(k) for k in (
-        "attack", "defense", "power", "knowledge", "exp",
-        "level", "movement_left", "movement_total", "mana_left",
-    )}, **{k: bool for k in ("spellbook", "ballista", "ammo", "tent")})
-
-    def get_experience_level(self):
-        """Returns hero level that ought to match current experience."""
-        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.version)
-        orderlist = sorted(EXP_LEVELS.items(), reverse=True)
-        return next((k for k, v in orderlist if v <= self.exp), None)
-
-    def get_level_experience(self):
-        """Returns hero experience that ought to match current level."""
-        EXP_LEVELS = metadata.Store.get("experience_levels", version=self.version)
-        value = EXP_LEVELS.get(self.level)
-        if value is not None and value <= self.exp < EXP_LEVELS.get(self.level + 1, sys.maxsize):
-            value = self.exp  # Do not reset experience if already at level
-        elif value is None and self.level == 0:
-            value = 0
-        return value
-
-    def wrap_primary_attribute(self, value):
-        """Returns primary attribute wrapped to legal byte range."""
-        return value % (metadata.PRIMARY_ATTRIBUTE_RANGE[1] + 1) # Wrap around if overflow
-
-    def make_game_value(self, attribute_name, value):
-        """Returns attribute value as used in-game, like knowledge constrained to 1-99."""
-        if attribute_name not in metadata.PRIMARY_ATTRIBUTES: return value
-        RANGES = metadata.Store.get("primary_attribute_game_ranges", version=self.version)
-        MINV, MAXV, OVERFLOW = RANGES[attribute_name]
-        if value < MINV or value > MAXV:
-            value = MINV if value < MINV or value >= OVERFLOW else MAXV
-        return value
-
-
 class Inventory(TypedArray, DataClass):
     """Hero inventory property."""
 
@@ -459,6 +462,20 @@ class Inventory(TypedArray, DataClass):
         result = type(self)()
         for i, item in enumerate(items): list.__setitem__(result, i, item)
         return result
+
+
+class Profile(SlotsDict, DataClass):
+    """Hero profile property."""
+    __slots__ = {"faction": make_integer_cast("faction", nullable=True)}
+
+    def format_faction(self):
+        """Returns hero player faction as text."""
+        FACTIONS = metadata.Store.get("player_factions", version=self.version)
+        if self.faction in FACTIONS:
+            return "%s Player" % FACTIONS[self.faction]
+        if self.faction == metadata.BLANK[0]:
+            return "neutral"
+        return "0x%X" % self.faction if isinstance(self.faction, int) else "unknown"
 
 
 class Skills(TypedArrayCheckerMixin, TypedArray, DataClass):
@@ -505,6 +522,7 @@ class Hero(object):
         self.span    = None    # Hero byte span in uncompressed savefile
         self.name_counter = 1  # 1-based index for hero name, tracking duplicate names
 
+        self.profile   = Profile   .factory(version)
         self.stats     = Attributes.factory(version)
         self.skills    = Skills    .factory(version)
         self.army      = Army      .factory(version)
@@ -617,6 +635,7 @@ class Hero(object):
         """Updates hero bytes with current properties state."""
         self.realize()
         for section, module in PROPERTIES.items():
+            if not callable(getattr(module, "serialize", None)): continue # for section
             self.bytes = module.serialize(self.properties[section], self.bytes, self.version, self)
         self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
@@ -697,8 +716,9 @@ class Hero(object):
                 for value in collection:
                     if isinstance(value, dict): process_keywords(value)
 
-        process_patterns(dict(self.properties, name=self.name), text_regexes)
-        process_keywords(dict(self.properties, name=self.name))
+        collection = dict(self.properties, name=self.name, faction=self.profile.format_faction())
+        process_patterns(collection, text_regexes)
+        process_keywords(collection)
         return all(r in matches for r in text_regexes) and \
                all((k, r) in matches for k, rr in kw_regexes.items() for r in rr)
 

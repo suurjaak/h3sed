@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  06.01.2026
+@modified  22.01.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -99,28 +99,30 @@ ARTIFACT_SPELLS = {
 
 """Regulax expression for finding hero struct in savefile bytes."""
 HERO_REGEX = re.compile(b"""
-    .{4}                     #   4 bytes: movement points in total             000-003
-    .{4}                     #   4 bytes: movement points remaining            004-007
-    .{4}                     #   4 bytes: experience                           008-011
-    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     012-015
-    .{2}                     #   2 bytes: spell points remaining               016-017
-    .{1}                     #   1 byte:  hero level                           018-018
+    .                        #   1 byte:  player faction 0-7 or 255            000-000
+    .{30}                    #  30 bytes: unknown                              001-031
+    .{4}                     #   4 bytes: movement points in total             031-034
+    .{4}                     #   4 bytes: movement points remaining            035-038
+    .{4}                     #   4 bytes: experience                           039-042
+    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     043-046
+    .{2}                     #   2 bytes: spell points remaining               047-048
+    .{1}                     #   1 byte:  hero level                           049-049
 
-    .{63}                    #  63 bytes: unknown                              019-081
+    .{63}                    #  63 bytes: unknown                              050-112
 
-    .{28}                    #  28 bytes: 7 4-byte creature IDs                082-109
-    .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
+    .{28}                    #  28 bytes: 7 4-byte creature IDs                113-150
+    .{28}                    #  28 bytes: 7 4-byte creature counts             151-168
 
-                             #  13 bytes: hero name, null-padded               138-150
+                             #  13 bytes: hero name, null-padded               169-181
     (?P<name>[^\x00-\x20].{11}\x00)
-    [\x00-\x03]{28}          #  28 bytes: skill levels                         151-178
-    [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
-    .{4}                     #   4 bytes: primary stats                        207-210
+    [\x00-\x03]{28}          #  28 bytes: skill levels                         182-209
+    [\x00-\x1C]{28}          #  28 bytes: skill slots                          210-237
+    .{4}                     #   4 bytes: primary stats                        238-241
 
-    [\x00-\x01]{70}          #  70 bytes: spells in book                       211-280
-    [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
+    [\x00-\x01]{70}          #  70 bytes: spells in book                       242-311
+    [\x00-\x01]{70}          #  70 bytes: spells available                     312-381
 
-                             # 144 bytes: 18 8-byte equipments worn            351-494
+                             # 144 bytes: 18 8-byte equipments worn            382-525
                              # Blank spots:   FF FF FF FF XY XY XY XY
                              # Artifacts:     XY 00 00 00 FF FF FF FF
                              # Scrolls:       XY 00 00 00 00 00 00 00
@@ -128,44 +130,46 @@ HERO_REGEX = re.compile(b"""
       (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
     ){18})
 
-                             # 512 bytes: 64 8-byte artifacts in inventory     495-1006
+                             # 512 bytes: 64 8-byte artifacts in inventory     526-1037
     ( ((.\x00{3}) | \xFF{4}){2} ){64}
 """, re.VERBOSE | re.DOTALL)
 
 
 """Regulax expression for finding hero struct in newer releases like GOG Complete."""
 HERO_REGEX_NEWFORMAT = re.compile(b"""
-    .{4}                     #   4 bytes: movement points in total             000-003
-    .{4}                     #   4 bytes: movement points remaining            004-007
-    .{4}                     #   4 bytes: experience                           008-011
-    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     012-015
-    .{2}                     #   2 bytes: spell points remaining               016-017
-    .{1}                     #   1 byte:  hero level                           018-018
+    .                        #   1 byte:  player faction 0-7 or 255            000-000
+    .{30}                    #  30 bytes: unknown                              001-031
+    .{4}                     #   4 bytes: movement points in total             031-034
+    .{4}                     #   4 bytes: movement points remaining            035-038
+    .{4}                     #   4 bytes: experience                           039-042
+    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     043-046
+    .{2}                     #   2 bytes: spell points remaining               047-048
+    .{1}                     #   1 byte:  hero level                           049-049
 
-    .{63}                    #  63 bytes: unknown                              019-081
+    .{63}                    #  63 bytes: unknown                              050-112
 
-    .{28}                    #  28 bytes: 7 4-byte creature IDs                082-109
-    .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
+    .{28}                    #  28 bytes: 7 4-byte creature IDs                113-150
+    .{28}                    #  28 bytes: 7 4-byte creature counts             151-168
 
-                             #  13 bytes: hero name, null-padded               138-150
+                             #  13 bytes: hero name, null-padded               169-181
     (?P<name>[^\x00-\x20].{11}\x00)
-    [\x00-\x03]{28}          #  28 bytes: skill levels                         151-178
-    [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
-    .{4}                     #   4 bytes: primary stats                        207-210
+    [\x00-\x03]{28}          #  28 bytes: skill levels                         182-209
+    [\x00-\x1C]{28}          #  28 bytes: skill slots                          210-237
+    .{4}                     #   4 bytes: primary stats                        238-241
 
-    [\x00-\x01]{70}          #  70 bytes: spells in book                       211-280
-    [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
+    [\x00-\x01]{70}          #  70 bytes: spells in book                       242-311
+    [\x00-\x01]{70}          #  70 bytes: spells available                     312-381
 
-                             # 144 bytes: 18 8-byte equipments worn            351-494
+                             # 144 bytes: 18 8-byte equipments worn            382-525
                              # Blank spots:   FF FF FF FF XY XY XY XY
                              # Artifacts:     XY 00 00 00 FF FF FF FF
                              # Scrolls:       XY 00 00 00 00 00 00 00
     (?P<equipment>(          # Catapult etc:  XY 00 00 00 XY XY 00 00
       (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
     ){18})
-    .{8}                     # 8 bytes: side5 slot unused in RoE               494-502
+    .{8}                     # 8 bytes: side5 slot unused in RoE               526-533
 
-                             # 512 bytes: 64 8-byte artifacts in inventory     503-1014
+                             # 512 bytes: 64 8-byte artifacts in inventory     534-1045
     ( ((.\x00{3}) | \xFF{4}){2} ){64}
 """, re.VERBOSE | re.DOTALL)
 
@@ -191,6 +195,8 @@ class Army(DataClass, hero.Army):             pass
 class Attributes(DataClass, hero.Attributes): pass
 
 class Inventory(DataClass, hero.Inventory):   pass
+
+class Profile(DataClass, hero.Profile):       pass
 
 class Skill(DataClass, hero.Skill):           pass
 
@@ -249,6 +255,8 @@ def adapt(name, value, version=None):
         result = Equipment
     elif "hero.Inventory" == name:
         result = Inventory
+    elif "hero.Profile" == name:
+        result = Profile
     elif "hero.Skill" == name:
         result = Skill
     elif "hero.Skills" == name:

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  13.01.2026
+@modified  22.01.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -73,6 +73,10 @@ PRIMARY_ATTRIBUTE_RANGE = (0, 255)
 PRIMARY_ATTRIBUTE_GAME_RANGES = {"attack": (0, 99, 128), "defense":   (0, 99, 128),
                                  "power":  (1, 99, 128), "knowledge": (1, 99, 128)}
 
+"""Hero player factions, as {byte value: label}."""
+PLAYER_FACTIONS = {0: "Red",    1: "Blue",   2: "Tan",  3: "Green",
+                   4: "Orange", 5: "Purple", 6: "Teal", 7: "Pink"}
+
 
 """Allowed (min, max) ranges and other configuration for various hero properties."""
 HERO_RANGES = {
@@ -86,6 +90,7 @@ HERO_RANGES = {
     "mana_left":       ( 0, 2**16 - 1),
     "movement_left":   ( 0, 2**32 - 1),
     "movement_total":  ( 0, 2**32 - 1),
+    "faction":         ( 0, 2**8 - 1),
 
     "army":            ( 0, 7),
     "army.count":      ( 1, 2**32 - 1),
@@ -97,93 +102,96 @@ HERO_RANGES = {
 
 """Index for byte start of various attributes in hero bytearray."""
 HERO_BYTE_POSITIONS = {
-    "movement_total":     0, # Movement points in total
-    "movement_left":      4, # Movement points remaining
+    "faction":            0, # Player faction (e.g. Red player)
+    "movement_total":    31, # Movement points in total
+    "movement_left":     35, # Movement points remaining
 
-    "exp":                8, # Experience points
-    "mana_left":         16, # Spell points remaining
-    "level":             18, # Hero level
+    "exp":               39, # Experience points
+    "mana_left":         47, # Spell points remaining
+    "level":             49, # Hero level
 
-    "skills_count":      12, # Skills count
-    "skills_level":     151, # Skill levels
-    "skills_slot":      179, # Skill slots
+    "skills_count":      43, # Skills count
+    "skills_level":     182, # Skill levels
+    "skills_slot":      210, # Skill slots
 
-    "army_types":        82, # Creature type IDs
-    "army_counts":      110, # Creature counts
+    "army_types":       113, # Creature type IDs
+    "army_counts":      141, # Creature counts
 
-    "spells_book":      211, # Spells in book
-    "spells_available": 281, # All spells available for casting
+    "spells_book":      242, # Spells in book
+    "spells_available": 312, # All spells available for casting
 
-    "attack":           207, # Primary attribute: Attack
-    "defense":          208, # Primary attribute: Defense
-    "power":            209, # Primary attribute: Spell Power
-    "knowledge":        210, # Primary attribute: Knowledge
+    "attack":           238, # Primary attribute: Attack
+    "defense":          239, # Primary attribute: Defense
+    "power":            240, # Primary attribute: Spell Power
+    "knowledge":        241, # Primary attribute: Knowledge
 
-    "helm":             351, # Helm slot
-    "cloak":            359, # Cloak slot
-    "neck":             367, # Neck slot
-    "weapon":           375, # Weapon slot
-    "shield":           383, # Shield slot
-    "armor":            391, # Armor slot
-    "lefthand":         399, # Left hand slot
-    "righthand":        407, # Right hand slot
-    "feet":             415, # Feet slot
-    "side1":            423, # Side slot 1
-    "side2":            431, # Side slot 2
-    "side3":            439, # Side slot 3
-    "side4":            447, # Side slot 4
-    "ballista":         455, # Ballista slot
-    "ammo":             463, # Ammo Cart slot
-    "tent":             471, # First Aid Tent slot
-    "catapult":         479, # Catapult slot
-    "spellbook":        487, # Spellbook slot
-    "side5":            495, # Side slot 5
-    "inventory":        503, # Inventory start
+    "helm":             382, # Helm slot
+    "cloak":            390, # Cloak slot
+    "neck":             398, # Neck slot
+    "weapon":           406, # Weapon slot
+    "shield":           414, # Shield slot
+    "armor":            422, # Armor slot
+    "lefthand":         430, # Left hand slot
+    "righthand":        438, # Right hand slot
+    "feet":             446, # Feet slot
+    "side1":            454, # Side slot 1
+    "side2":            462, # Side slot 2
+    "side3":            470, # Side slot 3
+    "side4":            478, # Side slot 4
+    "ballista":         486, # Ballista slot
+    "ammo":             494, # Ammo Cart slot
+    "tent":             502, # First Aid Tent slot
+    "catapult":         510, # Catapult slot
+    "spellbook":        518, # Spellbook slot
+    "side5":            526, # Side slot 5
+    "inventory":        534, # Inventory start
 
     "reserved": {            # Slots reserved by combination artifacts
-        "helm":        1016,
-        "cloak":       1017,
-        "neck":        1018,
-        "weapon":      1019,
-        "shield":      1020,
-        "armor":       1021,
-        "hand":        1022, # For both left and right hand, \x00-\x02
-        "feet":        1023,
-        "side":        1024, # For all side slots, \x00-\x05
+        "helm":        1047,
+        "cloak":       1048,
+        "neck":        1049,
+        "weapon":      1050,
+        "shield":      1051,
+        "armor":       1052,
+        "hand":        1053, # For both left and right hand, \x00-\x02
+        "feet":        1054,
+        "side":        1055, # For all side slots, \x00-\x05
     },
 }
 
 
 """Regulax expression for finding hero struct in savefile bytes."""
 HERO_REGEX = re.compile(b"""
-    # There are at least 60 bytes more at front, but those can also include
+    # There are at least 30 bytes more at front, but those can also include
     # hero biography, making length indeterminate.
-    # Bio ends at position -32 from total movement point start.
+    # Bio comes immediately before player faction.
     # If bio end position is \x00, then bio is empty, otherwise bio extends back
     # until a 4-byte span giving bio length (which always ends with \x00).
 
-    .{4}                     #   4 bytes: movement points in total             000-003
-    .{4}                     #   4 bytes: movement points remaining            004-007
-    .{4}                     #   4 bytes: experience                           008-011
-    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     012-015
-    .{2}                     #   2 bytes: spell points remaining               016-017
-    .{1}                     #   1 byte:  hero level                           018-018
+    .                        #   1 byte:  player faction 0-7 or 255            000-000
+    .{30}                    #  30 bytes: unknown                              001-031
+    .{4}                     #   4 bytes: movement points in total             031-034
+    .{4}                     #   4 bytes: movement points remaining            035-038
+    .{4}                     #   4 bytes: experience                           039-042
+    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     043-046
+    .{2}                     #   2 bytes: spell points remaining               047-048
+    .{1}                     #   1 byte:  hero level                           049-049
 
-    .{63}                    #  63 bytes: unknown                              019-081
+    .{63}                    #  63 bytes: unknown                              050-112
 
-    .{28}                    #  28 bytes: 7 4-byte creature IDs                082-109
-    .{28}                    #  28 bytes: 7 4-byte creature counts             110-137
+    .{28}                    #  28 bytes: 7 4-byte creature IDs                113-150
+    .{28}                    #  28 bytes: 7 4-byte creature counts             151-168
 
-                             #  13 bytes: hero name, null-padded               138-150
+                             #  13 bytes: hero name, null-padded               169-181
     (?P<name>[^\x00-\x20].{11}\x00)
-    [\x00-\x03]{28}          #  28 bytes: skill levels                         151-178
-    [\x00-\x1C]{28}          #  28 bytes: skill slots                          179-206
-    .{4}                     #   4 bytes: primary stats                        207-210
+    [\x00-\x03]{28}          #  28 bytes: skill levels                         182-209
+    [\x00-\x1C]{28}          #  28 bytes: skill slots                          210-237
+    .{4}                     #   4 bytes: primary stats                        238-241
 
-    [\x00-\x01]{70}          #  70 bytes: spells in book                       211-280
-    [\x00-\x01]{70}          #  70 bytes: spells available                     281-350
+    [\x00-\x01]{70}          #  70 bytes: spells in book                       242-311
+    [\x00-\x01]{70}          #  70 bytes: spells available                     312-381
 
-                             # 152 bytes: 19 8-byte equipments worn            351-502
+                             # 152 bytes: 19 8-byte equipments worn            382-533
                              # Blank spots:   FF FF FF FF XY XY XY XY
                              # Artifacts:     XY 00 00 00 FF FF FF FF
                              # Scrolls:       XY 00 00 00 00 00 00 00
@@ -191,10 +199,10 @@ HERO_REGEX = re.compile(b"""
       (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
     ){19})
 
-                             # 512 bytes: 64 8-byte artifacts in inventory     503-1014
+                             # 512 bytes: 64 8-byte artifacts in inventory     534-1045
     ( ((.\x00{3}) | \xFF{4}){2} ){64}
 
-                             # 10 bytes: slots taken by combination artifacts 1015-1024
+                             # 10 bytes: slots taken by combination artifacts 1046-1055
     .[\x00-\x01]{6}[\x00-\x02][\x00-\x01][\x00-\x05]
 """, re.VERBOSE | re.DOTALL)
 
@@ -1540,6 +1548,7 @@ Store.add("artifact_stats",        ARTIFACT_STATS)
 Store.add("creatures",             CREATURES, sortable=True)
 Store.add("equipment_slots",       EQUIPMENT_SLOTS, separate=True)  # Versions without side5 e.g. RoE
 Store.add("experience_levels",     EXPERIENCE_LEVELS, separate=True) # Versions can cap level e.g. HoTA
+Store.add("player_factions",       PLAYER_FACTIONS)
 Store.add("hero_byte_positions",   HERO_BYTE_POSITIONS)
 Store.add("hero_ranges",           HERO_RANGES)
 Store.add("ids",                   IDS)
