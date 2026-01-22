@@ -733,7 +733,7 @@ class HeroPlugin(object):
             page = wx.Window(tabs)
             self._pages[page] = index
             title = "%s%s" % (hero2, "*" if hero2.is_changed() else "")
-            tabs.AddPage(page, title, select=True)
+            tabs.InsertPage(1, page, title, select=True)
             style = tabs.GetAGWWindowStyleFlag() | wx.lib.agw.flatnotebook.FNB_X_ON_TAB
             if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
         else:
@@ -870,7 +870,7 @@ class HeroPlugin(object):
         else:
             page = wx.Window(tabs)
             self._pages[page] = index
-            tabs.AddPage(page, str(hero), select=True)
+            tabs.InsertPage(1, page, str(hero), select=True)
             self._indexpanel.Hide()
             self._heropanel.Show()
         if self._hero != hero:

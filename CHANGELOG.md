@@ -8,6 +8,7 @@ CHANGELOG
 - fix Magic Mirror missing from artifact spells of Spellbinder's Hat
 - strip unprintable characters from map name and description
 - restore previously active subtab on switching between hero tabs
+- open new hero tabs next to index tab instead of adding as last
 
 
 3.3, 2026-01-09
