@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    13.01.2026
+@modified    22.01.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -2017,7 +2017,7 @@ def build(plugin, panel):
 
 
         elif "combo" == prop.get("type"):
-            c1 = wx.StaticText(panel, label="%s: " % prop.get("label", prop["name"]),
+            c1 = wx.StaticText(panel, label=prop.get("label", prop["name"]),
                                name="%s_label" % prop["name"])
             c2 = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY, name=prop["name"])
 
@@ -2057,7 +2057,7 @@ def build(plugin, panel):
 
 
         elif "check" == prop.get("type"):
-            c1 = wx.StaticText(panel, label="%s: " % prop.get("label", prop["name"]),
+            c1 = wx.StaticText(panel, label=prop.get("label", prop["name"]),
                                name="%s_label" % prop["name"])
             c2 = wx.CheckBox(panel, name=prop["name"])
 
