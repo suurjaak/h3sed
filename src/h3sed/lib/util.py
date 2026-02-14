@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    08.10.2025
+@modified    14.02.2026
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -993,7 +993,7 @@ def start_file(filepath):
                     cmd = "Rundll32.exe SHELL32.dll, OpenAs_RunDLL %s"
                     os.popen(cmd % filepath)
                 else: raise
-        elif "mac" == os.name:
+        elif "darwin" == sys.platform:
             subprocess.call(("open", filepath))
         elif "posix" == os.name:
             subprocess.call(("xdg-open", filepath))
