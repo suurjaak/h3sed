@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  22.01.2026
+@modified  14.02.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -692,7 +692,7 @@ HERO_EXPORT_HTML = """<%
 import datetime, json
 import h3sed
 from h3sed.lib import util
-from h3sed import conf, images, metadata
+from h3sed import conf, images, metadata, templates
 stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=savefile.version_id)
 deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACTS]
 %><!DOCTYPE HTML><html lang="en">
@@ -798,16 +798,18 @@ deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACT
   </style>
   <script>
 <%
-MULTICOLS = {"stats": [3, 4, 5, 6, 7]}
-colptr = 7 if categories["stats"] else 3  # 1: index 2: name
+CATEGORY_COLUMNS = {k: [k] for k in templates.HERO_PROPERTY_CATEGORIES}
+CATEGORY_COLUMNS["stats"] = ["Level"] + list(metadata.PRIMARY_ATTRIBUTES)
+colptr = 3 # First two columns are always shown (1: index 2: name)
 %>
   var CATEGORIES = {  // {category: [table column index, ]}
-%for i, (category, state) in enumerate(categories.items()):
-    %if state:
-    "{{ category }}": {{! MULTICOLS.get(category) or [colptr] }},
-    %endif
+%for category in filter(categories.get, templates.HERO_PROPERTY_CATEGORIES):
 <%
-colptr += state
+col_indexes = [i + colptr for i in range(len(CATEGORY_COLUMNS[category]))]
+%>
+    "{{ category }}": {{! col_indexes }},
+<%
+colptr = max(col_indexes) + 1
 %>
 %endfor
   };
@@ -975,7 +977,7 @@ colptr += state
 
 <div id="opts">
   <div id="toggles">
-%for category in (k for k, v in categories.items() if v):
+%for category in filter(categories.get, templates.HERO_PROPERTY_CATEGORIES):
     <label for="toggle-{{ category }}" title="Show or hide {{ category }} column{{ "s" if "stats" == category else "" }}"><input type="checkbox" id="toggle-{{ category }}" onclick="onToggleCategory('{{ category }}', this)" checked />{{ category.capitalize() }}</label>
 %endfor
   </div>
