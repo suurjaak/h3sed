@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  22.01.2026
+@modified  14.02.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -454,6 +454,7 @@ class HeroPlugin(object):
         elif self._hero:
             index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
             self._index["herotexts"][index] = maketexts(self._hero)
+        herotexts = self._index["herotexts"]
 
         if searchtext:
             words, herotexts = searchtext.strip().lower().split(), self._index["herotexts"]
@@ -462,10 +463,11 @@ class HeroPlugin(object):
             matches = [(i, h) for i, (h, t) in enumerate(zip(heroes, texts))
                        if all(w in t for w in words)]
             links, heroes = zip(*matches) if matches else ([], [])
+            herotexts = [self._index["herotexts"][i] for i in links]
         self._index["text"] = searchtext
         self._index["visible"] = heroes
         tplargs.update(heroes=heroes, count=len(self._heroes), links=links, text=searchtext,
-                       herotexts=self._index["herotexts"], savefile=self.savefile)
+                       herotexts=herotexts, savefile=self.savefile)
         page = step.Template(templates.HERO_INDEX_HTML, escape=True).expand(**tplargs)
         if page != self._index["html"]:
             info = util.plural("hero", heroes) if len(heroes) == len(self._heroes) else \

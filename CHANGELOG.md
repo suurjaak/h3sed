@@ -1,11 +1,12 @@
 CHANGELOG
 =========
 
-3.4, 2026-01-22
+3.4, 2026-02-14
 ---------------
 - add player faction information for heroes (issue #25)
 - add changes-only view to hero charsheet, use it for global changes view
 - fix Magic Mirror missing from artifact spells of Spellbinder's Hat
+- fix sorting heroes index when filter applied
 - strip unprintable characters from map name and description
 - restore previously active subtab on switching between hero tabs
 - open new hero tabs next to index tab instead of adding as last
