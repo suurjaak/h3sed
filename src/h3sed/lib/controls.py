@@ -150,7 +150,7 @@ class ColourManager(object):
             cls.darkoriginals[name] = getattr(colourcontainer, name)
 
         cls.UpdateContainer()
-        if "nt" != os.name: return
+        if "GTK" not in wx.Port: return
 
         # Hack: monkey-patch FlatImageBook with non-hardcoded background
         class HackContainer(wx.lib.agw.labelbook.ImageContainer):

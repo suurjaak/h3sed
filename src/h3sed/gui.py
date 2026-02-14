@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.01.2026
+@modified    14.02.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -535,7 +535,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.StatusBar.SetFieldsCount(3)
         extent1 = self.StatusBar.GetTextExtent("222.22 KB")[0]
         extent2 = self.StatusBar.GetTextExtent("2222-22-22 22:22:22")[0]
-        WPLUS = 10 if "nt" == os.name else 30
+        WPLUS = 30 if "GTK" in wx.Port else 0
         self.StatusBar.SetStatusStyles([wx.SB_SUNKEN] * 3)
         self.StatusBar.SetStatusWidths([-2, extent1 + WPLUS, extent2 + WPLUS])
 
@@ -1876,8 +1876,8 @@ def build(plugin, panel):
 
 
     count = 0
-    BTN_WPLUS  = 0 if "nt" == os.name else 20
-    SPIN_WPLUS = 0 if "nt" == os.name else 80
+    BTN_WPLUS  = 20 if "GTK" in wx.Port else 0
+    SPIN_WPLUS = 80 if "GTK" in wx.Port else 0
     for prop in props if isinstance(props, (list, tuple)) else [props]:
         if "itemlist" == prop.get("type"):
             values_present = []
