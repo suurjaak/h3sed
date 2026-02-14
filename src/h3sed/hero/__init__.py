@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  22.01.2026
+@modified  14.02.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -470,12 +470,16 @@ class Profile(SlotsDict, DataClass):
 
     def format_faction(self):
         """Returns hero player faction as text."""
-        FACTIONS = metadata.Store.get("player_factions", version=self.version)
-        if self.faction in FACTIONS:
-            return "%s Player" % FACTIONS[self.faction]
-        if self.faction == metadata.BLANK[0]:
+        return self.make_faction_text(self.faction, self.version)
+        
+    @staticmethod
+    def make_faction_text(faction, version=None):
+        FACTIONS = metadata.Store.get("player_factions", version=version)
+        if faction in FACTIONS:
+            return "%s Player" % FACTIONS[faction]
+        if faction == metadata.BLANK[0]:
             return "neutral"
-        return "0x%X" % self.faction if isinstance(self.faction, int) else "unknown"
+        return "0x%X" % faction if isinstance(faction, int) else "unknown"
 
 
 class Skills(TypedArrayCheckerMixin, TypedArray, DataClass):
