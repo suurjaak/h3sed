@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  14.02.2026
+@modified  15.02.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -891,6 +891,14 @@ class Hero(object):
     def __hash__(self):
         """Returns hero hash code from name and index."""
         return hash((self.name, self.index))
+
+
+    def __lt__(self, other):
+        """Returns whether this hero < other hero, by case-insensitive name and index."""
+        if not isinstance(other, Hero): return NotImplemented
+        mykey    = (self.name .lower(), self .name_counter, self .index or 0)
+        otherkey = (other.name.lower(), other.name_counter, other.index or 0)
+        return mykey < otherkey
 
 
     def __str__(self):

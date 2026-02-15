@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  22.01.2026
+@modified  15.02.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1423,7 +1423,7 @@ class Savefile(object):
             m = re.search(REGEX, self.raw[pos:pos+5000])
 
         dupe_counts = Counter(x.name for x in heroes)
-        heroes.sort(key=lambda x: x.name.lower())
+        heroes.sort()
         for hero in heroes[::-1]:
             if dupe_counts[hero.name] > 1:
                 hero.name_counter = dupe_counts[hero.name]
