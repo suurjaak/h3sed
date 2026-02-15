@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.4, 2026-02-14
+3.4, 2026-02-15
 ---------------
 - add player faction information for heroes (issue #25)
 - add changes-only view to hero charsheet, use it for global changes view
