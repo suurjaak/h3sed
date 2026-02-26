@@ -1207,7 +1207,7 @@ ARTIFACT_STATS = {
     "Quiet Eye of the Dragon":           (+1, +1,  0,  0),
 
     "Dragon Wing Tabard":                ( 0,  0, +2, +2),
-    
+
     "Dragonbone Greaves":                ( 0,  0, +1, +1),
     "Sandals of the Saint":              (+2, +2, +2, +2),
 }
@@ -1403,24 +1403,49 @@ class Savefile(object):
         rgx_nulls = re.compile(br"^(\x00+)|(\x00{4}\xFF{4})+$")
         REGEX = h3sed.version.adapt("hero_regex", HERO_REGEX, version=self.version_id)
 
-        # Jump over potential campaign carry-over heroes, stored in savefile with their
-        # original armies+artifacts; the structs used by game come later.
+        # Jump over potential campaign carry-over heroes stored early in the savefile with
+        # their original armies+artifacts; the active game structs used by the game come
+        # later. Start search at byte 30000 to skip this section.
+        #
+        # Note: HotA 1.8.0+ adds Extended Events with variable-length data that can shift
+        # the hero section position by 180KB+ when there are event objects using them.
+        # The regex may match false positives in this data before reaching real heroes.
+        # We use an adaptive search window to handle this: search the entire remaining
+        # file initially to skip past false matches, then switch to a small window after
+        # finding the first valid hero for performance.
         pos = 30000
         m = re.search(REGEX, self.raw[pos:])
+        heroes_found = False
         while m:
             start, end = m.span()
-            if rgx_strip.match(m.group("name")) and not rgx_nulls.match(m.group("equipment")):
-                blob = bytearray(self.raw[pos + start:pos + end])
-                name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
+            name_match = rgx_strip.match(m.group("name"))
+            equip_match = rgx_nulls.match(m.group("equipment"))
+
+            if name_match and not equip_match:
+                # Valid hero found: passes both name and equipment validation
+                blob = bytearray(self.raw[pos + start : pos + end])
+                name = util.to_unicode(name_match.group(1))
                 hero = h3sed.hero.Hero(name, version=self.version_id)
-                hero.set_file_data(blob, len(heroes), (start + pos, end + pos)) #, self)
+                hero.set_file_data(blob, len(heroes), (start + pos, end + pos))  # , self)
                 heroes.append(hero)
+                heroes_found = True
                 pos += end
             else:
+                # False positive match (invalid name or equipment data): skip it and
+                # continue searching. This occurs when regex matches Extended Event data
+                # or other savefile sections that happen to match the hero pattern.
                 pos += start + 1
-            # Continue in small chunks once heroes section reached:
-            # regex can get pathologically slow for the entire remainder beyond heroes
-            m = re.search(REGEX, self.raw[pos:pos+5000])
+
+            # Adaptive search window:
+            # - Before finding any valid heroes: search entire remaining file (no limit).
+            #   This ensures we skip past all false positives in Extended Event data,
+            #   which can be very large (150KB+).
+            # - After finding the first valid hero: use small 5KB window for performance.
+            #   Once we're in the hero section, heroes are contiguous and we can use the
+            #   small window to avoid pathologically slow regex performance on the
+            #   remainder of the file.
+            search_window = len(self.raw) - pos if not heroes_found else 5000
+            m = re.search(REGEX, self.raw[pos : pos + search_window])
 
         dupe_counts = Counter(x.name for x in heroes)
         heroes.sort()
@@ -1479,7 +1504,7 @@ class Store(object):
     DATA = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
     CACHE = {} # {(name, category, version): prepared result}
-    
+
     SEPARATES = set() # {data names to not combine over versions}
 
     SORTABLES = set() # {data names of lists to sort}
