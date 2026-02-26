@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  14.02.2026
+@modified  26.02.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -224,14 +224,7 @@ class HeroPlugin(object):
                   self.on_close_page, tabs)
         tabs.Bind(wx.lib.agw.flatnotebook.EVT_FLATNOTEBOOK_PAGE_DROPPED,
                   self.on_dragdrop_page, tabs)
-        controls.ColourManager.Manage(tabs, "ActiveTabColour",        wx.SYS_COLOUR_WINDOW)
-        controls.ColourManager.Manage(tabs, "ActiveTabTextColour",    wx.SYS_COLOUR_BTNTEXT)
-        controls.ColourManager.Manage(tabs, "NonActiveTabTextColour", wx.SYS_COLOUR_BTNTEXT)
-        controls.ColourManager.Manage(tabs, "TabAreaColour",          wx.SYS_COLOUR_BTNFACE)
-        controls.ColourManager.Manage(tabs, "GradientColourBorder",   wx.SYS_COLOUR_BTNSHADOW)
-        controls.ColourManager.Manage(tabs, "GradientColourTo",       wx.SYS_COLOUR_ACTIVECAPTION)
-        controls.ColourManager.Manage(tabs, "ForegroundColour",       wx.SYS_COLOUR_BTNTEXT)
-        controls.ColourManager.Manage(tabs, "BackgroundColour",       wx.SYS_COLOUR_WINDOW)
+        controls.ColourManager.Manage(tabs, "TabAreaColour", wx.SYS_COLOUR_BTNFACE)
 
         indexpanel.Sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_opts = wx.BoxSizer(wx.HORIZONTAL)
@@ -705,7 +698,7 @@ class HeroPlugin(object):
     def on_sys_colour_change(self, event):
         """Handler for system colour change, refreshes hero index HTML."""
         event.Skip()
-        wx.CallAfter(lambda: self._panel and self.populate_index())
+        wx.CallAfter(lambda: self._panel and self.populate_index(force=True))
         wx.CallLater(100, lambda: self._panel and self._panel.Layout())
 
 

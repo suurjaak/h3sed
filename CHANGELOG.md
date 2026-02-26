@@ -3,6 +3,7 @@ CHANGELOG
 
 3.5, 2026-02-26
 ---------------
+- add dark mode support, to the extent possible in wx
 - fix not finding any heroes in certain savefiles (issue #26)
 
 

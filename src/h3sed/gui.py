@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    14.02.2026
+@modified    26.02.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -72,6 +72,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         ColourManager.Init(self, conf, colourmap={
             "FgColour":                wx.SYS_COLOUR_BTNTEXT,
             "BgColour":                wx.SYS_COLOUR_WINDOW,
+            "LinkColour":              wx.SYS_COLOUR_HOTLIGHT,
             "MainBgColour":            wx.SYS_COLOUR_WINDOW,
             "WidgetColour":            wx.SYS_COLOUR_BTNFACE,
         }, darkcolourmap={
@@ -98,14 +99,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                      wx.lib.agw.flatnotebook.FNB_NO_TAB_FOCUS |
                      wx.lib.agw.flatnotebook.FNB_NO_X_BUTTON |
                      wx.lib.agw.flatnotebook.FNB_FF2)
-        ColourManager.Manage(notebook, "ActiveTabColour",        wx.SYS_COLOUR_WINDOW)
-        ColourManager.Manage(notebook, "ActiveTabTextColour",    wx.SYS_COLOUR_BTNTEXT)
-        ColourManager.Manage(notebook, "NonActiveTabTextColour", wx.SYS_COLOUR_BTNTEXT)
-        ColourManager.Manage(notebook, "TabAreaColour",          wx.SYS_COLOUR_BTNFACE)
-        ColourManager.Manage(notebook, "GradientColourBorder",   wx.SYS_COLOUR_BTNSHADOW)
-        ColourManager.Manage(notebook, "GradientColourTo",       wx.SYS_COLOUR_ACTIVECAPTION)
-        ColourManager.Manage(notebook, "ForegroundColour",       wx.SYS_COLOUR_BTNTEXT)
-        ColourManager.Manage(notebook, "BackgroundColour",       wx.SYS_COLOUR_WINDOW)
+        ColourManager.Manage(notebook, "TabAreaColour", wx.SYS_COLOUR_BTNFACE)
 
         self.create_page_main(notebook)
         self.page_log = self.create_log_panel(notebook)
@@ -179,6 +173,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.DropTarget     = FileDrop(self)
         notebook.DropTarget = FileDrop(self)
 
+        ColourManager.Patch(self)
         self.MinSize = conf.MinWindowSize
         if conf.WindowPosition and conf.WindowSize:
             if [-1, -1] != conf.WindowSize:
@@ -1339,6 +1334,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if self.page_file_latest == page:
             self.page_file_latest = next((i for i in self.pages_visited[::-1]
                                         if isinstance(i, SavefilePage)), None)
+        wx.CallAfter(ColourManager.UpdateControls)
         self.SendSizeEvent() # Multiline wx.Notebooks need redrawing
 
         # Change notebook page to last visited
@@ -1593,6 +1589,7 @@ class SavefilePage(wx.Panel):
             self.update_metadata()
             self.Refresh()
             for p in self.plugins: p.render()
+            ColourManager.Patch(self)
             wx_accel.accelerate(self.notebook)
         evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)

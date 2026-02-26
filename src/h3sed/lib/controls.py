@@ -25,12 +25,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    29.09.2025
+@modified    26.02.2026
 ------------------------------------------------------------------------------
 """
 import collections
 import datetime
 import functools
+import math
 import os
 import sys
 import time
@@ -119,14 +120,17 @@ class BusyPanel(wx.Window):
 
 class ColourManager(object):
     """
-    Updates managed component colours on Windows system colour change.
+    Sets and manages component colours, handles system colour changes and dark themes.
     """
-    colourcontainer   = None
-    colourmap         = {} # {colour name in container: wx.SYS_COLOUR_XYZ}
-    darkcolourmap     = {} # {colour name in container: wx.SYS_COLOUR_XYZ}
-    darkoriginals     = {} # {colour name in container: original value}
-    # {ctrl: (prop name: colour name in container)}
-    ctrls             = collections.defaultdict(dict)
+    colourcontainer = None # object with color attributes, like a class or config module
+    isdarkmode      = None # True-False-None for darkened-default-autodetect
+    colourmap       = {} # {colour name in container: wx.SYS_COLOUR_XYZ}
+    darkcolourmap   = {} # {colour name in container: wx.SYS_COLOUR_XYZ}
+    darkoriginals   = {} # {colour name in container: original value}
+    regctrls        = set() # {ctrl, }
+    # {ctrl: (prop name: colour name in container or wx.SYS_COLOUR_XYZ)}
+    ctrlprops       = collections.defaultdict(dict)
+    ctrlchildren    = collections.defaultdict(set) # {managed parent ctrl: {managed child controls}}
 
 
     @classmethod
@@ -141,7 +145,6 @@ class ColourManager(object):
         @param   darkcolourmap    colours changed if dark background,
                                   {"attribute": wx.SYS_COLOUR_XYZ or wx.Colour}
         """
-
         cls.colourcontainer = colourcontainer
         cls.colourmap.update(colourmap)
         cls.darkcolourmap.update(darkcolourmap)
@@ -150,7 +153,6 @@ class ColourManager(object):
             cls.darkoriginals[name] = getattr(colourcontainer, name)
 
         cls.UpdateContainer()
-        if "GTK" not in wx.Port: return
 
         # Hack: monkey-patch FlatImageBook with non-hardcoded background
         class HackContainer(wx.lib.agw.labelbook.ImageContainer):
@@ -189,8 +191,26 @@ class ColourManager(object):
                          or system colour ID like wx.SYS_COLOUR_WINDOW
         """
         if not ctrl: return
-        cls.ctrls[ctrl][prop] = colour
-        cls.UpdateControlColour(ctrl, prop, colour)
+        cls.ctrlprops[ctrl][prop] = colour
+        if isinstance(ctrl, wx.stc.StyledTextCtrl):
+            cls.UpdateSTCColours(ctrl, {prop: colour})
+        else:
+            cls.UpdateControlColour(ctrl, prop, colour)
+        if hasattr(ctrl, "GetParent") and ctrl.GetParent() and ctrl.GetParent() in cls.ctrlprops:
+            cls.ctrlchildren[ctrl.GetParent()].add(ctrl)
+
+
+    @classmethod
+    def Register(cls, ctrl):
+        """
+        Registers a control for special handling, e.g. refreshing STC colours
+        for instances of wx.py.shell.Shell on system colour change.
+        """
+        if isinstance(ctrl, wx.py.shell.Shell):
+            cls.regctrls.add(ctrl)
+            cls.SetShellStyles(ctrl)
+            if ctrl.GetParent() in cls.ctrlprops:
+                cls.ctrlchildren[ctrl.GetParent()].add(ctrl)
 
 
     @classmethod
@@ -205,18 +225,59 @@ class ColourManager(object):
 
 
     @classmethod
-    def ColourHex(cls, idx):
-        """Returns wx.Colour or system colour as HTML colour hex string."""
-        colour = idx if isinstance(idx, wx.Colour) \
-                 else wx.SystemSettings.GetColour(idx)
+    def ColourHex(cls, colour, adjust=True):
+        """
+        Returns wx.Colour or system colour as HTML colour hex string.
+
+        @param   adjust  whether to adapt for current dark mode if system colour ID
+        """
+        if not isinstance(colour, wx.Colour):
+            colour = cls.EnsureModeColour(colour) if adjust else wx.SystemSettings.GetColour(colour)
+        if colour.Alpha() != wx.ALPHA_OPAQUE:
+            colour = wx.Colour(colour[:3])  # GetAsString(C2S_HTML_SYNTAX) can raise if transparent
         return colour.GetAsString(wx.C2S_HTML_SYNTAX)
 
 
     @classmethod
-    def GetColour(cls, colour):
-        return wx.Colour(getattr(cls.colourcontainer, colour)) \
-               if isinstance(colour, text_type) \
-               else wx.SystemSettings.GetColour(colour)
+    def GetColour(cls, colour, adjust=True):
+        """
+        Returns wx.Colour or configured colour or system colour as wx.Colour.
+
+        @param   adjust  whether to adapt for current dark mode if system colour ID
+        """
+        if isinstance(colour, wx.Colour): return colour
+        if isinstance(colour, text_type): return wx.Colour(getattr(cls.colourcontainer, colour))
+        if adjust: return cls.EnsureModeColour(colour)
+        return wx.SystemSettings.GetColour(colour)
+
+
+    @classmethod
+    def Luminance(cls, colour):
+        """Returns luminance value for wx.Colour or system colour, as a percentage ratio 0..1."""
+        if isinstance(colour, integer_types): colour = wx.SystemSettings.GetColour(colour)
+        r, g, b = colour[:3]
+        # From HSP Color Model: https://alienryderflex.com/hsp.html
+        return math.sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b)) / 255
+
+
+    @classmethod
+    def Adjust(cls, colour1, colour2, ratio=0.5):
+        """
+        Returns first colour adjusted towards second, as wx.Colour.
+
+        @param   colour1  wx.Colour, RGB tuple, colour hex string, or wx.SystemSettings colour index
+        @param   colour2  wx.Colour, RGB tuple, colour hex string, or wx.SystemSettings colour index
+        @param   ratio    RGB channel adjustment ratio towards second colour
+        """
+        colour1 = wx.SystemSettings.GetColour(colour1) \
+                  if isinstance(colour1, integer_types) else wx.Colour(colour1)
+        colour2 = wx.SystemSettings.GetColour(colour2) \
+                  if isinstance(colour2, integer_types) else wx.Colour(colour2)
+        rgb1, rgb2 = tuple(colour1)[:3], tuple(colour2)[:3]
+        delta  = tuple(a - b for a, b in zip(rgb1, rgb2))
+        result = tuple(a - int(d * ratio) for a, d in zip(rgb1, delta))
+        result = tuple(min(255, max(0, x)) for x in result)
+        return wx.Colour(result)
 
 
     @classmethod
@@ -224,7 +285,8 @@ class ColourManager(object):
         """
         Returns difference between two colours, as wx.Colour of absolute deltas over channels.
 
-        Arguments can be wx.Colour, RGB tuple, colour hex string, or wx.SystemSettings colour index.
+        @param   colour1  wx.Colour, RGB tuple, colour hex string, or wx.SystemSettings colour index
+        @param   colour2  wx.Colour, RGB tuple, colour hex string, or wx.SystemSettings colour index
         """
         colour1 = wx.SystemSettings.GetColour(colour1) \
                   if isinstance(colour1, integer_types) else wx.Colour(colour1)
@@ -236,10 +298,36 @@ class ColourManager(object):
 
 
     @classmethod
-    def IsDark(cls):
-        """Returns whether display is in dark mode (heuristical judgement from system colours)."""
-        try:              return wx.SystemSettings.GetAppearance().IsDark()
-        except Exception: return sum(cls.Diff(wx.WHITE, wx.SYS_COLOUR_WINDOW)[:3]) > 3 * 175
+    def IsDarkDisplay(cls):
+        """Returns whether display is in dark mode (Win10+ flag or judged from system colours)."""
+        try:
+            if wx.SystemSettings.GetAppearance().IsDark(): return True
+        except Exception: pass
+        bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        fg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        return sum(bg[:3]) < sum(fg[:3])
+
+
+    @classmethod
+    def IsDarkMode(cls):
+        """Returns whether colour theme is in dark mode, either set here or detected from system."""
+        return cls.IsDarkDisplay() if cls.isdarkmode is None else cls.isdarkmode
+
+
+    @classmethod
+    def SetDarkMode(cls, mode):
+        """
+        Sets whether darkened theme is forced (True), not used (False), or auto-detected (None).
+
+        Refreshes controls if setting changed.
+        """
+        if mode is not None: mode = bool(mode)
+        if mode is cls.isdarkmode: return
+        cls.isdarkmode = mode
+        cls.UpdateContainer()
+        for window in wx.GetTopLevelWindows():
+            window.Refresh()
+            wx.PostEvent(window, wx.SysColourChangedEvent()) # Will invoke cls.OnSysColourChange()
 
 
     @classmethod
@@ -248,58 +336,278 @@ class ColourManager(object):
         for name, colourid in cls.colourmap.items():
             setattr(cls.colourcontainer, name, cls.ColourHex(colourid))
 
-        if cls.IsDark():
+        if cls.IsDarkMode():
             for name, colourid in cls.darkcolourmap.items():
                 setattr(cls.colourcontainer, name, cls.ColourHex(colourid))
         else:
             for name, value in cls.darkoriginals.items():
+                if name in cls.colourmap:
+                    value = cls.ColourHex(cls.colourmap[name])
                 setattr(cls.colourcontainer, name, value)
 
 
     @classmethod
     def UpdateControls(cls):
         """Updates all managed controls."""
-        for ctrl, props in list(cls.ctrls.items()):
-            if not ctrl: # Component destroyed
-                cls.ctrls.pop(ctrl, None)
+        cls.ClearDestroyed()
+        for ctrl, props in list(cls.ctrlprops.items()):
+            if cls.DiscardIfDead(ctrl):
                 continue # for ctrl, props
 
-            for prop, colour in props.items():
-                cls.UpdateControlColour(ctrl, prop, colour)
+            if isinstance(ctrl, wx.stc.StyledTextCtrl):
+                cls.UpdateSTCColours(ctrl, props)
+            else:
+                for prop, colour in props.items():
+                    cls.UpdateControlColour(ctrl, prop, colour)
+
+        for ctrl in list(cls.regctrls):
+            if not cls.DiscardIfDead(ctrl) and isinstance(ctrl, wx.py.shell.Shell):
+                cls.SetShellStyles(ctrl)
+
+
+    @classmethod
+    def UpdateControl(cls, ctrl):
+        """Updates colours for specific managed control."""
+        if cls.DiscardIfDead(ctrl):
+            return
+        if ctrl in cls.ctrlprops:
+            if isinstance(ctrl, wx.stc.StyledTextCtrl):
+                cls.UpdateSTCColours(ctrl, cls.ctrlprops[ctrl])
+            else:
+                for prop, colour in cls.ctrlprops[ctrl].items():
+                    cls.UpdateControlColour(ctrl, prop, colour)
+        if ctrl in cls.regctrls:
+            if isinstance(ctrl, wx.py.shell.Shell): cls.SetShellStyles(ctrl)
+        ctrl.Refresh()
 
 
     @classmethod
     def UpdateControlColour(cls, ctrl, prop, colour):
         """Sets control property or invokes "Set" + prop."""
         mycolour = cls.GetColour(colour)
-        if hasattr(ctrl, prop):
+        if "FoldMarginColour" == prop and isinstance(ctrl, wx.stc.StyledTextCtrl):
+            ctrl.SetFoldMarginColour(True, mycolour)
+        elif hasattr(ctrl, prop):
             setattr(ctrl, prop, mycolour)
         elif hasattr(ctrl, "Set" + prop):
             getattr(ctrl, "Set" + prop)(mycolour)
 
 
     @classmethod
+    def UpdateSTCColours(cls, ctrl, props):
+        """Updates colours for a StyledTextCtrl."""
+        SPEC_PROPS = {"StyleBackground": "back", "StyleForeground": "fore"}
+        style_specs = collections.OrderedDict() # {style number: ["name:value"]}
+        for prop, colour in ((k, v) for k, v in props.items() if k in SPEC_PROPS):
+            spec = "%s:%s" % (SPEC_PROPS[prop], cls.ColourHex(colour))
+            if not ctrl.Lexer: # Must not override lexed syntax colouring
+                style_specs.setdefault(wx.stc.STC_STYLE_DEFAULT, []).append(spec)
+            if "StyleBackground" == prop:
+                # Line number margin backgrounds need additional explicit setting
+                style_specs.setdefault(wx.stc.STC_STYLE_LINENUMBER, []).append(spec)
+        for style, specs in style_specs.items():
+            ctrl.StyleSetSpec(style, ",".join(specs))
+            if wx.stc.STC_STYLE_DEFAULT == style:
+                ctrl.StyleClearAll() # NB: DEFAULT must be first in order, as it resets all
+        for prop, colour in props.items():
+            if prop not in SPEC_PROPS:
+                cls.UpdateControlColour(ctrl, prop, colour)
+
+
+    @classmethod
+    def SetShellStyles(cls, stc):
+        """Sets system colours to Python shell console."""
+
+        fg    = cls.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        bg    = cls.GetColour(wx.SYS_COLOUR_WINDOW)
+        btbg  = cls.GetColour(wx.SYS_COLOUR_BTNFACE)
+        grfg  = cls.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        ibg   = cls.GetColour(wx.SYS_COLOUR_INFOBK)
+        ifg   = cls.GetColour(wx.SYS_COLOUR_INFOTEXT)
+        hlfg  = cls.GetColour(wx.SYS_COLOUR_HOTLIGHT)
+        q3bg  = cls.GetColour(wx.SYS_COLOUR_INFOBK)
+        q3sfg = wx.Colour(127,   0,   0) # brown  #7F0000
+        deffg = wx.Colour(  0, 127, 127) # teal   #007F7F
+        eolbg = wx.Colour(224, 192, 224) # pink   #E0C0E0
+        strfg = wx.Colour(127,   0, 127) # purple #7F007F
+
+        if sum(fg) > sum(bg): # Background darker than foreground
+            deffg = cls.Adjust(deffg, bg, -1)
+            eolbg = cls.Adjust(eolbg, bg, -1)
+            q3bg  = cls.Adjust(q3bg,  bg)
+            q3sfg = cls.Adjust(q3sfg, bg, -1)
+            strfg = cls.Adjust(strfg, bg, -1)
+
+        faces = dict(wx.py.editwindow.FACES,
+                     q3bg =cls.ColourHex(q3bg),  backcol  =cls.ColourHex(bg),
+                     q3fg =cls.ColourHex(ifg),   forecol  =cls.ColourHex(fg),
+                     deffg=cls.ColourHex(deffg), calltipbg=cls.ColourHex(ibg),
+                     eolbg=cls.ColourHex(eolbg), calltipfg=cls.ColourHex(ifg),
+                     q3sfg=cls.ColourHex(q3sfg), linenobg =cls.ColourHex(btbg),
+                     strfg=cls.ColourHex(strfg), linenofg =cls.ColourHex(grfg),
+                     keywordfg=cls.ColourHex(hlfg))
+
+        # Default style
+        stc.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "face:%(mono)s,size:%(size)d,"
+                                                   "back:%(backcol)s,fore:%(forecol)s" % faces)
+        stc.SetCaretForeground(fg)
+        stc.StyleClearAll()
+        stc.SetSelForeground(True, cls.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        stc.SetSelBackground(True, cls.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+
+        # Built in styles
+        stc.StyleSetSpec(wx.stc.STC_STYLE_LINENUMBER,  "back:%(linenobg)s,fore:%(linenofg)s,"
+                                                       "face:%(mono)s,size:%(lnsize)d" % faces)
+        stc.StyleSetSpec(wx.stc.STC_STYLE_CONTROLCHAR, "face:%(mono)s" % faces)
+        stc.StyleSetSpec(wx.stc.STC_STYLE_BRACELIGHT,  "fore:#0000FF,back:#FFFF88")
+        stc.StyleSetSpec(wx.stc.STC_STYLE_BRACEBAD,    "fore:#FF0000,back:#FFFF88")
+
+        # Python styles
+        stc.StyleSetSpec(wx.stc.STC_P_DEFAULT,      "face:%(mono)s" % faces)
+        stc.StyleSetSpec(wx.stc.STC_P_COMMENTLINE,  "fore:#007F00,face:%(mono)s" % faces)
+        stc.StyleSetSpec(wx.stc.STC_P_NUMBER,       "")
+        stc.StyleSetSpec(wx.stc.STC_P_STRING,       "fore:%(strfg)s,face:%(mono)s" % faces)
+        stc.StyleSetSpec(wx.stc.STC_P_CHARACTER,    "fore:%(strfg)s,face:%(mono)s" % faces)
+        stc.StyleSetSpec(wx.stc.STC_P_WORD,         "fore:%(keywordfg)s,bold" % faces)
+        stc.StyleSetSpec(wx.stc.STC_P_TRIPLE,       "fore:%(q3sfg)s" % faces)
+        stc.StyleSetSpec(wx.stc.STC_P_TRIPLEDOUBLE, "fore:%(q3fg)s,back:%(q3bg)s" % faces)
+        stc.StyleSetSpec(wx.stc.STC_P_CLASSNAME,    "fore:%(deffg)s,bold" % faces)
+        stc.StyleSetSpec(wx.stc.STC_P_DEFNAME,      "fore:%(deffg)s,bold" % faces)
+        stc.StyleSetSpec(wx.stc.STC_P_OPERATOR,     "")
+        stc.StyleSetSpec(wx.stc.STC_P_IDENTIFIER,   "")
+        stc.StyleSetSpec(wx.stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F")
+        stc.StyleSetSpec(wx.stc.STC_P_STRINGEOL,    "fore:#000000,face:%(mono)s,"
+                                                    "back:%(eolbg)s,eolfilled" % faces)
+
+        stc.CallTipSetBackground(faces['calltipbg'])
+        stc.CallTipSetForeground(faces['calltipfg'])
+
+
+    @classmethod
+    def EnsureModeColour(cls, sys_colour):
+        """
+        Returns wx.Colour for given wx.SYS_COLOUR_XYZ, adjusted for dark mode per configuration.
+
+        In dark mode, light backgrounds get darkened and dark foregrounds lightened.
+        """
+        GROUNDS = {wx.SYS_COLOUR_3DDKSHADOW:               -1, # -1 for background colour
+                   wx.SYS_COLOUR_3DLIGHT:                   1, #  1 for foreground colour
+                   wx.SYS_COLOUR_ACTIVEBORDER:              1,
+                   wx.SYS_COLOUR_ACTIVECAPTION:             1,
+                   wx.SYS_COLOUR_APPWORKSPACE:             -1,
+                   wx.SYS_COLOUR_BTNFACE:                  -1,
+                   wx.SYS_COLOUR_BTNHIGHLIGHT:             -1,
+                   wx.SYS_COLOUR_BTNSHADOW:                -1,
+                   wx.SYS_COLOUR_BTNTEXT:                   1,
+                   wx.SYS_COLOUR_CAPTIONTEXT:               1,
+                   wx.SYS_COLOUR_DESKTOP:                  -1,
+                   wx.SYS_COLOUR_GRADIENTACTIVECAPTION:    -1,
+                   wx.SYS_COLOUR_GRADIENTINACTIVECAPTION:  -1,
+                   wx.SYS_COLOUR_GRAYTEXT:                  1,
+                   wx.SYS_COLOUR_HIGHLIGHT:                -1,
+                   wx.SYS_COLOUR_HIGHLIGHTTEXT:             1,
+                   wx.SYS_COLOUR_HOTLIGHT:                  1,
+                   wx.SYS_COLOUR_INACTIVEBORDER:            1,
+                   wx.SYS_COLOUR_INACTIVECAPTION:          -1,
+                   wx.SYS_COLOUR_INACTIVECAPTIONTEXT:       1,
+                   wx.SYS_COLOUR_INFOBK:                   -1,
+                   wx.SYS_COLOUR_INFOTEXT:                  1,
+                   wx.SYS_COLOUR_LISTBOX:                  -1,
+                   wx.SYS_COLOUR_LISTBOXHIGHLIGHTTEXT:      1,
+                   wx.SYS_COLOUR_LISTBOXTEXT:               1,
+                   wx.SYS_COLOUR_MENU:                     -1,
+                   wx.SYS_COLOUR_MENUBAR:                  -1,
+                   wx.SYS_COLOUR_MENUHILIGHT:              -1,
+                   wx.SYS_COLOUR_MENUTEXT:                  1,
+                   wx.SYS_COLOUR_SCROLLBAR:                -1,
+                   wx.SYS_COLOUR_WINDOW:                   -1,
+                   wx.SYS_COLOUR_WINDOWFRAME:               1,
+                   wx.SYS_COLOUR_WINDOWTEXT:                1}
+        if sys_colour not in GROUNDS: return sys_colour
+
+        colour = wx.SystemSettings.GetColour(sys_colour)
+        if cls.isdarkmode is False or cls.isdarkmode is None and not cls.IsDarkDisplay():
+            return colour
+
+        is_background = (GROUNDS[sys_colour] < 0)
+        is_already_dark = (cls.Luminance(colour) < 0.5)
+        if is_background == is_already_dark: return colour
+
+        ratio = 0.5 if wx.SYS_COLOUR_GRAYTEXT == sys_colour else 0.8 if is_background else 0.9
+        return cls.Adjust(colour, wx.BLACK if is_background else wx.WHITE, ratio)
+
+
+    @classmethod
     def Patch(cls, ctrl):
         """
-        Ensures foreground and background system colours on control and its descendant controls.
+        Ensures foreground and background system colours on control and all its nested child controls.
 
-        Explicitly sets background colour on ComboBox, SpinCtrl and TextCtrl,
-        and foreground colour on wx.CheckBox (workaround for dark mode in Windows 10+).
+        Sets certain pre-defined component types to have managed colours, adjusting for dark mode.
+
+        @return  ctrl
         """
-        if "nt" != os.name or sys.getwindowsversion() < (10, ): return
+        PROPS = {wx.Button:     {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.Choice:     {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
+                                 "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.ComboBox:   {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.CheckBox:   {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT},
+                 wx.Dialog:     {"BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.ListBox:    {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
+                                 "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.ListCtrl:   {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
+                                 "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.Notebook:   {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.SpinCtrl:   {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.StaticText: {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT},
+                 wx.TextCtrl:   {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
+                                 "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.ToolBar:    {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.stc.StyledTextCtrl:
+                                {"CaretForeground":  wx.SYS_COLOUR_WINDOWTEXT,
+                                 "FoldMarginColour": wx.SYS_COLOUR_WINDOW,
+                                 "StyleForeground":  wx.SYS_COLOUR_WINDOWTEXT,
+                                 "StyleBackground":  wx.SYS_COLOUR_WINDOW}, }
+        for myctrl in [ctrl] + get_all_children(ctrl):
+            for proptype in (t for t in PROPS if issubclass(type(myctrl), t)):
+                for prop, colour in PROPS[proptype].items():
+                    if myctrl not in cls.ctrlprops or prop not in cls.ctrlprops[myctrl]:
+                        cls.Manage(myctrl, prop, colour)
+        cls.ClearDestroyed()
+        return ctrl
 
-        PROPS = {wx.ComboBox:       {"BackgroundColour": wx.SYS_COLOUR_WINDOW},
-                 wx.SpinCtrl:       {"BackgroundColour": wx.SYS_COLOUR_WINDOW},
-                 wx.SpinCtrlDouble: {"BackgroundColour": wx.SYS_COLOUR_WINDOW},
-                 wx.TextCtrl:       {"BackgroundColour": wx.SYS_COLOUR_WINDOW},
-                 wx.CheckBox:       {"ForegroundColour": wx.SYS_COLOUR_BTNTEXT}, }
-        for ctrl in [ctrl] + get_all_children(ctrl):
-            if isinstance(ctrl, wx.TextCtrl) \
-            and isinstance(ctrl.Parent, (wx.SpinCtrl, wx.SpinCtrlDouble)):
-                continue # for ctrl
-            for prop, colour in PROPS.get(type(ctrl), {}).items():
-                if ctrl not in cls.ctrls or prop not in cls.ctrls[ctrl]:
-                    cls.Manage(ctrl, prop, colour)
+
+    @classmethod
+    def ClearDestroyed(cls):
+        """Discards destroyed components from managed controls."""
+        children = sum(map(list, cls.ctrlchildren.values()), [])
+        for ctrl in set(cls.ctrlprops) | set(cls.regctrls) | set(cls.ctrlchildren) | set(children):
+            cls.DiscardIfDead(ctrl)
+
+
+    @classmethod
+    def DiscardIfDead(cls, ctrl):
+        """Discards component from managed controls if destroyed, returns whether was discarded."""
+        ctrl_collections = [cls.ctrlprops, cls.regctrls, cls.ctrlchildren]
+        ctrl_collections.extend(cls.ctrlchildren.values())
+        if not any(ctrl in collection for collection in ctrl_collections): return False
+
+        is_alive = ctrl and not ctrl.IsBeingDeleted()
+        if is_alive: return False
+
+        # Must track parents and children explicitly: in Linux, dialog ButtonSizer buttons
+        # remain undestroyed but very crash-prone to examine: discard them along with the dialog.
+        children = lambda c: [] if c not in cls.ctrlchildren else \
+                             list(cls.ctrlchildren[c]) + sum(map(children, cls.ctrlchildren[c]), [])
+        for ctrl in [ctrl] + children(ctrl):
+            for collection in ctrl_collections:
+                if ctrl in collection:
+                    (collection.discard if isinstance(collection, set) else collection.pop)(ctrl)
+        return True
 
 
 
@@ -343,6 +651,7 @@ class CommandHistoryDialog(wx.Dialog):
         self.Bind(wx.EVT_LISTBOX, self._OnSelectChange, listbox)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self._OnSubmit, listbox)
         self.CenterOnParent()
+        ColourManager.Patch(self)
 
 
     def GetSelection(self):
@@ -471,6 +780,7 @@ class HtmlDialog(wx.Dialog):
         self.Size = min(width, MAXW - 2*BARWH[0]), min(height, MAXH - 2*BARWH[1])
         self.MinSize = (400, 300)
         self.CenterOnParent()
+        ColourManager.Patch(self)
 
 
     def OnLink(self, event):

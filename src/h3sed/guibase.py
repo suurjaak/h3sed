@@ -12,7 +12,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    29.09.2025
+@modified    26.02.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -107,6 +107,7 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
             conf.ConsoleHistoryCommands = []
         for cmd in conf.ConsoleHistoryCommands:
             console.addHistory(cmd)
+        ColourManager.Register(console)
         console.Bind(wx.EVT_KEY_DOWN, self.on_keydown_console)
         self.widget_inspector = wx.lib.inspection.InspectionTool()
 
