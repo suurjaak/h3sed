@@ -66,6 +66,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                     wx.ART_FILE_SAVE_AS: images.ToolbarFileSaveAs,
                     wx.ART_REDO:  images.ToolbarRedo} if "win32" == sys.platform else {}
         controls.Patch.patch_wx(art={k: v.Bitmap for k, v in art_imgs.items()})
+        controls.ColourManager.SetDarkMode(conf.DarkTheme)
         wx.Frame.__init__(self, parent=None, title=conf.Title, size=conf.WindowSize)
         guibase.TemplateFrameMixIn.__init__(self)
 
@@ -274,6 +275,17 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu_file.AppendSeparator()
         menu_options = wx.Menu()
         menu_file.AppendSubMenu(menu_options, "Opt&ions")
+        menu_darkmode = wx.Menu()
+        menu_options.AppendSubMenu(menu_darkmode, "&Dark mode")
+        menu_darkmode_auto = self.menu_darkmode_auto = menu_darkmode.Append(wx.ID_ANY,
+            "&System",
+            "Dark mode applied automatically from system settings", kind=wx.ITEM_RADIO)
+        menu_darkmode_on = self.menu_darkmode_on = menu_darkmode.Append(wx.ID_ANY,
+            "&Enabled", "Dark mode on", kind=wx.ITEM_RADIO)
+        menu_darkmode_off = self.menu_darkmode_off = menu_darkmode.Append(wx.ID_ANY,
+            "&Off", "Dark mode off", kind=wx.ITEM_RADIO)
+        if conf.DarkTheme is None: menu_darkmode_auto.Check(True)
+        else: menu_darkmode_on.Check(True) if conf.DarkTheme else menu_darkmode_off.Check(True)
         menu_autoupdate_check = self.menu_autoupdate_check = menu_options.Append(
             wx.ID_ANY, "Automatic &update check",
             "Automatically check for program updates periodically", kind=wx.ITEM_CHECK
@@ -362,6 +374,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.Bind(wx.EVT_MENU,       self.on_reload_savefile,  menu_reload)
         self.Bind(wx.EVT_MENU,       self.on_save_savefile,    menu_save)
         self.Bind(wx.EVT_MENU,       self.on_save_savefile_as, menu_save_as)
+        self.Bind(wx.EVT_MENU,       self.on_menu_darkmode,    menu_darkmode_auto)
+        self.Bind(wx.EVT_MENU,       self.on_menu_darkmode,    menu_darkmode_on)
+        self.Bind(wx.EVT_MENU,       self.on_menu_darkmode,    menu_darkmode_off)
         self.Bind(wx.EVT_MENU,       self.on_menu_autoupdate,  menu_autoupdate_check)
         self.Bind(wx.EVT_MENU,       self.on_menu_backup,      menu_backup)
         self.Bind(wx.EVT_MENU,       self.on_menu_confirm,     menu_confirm)
@@ -1029,6 +1044,18 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             guibase.status("Redoing %s" % page.undoredo.Commands[cmdpos].Name,
                            flash=conf.StatusShortFlashLength, log=True)
             page.undoredo.Redo()
+
+
+    def on_menu_darkmode(self, event):
+        """Handler for toggling dark mode on or off or automatic."""
+        mode = conf.DarkTheme
+        if   event.Id == self.menu_darkmode_auto.Id: mode = None
+        elif event.Id == self.menu_darkmode_on  .Id: mode = True
+        elif event.Id == self.menu_darkmode_off .Id: mode = False
+        if mode == conf.DarkTheme: return
+        conf.DarkTheme = mode
+        conf.save()
+        wx.CallAfter(ColourManager.SetDarkMode, mode)
 
 
     def on_menu_autoupdate(self, event):

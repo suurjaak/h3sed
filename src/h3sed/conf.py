@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "3.5.dev1"
+Version = "3.5.dev2"
 VersionDate = "26.02.2026"
 
 Frozen = getattr(sys, "frozen", False)
@@ -52,7 +52,7 @@ FileDirectives = [
 ]
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
-    "FileExtensions", "HeroToggles", "MaxConsoleHistory", "MaxRecentFiles",
+    "DarkTheme", "FileExtensions", "HeroToggles", "MaxConsoleHistory", "MaxRecentFiles",
     "PopupUnexpectedErrors", "Positions", "SavegameNewFormat", "StatusFlashLength",
     "UpdateCheckInterval",
 ]
@@ -68,6 +68,9 @@ Backup = True
 
 """Confirm on closing files with unsaved changes."""
 ConfirmUnsaved = True
+
+"""Whether to apply dark mode colours, None for autodetect from system."""
+DarkTheme = None
 
 """Savefile filename extensions, as {'description': ('.ext1', '.ext2')}."""
 FileExtensions = [("Heroes3 savefiles",               (".cgm", ".gm1", ".gm2", ".gm3", ".gm4", ".gm5", ".gm6", ".gm7", ".gm8")),
