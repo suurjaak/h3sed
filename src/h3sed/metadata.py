@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  15.02.2026
+@modified  26.02.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1420,7 +1420,7 @@ class Savefile(object):
                 pos += start + 1
             # Continue in small chunks once heroes section reached:
             # regex can get pathologically slow for the entire remainder beyond heroes
-            m = re.search(REGEX, self.raw[pos:pos+5000])
+            m = re.search(REGEX, self.raw[pos:pos+5000 if heroes else None])
 
         dupe_counts = Counter(x.name for x in heroes)
         heroes.sort()

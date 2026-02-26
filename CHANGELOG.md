@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.5, 2026-02-26
+---------------
+- fix not finding any heroes in certain savefiles (issue #26)
+
+
 3.4, 2026-02-15
 ---------------
 - add player faction information for heroes (issue #25)
