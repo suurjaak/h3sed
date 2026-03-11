@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  15.02.2026
+@modified  11.03.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -474,6 +474,7 @@ class Profile(SlotsDict, DataClass):
         
     @staticmethod
     def make_faction_text(faction, version=None):
+        """Returns given faction as text, like "Red Player" or "neutral"."""
         FACTIONS = metadata.Store.get("player_factions", version=version)
         if faction in FACTIONS:
             return "%s Player" % FACTIONS[faction]
