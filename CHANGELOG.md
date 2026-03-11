@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.6, 2026-03-11
+---------------
+- set map description as tooltip to map description box
+
+
 3.5, 2026-02-27
 ---------------
 - add dark mode support, to the extent possible in wx
