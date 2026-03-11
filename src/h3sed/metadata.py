@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  26.02.2026
+@modified  27.02.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -1413,7 +1413,7 @@ class Savefile(object):
                 blob = bytearray(self.raw[pos + start:pos + end])
                 name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
                 hero = h3sed.hero.Hero(name, version=self.version_id)
-                hero.set_file_data(blob, len(heroes), (start + pos, end + pos)) #, self)
+                hero.set_file_data(blob, len(heroes), (start + pos, end + pos))
                 heroes.append(hero)
                 pos += end
             else:
