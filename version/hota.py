@@ -1,0 +1,673 @@
+# -*- coding: utf-8 -*-
+"""
+Subplugin for HOMM3 version "Horn of the Abyss".
+
+------------------------------------------------------------------------------
+This file is part of h3sed - Heroes3 Savegame Editor.
+Released under the MIT License.
+
+@created   22.03.2020
+@modified  22.01.2026
+------------------------------------------------------------------------------
+"""
+import copy
+import re
+
+from .. import hero
+from .. import metadata
+from .. hero import make_artifact_cast, make_integer_cast, make_string_cast
+
+
+NAME  = "hota"
+TITLE = "Horn of the Abyss"
+
+
+"""Game major and minor version byte ranges, as (min, max)."""
+VERSION_BYTERANGES = {
+    "version_major":  (44, -1),
+    "version_minor":  ( 5, -1),
+}
+
+
+"""Hero skills, in file order, added to default skills."""
+SKILLS = ["Interference", "Runes"]
+
+
+"""Hero primary attribute value ranges as used in-game, as (min, max, overflow handicap)."""
+PRIMARY_ATTRIBUTE_GAME_RANGES = {"attack": (0, 99, 231), "defense":   (0, 99, 231),
+                                 "power":  (1, 99, 231), "knowledge": (1, 99, 231)}
+
+
+
+"""Allowed (min, max) ranges and other configuration for various hero properties."""
+HERO_RANGES = {
+    "level":           ( 0, 74),
+    "skills":          ( 0, 29),
+    "Intelligence":    (1.2, 1.35, 1.5), # Hero maximum spell points multiplier by skill level
+}
+
+
+"""Options for Ballista war machine."""
+BALLISTA_CHOICES = ["Ballista", "Cannon"]
+
+
+"""Hero artifacts, for wearing and side slots, excluding spell scrolls."""
+ARTIFACTS = [
+    "Admiral's Hat",
+    "Angelic Alliance",
+    "Armageddon's Blade",
+    "Armor of the Damned",
+    "Bow of the Sharpshooter",
+    "Cape of Silence",
+    "Charm of Eclipse",
+    "Cloak of the Undead King",
+    "Cornucopia",
+    "Crown of the Five Seas",
+    "Demon's Horseshoe",
+    "Diplomat's Cloak",
+    "Elixir of Life",
+    "Golden Goose",
+    "Hideous Mask",
+    "Horn of the Abyss",
+    "Ironfist of the Ogre",
+    "Pendant of Downfall",
+    "Pendant of Reflection",
+    "Plate of Dying Light",
+    "Power of the Dragon Father",
+    "Ring of Oblivion",
+    "Ring of Suppression",
+    "Ring of the Magi",
+    "Royal Armor of Nix",
+    "Runes of Imminency",
+    "Seal of Sunset",
+    "Shaman's Puppet",
+    "Shield of Naval Glory",
+    "Sleepkeeper",
+    "Statue of Legion",
+    "Titan's Thunder",
+    "Trident of Dominion",
+    "Vial of Dragon Blood",
+    "Wayfarer's Boots",
+    "Wizard's Well",
+]
+
+
+"""Special artifacts like Ballista."""
+SPECIAL_ARTIFACTS = [
+    "Cannon",
+]
+
+
+"""Creatures for hero army slots."""
+CREATURES = [
+    "Argali",
+    "Armadillo",
+    "Automaton",
+    "Ayssid",
+    "Azure Dragon",
+    "Bellwether Armadillo",
+    "Boar",
+    "Bounty Hunter",
+    "Corsair",
+    "Couatl",
+    "Crew Mate",
+    "Crimson Couatl",
+    "Crystal Dragon",
+    "Dreadnought",
+    "Enchanter",
+    "Energy Elemental",
+    "Engineer",
+    "Faerie Dragon",
+    "Fangarm",
+    "Firebird",
+    "Great Shaman",
+    "Gunslinger",
+    "Halfling Grenadier",
+    "Halfling",
+    "Haspid",
+    "Ice Elemental",
+    "Jotunn",
+    "Jotunn Warlord",
+    "Juggernaut",
+    "Kobold",
+    "Kobold Foreman",
+    "Leprechaun",
+    "Magic Elemental",
+    "Magma Elemental",
+    "Mammoth",
+    "Mechanic",
+    "Mountain Ram",
+    "Mummy",
+    "Nix Warrior",
+    "Nix",
+    "Nomad",
+    "Nymph",
+    "Oceanid",
+    "Olgoi-Khorkhoi",
+    "Peasant",
+    "Phoenix",
+    "Pirate",
+    "Pixie",
+    "Psychic Elemental",
+    "Rogue",
+    "Rust Dragon",
+    "Sandworm",
+    "Satyr",
+    "Sea Dog",
+    "Sea Serpent",
+    "Sea Witch",
+    "Seaman",
+    "Sentinel Automaton",
+    "Shaman",
+    "Sharpshooter",
+    "Snow Elf",
+    "Sorceress",
+    "Sprite",
+    "Steel Elf",
+    "Steel Golem",
+    "Storm Elemental",
+    "Stormbird",
+    "Troll",
+    "War Mammoth",
+    "Yeti",
+    "Yeti Runemaster",
+]
+
+
+"""IDs of all items in savefile."""
+IDS = {
+    # Artifacts
+    "Admiral's Hat":                     0x88,
+    "Angelic Alliance":                  0x81,
+    "Armageddon's Blade":                0x80,
+    "Armor of the Damned":               0x84,
+    "Bow of the Sharpshooter":           0x89,
+    "Cape of Silence":                   0x9F,
+    "Charm of Eclipse":                  0xA2,
+    "Cloak of the Undead King":          0x82,
+    "Cornucopia":                        0x8C,
+    "Crown of the Five Seas":            0x96,
+    "Demon's Horseshoe":                 0x99,
+    "Diplomat's Cloak":                  0x8D,
+    "Elixir of Life":                    0x83,
+    "Golden Goose":                      0xA0,
+    "Hideous Mask":                      0x9B,
+    "Horn of the Abyss":                 0xA1,
+    "Ironfist of the Ogre":              0x8F,
+    "Pendant of Downfall":               0x9D,
+    "Pendant of Reflection":             0x8E,
+    "Plate of Dying Light":              0xA4,
+    "Power of the Dragon Father":        0x86,
+    "Ring of Oblivion":                  0x9E,
+    "Ring of Suppression":               0x9C,
+    "Ring of the Magi":                  0x8B,
+    "Royal Armor of Nix":                0x95,
+    "Runes of Imminency":                0x98,
+    "Seal of Sunset":                    0xA3,
+    "Shaman's Puppet":                   0x9A,
+    "Shield of Naval Glory":             0x94,
+    "Sleepkeeper":                       0xA5,
+    "Statue of Legion":                  0x85,
+    "Titan's Thunder":                   0x87,
+    "Trident of Dominion":               0x93,
+    "Vial of Dragon Blood":              0x7F,
+    "Wayfarer's Boots":                  0x97,
+    "Wizard's Well":                     0x8A,
+
+    # Special artifacts
+    "Cannon":                            0x92,
+
+    # Creatures
+    "Argali":                            0xBD,
+    "Armadillo":                         0xAE,
+    "Automaton":                         0xB0,
+    "Ayssid":                            0xA0,
+    "Azure Dragon":                      0x84,
+    "Bellwether Armadillo":              0xAF,
+    "Boar":                              0x8C,
+    "Bounty Hunter":                     0xB5,
+    "Corsair":                           0x9E,
+    "Couatl":                            0xB6,
+    "Crew Mate":                         0x9B,
+    "Crimson Couatl":                    0xB7,
+    "Crystal Dragon":                    0x85,
+    "Dreadnought":                       0xB8,
+    "Enchanter":                         0x88,
+    "Energy Elemental":                  0x81,
+    "Engineer":                          0xAD,
+    "Faerie Dragon":                     0x86,
+    "Fangarm":                           0xA8,
+    "Firebird":                          0x82,
+    "Great Shaman":                      0xC3,
+    "Gunslinger":                        0xB4,
+    "Halfling Grenadier":                0xAB,
+    "Halfling":                          0x8A,
+    "Haspid":                            0xA6,
+    "Ice Elemental":                     0x7B,
+    "Jotunn":                            0xC6,
+    "Jotunn Warlord":                    0xC7,
+    "Juggernaut":                        0xB9,
+    "Kobold":                            0xBA,
+    "Kobold Foreman":                    0xBB,
+    "Leprechaun":                        0xA9,
+    "Magic Elemental":                   0x79,
+    "Magma Elemental":                   0x7D,
+    "Mammoth":                           0xC4,
+    "Mechanic":                          0xAC,
+    "Mountain Ram":                      0xBC,
+    "Mummy":                             0x8D,
+    "Nix Warrior":                       0xA4,
+    "Nix":                               0xA3,
+    "Nomad":                             0x8E,
+    "Nymph":                             0x99,
+    "Oceanid":                           0x9A,
+    "Olgoi-Khorkhoi":                    0xB3,
+    "Peasant":                           0x8B,
+    "Phoenix":                           0x83,
+    "Pirate":                            0x9D,
+    "Pixie":                             0x76,
+    "Psychic Elemental":                 0x78,
+    "Rogue":                             0x8F,
+    "Rust Dragon":                       0x87,
+    "Sandworm":                          0xB2,
+    "Satyr":                             0xA7,
+    "Sea Dog":                           0x97,
+    "Sea Serpent":                       0xA5,
+    "Sea Witch":                         0xA1,
+    "Seaman":                            0x9C,
+    "Sentinel Automaton":                0xB1,
+    "Shaman":                            0xC2,
+    "Sharpshooter":                      0x89,
+    "Snow Elf":                          0xBE,
+    "Sorceress":                         0xA2,
+    "Sprite":                            0x77,
+    "Steel Elf":                         0xBF,
+    "Steel Golem":                       0xAA,
+    "Storm Elemental":                   0x7F,
+    "Stormbird":                         0x9F,
+    "Troll":                             0x90,
+    "War Mammoth":                       0xC5,
+    "Yeti":                              0xC0,
+    "Yeti Runemaster":                   0xC1,
+
+    # Skills
+    "Interference":                      0x1C,
+    "Runes":                             0x1D,
+
+    # Spells
+    "Titan's Lightning Bolt":            0x39,
+}
+
+
+"""Artifact slots, with first being primary slot."""
+ARTIFACT_SLOTS = {
+    "Admiral's Hat":                     ["helm", "neck"],
+    "Angelic Alliance":                  ["weapon", "helm", "neck", "armor", "shield", "feet"],
+    "Armageddon's Blade":                ["weapon"],
+    "Armor of the Damned":               ["armor", "helm", "weapon", "shield"],
+    "Bow of the Sharpshooter":           ["side", "side", "side"],
+    "Cape of Silence":                   ["cloak"],
+    "Charm of Eclipse":                  ["side"],
+    "Cloak of the Undead King":          ["cloak", "neck", "feet"],
+    "Cornucopia":                        ["side", "hand", "hand", "cloak"],
+    "Crown of the Five Seas":            ["helm"],
+    "Demon's Horseshoe":                 ["side"],
+    "Diplomat's Cloak":                  ["cloak", "neck", "hand"],
+    "Elixir of Life":                    ["side", "hand", "hand"],
+    "Golden Goose":                      ["side", "side", "side"],
+    "Hideous Mask":                      ["side"],
+    "Horn of the Abyss":                 ["side"],
+    "Ironfist of the Ogre":              ["weapon", "helm", "armor", "shield"],
+    "Pendant of Downfall":               ["neck"],
+    "Pendant of Reflection":             ["neck", "cloak", "feet"],
+    "Plate of Dying Light":              ["armor"],
+    "Power of the Dragon Father":        ["armor", "helm", "neck", "weapon", "shield", "hand", "hand", "cloak", "feet"],
+    "Ring of Oblivion":                  ["hand"],
+    "Ring of Suppression":               ["hand"],
+    "Ring of the Magi":                  ["hand", "neck", "cloak"],
+    "Royal Armor of Nix":                ["armor"],
+    "Runes of Imminency":                ["side"],
+    "Seal of Sunset":                    ["hand"],
+    "Shaman's Puppet":                   ["side"],
+    "Shield of Naval Glory":             ["shield"],
+    "Sleepkeeper":                       ["side"],
+    "Statue of Legion":                  ["side", "side", "side", "side", "side"],
+    "Titan's Thunder":                   ["weapon", "helm", "armor", "shield"],
+    "Trident of Dominion":               ["weapon"],
+    "Vial of Dragon Blood":              ["side"],
+    "Wayfarer's Boots":                  ["feet"],
+    "Wizard's Well":                     ["side", "side", "side"],
+}
+
+
+"""Primary skill modifiers that artifacts give to hero."""
+ARTIFACT_STATS = {
+    "Angelic Alliance":                  (21, 21, 21, 21),
+    "Armageddon's Blade":                (+3, +3, +3, +6),
+    "Armor of the Damned":               (+3, +3, +2, +2),
+    "Crown of the Five Seas":            ( 0,  0,  0, +6),
+    "Ironfist of the Ogre":              (+5, +5, +4, +4),
+    "Power of the Dragon Father":        (16, 16, 16, 16),
+    "Royal Armor of Nix":                ( 0,  0, +6,  0),
+    "Shield of Naval Glory":             ( 0, +7,  0,  0),
+    "Titan's Thunder":                   (+9, +9, +8, +8),
+    "Trident of Dominion":               (+7,  0,  0,  0),
+}
+
+
+"""Spells that artifacts make available to hero."""
+ARTIFACT_SPELLS = {
+    "Armageddon's Blade":                ["Armageddon"],
+    "Titan's Thunder":                   ["Titan's Lightning Bolt"],
+}
+
+
+"""Combination artifact components, as {artifact: [component artifacts in slot order]}."""
+COMBINATION_ARTIFACTS = {
+    "Admiral's Hat":              ["Sea Captain's Hat", "Necklace of Ocean Guidance"],
+    "Angelic Alliance":           ["Sword of Judgement", "Helm of Heavenly Enlightenment",
+                                   "Celestial Necklace of Bliss", "Armor of Wonder",
+                                   "Lion's Shield of Courage", "Sandals of the Saint"],
+    "Armor of the Damned":        ["Rib Cage", "Skull Helmet", "Blackshard of the Dead Knight",
+                                   "Shield of the Yawning Dead"],
+    "Bow of the Sharpshooter":    ["Bow of Elven Cherrywood", "Bowstring of the Unicorn's Mane",
+                                   "Angel Feather Arrows"],
+    "Cloak of the Undead King":   ["Vampire's Cowl", "Amulet of the Undertaker", "Dead Man's Boots"],
+    "Cornucopia":                 ["Everpouring Vial of Mercury", "Eversmoking Ring of Sulfur",
+                                   "Ring of Infinite Gems", "Everflowing Crystal Cloak"],
+    "Diplomat's Cloak":           ["Ambassador's Sash", "Statesman's Medal", "Diplomat's Ring"],
+    "Elixir of Life":             ["Vial of Lifeblood", "Ring of Life", "Ring of Vitality"],
+    "Golden Goose":               ["Endless Bag of Gold", "Endless Purse of Gold",
+                                   "Endless Sack of Gold"],
+    "Ironfist of the Ogre":       ["Ogre's Club of Havoc", "Crown of the Supreme Magi",
+                                   "Tunic of the Cyclops King", "Targ of the Rampaging Ogre"],
+    "Pendant of Reflection":      ["Garniture of Interference", "Surcoat of Counterpoise",
+                                   "Boots of Polarity"],
+    "Power of the Dragon Father": ["Dragon Scale Armor", "Crown of Dragontooth",
+                                   "Necklace of Dragonteeth", "Red Dragon Flame Tongue",
+                                   "Dragon Scale Shield", "Quiet Eye of the Dragon",
+                                   "Still Eye of the Dragon", "Dragon Wing Tabard",
+                                   "Dragonbone Greaves"],
+    "Ring of the Magi":           ["Ring of Conjuring", "Collar of Conjuring", "Cape of Conjuring"],
+    "Statue of Legion":           ["Head of Legion", "Arms of Legion", "Torso of Legion",
+                                   "Loins of Legion", "Legs of Legion"],
+    "Titan's Thunder":            ["Titan's Gladius", "Thunder Helmet", "Titan's Cuirass",
+                                   "Sentinel's Shield"],
+    "Wizard's Well":              ["Charm of Mana", "Mystic Orb of Mana", "Talisman of Mana"],
+}
+
+
+"""Spells that may be banned on certain maps, like boat spells on maps with no water."""
+BANNABLE_SPELLS = [
+    "Scuttle Boat",
+    "Summon Boat",
+    "Water Walk",
+]
+
+
+
+# Index overrides for byte start of various attributes in hero bytearray
+HERO_BYTE_POSITIONS = {
+    "skills_slot":     1092, # Skill slots
+}
+
+
+"""Regulax expression for finding hero struct in savefile bytes."""
+HERO_REGEX = re.compile(b"""
+    .                        #   1 byte:  player faction 0-7 or 255            000-000
+    .{30}                    #  30 bytes: unknown                              001-031
+    .{4}                     #   4 bytes: movement points in total             031-034
+    .{4}                     #   4 bytes: movement points remaining            035-038
+    .{4}                     #   4 bytes: experience                           039-042
+    [\x00-\x1C][\x00]{3}     #   4 bytes: skill slots used                     043-046
+    .{2}                     #   2 bytes: spell points remaining               047-048
+    .{1}                     #   1 byte:  hero level                           049-049
+
+    .{63}                    #  63 bytes: unknown                              050-112
+
+    .{28}                    #  28 bytes: 7 4-byte creature IDs                113-150
+    .{28}                    #  28 bytes: 7 4-byte creature counts             151-168
+
+                             #  13 bytes: hero name, null-padded               169-181
+    (?P<name>[^\x00-\x20].{11}\x00)
+    [\x00-\x03]{30}          #  30 bytes: skill levels (Runes last)            182-211
+    .{26}                    #  26 bytes: skill slots (legacy, unused)         212-237
+    .{4}                     #   4 bytes: primary stats                        238-241
+
+    [\x00-\x01]{70}          #  70 bytes: spells in book                       242-311
+    [\x00-\x01]{70}          #  70 bytes: spells available                     312-381
+
+                             # 152 bytes: 19 8-byte equipments worn            382-533
+                             # Blank spots:   FF FF FF FF XY XY XY XY
+                             # Artifacts:     XY 00 00 00 FF FF FF FF
+                             # Scrolls:       XY 00 00 00 00 00 00 00
+    (?P<equipment>(          # Catapult etc:  XY 00 00 00 XY XY 00 00
+      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
+    ){19})
+
+                             # 512 bytes: 64 8-byte artifacts in inventory     534-1045
+    ( ((.\x00{3}) | \xFF{4}){2} ){64}
+
+                             # 10 bytes: slots taken by combination artifacts 1046-1055
+                             # Values should only be [\x00-\x05] as the count reserved,
+    .{10}                    # but HotA appears to encode additional information here.
+
+    .{36}                    #  36 bytes: unknown                             1056-1091
+    [\x00-\x1C]{29,30}       #  30 bytes: skill slots (29 for legacy hota)    1092-1121
+""", re.VERBOSE | re.DOTALL)
+
+
+"""Game minor version for HotA v1.80, from December 2025, adding Bulwark town and Runes skill."""
+BULWARK_MINOR = 0x0A
+
+
+"""Additions from later minor versions, as {version_minor: {name in store: values}}."""
+EXTRAS_BY_MINOR = {
+    BULWARK_MINOR: {
+        "skills": ["Runes"],
+        "creatures": [
+            "Argali",
+            "Great Shaman",
+            "Jotunn",
+            "Jotunn Warlord",
+            "Kobold",
+            "Kobold Foreman",
+            "Mammoth",
+            "Mountain Ram",
+            "Shaman",
+            "Snow Elf",
+            "Steel Elf",
+            "War Mammoth",
+            "Yeti",
+            "Yeti Runemaster",
+        ],
+        "ids": {
+            # Creatures
+            "Argali":                            0xBD,
+            "Great Shaman":                      0xC3,
+            "Jotunn":                            0xC6,
+            "Jotunn Warlord":                    0xC7,
+            "Kobold":                            0xBA,
+            "Kobold Foreman":                    0xBB,
+            "Mammoth":                           0xC4,
+            "Mountain Ram":                      0xBC,
+            "Shaman":                            0xC2,
+            "Snow Elf":                          0xBE,
+            "Steel Elf":                         0xBF,
+            "War Mammoth":                       0xC5,
+            "Yeti":                              0xC0,
+            "Yeti Runemaster":                   0xC1,
+            
+            # Skills
+            "Runes":                             0x1D,
+        },
+    },
+}
+
+
+
+class DataClass(hero.DataClass):
+
+    version = property(lambda self: NAME, doc="Game version in use")
+
+
+class ArmyStack(DataClass, hero.ArmyStack):
+    __slots__ = {"name":  make_string_cast("creatures", version=NAME),
+                 "count": make_integer_cast("army.count", version=NAME)}
+
+
+class Equipment(DataClass, hero.Equipment):
+    __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Equipment.__slots__}
+
+
+class Attributes(DataClass, hero.Attributes):
+    __slots__ = dict(hero.Attributes.__slots__)
+    __slots__["level"] = make_integer_cast("level", version=NAME)
+    __slots__["ballista"] = make_string_cast("ballista", version=NAME, choices=BALLISTA_CHOICES)
+
+
+class Skill(DataClass, hero.Skill):
+    __slots__ = {"name":  make_string_cast("skills", version=NAME),
+                 "level": make_string_cast("skill_levels", default=True, version=NAME)}
+
+
+class Army(DataClass, hero.Army):           pass
+
+class Inventory(DataClass, hero.Inventory): pass
+
+class Profile(DataClass, hero.Profile):     pass
+
+class Skills(DataClass, hero.Skills):       pass
+
+class Spells(DataClass, hero.Spells):       pass
+
+
+PRE_BULWARK_VERSION_ID = (NAME, VERSION_BYTERANGES["version_minor"][0])
+
+class PreBulwarkLegacy:
+    """Overrides for versions before the Bulwark town addition.."""
+
+    class DataClass(hero.DataClass):
+        version = property(lambda self: PRE_BULWARK_VERSION_ID, doc="Game version in use")
+
+    class ArmyStack(DataClass, hero.ArmyStack):
+        __slots__ = {"name":  make_string_cast("creatures", version=PRE_BULWARK_VERSION_ID),
+                     "count": make_integer_cast("army.count", version=NAME)}
+
+    class Skill(DataClass, hero.Skill):
+        __slots__ = {"name":  make_string_cast("skills", version=PRE_BULWARK_VERSION_ID),
+                     "level": make_string_cast("skill_levels", default=True, version=NAME)}
+
+    class Army(DataClass, hero.Army):     pass
+
+    class Skills(DataClass, hero.Skills): pass
+
+
+"""Adaptation overrides for earlier minor versions, as {highest version_minor: namespace}."""
+LEGACY_OVERRIDES = {BULWARK_MINOR - 1: PreBulwarkLegacy}
+
+
+
+def init():
+    """Adds Armageddon's Blade data to metadata stores."""
+    metadata.Store.add("artifacts", ARTIFACTS, version=NAME)
+    metadata.Store.add("artifacts", ARTIFACTS, category="inventory", version=NAME)
+    for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
+        metadata.Store.add("artifacts", [k for k, v in ARTIFACT_SLOTS.items() if v[0] == slot],
+                           category=slot, version=NAME)
+
+    LEVELS = {k: v for k, v in metadata.EXPERIENCE_LEVELS.items() if k <= HERO_RANGES["level"][1]}
+
+    metadata.Store.add("artifact_slots",        ARTIFACT_SLOTS,        version=NAME)
+    metadata.Store.add("artifact_spells",       ARTIFACT_SPELLS,       version=NAME)
+    metadata.Store.add("artifact_stats",        ARTIFACT_STATS,        version=NAME)
+    metadata.Store.add("combination_artifacts", COMBINATION_ARTIFACTS, version=NAME)
+    metadata.Store.add("creatures",             CREATURES,             version=NAME)
+    metadata.Store.add("experience_levels",     LEVELS,                version=NAME)
+    metadata.Store.add("hero_ranges",           HERO_RANGES,           version=NAME)
+    metadata.Store.add("ids",                   IDS,                   version=NAME)
+    metadata.Store.add("primary_attribute_game_ranges",
+                       PRIMARY_ATTRIBUTE_GAME_RANGES,                  version=NAME)
+    metadata.Store.add("skills",                SKILLS,                version=NAME)
+    metadata.Store.add("special_artifacts",     SPECIAL_ARTIFACTS,     version=NAME)
+    metadata.Store.add("bannable_spells",       BANNABLE_SPELLS,       version=NAME)
+    for artifact, spells in ARTIFACT_SPELLS.items():
+        metadata.Store.add("spells", spells, category=artifact, version=NAME)
+
+    ns = {name: copy.deepcopy(metadata.Store.get(name, version=NAME))
+          for names in EXTRAS_BY_MINOR.values() for name in names}
+    for version_minor in sorted(EXTRAS_BY_MINOR, reverse=True):
+        for name, value in ns.items():
+            if name not in EXTRAS_BY_MINOR[version_minor]: continue # for name, value
+            metadata.Store.add(name, value, version=(NAME, version_minor))
+            if isinstance(value, list):
+                value[:] = [x for x in value if x not in EXTRAS_BY_MINOR[version_minor][name]]
+            elif isinstance(value, dict):
+                for key in EXTRAS_BY_MINOR[version_minor][name]: value.pop(key, None)
+    for name, value in ns.items():
+        metadata.Store.add(name, value, version=(NAME, VERSION_BYTERANGES["version_minor"][0]))
+
+
+def adapt(name, value, version=None):
+    """
+    Adapts certain categories:
+
+    - "hero_regex":           adding support for new skills
+    - "hero_byte_positions":  adding support for new skills
+    - "hero.stats.DATAPROPS": adding cannon support
+    - "hero.PropertyName" classes:  returning version-specific data class,
+                                    with support for new artifacts/creatures/skills/spells,
+                                    attributes having cannon support and level capped at 74
+
+    @param   version   returns minor version specific classes if tuple for minor with extras
+    """
+    result = value
+    if "hero_byte_positions" == name:
+        result = dict(value, **HERO_BYTE_POSITIONS)
+    elif "hero_regex" == name:
+        result = HERO_REGEX
+    elif "hero.stats.DATAPROPS" == name:
+        # Replace ballista-prop checkbox with combobox including cannon
+        result = []
+        for prop in value:
+            if "ballista" == prop["name"]:
+                prop = dict(prop, type="combo", choices=[""] + BALLISTA_CHOICES)
+            result.append(prop)
+    elif "hero.ArmyStack" == name:
+        result = ArmyStack
+    elif "hero.Army" == name:
+        result = Army
+    elif "hero.Attributes" == name:
+        result = Attributes
+    elif "hero.Equipment" == name:
+        result = Equipment
+    elif "hero.Inventory" == name:
+        result = Inventory
+    elif "hero.Profile" == name:
+        result = Profile
+    elif "hero.Skill" == name:
+        result = Skill
+    elif "hero.Skills" == name:
+        result = Skills
+    elif "hero.Spells" == name:
+        result = Spells
+
+    if isinstance(version, tuple) and len(version) > 1 and name.startswith("hero"):
+        version_minor = version[1]
+        if version_minor <= min(LEGACY_OVERRIDES):
+            basename = name[4:].lstrip("._").replace(".", "_")
+            matching_minors = [x for x in LEGACY_OVERRIDES if x <= version_minor]
+            for matching_minor in sorted(matching_minors, reverse=True):
+                if hasattr(LEGACY_OVERRIDES[matching_minor], basename):
+                    result = getattr(LEGACY_OVERRIDES[matching_minor], basename)
+                    break # for matching_minor
+    return result
+
+
+def detect(savefile):
+    """Returns game version as string or tuple if savefile bytes match Horn of the Abyss, or None."""
+    if not savefile.match_byte_ranges(metadata.BYTE_POSITIONS, VERSION_BYTERANGES): return None
+    version_minor = savefile.raw[metadata.BYTE_POSITIONS["version_minor"]]
+    if version_minor < max(EXTRAS_BY_MINOR):
+        return (NAME, version_minor)
+    return NAME
