@@ -1,8 +1,9 @@
 CHANGELOG
 =========
 
-3.6, 2026-03-11
+3.6, 2026-03-20
 ---------------
+- add user-defined functions
 - set map description as tooltip to map description box
 
 

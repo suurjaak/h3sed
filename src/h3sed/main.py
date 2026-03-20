@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    09.04.2025
+@modified    20.03.2025
 ------------------------------------------------------------------------------
 """
 from __future__ import print_function
@@ -356,7 +356,7 @@ def run_gui(filenames):
     window.run_console("import datetime, math, os, re, time, sys, wx")
     window.run_console("# All %s standard modules:" % conf.Title)
     window.run_console("import h3sed")
-    window.run_console("from h3sed import conf, guibase, gui, hero, images, "
+    window.run_console("from h3sed import conf, functions, guibase, gui, hero, images, "
                        "main, metadata, templates, version")
     window.run_console("from h3sed.lib import controls, util, wx_accel")
 

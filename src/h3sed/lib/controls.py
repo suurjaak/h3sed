@@ -5,6 +5,9 @@ Stand-alone GUI components for wx:
 - BusyPanel(wx.Window):
   Primitive hover panel with a message that stays in the center of parent window.
 
+- CallableManagerDialog(wx.Dialog):
+  Dialog for displaying and managing a list of callables.
+
 - ColourManager(object):
   Updates managed component colours on Windows system colour change.
 
@@ -25,12 +28,14 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    26.02.2026
+@modified    20.03.2026
 ------------------------------------------------------------------------------
 """
 import collections
+import copy
 import datetime
 import functools
+import keyword
 import math
 import os
 import sys
@@ -41,6 +46,7 @@ import wx
 import wx.html
 import wx.lib.agw.labelbook
 import wx.lib.gizmos
+import wx.lib.newevent
 import wx.lib.wordwrap
 
 
@@ -609,6 +615,453 @@ class ColourManager(object):
                     (collection.discard if isinstance(collection, set) else collection.pop)(ctrl)
         return True
 
+
+CallableManagerEvent, EVT_CALLABLE_MANAGER = wx.lib.newevent.NewCommandEvent()
+
+class CallableManagerDialog(wx.Dialog):
+    """
+    Dialog for displaying and managing a list of callables.
+
+    Posts all changes as EVT_CALLABLE_MANAGER, with ClientObject as the current list.
+    """
+
+    def __init__(self, parent, title, items, validator=callable, tester=None, compiler=None,
+                 alias="callable", body=""):
+        """
+        @param   items      list of {label, body, name, ?callable, ?namespace, ?active, ?permanent}
+        @param   validator  function(target) returning bool or error message
+                            for potential target value from compiled namespace
+        @param   tester     function(target, dialog) returning bool or error message
+                            for test-invoking the target
+        @param   compiler   function(target) returning (eval namespace, error message)
+                            for compiling code
+        @param   alias      name for callable type, used in dialog texts
+        @param   body       default body content for new items
+        """
+        wx.Dialog.__init__(self, parent, title=title, style=wx.DEFAULT_FRAME_STYLE)
+        self.items     = []
+        self.validator = validator
+        self.compiler  = compiler
+        self.tester    = tester
+        self.alias     = alias
+        self.body      = body
+
+        self.editmode  = False
+        self.newmode   = False
+        self.item      = None
+        self.state     = {}  # Current item edit state, as {namespace: {..}, error: ".."}
+
+        panel = self.panel = wx.Panel(self, style=wx.BORDER_RAISED)
+        splitter = wx.SplitterWindow(panel, style=wx.BORDER_NONE)
+        panel_left  = wx.Panel(splitter)
+        panel_right = wx.Panel(splitter)
+
+        list_items  = wx.ListView(panel_left, style=wx.LC_REPORT | wx.LC_SINGLE_SEL |
+                                                    wx.LC_NO_HEADER)
+        button_up   = wx.Button(panel_left, label="Up")
+        button_down = wx.Button(panel_left, label="Down")
+
+        label_title = wx.StaticText(panel_right, label="Tit&le:")
+        edit_title = wx.TextCtrl(panel_right)
+        label_body = wx.StaticText(panel_right, label="&Body:")
+        stc_body = wx.stc.StyledTextCtrl(panel_right)
+        label_name = wx.StaticText(panel_right, label="Ta&rget:")
+        combo_name = wx.ComboBox(panel_right, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        button_test = wx.Button(panel_right, label="&Test")
+        label_active = wx.StaticText(panel_right, label="&Active:")
+        cb_active    = wx.CheckBox(panel_right)
+
+        label_error = wx.StaticText(panel_right, label="Error:")
+        edit_error  = wx.TextCtrl(panel_right, style=wx.TE_MULTILINE | wx.TE_NO_VSCROLL |
+                                                     wx.BORDER_NONE)
+
+        button_compile = wx.Button(panel_right, label="&Compile")
+        button_edit    = wx.Button(panel_right, label="&Edit")
+        button_save    = wx.Button(panel_right, label="&Save")
+        button_delete  = wx.Button(panel_right, label="Delete")
+        button_cancel  = wx.Button(panel_right, label="Canc&el")
+
+        button_new     = wx.Button(self, label="&New entry")
+        button_close   = wx.Button(self, label="Close")
+
+        self.Sizer        = wx.BoxSizer(wx.VERTICAL)
+        panel.Sizer       = wx.BoxSizer(wx.VERTICAL)
+        panel_left.Sizer  = wx.BoxSizer(wx.VERTICAL)
+        panel_right.Sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer_arrows      = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_form        = wx.GridBagSizer(hgap=5, vgap=5)
+        sizer_test        = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_itembuttons = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_buttons     = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_arrows.Add(button_up,   proportion=1)
+        sizer_arrows.Add(button_down, proportion=1)
+
+        sizer_test.Add(combo_name, proportion=1)
+        sizer_test.Add(button_test)
+
+        sizer_itembuttons.Add(button_compile)
+        sizer_itembuttons.AddStretchSpacer()
+        sizer_itembuttons.Add(button_edit,    flag=wx.LEFT, border=5)
+        sizer_itembuttons.Add(button_save,    flag=wx.LEFT, border=5)
+        sizer_itembuttons.Add(button_delete,  flag=wx.LEFT, border=5)
+        sizer_itembuttons.Add(button_cancel,  flag=wx.LEFT, border=5)
+
+        sizer_buttons.Add(button_new)
+        sizer_buttons.AddStretchSpacer()
+        sizer_buttons.Add(button_close)
+
+        panel_left.Sizer.Add(list_items, proportion=1, flag=wx.GROW)
+        panel_left.Sizer.Add(sizer_arrows, flag=wx.GROW)
+
+        sizer_form.Add(label_title,       pos=(0, 0), flag=wx.ALIGN_CENTER_VERTICAL)
+        sizer_form.Add(edit_title,        pos=(0, 1), flag=wx.GROW)
+        sizer_form.Add(label_body,        pos=(1, 0))
+        sizer_form.Add(stc_body,          pos=(1, 1), flag=wx.GROW)
+        sizer_form.Add(label_name,        pos=(2, 0), flag=wx.ALIGN_CENTER_VERTICAL)
+        sizer_form.Add(sizer_test,        pos=(2, 1), flag=wx.GROW)
+        sizer_form.Add(label_active,      pos=(3, 0), flag=wx.ALIGN_CENTER_VERTICAL)
+        sizer_form.Add(cb_active,         pos=(3, 1))
+        sizer_form.Add(label_error,       pos=(4, 0))
+        sizer_form.Add(edit_error,        pos=(4, 1), span=(2, 2), flag=wx.GROW)
+        sizer_form.Add(sizer_itembuttons, pos=(6, 0), span=(1, 2), flag=wx.GROW)
+        sizer_form.AddGrowableRow(1)
+        sizer_form.AddGrowableCol(1)
+
+        panel_right.Sizer.Add(sizer_form, proportion=1, flag=wx.ALL | wx.GROW, border=5)
+
+        panel.Sizer.Add(splitter, proportion=1, flag=wx.GROW)
+        self.Sizer.Add(panel, proportion=1, flag=wx.GROW)
+        self.Sizer.Add(sizer_buttons, flag=wx.ALL | wx.GROW, border=5)
+
+        splitter.SetMinimumPaneSize(150)
+        splitter.SplitVertically(panel_left, panel_right, splitter.MinimumPaneSize)
+
+        listfont = list_items.Font
+        listfont.PointSize = int(1.5 * listfont.PointSize)
+        list_items.Font = listfont
+        list_items.AppendColumn("")
+        edit_error.SetEditable(False)
+        stc_body.SetTabWidth(4)
+        stc_body.SetUseTabs(False)
+        stc_body.SetWrapMode(wx.stc.STC_WRAP_WORD)
+        stc_body.SetLexer(wx.stc.STC_LEX_PYTHON)
+        stc_body.SetKeyWords(0, " ".join(keyword.kwlist))
+        stc_body.SetMargins(0, 0)
+        stc_body.SetMarginType(1, wx.stc.STC_MARGIN_NUMBER)
+        ColourManager.SetShellStyles(stc_body)
+        button_test.Show(bool(tester))
+
+        label_title.ToolTip    = edit_title.ToolTip = "Title for %s; ampersand makes hotkey" % alias
+        label_body.ToolTip     = "Python code to compile for %s" % alias
+        label_active.ToolTip   = cb_active.ToolTip  = "Enable %s for use" % alias
+        label_name.ToolTip     = combo_name.ToolTip = "Callable name from body to invoke as %s" % alias
+        button_new.ToolTip     = "Enter new %s" % alias
+        button_close.ToolTip   = "Close dialog"
+        button_up.ToolTip      = "Move selected entry one step higher"
+        button_down.ToolTip    = "Move selected entry one step higher"
+        button_test.ToolTip    = "Invoke %s with content from popup" % alias
+        button_compile.ToolTip = "Compile and verify code"
+        button_edit.ToolTip    = "Edit current %s" % alias
+        button_save.ToolTip    = "Save %s" % alias
+        button_delete.ToolTip  = "Delete %s" % alias
+        button_cancel.ToolTip  = "Discard changes"
+
+        self.list_items     = list_items
+        self.edit_title     = edit_title
+        self.stc_body       = stc_body
+        self.combo_name     = combo_name
+        self.cb_active      = cb_active
+        self.label_error    = label_error
+        self.edit_error     = edit_error
+        self.button_up      = button_up
+        self.button_down    = button_down
+        self.button_test    = button_test
+        self.button_compile = button_compile
+        self.button_edit    = button_edit
+        self.button_save    = button_save
+        self.button_delete  = button_delete
+        self.button_cancel  = button_cancel
+        self.button_new     = button_new
+        self.button_close   = button_close
+
+        wrap = lambda f, *a: lambda e: wx.CallAfter(f, *a)
+        splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, wrap(self._UpdateUI))
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._OnSelectItem,           list_items)
+        self.Bind(wx.stc.EVT_STC_MODIFIED,    wrap(self.EnsureMargin),      stc_body)
+        self.Bind(wx.EVT_BUTTON,              wrap(self.Compile),           button_compile)
+        self.Bind(wx.EVT_BUTTON,              wrap(self.Test),              button_test)
+        self.Bind(wx.EVT_BUTTON,              wrap(self.SetEditmode, True), button_edit)
+        self.Bind(wx.EVT_BUTTON,              self._OnCancelEdit,           button_cancel)
+        self.Bind(wx.EVT_BUTTON,              self._OnSaveEdit,             button_save)
+        self.Bind(wx.EVT_BUTTON,              self._OnDelete,               button_delete)
+        self.Bind(wx.EVT_BUTTON,              self._OnNew,                  button_new)
+        self.Bind(wx.EVT_BUTTON,              self._OnClose,                button_close)
+        self.Bind(wx.EVT_BUTTON,              wrap(self.MoveItem, -1),      button_up)
+        self.Bind(wx.EVT_BUTTON,              wrap(self.MoveItem, +1),      button_down)
+        self.Bind(wx.EVT_SYS_COLOUR_CHANGED,  self._OnSysColourChange)
+        self.Bind(wx.EVT_CLOSE,               self._OnClose)
+        self.SetEscapeId(button_close.Id)
+
+        ColourManager.Manage(self,        "BackgroundColour", wx.SYS_COLOUR_BTNFACE)
+        ColourManager.Manage(edit_error,  "BackgroundColour", wx.SYS_COLOUR_BTNFACE)
+        ColourManager.Manage(label_error, "ForegroundColour", wx.SYS_COLOUR_HOTLIGHT)
+        ColourManager.Manage(edit_error,  "ForegroundColour", wx.SYS_COLOUR_HOTLIGHT)
+
+        self.Populate(items)
+        self.SetEditmode(False)
+
+        self.Layout()
+        self.Fit()
+        self.Size = (700, 500)
+        self.MinSize = (450, 350)
+        self.CenterOnParent()
+        ColourManager.Patch(self)
+        self._UpdateUI()
+
+
+    def Populate(self, items):
+        """Populates dialog list and controls with given items."""
+        selected_index = 0 if items else -1
+        def find_item(*keys):
+            return next((x for x in items if all(self.item.get(k) == x.get(k) for k in keys)), None)
+        if self.item:
+            item = find_item("body", "title", "name") or find_item("title", "name") or \
+                   find_item("title")
+            if item: selected_index = items.index(item)
+
+        self.items = [dict(x) for x in items]
+        self.item = self.items[selected_index] if selected_index >= 0 else None
+        self.state.clear()
+        self.list_items.DeleteAllItems()
+        for i, item in enumerate(self.items):
+            self.list_items.InsertItem(i, wx.Control.RemoveMnemonics(item["title"]))
+        if selected_index >= 0: self.list_items.Select(selected_index)
+        self.PopulateItem()
+
+
+    def PopulateItem(self):
+        """Populates dialog controls with current item."""
+        item = self.item or {}
+        readonly, self.stc_body.ReadOnly = self.stc_body.ReadOnly, False
+        self.edit_title.Value = item.get("title", "")
+        self.stc_body.Text    = item.get("body", "")
+        self.cb_active.Value  = item.get("active") is not False
+        self.label_error.Shown = False
+        self.edit_error.Value = ""
+        self.edit_error.Hide()
+        self.combo_name.SetItems([])
+        self.stc_body.EmptyUndoBuffer()
+        self.stc_body.ReadOnly = readonly
+        self.EnsureMargin()
+        self.button_test.Enabled = self.item is not None
+        if not self.newmode and self.item is not None: self.Compile()
+
+
+    def GetChanges(self):
+        """Returns dictionary of values changed in current item, if any."""
+        result = {}
+        if self.item.get("title", "") != self.edit_title.Value: result["title"] = self.edit_title.Value.strip()
+        if self.item.get("body",  "") != self.stc_body.Text:    result["body"]  = self.stc_body.Text
+        if self.item.get("name",  "") != self.combo_name.Value: result["name"]  = self.combo_name.Value
+        if self.item.get("active", True) != self.cb_active.Value:
+            result["active"] = self.cb_active.Value
+        return result
+
+
+    def Compile(self):
+        """Compiles entered code, updates state and UI with results."""
+        self.label_error.Shown = False
+        self.edit_error.Value = ""
+        ns, err, text, name_selected = {}, None, self.stc_body.Text, None
+
+        if self.compiler:
+            ns, err = self.compiler(text)
+        else:
+            try: eval(compile(text, "", "exec"), None, ns)
+            except Exception as e: ns, err = None, str(e)
+        if ns:
+            ns = {k: v for k, v in sorted(ns.items()) if self.validator(v) is True}
+            candidates = [x for x in (self.combo_name.Value, self.item.get("name")) if x]
+            name_selected = next((k for k in candidates if k in ns), None)
+        elif not err:
+            err = "No suitable %s found in body." % self.alias
+
+        self.combo_name.SetItems(list(ns or {}))
+        self.label_error.Shown = bool(err)
+        self.edit_error.Value = err or ""
+        self.edit_error.Show(bool(err))
+        if name_selected: self.combo_name.SetSelection(self.combo_name.FindString(name_selected))
+        elif ns: self.combo_name.SetSelection(0)
+        self.label_error.ContainingSizer.Layout()
+
+        self.state.update(namespace=ns or {}, error=err)
+
+
+    def Test(self):
+        """Compiles item if changed, and invokes external tester."""
+        if not self.state or "body" in self.GetChanges():
+            self.Compile()
+        if "namespace" in self.state and self.combo_name.Value in self.state["namespace"]:
+            item = dict(self.item, **self.GetChanges())
+            item["target"] = self.state["namespace"][self.combo_name.Value]
+            self.tester(item, self)
+
+
+    def MoveItem(self, direction):
+        """Moves item currently selected in itemlist one step higher or lower; posts event."""
+        index = self.list_items.GetFirstSelected()
+        if index < 0 or direction < 0 and not index \
+        or direction > 0 and index == len(self.items) - 1:
+            self.list_items.SetFocus()
+            return
+        index2 = index + (1 if direction > 0 else -1)
+        self.list_items.SetItemText(index,  wx.Control.RemoveMnemonics(self.items[index2]["title"]))
+        self.list_items.SetItemText(index2, wx.Control.RemoveMnemonics(self.items[index ]["title"]))
+        self.items[index], self.items[index2] = self.items[index2], self.items[index]
+        self.list_items.SetFocus()
+        self.list_items.Select(index2)
+        self._PostEvent()
+
+
+    def SetEditmode(self, editmode=True):
+        """Sets form controls read-only or not and toggles buttons."""
+        self.editmode = editmode
+        if not editmode: self.newmode = False
+        self.edit_title.SetEditable(editmode)
+        self.stc_body.ReadOnly  = not editmode
+        self.combo_name.Enabled = editmode
+        self.cb_active.Enabled  = editmode
+        self.button_edit.Shown    = self.button_delete.Shown = not editmode
+        self.button_compile.Shown = self.button_save.Shown   = self.button_cancel.Shown = editmode
+        self.button_edit.Enabled  = self.button_delete.Enabled = not editmode and self.item is not None
+        if self.item and self.item.get("permanent"):
+            self.button_delete.Enabled = False
+        self.button_edit.ContainingSizer.Layout()
+
+
+    def EnsureMargin(self):
+        """Ensures code editor having margin wide enough for line numbers."""
+        PADDING, CHARWIDTH = 4, 7
+        linecount = len(self.stc_body.Text.splitlines()) + 1
+        width = PADDING + CHARWIDTH * (1 + max(1, int(math.log10(linecount or 1))))
+        self.stc_body.SetMarginWidth(1, width)
+
+
+    def _CheckUnsaved(self):
+        """Returns true if form has unsaved changes and user prompted to cancel in popup."""
+        if not self.editmode or not self.GetChanges(): return False
+        return wx.OK != wx.MessageBox("There are unsaved changes.\n\n"
+                                      "Are you sure you want to discard them?",
+                                      "Unsaved changes", wx.OK | wx.CANCEL)
+
+
+    def _PostEvent(self):
+        """Posts CallableManagerEvent with current content."""
+        evt = CallableManagerEvent(self.Id)
+        evt.SetEventObject(self)
+        evt.SetClientObject([copy.copy(x) for x in self.items])
+        wx.PostEvent(self, evt)
+
+
+    def _UpdateUI(self):
+        """Sizes itemlist columns to fit."""
+        w = self.list_items.Size[0] - self.list_items.GetWindowBorderSize()[0]
+        self.list_items.SetColumnWidth(0, w)
+
+
+    def _OnSysColourChange(self, event):
+        """Handler for system colour change, updates STC styling."""
+        event.Skip()
+        ColourManager.SetShellStyles(self.stc_body)
+
+
+    def _OnSelectItem(self, event):
+        """Handler for activating an item entry, populates form."""
+        if self._CheckUnsaved() \
+        or self.item in self.items and self.items.index(self.item) == event.Index: return
+        self.item = self.items[event.Index]
+        self.state.clear()
+        self.newmode = False
+        self.PopulateItem()
+        self.SetEditmode(False)
+
+
+    def _OnNew(self, event):
+        """Handler for clicking the new button, opens blank form if not already."""
+        if self.newmode or self._CheckUnsaved():
+            if self.newmode: self.edit_title.SetFocus()
+            return
+        self.SetEditmode(True)
+        self.newmode = True
+        self.item = {"body": (self.body + "\n") if self.body else ""}
+        self.state.clear()
+        self.PopulateItem()
+        if self.list_items.GetFirstSelected() >= 0:
+            self.list_items.Select(self.list_items.GetFirstSelected(), False)
+        self.edit_title.SetFocus()
+
+
+    def _OnSaveEdit(self, event):
+        """Handler for saving changes, posts event if changed, and exits editmode."""
+        changes = self.GetChanges()
+        if not changes.get("title", self.item.get("title")):
+            self.edit_title.SetFocus()
+            wx.MessageBox("Title is mandatory.", "Unsaved changes", wx.ICON_WARNING | wx.OK)
+            return
+        if changes:
+            self.Compile()
+            if self.state["error"] and wx.OK != wx.MessageBox(
+                "Are you sure you want to save invalid state?\n\nError: %s" % self.state["error"],
+                "Unsaved changes", wx.ICON_WARNING | wx.OK | wx.CANCEL
+            ): return
+
+            self.item.update(changes, **self.GetChanges())
+            if self.item.get("active") is not False: self.item.pop("active", None)
+            if self.item.get("name") in self.state["namespace"]:
+                self.item["target"] = self.state["namespace"][self.item["name"]]
+
+            label = wx.Control.RemoveMnemonics(self.item["title"])
+            if self.newmode:
+                self.items.append(self.item)
+                self.list_items.InsertItem(len(self.items) - 1, label)
+                self.list_items.Select(len(self.items) - 1)
+            elif "title" in changes:
+                idx = self.items.index(self.item)
+                self.list_items.SetItemText(idx, label)
+            self._UpdateUI()
+
+            self._PostEvent()
+        self.SetEditmode(False)
+
+
+    def _OnCancelEdit(self, event):
+        """Handler for cancelling editmode, confirms unsaved changes."""
+        if self._CheckUnsaved(): return
+        if self.newmode: self.item = None
+        self.newmode = False
+        self.PopulateItem()
+        self.SetEditmode(False)
+
+
+    def _OnDelete(self, event):
+        """Handler for deleting item, asks for confirmation and posts event."""
+        if wx.OK != wx.MessageBox("Are you sure you want to delete this item?", "Delete",
+                                  wx.OK | wx.CANCEL): return
+        self.list_items.DeleteItem(self.items.index(self.item))
+        self.items.remove(self.item)
+        self.state.clear()
+        self.item = None
+        self.PopulateItem()
+        self.SetEditmode(False)
+        self._PostEvent()
+
+
+    def _OnClose(self, event):
+        """Handler for closing dialog, confirms unsaved changes."""
+        if self._CheckUnsaved(): return
+        self.EndModal(wx.ID_OK) if self.IsModal() else self.Hide()
+        self.SetEditmode(False)
 
 
 class CommandHistoryDialog(wx.Dialog):

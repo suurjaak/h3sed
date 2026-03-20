@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  26.02.2026
+@modified  19.03.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -118,7 +118,7 @@ class HeroPlugin(object):
             "stale":     True,     # Whether should repopulate index before display
             "timer":     None,     # wx.Timer for filtering heroes index
             "ids":       {},       # {category: wx ID for toolbar toggle}
-            "visible":   [],       # List of heroes visible
+            "visible":   [],       # List of heroes visible, ordered by name
             "sort_col":  "index",  # Field being sorted by
             "sort_asc":  True,     # Sort ascending or descending
             "toggles":   collections.OrderedDict(),  # {category: toggled state}
@@ -885,6 +885,17 @@ class HeroPlugin(object):
             pairs = [(v1, v2) for v1, v2 in zip(yamls["originals"], yamls["currents"]) if v1 != v2]
             changes.append(tpl.expand(name=str(hero), changes=pairs))
         return "\n".join(changes)
+
+
+    def get_function_arguments(self):
+        """
+        Returns a dictionary of keyword arguments with current state for user functions.
+        
+        @return  {"hero": current hero, "heroes": visible heroes, "heroes_open": all open heroes}
+        """
+        result = {"hero": self._hero, "heroes": self._index["visible"][:],
+                  "heroes_open": [self._heroes[index] for index in self._pages.values()]}
+        return result
 
 
     def patch(self):

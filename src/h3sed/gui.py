@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    11.03.2026
+@modified    20.03.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -41,6 +41,7 @@ from . lib import util
 from . lib import wx_accel
 from . hero import gui as hero_gui
 from . import conf
+from . import functions
 from . import guibase
 from . import images
 from . import metadata
@@ -87,6 +88,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         # List of Notebook pages user has visited, used for choosing page to
         # show when closing one.
         self.pages_visited = []
+        self.dialog_functions = None # controls.CallableManagerDialog
 
         icons = images.get_appicons()
         self.SetIcons(icons)
@@ -187,6 +189,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.dir_ctrl.SetFocus()
         self.set_savegame_filters(self.dir_ctrl)
         if conf.SelectedPath: self.refresh_dir_ctrl(conf.SelectedPath)
+        functions.init_functions(conf.UserFunctions, {"h3sed": h3sed, "metadata": metadata})
 
         self.Show(True)
         logger.info("Started application.")
@@ -395,27 +398,31 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def create_toolbar(self):
         """Creates the program toolbar."""
-        TOOLS = [("Open",    wx.ID_OPEN,     wx.ART_FILE_OPEN,    self.on_open_savefile),
-                 ("Save",    wx.ID_SAVE,     wx.ART_FILE_SAVE,    self.on_save_savefile),
-                 ("Save as", wx.ID_SAVEAS,   wx.ART_FILE_SAVE_AS, self.on_save_savefile_as),
+        TOOLS = [("Open",      wx.ID_OPEN,     wx.ART_FILE_OPEN,    self.on_open_savefile),
+                 ("Save",      wx.ID_SAVE,     wx.ART_FILE_SAVE,    self.on_save_savefile),
+                 ("Save as",   wx.ID_SAVEAS,   wx.ART_FILE_SAVE_AS, self.on_save_savefile_as),
                  (),
-                 ("Undo",    wx.ID_UNDO,     wx.ART_UNDO,         self.on_undo_savefile),
-                 ("Redo",    wx.ID_REDO,     wx.ART_REDO,         self.on_redo_savefile),
+                 ("Undo",      wx.ID_UNDO,     wx.ART_UNDO,         self.on_undo_savefile),
+                 ("Redo",      wx.ID_REDO,     wx.ART_REDO,         self.on_redo_savefile),
                  (),
-                 ("Reload",  wx.ID_REFRESH,  "ToolbarRefresh",    self.on_reload_savefile),
+                 ("Reload",    wx.ID_REFRESH,  "ToolbarRefresh",    self.on_reload_savefile),
                  (),
-                 ("Folder",  wx.ID_HARDDISK, wx.ART_FOLDER,       self.on_open_folder)]
+                 ("Folder",    wx.ID_HARDDISK, wx.ART_FOLDER,       self.on_open_folder),
+                 None,
+                 ("Function",  wx.ID_EXECUTE,  wx.ART_HELP_PAGE,    self.on_function_menu)]
         TOOL_HELPS = {wx.ID_OPEN:     "Choose a savefile to open",
                       wx.ID_SAVE:     "Save the active file",
                       wx.ID_SAVEAS:   "Save the active file under a new name",
                       wx.ID_UNDO:     "Undo the last action",
                       wx.ID_REDO:     "Redo the previously undone action",
                       wx.ID_REFRESH:  "Reload savefile, losing any current changes",
-                      wx.ID_HARDDISK: "Open file directory in file manager program"}
+                      wx.ID_HARDDISK: "Open file directory in file manager program",
+                      wx.ID_EXECUTE:  "Select function to run"}
         tb = self.CreateToolBar(wx.TB_FLAT | wx.TB_HORIZONTAL | wx.TB_TEXT)
         tb.SetToolBitmapSize((20, 20))
         for tool in TOOLS:
-            if not tool: tb.AddSeparator()
+            if tool is None: tb.AddStretchableSpace()
+            elif not tool: tb.AddSeparator()
             if not tool: continue  # for tool
             label, toolid, art, handler = tool
             bmp = getattr(images, art).Bitmap if isinstance(art, str) and hasattr(images, art) else \
@@ -424,9 +431,105 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             tb.EnableTool(toolid, False)
             tb.Bind(wx.EVT_TOOL, handler, id=toolid)
 
-        tb.EnableTool(wx.ID_OPEN, True)
+        tb.EnableTool(wx.ID_OPEN,     True)
         tb.EnableTool(wx.ID_HARDDISK, True)
+        tb.EnableTool(wx.ID_EXECUTE,  True)
         tb.Realize()
+
+
+    def on_function_menu(self, event):
+        """Handler for user functions menu, opens popup menu from toolbar."""
+
+        def make_function_arguments():
+            """Returns keyword arguments dictionary for invoking user function."""
+            kwargs = {"hero": None, "heroes": None, "heroes_open": None}
+            kwargs["page"]           = self.page_file_latest
+            kwargs["savefile"]       = self.page_file_latest and self.page_file_latest.savefile
+            kwargs["pages_open"]     = [o["page"]     for o in self.files.values()]
+            kwargs["savefiles_open"] = [o["savefile"] for o in self.files.values()]
+            kwargs["path_selected"]  = self.dir_ctrl.GetPath()
+            for plugin in self.page_file_latest.plugins if self.page_file_latest else ():
+                if callable(getattr(plugin, "get_function_arguments", None)):
+                    kwargs.update(plugin.get_function_arguments())
+            return kwargs
+
+        def on_copy(text):
+            with wx.TheClipboard: wx.TheClipboard.SetData(wx.TextDataObject(text))
+            guibase.status("Copied to clipboard.", flash=conf.StatusShortFlashLength)
+
+        def on_call(entry, *_):
+            """Handler for invoking a user function with current value, sets result as new value."""
+            function_title = wx.Control.RemoveMnemonics(entry["title"])
+            logger.info("Invoking function %r.", function_title)
+            kwargs = make_function_arguments()
+            try: value = functions.execute_function(entry["target"], **kwargs)
+            except Exception as e:
+                logger.exception("Error invoking function %r.", function_title)
+                wx.MessageBox("Error invoking function %r: %s" % (function_title, e),
+                              conf.Title, wx.OK | wx.ICON_ERROR)
+                return 
+            if value is None: return
+
+            text = value
+            if not isinstance(value, util.text_types):
+                value = str(value)
+                text = value.replace("<", "&lt;")
+            if not re.search("<[a-z][^>]*/?>", text, re.I): # Wrap in simple HTML if no tags evident
+                text = '<font size="2" face="%s" color="%s"><pre>%s</pre></font>' % \
+                       (conf.HtmlFontName, conf.FgColour, text.rstrip())
+            buttons = {"&Copy": functools.partial(on_copy, value)}
+            controls.HtmlDialog(self, function_title, text, buttons=buttons).ShowModal()
+
+        def on_change(event):
+            """Handler for updated user functions from callable manager, saves config."""
+            functions.set_functions(event.GetClientObject())
+            conf.UserFunctions = functions.get_config()
+            conf.save()
+
+        def on_edit(*_):
+            """Handler for choosing to edit user functions, opens callable manager dialog."""
+            entries = functions.get_functions()
+            if self.dialog_functions:
+                if not self.dialog_functions.Shown:
+                    self.dialog_functions.Populate(entries)
+                    self.dialog_functions.Show()
+                self.dialog_functions.Raise()
+                return
+
+            kwargs = make_function_arguments()
+            defaultbody = """
+# Python function performing some desired extra task.
+# Any returned value will be shown in a popup HTML dialog.
+# Function may accept any of the following arguments:
+# (%s).
+            """.lstrip() % (", ".join(sorted(kwargs)))
+            title = "User-defined functions"
+            validator = functools.partial(functions.validate_function, **kwargs)
+            dialog = controls.CallableManagerDialog(self, title, entries, validator, tester=on_call,
+                                                    compiler=functions.compile_code, body=defaultbody)
+            dialog.SetIcons(images.get_appicons())
+            dialog.Bind(controls.EVT_CALLABLE_MANAGER, on_change)
+            wx_accel.accelerate(dialog)
+            self.dialog_functions = dialog
+            self.dialog_functions.Show()
+
+        menu = wx.Menu()
+        for entry in functions.get_functions():
+            if entry.get("active") is False: continue
+            item_entry = wx.MenuItem(menu, -1, entry["title"])
+            menu.Append(item_entry)
+            menu.Bind(wx.EVT_MENU, functools.partial(on_call, entry), item_entry)
+            if "target" not in entry: item_entry.Enable(False)
+
+        item_edit = wx.MenuItem(menu, -1, "Edit user functions")
+        menu.AppendSeparator()
+        menu.Append(item_edit)
+
+        menu.Bind(wx.EVT_MENU, on_edit, item_edit)
+
+        mousepos = self.ToolBar.ScreenToClient(wx.GetMousePosition())
+        event.EventObject.PopupMenu(menu, mousepos.x, self.ToolBar.Size.Height)
+
 
 
     def load_fs_images(self):
@@ -865,6 +968,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             self.ToolBar.EnableTool(self.ToolBar.GetToolByPos(i).Id, False)
         self.ToolBar.EnableTool(wx.ID_OPEN,     True)
         self.ToolBar.EnableTool(wx.ID_HARDDISK, True)
+        self.ToolBar.EnableTool(wx.ID_EXECUTE,  True)
         if isinstance(page, SavefilePage):
             self.ToolBar.EnableTool(wx.ID_SAVE,    True)
             self.ToolBar.EnableTool(wx.ID_SAVEAS,  True)
