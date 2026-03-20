@@ -30,7 +30,14 @@ KEYS = ("title", "body", "name", "active", "target", "__builtin__")
 FUNCTIONS = []
 
 ## {id: {"body", "title", ?"name", ?"target"}}
-BUILTINS = {}
+BUILTINS = {
+    "show_combination_artifacts": {
+        "name":   "show_combination_artifacts",
+        "title":  "Show &combination artifacts",
+        "target": show_combination_artifacts.show_combination_artifacts,
+       #"body":   "", Populated later from file on disk
+    },
+}
 
 ## Default namespace for compiled functions
 NAMESPACE = {}

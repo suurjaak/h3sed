@@ -4,6 +4,7 @@ CHANGELOG
 3.6, 2026-03-20
 ---------------
 - add user-defined functions
+- add user function to show combination artifacts over player factions
 - set map description as tooltip to map description box
 
 
