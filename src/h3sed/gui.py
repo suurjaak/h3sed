@@ -189,7 +189,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.dir_ctrl.SetFocus()
         self.set_savegame_filters(self.dir_ctrl)
         if conf.SelectedPath: self.refresh_dir_ctrl(conf.SelectedPath)
-        functions.init_functions(conf.UserFunctions, {"h3sed": h3sed, "metadata": metadata})
+        functions.init_functions(conf.UserFunctions, {"h3sed": h3sed, "metadata": metadata},
+                                 conf.FunctionDirectory)
 
         self.Show(True)
         logger.info("Started application.")
@@ -489,6 +490,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         def on_edit(*_):
             """Handler for choosing to edit user functions, opens callable manager dialog."""
             entries = functions.get_functions()
+            entries = [dict(x, permanent=True) if x.get("__builtin__") else x for x in entries]
             if self.dialog_functions:
                 if not self.dialog_functions.Shown:
                     self.dialog_functions.Populate(entries)

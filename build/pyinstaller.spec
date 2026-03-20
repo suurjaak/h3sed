@@ -6,9 +6,10 @@ depending on current environment.
 Pyinstaller-provided names and variables: Analysis, EXE, PYZ, SPEC, TOC.
 
 @created   12.04.2020
-@modified  09.04.2025
+@modified  20.03.2026
 """
 import atexit
+import glob
 import os
 import struct
 import sys
@@ -28,8 +29,16 @@ def cleanup():
     except Exception: pass
 
 
+extra_datas = [("res/3rd-party licenses.txt",  "3rd-party licenses.txt", "DATA")]
+# Include built-in user functions for source viewing and editing
+for path in glob.glob(os.path.join(ROOTPATH, "src", NAME, "functions", "*.py")):
+    name = os.path.basename(path)
+    if not name.startswith("__"):
+        extra_datas += [("functions/%s" % name, path, "DATA")]
+
+
 entrypoint = os.path.join(ROOTPATH, "launch.py")
-with open(entrypoint, "w") as f:
+with open(entrypoint, "w", encoding="utf-8") as f:
     f.write("from %s import main; main.run()" % NAME)
 atexit.register(cleanup)
 
@@ -37,7 +46,7 @@ a = Analysis(
     [entrypoint],
     excludes=["FixTk", "numpy", "tcl", "tk", "_tkinter", "tkinter", "Tkinter"],
 )
-a.datas += [("res/3rd-party licenses.txt",  "3rd-party licenses.txt", "DATA")]
+a.datas += extra_datas
 a.binaries = a.binaries - TOC([
     ('tcl85.dll', None, None),
     ('tk85.dll',  None, None),

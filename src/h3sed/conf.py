@@ -26,19 +26,19 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "3.6.dev2"
+Version = "3.6.dev3"
 VersionDate = "20.03.2026"
 
 Frozen = getattr(sys, "frozen", False)
 if Frozen:
     # Running as a pyinstaller executable
     ApplicationDirectory = os.path.dirname(sys.executable)
-    PluginDirectory = os.path.join(getattr(sys, "_MEIPASS", ""), "h3sed", "plugins")
+    FunctionDirectory = os.path.join(getattr(sys, "_MEIPASS", ""), "h3sed", "functions")
     ResourceDirectory = os.path.join(getattr(sys, "_MEIPASS", ""), "res")
     EtcDirectory = ApplicationDirectory
 else:
     ApplicationDirectory = os.path.realpath(os.path.dirname(__file__))
-    PluginDirectory = os.path.join(ApplicationDirectory, "plugins")
+    FunctionDirectory = os.path.join(ApplicationDirectory, "functions")
     ResourceDirectory = os.path.join(ApplicationDirectory, "res")
     EtcDirectory = os.path.join(ApplicationDirectory, "etc")
 
