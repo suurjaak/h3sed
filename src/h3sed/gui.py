@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    20.03.2026
+@modified    22.03.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -479,7 +479,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 text = '<font size="2" face="%s" color="%s"><pre>%s</pre></font>' % \
                        (conf.HtmlFontName, conf.FgColour, text.rstrip())
             buttons = {"&Copy": functools.partial(on_copy, value)}
-            controls.HtmlDialog(self, function_title, text, buttons=buttons).ShowModal()
+            with controls.HtmlDialog(self, function_title, text, buttons=buttons) as dlg:
+                dlg.ShowModal()
 
         def on_change(event):
             """Handler for updated user functions from callable manager, saves config."""
@@ -1207,10 +1208,11 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Handler for clicking to show command history, pops up history dialog."""
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage): return
-        dlg = controls.CommandHistoryDialog(self, page.undoredo)
-        if dlg.ShowModal() != wx.ID_OK: return
+        with controls.CommandHistoryDialog(self, page.undoredo) as dlg:
+            if dlg.ShowModal() != wx.ID_OK: return
+            count = dlg.GetSelection()
 
-        count, cando, do = dlg.GetSelection(), page.undoredo.CanUndo, page.undoredo.Undo
+        cando, do = page.undoredo.CanUndo, page.undoredo.Undo
         if count >= 0: cando, do = page.undoredo.CanRedo, page.undoredo.Redo
         verb = "Undo" if count < 0 else "Redo"
         guibase.status("%sing %s", verb, util.plural("action", abs(count)),
@@ -1228,7 +1230,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Handler for clicking "About program" menu, opens a small info frame."""
         maketext = lambda: step.Template(templates.ABOUT_HTML).expand()
         buttons = {"Check for &updates": self.on_check_update}
-        controls.HtmlDialog(self, "About %s" % conf.Title, maketext, buttons=buttons).ShowModal()
+        with controls.HtmlDialog(self, "About %s" % conf.Title, maketext, buttons=buttons) as dlg:
+            dlg.ShowModal()
 
 
     def on_browse(self, event=None):
@@ -1748,7 +1751,8 @@ class SavefilePage(wx.Panel):
         """Shows unsaved changes in a popup dialog."""
         title = "Changes in %s" % self.savefile.filename
         content = "".join(p.get_changes() for p in self.plugins)
-        controls.HtmlDialog(self, title, content, style=wx.RESIZE_BORDER).ShowModal()
+        with controls.HtmlDialog(self, title, content, style=wx.RESIZE_BORDER) as dlg:
+            dlg.ShowModal()
 
 
     def on_page_event(self, event):

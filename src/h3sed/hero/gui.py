@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  19.03.2026
+@modified  22.03.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -533,7 +533,10 @@ class HeroPlugin(object):
         buttons = {"Copy data": self.on_copy_hero}
         dlg = controls.HtmlDialog(self._panel.TopLevelParent, "Hero character sheet", content,
                                   links, buttons, autowidth_links=True, style=wx.RESIZE_BORDER)
-        wx.CallAfter(dlg.ShowModal)
+        def after(dlg):
+            if not self._panel: return
+            with dlg: dlg.ShowModal()
+        wx.CallAfter(after, dlg) # After to allow clicked toolbar icon to lose focus
 
 
     def on_plugin_event(self, event):
