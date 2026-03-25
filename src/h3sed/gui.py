@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.03.2026
+@modified    25.03.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -37,6 +37,8 @@ import wx.lib.newevent
 import h3sed
 from . lib import controls
 from . lib.controls import ColourManager
+from . lib import i18n
+from . lib.i18n import translate as __
 from . lib import util
 from . lib import wx_accel
 from . hero import gui as hero_gui
@@ -60,6 +62,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     """Program main window."""
 
     def __init__(self):
+        i18n.init(os.path.join(conf.EtcDirectory, "i18n"), conf.Translations)
+        i18n.set_current_language(conf.Language)
+        controls.Translate.HOOK = i18n.make_translate(stack_depth=2)
         # Override default wx images with ones from 4.1.1 for better looks
         art_imgs = {wx.ART_COPY:  images.ToolbarCopy,  wx.ART_FILE_OPEN: images.ToolbarFileOpen,
                     wx.ART_PASTE: images.ToolbarPaste, wx.ART_FILE_SAVE: images.ToolbarFileSave,
@@ -290,6 +295,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             "&Off", "Dark mode off", kind=wx.ITEM_RADIO)
         if conf.DarkTheme is None: menu_darkmode_auto.Check(True)
         else: menu_darkmode_on.Check(True) if conf.DarkTheme else menu_darkmode_off.Check(True)
+        menu_languages = self.menu_languages = wx.Menu()
+        menu_options.AppendSubMenu(menu_languages, "Interface &language")
+        self.populate_menu_languages()
         menu_autoupdate_check = self.menu_autoupdate_check = menu_options.Append(
             wx.ID_ANY, "Automatic &update check",
             "Automatically check for program updates periodically", kind=wx.ITEM_CHECK
@@ -436,6 +444,52 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         tb.EnableTool(wx.ID_HARDDISK, True)
         tb.EnableTool(wx.ID_EXECUTE,  True)
         tb.Realize()
+
+
+    def on_add_language(self, event):
+        """Handler adding new language, opens dialog for selecting translation file and loads it."""
+        formats = {"*.%s" % format: label for format, label in i18n.FORMATS.items()}
+        wildcard = "{0} ({1})|{1}".format("Translation file", ";".join(sorted(formats)))
+        wildcard += "|" + "|".join("{0} ({1})|{1}".format(label, pattern)
+                                   for pattern, label in formats.items())
+        with wx.FileDialog(self, "Select translation file", wildcard=wildcard,
+            style=wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.RESIZE_BORDER
+        ) as dialog:
+            if wx.ID_OK != dialog.ShowModal(): return
+            filename = dialog.GetPath()
+
+        opts, err = i18n.add_translation(filename)
+        if err:
+            wx.MessageBox("%s\n\n%s" % ("Error loading translation.", err),
+                          conf.Title, wx.OK | wx.ICON_ERROR)
+        else:
+            self.select_language(opts["code"])
+
+
+    def on_drop_language(self, event):
+        """Handler for dropping a translation, opens dialog for selecting language and drops it."""
+        droppables = [opts for opts in i18n.get_all_languages().values() if opts.get("extra")]
+        droppables.sort(key=lambda x: x["name"].lower())
+        choices = [opts["name"] for opts in droppables]
+        with wx.SingleChoiceDialog(self, "", "Drop translation", choices) as dlg:
+            if wx.ID_OK != dlg.ShowModal(): return
+            opts = droppables[dlg.GetSelection()]
+
+        was_current = (opts["code"] == conf.Language)
+        i18n.drop_language(opts["code"])
+        logger.info("Dropped translation language %(name)s (%(code)s, %(path)s).", opts)
+        msgs = ["Dropped translation for %(name)s (%(code)s)." % opts]
+
+        if was_current:
+            conf.Language = i18n.get_current_language()
+            current_opts = i18n.get_language(conf.Language)
+            logger.info("Application language set to %(name)s (%(code)s).", current_opts)
+            msgs.append("Application language set to %(name)s (%(code)s). "
+                        "Relaunch for full effect." % current_opts)
+        conf.Translations = i18n.get_config()
+        conf.save()
+        guibase.status(" ".join(msgs), flash=True)
+        self.populate_menu_languages()
 
 
     def on_function_menu(self, event):
@@ -646,6 +700,29 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             wx.MessageBox("\n\n".join(texts), conf.Title, wx.OK | wx.ICON_ERROR)
 
 
+    def populate_menu_languages(self):
+        """Populates the language selection menu with current translation options."""
+        for item in self.menu_languages.MenuItems: self.menu_languages.Delete(item)
+
+        language_map = i18n.get_all_languages()
+        for lang in sorted(language_map, key=lambda x: language_map[x]["name"].lower()):
+            opts = language_map[lang]
+            menu_lang = self.menu_languages.Append(wx.ID_ANY, opts["name"],
+                "Application interface in %(name)s (%(code)s)" % opts, kind=wx.ITEM_RADIO)
+            if lang == conf.Language: menu_lang.Check(True)
+            else:
+                handler = (lambda lang: lambda event: self.select_language(lang))(lang)
+                self.menu_languages.Bind(wx.EVT_MENU, handler, menu_lang)
+        self.menu_languages.AppendSeparator()
+        menu_add = self.menu_languages.Append(wx.ID_ANY, "Add language ..",
+            "Add another language from a translation file")
+        self.menu_languages.Bind(wx.EVT_MENU, self.on_add_language, menu_add)
+        if any(opts.get("extra") for opts in language_map.values()):
+            menu_drop = self.menu_languages.Append(wx.ID_ANY, "Remove language",
+                "Remove an added translation language")
+            self.menu_languages.Bind(wx.EVT_MENU, self.on_drop_language, menu_drop)
+
+
     def populate_statusbar(self):
         """Adds file status fields to program statusbar."""
         self.StatusBar.SetFieldsCount(3)
@@ -698,6 +775,20 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         direction, visible = next((k, v) for k, v in horizon.items() if v == min(horizon.values()))
         if visible < padding:
             treectrl.ScrollLines(direction * (padding - visible))
+
+
+    def select_language(self, lang):
+        """Handler for selecting application language, updates configuration."""
+        i18n.set_current_language(lang)
+        conf.Language = i18n.get_current_language()
+        conf.Translations = i18n.get_config()
+        conf.save()
+
+        opts = i18n.get_language(lang)
+        logger.info("Application language set to %(name)s (%(code)s).", opts)
+        t = "Application language set to %(name)s (%(code)s). Relaunch for full effect." % opts
+        guibase.status(t, flash=True)
+        self.populate_menu_languages()
 
 
     def set_savegame_filters(self, ctrl):

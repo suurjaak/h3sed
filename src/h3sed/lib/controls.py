@@ -28,7 +28,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    20.03.2026
+@modified    24.03.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -59,6 +59,30 @@ PY3 = sys.version_info > (3, )
 
 # wx.NewId() deprecated from around wxPython 4
 NewId = (lambda: wx.NewIdRef().Id) if hasattr(wx, "NewIdRef") else wx.NewId
+
+
+
+class Translate(object):
+    """Provides simple text translation."""
+
+    ## Translator callback(text), returning translated value, or given text as fallback
+    HOOK = None
+
+    @classmethod
+    def translate(cls, text, *args, **kwargs):
+        """Returns translated text, formatted with positional and keyword arguments if any."""
+        result = text if cls.HOOK is None else cls.HOOK(text)
+        if not args and not kwargs: return result
+
+        for fmter in [lambda x: x % (tuple(args) if args else kwargs), 
+                      lambda x: x.format(*args, **kwargs)]:
+            try:   result = fmter(result) # Try both printf-style % and format-style {}
+            except (KeyError, IndexError, TypeError): pass
+            else:   break # for fmter
+        return result
+
+
+__ = Translate.translate
 
 
 

@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  22.03.2026
+@modified  25.03.2026
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
@@ -26,8 +26,8 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "3.6.dev5"
-VersionDate = "22.03.2026"
+Version = "3.6.dev6"
+VersionDate = "25.03.2026"
 
 Frozen = getattr(sys, "frozen", False)
 if Frozen:
@@ -52,9 +52,9 @@ FileDirectives = [
 ]
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
-    "DarkTheme", "FileExtensions", "HeroToggles", "MaxConsoleHistory", "MaxRecentFiles",
-    "PopupUnexpectedErrors", "Positions", "SavegameNewFormat", "StatusFlashLength",
-    "UpdateCheckInterval", "UserFunctions",
+    "DarkTheme", "FileExtensions", "HeroToggles", "Language", "MaxConsoleHistory",
+    "MaxRecentFiles", "PopupUnexpectedErrors", "Positions", "SavegameNewFormat",
+    "StatusFlashLength", "Translations", "UpdateCheckInterval", "UserFunctions",
 ]
 Defaults = {}
 
@@ -84,6 +84,9 @@ ConsoleHistoryCommands = []
 """Hero index categories toggle state, as {name: false}."""
 HeroToggles = {}
 
+"""Current application language."""
+Language = "en"
+
 """Various index and location selection states."""
 Positions = {"filefilter_index": 0, "herotab_index": 0, "charsheet_view": "normal",
              "savepage_splitter": 36}
@@ -96,6 +99,9 @@ RecentHeroes = []
 
 """Whether to assume new savegame format when ambiguous e.g. updated Armageddon's Blade."""
 SavegameNewFormat = True
+
+"""Additional internationalization languages, as {language code: {"name", "path"}}."""
+Translations = {}
 
 """Whether the program checks for updates every UpdateCheckInterval."""
 UpdateCheckAutomatic = True
