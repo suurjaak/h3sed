@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  26.02.2026
+@modified  28.03.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -19,10 +19,12 @@ import step
 import yaml
 
 import h3sed
+from . lib.i18n import translate as __
 from . lib import util
 
 # Modules imported inside templates:
 #import datetime, json, os, sys, step, wx
+#from h3sed.lib.i18n import translate as __
 #from h3sed.lib import util
 #from h3sed import conf, images, metadata, templates
 
@@ -200,7 +202,7 @@ def serialize_property_yaml(state, indent="  "):
     """Returns hero property data as ([(formatted prefix, formatted value)], max key length)."""
     pairs, maxlen = [], 0
     fmt = lambda v: "" if v in (None, {}) else \
-                    yaml.safe_dump([v], default_flow_style=True).strip()[1:-1] # Strip []
+                    yaml.safe_dump([__(v)], default_flow_style=True).strip()[1:-1] # Strip []
 
     if isinstance(state, (list, set)):
         state = list(state)
@@ -435,6 +437,7 @@ Text to search for filtering heroes index.
 HERO_SEARCH_TEXT = """<%
 import h3sed
 from h3sed import conf, metadata
+from h3sed.lib.i18n import translate as __
 stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=hero.version)
 deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACTS]
 category = get("category")
@@ -454,33 +457,33 @@ category = get("category")
 %if category is None or "devices" == category:
     %for prop in deviceprops:
         %if hero.stats.get(prop["name"]):
-{{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}
+{{ __(prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]]) }}
         %endif
     %endfor
 %endif
 %if category is None or "skills" == category:
     %for skill in hero.skills:
-{{ skill["name"] }}: {{ skill["level"] }}
+{{ __(skill["name"]) }}: {{ __(skill["level"]) }}
     %endfor
 %endif
 %if category is None or "army" == category:
     %for army in filter(bool, hero.army):
-{{ army["name"] }}: {{ army["count"] }}
+{{ __(army["name"]) }}: {{ army["count"] }}
     %endfor
 %endif
 %if category is None or "spells" == category:
-    %for item in hero.spells:
-{{ item }}
+    %for spell in hero.spells:
+{{ __(spell) }}
     %endfor
 %endif
 %if category is None or "equipment" == category:
-    %for item in filter(bool, hero.equipment.values()):
-{{ item }}
+    %for artifact in filter(bool, hero.equipment.values()):
+{{ __(artifact) }}
     %endfor
 %endif
 %if category is None or "inventory" == category:
-    %for item in filter(bool, hero.inventory):
-{{ item }}
+    %for artifact in filter(bool, hero.inventory):
+{{ __(artifact) }}
     %endfor
 %endif
 """
@@ -502,6 +505,7 @@ HTML text shown in heroes index.
 HERO_INDEX_HTML = """<%
 import h3sed
 from h3sed import conf, metadata
+from h3sed.lib.i18n import translate as __
 stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=savefile.version_id)
 deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACTS]
 categories = get("categories")
@@ -532,7 +536,11 @@ def sortarrow(col):
 %if not categories or categories["stats"]:
     <th align="left" valign="bottom" nowrap><a href="sort:level"><font color="{{ conf.FgColour }}">Level{{! sortarrow("level") }}</font></a></th>
     %for name, label in metadata.PRIMARY_ATTRIBUTES.items():
-    <th align="left" valign="bottom" nowrap><a href="sort:{{ name }}"><font color="{{ conf.FgColour }}">{{ next(x[:5] if len(x) > 7 else x for x in [label.split()[-1]]) }}{{! sortarrow(name) }}</font></a></th>
+<%
+label_text = __(name.title() if " " in label else label)
+if len(label_text) > 7: label_text = label_text[:5]
+%>
+    <th align="left" valign="bottom" nowrap><a href="sort:{{ name }}"><font color="{{ conf.FgColour }}">{{ label_text }}{{! sortarrow(name) }}</font></a></th>
     %endfor
 %endif
 %if not categories or categories["devices"]:
@@ -591,36 +599,36 @@ def sortarrow(col):
 %if not categories or categories["skills"]:
     <td align="left" valign="top" nowrap>
     %for skill in hero.skills:
-    <b>{{ skill["name"] }}:</b> {{ skill["level"] }}<br />
+    <b>{{ __(skill["name"]) }}:</b> {{ __(skill["level"]) }}<br />
     %endfor
     </td>
 %endif
 %if not categories or categories["army"]:
     <td align="left" valign="top" nowrap>
     %for army in filter(bool, hero.army):
-    {{ army["name"] }}: {{ army["count"] }}<br />
+    {{ __(army["name"]) }}: {{ army["count"] }}<br />
     %endfor
     </td>
 %endif
 %if not categories or categories["equipment"]:
     <td align="left" valign="top" nowrap>
-    %for item in filter(bool, hero.equipment.values()):
-    {{ item }}<br />
+    %for artifact in filter(bool, hero.equipment.values()):
+    {{ __(artifact) }}<br />
     %endfor
     </td>
 %endif
 %if not categories or categories["inventory"]:
     <td align="left" valign="top" nowrap>
-    %for item in filter(bool, hero.inventory):
-    {{ item }}<br />
+    %for artifact in filter(bool, hero.inventory):
+    {{ __(artifact) }}<br />
     %endfor
     </td>
   </tr>
 %endif
 %if not categories or categories["spells"]:
     <td align="left" valign="top" nowrap>
-    %for item in hero.spells:
-    {{ item }}<br />
+    %for spell in hero.spells:
+    {{ __(spell) }}<br />
     %endfor
     </td>
 %endif
@@ -640,6 +648,7 @@ Text to provide for hero columns in CSV export.
 """
 HERO_EXPORT_CSV = """<%
 import h3sed
+from h3sed.lib.i18n import translate as __
 stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=hero.version)
 deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_ARTIFACTS]
 %>
@@ -657,23 +666,23 @@ deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_AR
     %endfor
 %elif "skills" == column:
     %for skill in hero.skills:
-{{ skill["name"] }}: {{ skill["level"] }}
+{{ __(skill["name"]) }}: {{ __(skill["level"]) }}
     %endfor
 %elif "army" == column:
     %for army in filter(bool, hero.army):
-{{ army["name"] }}: {{ army["count"] }}
+{{ __(army["name"]) }}: {{ army["count"] }}
     %endfor
 %elif "spells" == column:
-    %for item in hero.spells:
-{{ item }}
+    %for spell in hero.spells:
+{{ __(spell) }}
     %endfor
 %elif "equipment" == column:
-    %for slot, item in ((k, v) for k, v in hero.equipment.items() if v):
-{{ slot }}: {{ item }}
+    %for slot, artifact in ((k, v) for k, v in hero.equipment.items() if v):
+{{ slot }}: {{ __(artifact) }}
     %endfor
 %elif "inventory" == column:
-    %for item in filter(bool, hero.inventory):
-{{ item }}
+    %for artifact in filter(bool, hero.inventory):
+{{ __(artifact) }}
     %endfor
 %endif
 """
@@ -691,8 +700,9 @@ HTML text for exporting heroes to file.
 HERO_EXPORT_HTML = """<%
 import datetime, json
 import h3sed
-from h3sed.lib import util
 from h3sed import conf, images, metadata, templates
+from h3sed.lib.i18n import translate as __
+from h3sed.lib import util
 stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAPROPS, version=savefile.version_id)
 deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACTS]
 %><!DOCTYPE HTML><html lang="en">
@@ -1046,35 +1056,35 @@ colptr = max(col_indexes) + 1
 %if not categories or categories["skills"]:
     <td>
     %for skill in hero.skills:
-    <b>{{ skill["name"] }}:</b> {{ skill["level"] }}<br />
+    <b>{{ __(skill["name"]) }}:</b> {{ __(skill["level"]) }}<br />
     %endfor
     </td>
 %endif
 %if not categories or categories["army"]:
     <td>
     %for army in filter(bool, hero.army):
-    {{ army["name"] }}: {{ army["count"] }}<br />
+    {{ __(army["name"]) }}: {{ army["count"] }}<br />
     %endfor
     </td>
 %endif
 %if not categories or categories["equipment"]:
     <td>
-    %for item in filter(bool, hero.equipment.values()):
-    {{ item }}<br />
+    %for artifact in filter(bool, hero.equipment.values()):
+    {{ __(artifact) }}<br />
     %endfor
     </td>
 %endif
 %if not categories or categories["inventory"]:
     <td>
-    %for item in filter(bool, hero.inventory):
-    {{ item }}<br />
+    %for artifact in filter(bool, hero.inventory):
+    {{ __(artifact) }}<br />
     %endfor
     </td>
 %endif
 %if not categories or categories["spells"]:
     <td>
-    %for item in hero.spells:
-    {{ item }}<br />
+    %for spell in hero.spells:
+    {{ __(spell) }}<br />
     %endfor
     </td>
 %endif

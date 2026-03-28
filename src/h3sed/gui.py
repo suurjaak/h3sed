@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    25.03.2026
+@modified    28.03.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1934,10 +1934,9 @@ def build(plugin, panel):
             return result
 
         def handler(event):
-            value = event.EventObject.Value
-            if isinstance(ctrl, wx.SpinCtrlDouble): value = int(value)
-            if callable(myprops.get("convert")):
-                value = myprops["convert"](myprops, value, reverse=True)
+            value = ctrl.Value
+            if isinstance(ctrl, wx.ComboBox): value = ctrl.GetClientData(ctrl.Selection) or value
+            elif isinstance(ctrl, wx.SpinCtrlDouble): value = int(value)
             state  = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             row    = state[rowindex] if rowindex is not None and isinstance(state, list) else state
             target = next((x for x in (row, state) if isinstance(x, (list, dict))), None)
@@ -1948,7 +1947,7 @@ def build(plugin, panel):
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
             if name is not None: namelbl += (" " if namelbl else "") + name
-            valuelbl = "<blank>" if value in ("", None) else value
+            valuelbl = "<blank>" if value in ("", None) else __(value)
             cname = "set %s: %s %s" % (label, namelbl, valuelbl)
             logger.info("Setting %s: %s to %s.", label, namelbl, valuelbl)
             plugin.parent.command(functools.partial(on_do, value), cname)
@@ -1991,11 +1990,13 @@ def build(plugin, panel):
             return True
 
         def handler(event):
-            if not ctrl.Value: return
+            value = ctrl.Value
+            if isinstance(ctrl, wx.ComboBox): value = ctrl.GetClientData(ctrl.Selection) or value
+            if not value: return
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            cname = "add %s: %s" % (label, ctrl.Value)
-            logger.info("Adding %s: %s.", label, ctrl.Value)
-            plugin.parent.command(functools.partial(on_do, ctrl.Value), cname)
+            cname = "add %s: %s" % (label, __(value))
+            logger.info("Adding %s: %s.", label, value)
+            plugin.parent.command(functools.partial(on_do, value), cname)
         return handler
 
     def make_remove_handler(ctrl, index):
@@ -2011,7 +2012,7 @@ def build(plugin, panel):
             v = state[index]
             if isinstance(v, dict): v = v.get("name", v)
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            cname = "remove %s: %s" % (label, v)
+            cname = "remove %s: %s" % (label, __(v))
             logger.info("Removing %s: %s.", label, v)
             plugin.parent.command(on_do, cname)
         return handler
@@ -2036,7 +2037,7 @@ def build(plugin, panel):
         def handler(event):
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
-            if name is not None: namelbl += (" " if namelbl else "") + name
+            if name is not None: namelbl += (" " if namelbl else "") + __(name)
             cname = "set %s: %s <blank>" % (label, namelbl)
             logger.info("Setting %s: %s to <blank>.", label, namelbl)
             plugin.parent.command(on_do, cname)
@@ -2060,8 +2061,8 @@ def build(plugin, panel):
         def handler(event):
             action, doing = ("add", "Adding") if ctrl.Value else ("remove", "Removing")
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            cname = "%s %s: %s" % (action, label, value)
-            logger.info("%s %s: %s.", doing, label, value)
+            cname = "%s %s: %s" % (action, label, __(value))
+            logger.info("%s %s: %s.", doing, label, __(value))
             plugin.parent.command(functools.partial(on_do, ctrl.Value), cname)
         return handler
 
@@ -2113,10 +2114,11 @@ def build(plugin, panel):
                 resultitem = {}
                 for itemprop in prop["item"]:
                     c, v = None, row.get(itemprop.get("name")) if isinstance(row, dict) else row
-                    if callable(itemprop.get("convert")): v = itemprop["convert"](itemprop, v)
+                    formatter = itemprop["format"] if callable(itemprop.get("format")) else \
+                                lambda x: list(map(__, x)) if isinstance(x, list) else __(x)
                     if "label" == itemprop.get("type"):
                         values_present.append(v)
-                        if itemprop.get("label"): v = itemprop["label"]
+                        v = itemprop["label"] if itemprop.get("label") else formatter(v)
                         if prop.get("orderable"): v = "%s. %s" % (i + 1, v)
                         c0 = wx.StaticText(panel, label=v, name="%s_%s_label" % (plugin.name, i))
                         sizer.Add(c0, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
@@ -2125,10 +2127,16 @@ def build(plugin, panel):
                         if isinstance(choices, dict): choices = list(choices.values())
                         if prop.get("nullable") and "" not in choices: choices = [""] + choices
                         if v and v not in choices: choices = [v] + choices
+                        labels = formatter(choices)
+                        if not itemprop.get("sequence"):
+                            choices, labels = zip(*sorted(zip(choices, labels),
+                                                          key=lambda x: x[1].lower()))
+
                         c = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY,
                                         name="%s_%s" % (plugin.name, i))
-                        c.SetItems(choices)
-                        if v is not None: c.Value = v
+                        c.SetItems(labels)
+                        for j, x in enumerate(choices): c.SetClientData(j, x)
+                        if v is not None: c.Value = formatter(v)
                         elif "" in choices: c.Value = ""
                         c.Bind(wx.EVT_COMBOBOX, make_value_handler(c, itemprop, rowindex=i))
                         bsizer.Add(c, flag=wx.GROW)
@@ -2192,7 +2200,9 @@ def build(plugin, panel):
                     choices = [x for x in choices if x not in values_present]
                 c1 = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
                 c2 = wx.Button(panel, label="Add", name="add")
-                c1.SetItems(choices)
+                labels = [__(x) for x in choices]
+                c1.SetItems(labels)
+                for j, x in enumerate(choices): c1.SetClientData(j, x)
                 c2.Bind(wx.EVT_BUTTON, make_add_handler(c1, prop))
 
                 sizer.Add(c1, pos=(count, 0))
@@ -2206,8 +2216,12 @@ def build(plugin, panel):
             drow, dcol = (1, 0) if prop.get("vertical") else (0, 1)
             maxrows, maxcols = math.ceil(len(prop["choices"]) / prop["columns"]), prop["columns"]
             row, column = row0, col0 = count, 0
-            for value in prop["choices"]:
-                c = wx.CheckBox(panel, label=value)
+            choices, labels = prop["choices"], [__(x) for x in prop["choices"]]
+            if not prop.get("sequence"):
+                choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
+
+            for value, label in zip(choices, labels):
+                c = wx.CheckBox(panel, label=label)
                 c.Value = bool(state.get(value)) if isinstance(state, dict) else value in state
                 c.Bind(wx.EVT_CHECKBOX, make_check_handler(c, prop, value))
                 sizer.Add(c, pos=(row, column), border=10, flag=wx.TOP if row == row0 else 0)
@@ -2247,16 +2261,22 @@ def build(plugin, panel):
                                name="%s_label" % prop["name"])
             c2 = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY, name=prop["name"])
 
+            formatter = prop["format"] if callable(prop.get("format")) else \
+                        lambda x: list(map(__, x)) if isinstance(x, list) else __(x)
             v = state[prop["name"]]
-            if callable(prop.get("convert")): v = prop["convert"](prop, v)
             choices = prop["choices"]
             if isinstance(choices, dict):
                 choices = list(choices.values())
                 v = next((y for x, y in prop["choices"].items() if v == x), v)
             if prop.get("nullable") and "" not in choices: choices = [""] + choices
             if v and v not in choices: choices = [v] + choices
-            c2.SetItems(choices)
-            if v is not None: c2.Value = v
+            labels = formatter(choices)
+            if not prop.get("sequence"):
+                choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
+
+            c2.SetItems(labels)
+            for j, x in enumerate(choices): c2.SetClientData(j, x)
+            if v is not None: c2.Value = formatter(v)
             if prop.get("readonly"): c2.Enable(False)
             c2.Bind(wx.EVT_COMBOBOX, make_value_handler(c2, prop))
 

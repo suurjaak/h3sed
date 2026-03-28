@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  11.03.2026
+@modified  27.03.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -17,6 +17,7 @@ import re
 import sys
 
 import h3sed
+from .. lib.i18n import translate as __
 from .. lib.util import AttrDict, OrderedSet, SlotsDict, TypedArray, tuplefy
 from .. import metadata
 from . import army
@@ -136,23 +137,22 @@ def make_string_cast(name, version=None, nullable=True, default=False, choices=(
     return cast
 
 
-def format_artifacts(value, version=None, reverse=False):
+def format_artifacts(value, version=None):
     """
-    Adds or removes combination artifact text from artifact names.
+    Returns artifact name for display, translating and adding combination artifact suffix if any.
 
     @param   value    a single value, or a list of values
     @param   version  game version like "sod", if any
-    @param   reverse  strip combination artifact text instead of adding
     """
+    if not value: return value
     COMBINATION_ARTIFACTS = metadata.Store.get("combination_artifacts", version=version)
     COMBINATION_SUFFIX = "  (combined artifact)"
-    if not value or not COMBINATION_ARTIFACTS: return value
+    if not COMBINATION_ARTIFACTS: return __(value)
     result = []
     for v in (value if isinstance(value, list) else [value]):
-        if reverse:
-            if v and v.endswith(COMBINATION_SUFFIX): v = v[:-len(COMBINATION_SUFFIX)]
-        elif v in COMBINATION_ARTIFACTS: v += COMBINATION_SUFFIX
-        result.append(v)
+        v2 = __(v)
+        if v in COMBINATION_ARTIFACTS: v2 += COMBINATION_SUFFIX
+        result.append(v2)
     return result if isinstance(value, list) else result[0]
 
 

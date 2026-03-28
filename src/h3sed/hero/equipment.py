@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  09.01.2026
+@modified  28.03.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -18,6 +18,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import util
+from .. lib.i18n import translate as __
 from .. import conf
 from .. import metadata
 
@@ -28,135 +29,135 @@ logger = logging.getLogger(__name__)
 PROPS = {"name": "equipment", "label": "Equipment", "index": 3}
 DATAPROPS = [{
     "name":     "helm",
-    "label":    "Helm slot",
+    "label":    "Helm",
     "type":     "combo",
     "nullable": True,
     "choices":  None, # Populated later
-    "convert":  None, # Populated later
+    "format":   None, # Populated later
     "menu":     None, # Populated later
     "info":     None, # Populated later
 }, {
     "name":     "neck",
-    "label":    "Neck slot",
+    "label":    "Neck",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "armor",
-    "label":    "Armor slot",
+    "label":    "Armor",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "weapon",
-    "label":    "Weapon slot",
+    "label":    "Weapon",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "shield",
-    "label":    "Shield slot",
+    "label":    "Shield",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "lefthand",
-    "label":    "Left hand slot",
+    "label":    "Left hand",
     "type":     "combo",
     "slot":     "hand",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "righthand",
-    "label":    "Right hand slot",
+    "label":    "Right hand",
     "type":     "combo",
     "slot":     "hand",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "cloak",
-    "label":    "Cloak slot",
+    "label":    "Cloak",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "feet",
-    "label":    "Feet slot",
+    "label":    "Feet",
     "type":     "combo",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "side1",
-    "label":    "Side slot 1",
+    "label":    "Side 1",
     "type":     "combo",
     "slot":     "side",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "side2",
-    "label":    "Side slot 2",
+    "label":    "Side 2",
     "type":     "combo",
     "slot":     "side",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "side3",
-    "label":    "Side slot 3",
+    "label":    "Side 3",
     "type":     "combo",
     "slot":     "side",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "side4",
-    "label":    "Side slot 4",
+    "label":    "Side 4",
     "type":     "combo",
     "slot":     "side",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }, {
     "name":     "side5",
-    "label":    "Side slot 5",
+    "label":    "Side 5",
     "type":     "combo",
     "slot":     "side",
     "nullable": True,
     "choices":  None,
-    "convert":  None,
+    "format":   None,
     "menu":     None,
     "info":     None,
 }]
@@ -192,18 +193,16 @@ class EquipmentPlugin(object):
         """Returns UI props for equipment-tab, as [{type: "combo", ..}]."""
         result = []
         LOCATION_TO_SLOT = metadata.Store.get("equipment_slots", version=self.version)
-        def format_artifact(props, value, reverse=False):
-            return h3sed.hero.format_artifacts(value, version=self.version, reverse=reverse)
         for prop in DATAPROPS:
             slot = LOCATION_TO_SLOT.get(prop["name"])
             if slot is None: continue # for prop
             myprop = dict(prop)
             if "choices" in prop:
                 choices = metadata.Store.get("artifacts", category=slot, version=self.version)
-                myprop["choices"] = [""] + h3sed.hero.format_artifacts(choices)
-            if "convert" in prop: myprop["convert"] = format_artifact
-            if "menu"    in prop: myprop["menu"]    = self.make_item_menu
-            if "info"    in prop: myprop["info"]    = self.format_stats_bonus
+                myprop["choices"] = choices
+            if "format"  in prop: myprop["format"] = self.format_artifact
+            if "menu"    in prop: myprop["menu"]   = self.make_item_menu
+            if "info"    in prop: myprop["info"]   = self.format_stats_bonus
             result.append(myprop)
         return h3sed.version.adapt("hero.equipment.DATAPROPS", result, version=self.version)
 
@@ -247,13 +246,16 @@ class EquipmentPlugin(object):
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
                 cc = [""] + metadata.Store.get("artifacts", category=slot, version=self.version)
-                cc = h3sed.hero.format_artifacts(cc)
+                choices, value = cc, self._state.get(name) or ""
+                if value and value not in choices: choices.insert(0, value)
+                labels = self.format_artifact(choices)
+                choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
 
-                ctrl, choices = self._ctrls[name], cc
-                value = h3sed.hero.format_artifacts(self._state.get(name)) or ""
-                if value and value not in choices: choices = [value] + cc
-                if choices != ctrl.GetItems(): ctrl.SetItems(choices)
-                ctrl.Value = value
+                ctrl = self._ctrls[name]
+                if list(labels) != ctrl.GetItems():
+                    ctrl.SetItems(labels)
+                    for j, x in enumerate(choices): ctrl.SetClientData(j, x)
+                ctrl.Value = self.format_artifact(value) or ""
                 infoctrl = self._ctrls["%s-info" % name]
                 infoctrl.Label = self.format_stats_bonus(prop)
                 infoctrl.ToolTip = infoctrl.Label
@@ -301,7 +303,7 @@ class EquipmentPlugin(object):
             artifact_slot = ARTIFACT_TO_SLOTS[artifact_name][0]
             if artifact_slot != slot: continue # for inventory_index,
 
-            label = "%s:\t%s" % (inventory_index + 1, h3sed.hero.format_artifacts(artifact_name))
+            label = "%s:\t%s" % (inventory_index + 1, self.format_artifact(artifact_name))
             item = menu_equip.Append(wx.ID_ANY, label)
             kwargs = dict(location=location, inventory_index=inventory_index)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_transact_inventory, **kwargs), item)
@@ -311,9 +313,9 @@ class EquipmentPlugin(object):
             for location2 in SLOT_TO_LOCATIONS[slot]:
                 artifact_equipped = self._hero.equipment[location2]
                 if artifact_equipped is None and location2 in reserved_locations:
-                    label = "<taken by %s>" % self._hero.equipment[reserved_locations[location2]]
+                    label = "<taken by %s>" % __(self._hero.equipment[reserved_locations[location2]])
                 elif artifact_equipped is None: label = "<blank>"
-                else: label = h3sed.hero.format_artifacts(artifact_equipped)
+                else: label = self.format_artifact(artifact_equipped)
                 item = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (location2, label))
                 kwargs = dict(location=location, location2=location2)
                 menu.Bind(wx.EVT_MENU, functools.partial(self.on_swap_location, **kwargs), item)
@@ -344,6 +346,11 @@ class EquipmentPlugin(object):
         kwargs = dict(location=location)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_transact_inventory, **kwargs), item_send)
         return menu
+
+
+    def format_artifact(self, value):
+        """Returns label for display, for a single artifact or a list of artifacts."""
+        return h3sed.hero.format_artifacts(value, version=self.version)
 
 
     def format_stats_bonus(self, prop):
@@ -380,20 +387,23 @@ class EquipmentPlugin(object):
         try:
             for location, artifact in self._state.items():
                 slot = LOCATION_TO_SLOT[location]
-                choices = metadata.Store.get("artifacts", category=slot, version=self.version)
-                choices = [""] + h3sed.hero.format_artifacts(choices)
-                artifact = h3sed.hero.format_artifacts(artifact)
-                ctrl = self._ctrls[location]
+                cc = metadata.Store.get("artifacts", category=slot, version=self.version)
+                choices = [""] + cc
+                if artifact and artifact not in choices: choices.insert(0, artifact)
 
+                ctrl = self._ctrls[location]
                 if not ctrl.Enabled:
-                    if artifact and artifact not in choices:
-                        choices = [artifact] + choices
-                    if choices != ctrl.GetItems(): ctrl.SetItems(choices)
-                    ctrl.Value = artifact or ""
+                    labels = self.format_artifact(choices)
+                    choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
+                    if list(labels) != ctrl.GetItems():
+                        ctrl.SetItems(labels)
+                        for j, x in enumerate(choices): ctrl.SetClientData(j, x)
+                    ctrl.Value = self.format_artifact(artifact) or ""
                     ctrl.Enable()
 
                 if not artifact and location in reserved_locations:
-                    label = "<taken by %s>" % self._state[reserved_locations[location]]
+                    combo_artifact = self._state[reserved_locations[location]]
+                    label = "<taken by %s>" % __(combo_artifact)
                     ctrl.SetItems([label])
                     ctrl.Value = label
                     ctrl.Disable()
@@ -411,7 +421,7 @@ class EquipmentPlugin(object):
 
         try: self._state[prop["name"]] = v2
         except Exception as e:
-            ctrl.Value = h3sed.hero.format_artifacts(v1 or "")
+            ctrl.Value = self.format_artifact(v1) or ""
             wx.MessageBox(str(e), conf.Title, wx.OK | wx.ICON_WARNING)
             return False
 
@@ -489,8 +499,8 @@ class EquipmentPlugin(object):
             eq2.update({l: None for l in locations})
             eq2[primary_location] = combo_artifact
 
-        label = "change %s equipment: %s %s" % (self._hero.name, action, combo_artifact)
-        h3sed.guibase.status("%s equipment %s" % (acting, combo_artifact),
+        label = "change %s equipment: %s %s" % (self._hero.name, action, __(combo_artifact))
+        h3sed.guibase.status("%s equipment %s" % (acting, __(combo_artifact)),
                              flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(self.change_artifacts, eq2)
         self.parent.command(callable, name=label)
@@ -507,9 +517,9 @@ class EquipmentPlugin(object):
         inv2 = inv2.make_compact()
         artifact_name1 = self._state[location]
         artifact_name2 = None if inventory_index is None else self._hero.inventory[inventory_index]
-        action = "send %s" % artifact_name1 if inventory_index is None else \
-                 "swap %s with" % artifact_name1 if artifact_name1 else "equip %s from" % location
-        label = "%s equipment: %s inventory %s" % (self._hero.name, action, artifact_name2)
+        action = "send %s" % __(artifact_name1) if inventory_index is None else \
+                 "swap %s with" % __(artifact_name1) if artifact_name1 else "equip %s from" % location
+        label = "%s equipment: %s inventory %s" % (self._hero.name, action, __(artifact_name2))
         h3sed.guibase.status("Changing %s" % label, flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(self.change_artifacts, eq2, inv2)
         self.parent.command(callable, name="change %s" % label)

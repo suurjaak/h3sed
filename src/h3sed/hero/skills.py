@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  17.09.2025
+@modified  28.03.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -18,6 +18,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import controls
+from .. lib.i18n import translate as __
 from .. import metadata
 from .. import conf
 
@@ -42,7 +43,8 @@ DATAPROPS = [{
     }, {
         "name":     "level",
         "type":     "combo",
-        "choices":  None
+        "choices":  None,
+        "sequence": True,
     }],
 }]
 HINT = ("More than 8 skills can be added.\n"
@@ -153,7 +155,7 @@ class SkillsPlugin(object):
         item_clear = menu.Append(wx.ID_ANY, "Remove all skills")
         menu.AppendSubMenu(menu_level, "Set skill levels to ..")
         for level_name in SKILL_LEVELS:
-            item = menu_level.Append(wx.ID_ANY, level_name)
+            item = menu_level.Append(wx.ID_ANY, __(level_name))
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_set_level, level_name=level_name), item)
         menu.Bind(wx.EVT_MENU, self.on_remove_all, item_clear)
         return menu
@@ -170,13 +172,13 @@ class SkillsPlugin(object):
         item_swap   = menu.AppendSubMenu(menu_swap,   "Swap skill slot with ..")
         for skill_name in SKILLS:
             #if skill_name in self._state: continue # for skill_name
-            item = menu_change.Append(wx.ID_ANY, skill_name)
+            item = menu_change.Append(wx.ID_ANY, __(skill_name))
             kwargs = dict(rowindex=rowindex, skill_name2=skill_name)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_item_menu_option, **kwargs), item)
             if skill_name in self._state:
                 menu_change.Enable(item.Id, False)
         for index, skill in enumerate(self._state):
-            label = "%s. %s\t(%s)" % (index + 1, skill.name, skill.level)
+            label = "%s. %s\t(%s)" % (index + 1, __(skill.name), __(skill.level))
             item = menu_swap.Append(wx.ID_ANY, label)
             kwargs = dict(rowindex=rowindex, rowindex2=index)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_item_menu_option, **kwargs), item)
@@ -214,7 +216,7 @@ class SkillsPlugin(object):
         skill_name2 = skill_name2 if rowindex2 is None else self._state[rowindex2].name
         if rowindex2 is None: acting, action, adverb = ("Changing", "change", "to")
         else: acting, action, adverb = ("Swapping", "swap", "with")
-        label = "%s skills: %s %s %s" % (self._hero.name, skill_name1, adverb, skill_name2)
+        label = "%s skills: %s %s %s" % (self._hero.name, __(skill_name1), adverb, __(skill_name2))
         h3sed.guibase.status("%s %s" % (acting, label), flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, rowindex, rowindex2, skill_name2)
         self.parent.command(callable, name="%s %s" % (action, label))
@@ -248,7 +250,7 @@ class SkillsPlugin(object):
 
         if not self._state or all(x.level == level_name for x in self._state):
             return
-        label = "%s skills to %s" % (self._hero.name, level_name)
+        label = "%s skills to %s" % (self._hero.name, __(level_name))
         h3sed.guibase.status("Setting %s" % label, flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, level_name)
         self.parent.command(callable, name="set %s" % label)

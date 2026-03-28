@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  08.01.2026
+@modified  28.03.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -18,6 +18,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import util
+from .. lib.i18n import translate as __
 from .. import conf
 from .. import metadata
 
@@ -143,11 +144,16 @@ class ArmyPlugin(object):
                     ctrl, value = self._ctrls[i][name], self._state[i].get(name)
                     if "choices" in prop:
                         choices = ([value] if value and value not in CHOICES else []) + CHOICES
-                        if choices != ctrl.GetItems(): ctrl.SetItems(choices)
+                        labels = [__(x) for x in choices]
+                        choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
+
+                        if list(labels) != ctrl.GetItems():
+                            ctrl.SetItems(labels)
+                            for j, x in enumerate(choices): ctrl.SetClientData(j, x)
                         else: ctrl.Value = ""
                         creature = value
                     else: ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
-                    if value is not None and hasattr(ctrl, "Value"): ctrl.Value = value
+                    if value is not None and hasattr(ctrl, "Value"): ctrl.Value = __(value)
         else:
             self._ctrls, result = h3sed.gui.build(self, self._panel)[0], True
             # Hide count controls where no creature type selected
@@ -184,7 +190,7 @@ class ArmyPlugin(object):
         menu_swap = wx.Menu()
         menu.AppendSubMenu(menu_swap, "Swap army slot with ..")
         for stack_index, army_stack in enumerate(self._state):
-            label = "%s: %s" % (army_stack.name, army_stack.count) if army_stack else "<blank>"
+            label = "%s: %s" % (__(army_stack.name), army_stack.count) if army_stack else "<blank>"
             item = menu_swap.Append(wx.ID_ANY, "%s. %s" % (stack_index + 1, label))
             kwargs = dict(index1=rowindex, index2=stack_index)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_swap_stack, **kwargs), item)

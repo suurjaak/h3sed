@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  09.01.2026
+@modified  28.03.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -18,6 +18,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import util
+from .. lib.i18n import translate as __
 from .. import conf
 from .. import metadata
 
@@ -40,7 +41,7 @@ DATAPROPS = [{
       }, {
         "type":    "combo",
         "choices": None, # Populated later
-        "convert": None, # Populated later
+        "format":  None, # Populated later
     }]
 }]
 
@@ -76,15 +77,12 @@ class InventoryPlugin(object):
         result = []
         MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
         ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=self.version)
-        def format_artifact(props, value, reverse=False):
-            return h3sed.hero.format_artifacts(value, version=self.version, reverse=reverse)
-        choices = h3sed.hero.format_artifacts(ARTIFACTS)
         for prop in DATAPROPS:
             myprop = dict(prop, item=[], min=MIN, max=MAX, menu=self.make_item_menu,
                           info=self.format_stats_bonus)
             for item in prop["item"]:
-                if "choices" in item: item = dict(item, choices=choices)
-                if "convert" in item: item = dict(item, convert=format_artifact)
+                if "choices" in item: item = dict(item, choices=ARTIFACTS)
+                if "format"  in item: item = dict(item, format=self.format_artifact)
                 myprop["item"].append(item)
             result.append(myprop)
         return result
@@ -123,8 +121,16 @@ class InventoryPlugin(object):
         Returns whether new controls were created.
         """
         if self._ctrls and all(self._ctrls):
+            ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=self.version)
+            choices, labels = [""] + ARTIFACTS, [""] + self.format_artifact(ARTIFACTS)
+            choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
+            do_reset = False if list(labels) == self._ctrls[0].GetItems() else True
+
             for i, value in enumerate(self._state):
-                self._ctrls[i].Value = h3sed.hero.format_artifacts(value or "")
+                if do_reset:
+                    self._ctrls[i].SetItems(labels)
+                    for j, x in enumerate(choices): self._ctrls[i].SetClientData(j, x)
+                self._ctrls[i].Value = self.format_artifact(value) or ""
                 sibling = self._ctrls[i].GetNextSibling()
                 while sibling and not isinstance(sibling, wx.StaticText):
                     sibling = sibling.GetNextSibling()
@@ -132,6 +138,7 @@ class InventoryPlugin(object):
                     sibling.Label = self.format_stats_bonus(DATAPROPS[0], i)
                     sibling.ToolTip = sibling.Label
             return False
+
         self._ctrls = h3sed.gui.build(self, self._panel)[0]
         return True
 
@@ -204,7 +211,7 @@ class InventoryPlugin(object):
             elif "side" == category:
                 candidates = [x for x in candidates if x not in SCROLL_ARTIFACTS]
             elif "combined" == category:
-                candidates = sorted(COMBINATION_ARTIFACTS)
+                candidates = sorted(COMBINATION_ARTIFACTS, key=self.format_artifact)
             if not candidates: continue # for category
 
             menu_category = wx.Menu()
@@ -216,7 +223,7 @@ class InventoryPlugin(object):
                     item_category.Font = item_category.Font.Bold()
             menu_set.Append(item_category)
             for artifact_candidate in candidates:
-                label = h3sed.hero.format_artifacts(artifact_candidate)
+                label = self.format_artifact(artifact_candidate)
                 item_candidate = wx.MenuItem(menu_category, wx.ID_ANY, label)
                 if artifact_candidate == artifact_on_row:
                     item_candidate.Font = item_candidate.Font.Bold()
@@ -234,9 +241,9 @@ class InventoryPlugin(object):
             if location not in self._hero.equipment: continue # for location
             artifact_equipped = self._hero.equipment[location]
             if artifact_equipped is None and location in reserved_locations:
-                label = "<taken by %s>" % self._hero.equipment[reserved_locations[location]]
+                label = "<taken by %s>" % __(self._hero.equipment[reserved_locations[location]])
             elif artifact_equipped is None: label = "<blank>"
-            else: label = h3sed.hero.format_artifacts(artifact_equipped)
+            else: label = self.format_artifact(artifact_equipped)
             item_location = menu_equip.Append(wx.ID_ANY, "%s:\t%s" % (location, label))
             kwargs = dict(rowindex=rowindex, location=location)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_location)
@@ -247,7 +254,7 @@ class InventoryPlugin(object):
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item)
 
         for i, artifact in enumerate(self._state):
-            label = h3sed.hero.format_artifacts(artifact) or "<blank>"
+            label = self.format_artifact(artifact) or "<blank>"
             item_slot = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (i + 1, label))
             kwargs = dict(rowindex=rowindex, rowindex2=i)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_slot)
@@ -262,6 +269,11 @@ class InventoryPlugin(object):
         kwargs = dict(rowindex=rowindex, delete=True)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_drop)
         return menu
+
+
+    def format_artifact(self, value):
+        """Returns label for display, for a single artifact or a list of artifacts."""
+        return h3sed.hero.format_artifacts(value, version=self.version)
 
 
     def format_stats_bonus(self, prop, rowindex):
@@ -415,7 +427,7 @@ class InventoryPlugin(object):
             combo_artifact = artifact_on_row
             components = COMBINATION_ARTIFACTS[combo_artifact]
             if len(components) + sum(map(bool, self._state)) - 1 > len(self._state):
-                h3sed.guibase.status("Inventory too full to disassemble %s" % combo_artifact,
+                h3sed.guibase.status("Inventory too full to disassemble %s" % __(combo_artifact),
                                      flash=conf.StatusShortFlashLength)
                 return # Inventory too full
             inv2[rowindex] = components[0]
@@ -430,8 +442,8 @@ class InventoryPlugin(object):
             while components: inv2.remove(components.pop())
             inv2 = inv2.make_compact()
 
-        label = "change %s inventory: %s %s" % (self._hero.name, action, combo_artifact)
-        h3sed.guibase.status("%s inventory %s" % (acting, combo_artifact),
+        label = "change %s inventory: %s %s" % ((self._hero.name), action, __(combo_artifact))
+        h3sed.guibase.status("%s inventory %s" % (acting, __(combo_artifact)),
                              flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(self.change_artifacts, inv2)
         self.parent.command(callable, name=label)
