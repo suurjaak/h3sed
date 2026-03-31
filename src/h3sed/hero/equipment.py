@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  28.03.2026
+@modified  31.03.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -268,10 +268,10 @@ class EquipmentPlugin(object):
     def make_common_menu(self):
         """Returns wx.Menu with plugin-specific actions, like removing all equipment."""
         menu = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, "Remove all equipment")
-        item_send  = menu.Append(wx.ID_ANY, "Send all equipment to inventory")
-        item_recv  = menu.Append(wx.ID_ANY, "Equip all possible equipment from inventory")
-        item_swap  = menu.Append(wx.ID_ANY, "Swap all possible equipment with inventory")
+        item_clear = menu.Append(wx.ID_ANY, __("Remove all equipment"))
+        item_send  = menu.Append(wx.ID_ANY, __("Send all equipment to inventory"))
+        item_recv  = menu.Append(wx.ID_ANY, __("Equip all possible equipment from inventory"))
+        item_swap  = menu.Append(wx.ID_ANY, __("Swap all possible equipment with inventory"))
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all),                       item_clear)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, send=True),            item_send)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, recv=True),            item_recv)
@@ -292,8 +292,8 @@ class EquipmentPlugin(object):
         swap_label = "Swap with" if self._state[location] else "Equip from"
         menu = wx.Menu()
         menu_equip = wx.Menu()
-        item_send  = menu.Append(wx.ID_ANY, "Send to inventory")
-        item_equip = menu.AppendSubMenu(menu_equip, "%s inventory .." % swap_label)
+        item_send  = menu.Append(wx.ID_ANY, __("Send to inventory"))
+        item_equip = menu.AppendSubMenu(menu_equip, __("%s inventory" % swap_label) + " ..")
 
         sorted_inv = sorted(enumerate(self._hero.inventory),
                             key=lambda x: ("" if x[1] is None else x[1], x[0])) \
@@ -313,20 +313,20 @@ class EquipmentPlugin(object):
             for location2 in SLOT_TO_LOCATIONS[slot]:
                 artifact_equipped = self._hero.equipment[location2]
                 if artifact_equipped is None and location2 in reserved_locations:
-                    label = "<taken by %s>" % __(self._hero.equipment[reserved_locations[location2]])
-                elif artifact_equipped is None: label = "<blank>"
+                    label = __("<taken by %s>", __(self._hero.equipment[reserved_locations[location2]]))
+                elif artifact_equipped is None: label = __("<blank>")
                 else: label = self.format_artifact(artifact_equipped)
-                item = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (location2, label))
+                item = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (__(location2), label))
                 kwargs = dict(location=location, location2=location2)
                 menu.Bind(wx.EVT_MENU, functools.partial(self.on_swap_location, **kwargs), item)
                 if location == location2:
                     menu_swap.Enable(item.Id, False)
-            item_swap = menu.AppendSubMenu(menu_swap, "Swap with location ..")
+            item_swap = menu.AppendSubMenu(menu_swap, __("Swap with location") + " ..")
             if not any(self._state[l] for l in SLOT_TO_LOCATIONS[slot]):
                 menu.Enable(item_swap.Id, False)
 
         if location in reserved_locations or self._state[location] in COMBINATION_ARTIFACTS:
-            item_combo = menu.Append(wx.ID_ANY, "Disassemble combination artifact")
+            item_combo = menu.Append(wx.ID_ANY, __("Disassemble combination artifact"))
             kwargs = dict(location=location)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item_combo)
         elif self._state[location]:
@@ -334,8 +334,8 @@ class EquipmentPlugin(object):
                                   if self._state[location] in bb), (None, None))
             if combo and all(x in self._state for x in others):
                 menu_combo = wx.Menu()
-                menu.AppendSubMenu(menu_combo, "Assemble combination artifact")
-                item = menu_combo.Append(wx.ID_ANY, combo)
+                menu.AppendSubMenu(menu_combo, __("Assemble combination artifact"))
+                item = menu_combo.Append(wx.ID_ANY, __(combo))
                 kwargs = dict(location=location)
                 menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item)
 
@@ -359,7 +359,7 @@ class EquipmentPlugin(object):
         if not value: return ""
         STATS = metadata.Store.get("artifact_stats", version=self.version)
         if value not in STATS: return ""
-        return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
+        return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, __(k))
                          for k, v in zip(metadata.PRIMARY_ATTRIBUTES.values(), STATS[value]) if v)
 
 
@@ -403,7 +403,7 @@ class EquipmentPlugin(object):
 
                 if not artifact and location in reserved_locations:
                     combo_artifact = self._state[reserved_locations[location]]
-                    label = "<taken by %s>" % __(combo_artifact)
+                    label = __("<taken by %s>", __(combo_artifact))
                     ctrl.SetItems([label])
                     ctrl.Value = label
                     ctrl.Disable()
@@ -557,7 +557,7 @@ def parse(hero_bytes, version):
         artifact_id = parse_id(hero_bytes, BYTEPOS[location])
         if artifact_id and artifact_id not in ARTIFACT_NAMES:
             logger.warning("Unknown artifact for version %r: 0x%X.", version, artifact_id)
-            artifact_name = "<unknown 0x%X>" % artifact_id
+            artifact_name = __("<unknown 0x%X>", artifact_id)
             slot = metadata.Store.get("equipment_slots", version=version)[location]
             metadata.Store.add("artifacts", [artifact_name], category="inventory", version=version)
             metadata.Store.add("artifacts", [artifact_name], category=slot, version=version)

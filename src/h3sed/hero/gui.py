@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  22.03.2026
+@modified  31.03.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -78,13 +78,13 @@ import h3sed
 from .. lib import controls
 from .. lib import util
 from .. lib import wx_accel
+from .. lib.i18n import translate as __
 from .. import conf
 from .. import guibase
 from .. import templates
 
 
 logger = logging.getLogger(__package__)
-
 
 
 class HeroPlugin(object):
@@ -123,9 +123,9 @@ class HeroPlugin(object):
             "sort_asc":  True,     # Sort ascending or descending
             "toggles":   collections.OrderedDict(),  # {category: toggled state}
         }
-        self._dialog_export = wx.FileDialog(panel, "Export heroes to file",
-            wildcard="CSV spreadsheet (*.csv)|*.csv|HTML document (*.html)|*.html|"
-                     "JSON document (*.json)|*.json|YAML document (*.yaml)|*.yaml",
+        self._dialog_export = wx.FileDialog(panel, __("Export heroes to file"),
+            wildcard="|".join("{0} (*.{1})|*.{1}".format(__(label), format)
+                              for format, label in sorted(templates.EXPORT_FORMATS.items())),
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT | wx.FD_CHANGE_DIR | wx.RESIZE_BORDER
         )
         self._dialog_export.FilterIndex = 1
@@ -138,8 +138,8 @@ class HeroPlugin(object):
     def prebuild(self):
         """Builds general UI components."""
         self._panel.Freeze()
-        label  = wx.StaticText(self._panel, label="&Select hero:")
-        combo  = wx.ComboBox(self._panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        label  = wx.StaticText(self._panel, name="selectherolabel", label=__("&Select hero") + ":")
+        combo  = wx.ComboBox(self._panel, name="selecthero", style=wx.CB_DROPDOWN | wx.CB_READONLY)
         search = wx.SearchCtrl(self._panel)
         tabs = wx.lib.agw.flatnotebook.FlatNotebook(self._panel,
             agwStyle=wx.lib.agw.flatnotebook.FNB_DROPDOWN_TABS_LIST |
@@ -154,16 +154,16 @@ class HeroPlugin(object):
         bmpx = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE_AS, wx.ART_TOOLBAR, (16, 16))
         tb_index = wx.ToolBar(indexpanel, style=wx.TB_FLAT | wx.TB_NODIVIDER | wx.TB_NOICONS | wx.TB_TEXT)
         info = wx.StaticText(indexpanel)
-        export = wx.Button(indexpanel, label="Expo&rt")
+        export = wx.Button(indexpanel, label=__("Expo&rt"))
         export.SetBitmap(bmpx)
         export.SetBitmapMargins(0, 0)
-        export.ToolTip = "Export heroes to HTML or data file"
+        export.ToolTip = __("Export heroes to HTML or data file")
         export.Bind(wx.EVT_BUTTON, self.on_export_heroes)
 
         for category in templates.HERO_PROPERTY_CATEGORIES:
-            b = tb_index.AddCheckTool(wx.ID_ANY, category.capitalize(), wx.NullBitmap,
-                                      shortHelp="Show or hide %s column%s" %
-                                                (category, "s" if "stats" == category else ""))
+            help = __("Show or hide %s column" + ("s" if "stats" == category else ""), __(category))
+            b = tb_index.AddCheckTool(wx.ID_ANY, __(category.capitalize()), wx.NullBitmap,
+                                      shortHelp=help)
             tb_index.ToggleTool(b.Id, conf.HeroToggles.get(category, True))
             tb_index.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
             self._index["ids"][category] = b.Id
@@ -171,13 +171,13 @@ class HeroPlugin(object):
         tb_index.Realize()
 
         html = wx.html.HtmlWindow(indexpanel)
-        tabs.AddPage(wx.Window(tabs), " INDEX ")
+        tabs.AddPage(wx.Window(tabs), " %s " % __("INDEX"))
 
-        search.SetDescriptiveText("Search heroes")
+        search.SetDescriptiveText(__("Search heroes"))
         search.ShowSearchButton(True)
         search.ShowCancelButton(True)
-        search.ToolTip = "Filter hero index on any matching text (%s-F)" % \
-                         ("Cmd" if "darwin" == sys.platform else "Ctrl")
+        search.ToolTip = __("Filter hero index on any matching text (%s-F)",
+                            "Cmd" if "darwin" == sys.platform else "Ctrl")
         search.Bind(wx.EVT_CHAR, self.on_search)
         search.Bind(wx.EVT_TEXT, self.on_search)
         search.Bind(wx.EVT_SEARCH, self.on_search) if hasattr(wx, "EVT_SEARCH") else None
@@ -200,12 +200,12 @@ class HeroPlugin(object):
         bmp2 = wx.ArtProvider.GetBitmap(wx.ART_COPY,        wx.ART_TOOLBAR, (20, 20))
         bmp3 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,       wx.ART_TOOLBAR, (20, 20))
         bmp4 = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE,   wx.ART_TOOLBAR, (16, 16))
-        tb.AddTool(wx.ID_INFO,    "", bmp1, shortHelp="Show hero full character sheet\t%s-I" % CTRL)
+        tb.AddTool(wx.ID_INFO,    "", bmp1, shortHelp=__("Show hero full character sheet\t%s-I", CTRL))
         tb.AddSeparator()
-        tb.AddTool(wx.ID_COPY,    "", bmp2, shortHelp="Copy current hero data to clipboard")
-        tb.AddTool(wx.ID_PASTE,   "", bmp3, shortHelp="Paste data from clipboard to current hero")
+        tb.AddTool(wx.ID_COPY,    "", bmp2, shortHelp=__("Copy current hero data to clipboard"))
+        tb.AddTool(wx.ID_PASTE,   "", bmp3, shortHelp=__("Paste data from clipboard to current hero"))
         tb.AddSeparator()
-        tb.AddTool(wx.ID_SAVE,    "", bmp4, shortHelp="Save current hero to file")
+        tb.AddTool(wx.ID_SAVE,    "", bmp4, shortHelp=__("Save current hero to file"))
         tb.Bind(wx.EVT_TOOL, self.on_charsheet,  id=wx.ID_INFO)
         tb.Bind(wx.EVT_TOOL, self.on_copy_hero,  id=wx.ID_COPY)
         tb.Bind(wx.EVT_TOOL, self.on_paste_hero, id=wx.ID_PASTE)
@@ -214,8 +214,8 @@ class HeroPlugin(object):
         tb.Realize()
 
         faction = wx.StaticText(heropanel)
-        menubutton = wx.Button(heropanel, label="Change all ..")
-        menubutton.ToolTip = "Change multiple properties on page"
+        menubutton = wx.Button(heropanel, label=__("Change all") + " ..")
+        menubutton.ToolTip = __("Change multiple properties on page")
         menubutton.Bind(wx.EVT_BUTTON, self.on_hero_subtab_button)
 
         tabs.MinSize = -1, tabs.GetTabArea().MinSize[1]
@@ -227,13 +227,13 @@ class HeroPlugin(object):
         controls.ColourManager.Manage(tabs, "TabAreaColour", wx.SYS_COLOUR_BTNFACE)
 
         indexpanel.Sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer_opts = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_labels = wx.BoxSizer(wx.VERTICAL)
-        sizer_labels.Add(tb_index)
-        sizer_labels.Add(info)
-        sizer_opts.Add(sizer_labels, border=5, flag=wx.BOTTOM)
-        sizer_opts.AddStretchSpacer()
-        sizer_opts.Add(export, border=5, flag=wx.BOTTOM | wx.ALIGN_BOTTOM)
+        sizer_opts = wx.BoxSizer(wx.VERTICAL)
+        sizer_footer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_footer.Add(info)
+        sizer_footer.AddStretchSpacer()
+        sizer_footer.Add(export)
+        sizer_opts.Add(tb_index)
+        sizer_opts.Add(sizer_footer, flag=wx.GROW)
         indexpanel.Sizer.Add(html, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW, proportion=1)
         indexpanel.Sizer.Add(sizer_opts, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
 
@@ -294,7 +294,7 @@ class HeroPlugin(object):
         for i, props in enumerate(self._plugins):
             subpanel = props["panel"] = wx.ScrolledWindow(nb)
             title = props.get("label", props["name"])
-            nb.AddPage(subpanel, title)
+            nb.AddPage(subpanel, __(title))
             controls.ColourManager.Manage(subpanel, "BackgroundColour", wx.SYS_COLOUR_BTNFACE)
             plugin = props["module"].factory(self, subpanel, self.savefile.version_id)
             has_menu = hasattr(plugin, "make_common_menu") and bool(plugin.make_common_menu())
@@ -314,7 +314,7 @@ class HeroPlugin(object):
         self._heropanel.Hide()
         self._panel.Thaw()
         self._ctrls["properties"] = nb
-        with controls.BusyPanel(self._panel, "Loading heroes."):
+        with controls.BusyPanel(self._panel, __("Loading heroes.")):
             self.populate_index()
 
 
@@ -463,8 +463,9 @@ class HeroPlugin(object):
                        herotexts=herotexts, savefile=self.savefile)
         page = step.Template(templates.HERO_INDEX_HTML, escape=True).expand(**tplargs)
         if page != self._index["html"]:
-            info = util.plural("hero", heroes) if len(heroes) == len(self._heroes) else \
-                   "%s visible (%s total)" % (util.plural("hero", heroes), len(self._heroes))
+            info = "%s %s" % (len(heroes), __(util.plural("hero", heroes, numbers=False)))
+            if len(heroes) != len(self._heroes):
+                info = __("%s visible (%s total)", info, len(self._heroes))
             self._ctrls["count"].Label = info
             self._index["html"] = page
             html.SetPage(page)
@@ -530,8 +531,8 @@ class HeroPlugin(object):
             if dlg: conf.Positions["charsheet_view"] = mode
             return htmls.get(mode, htmls["normal"])
         links = {k: on_link for k in htmls} if texts0 else None
-        buttons = {"Copy data": self.on_copy_hero}
-        dlg = controls.HtmlDialog(self._panel.TopLevelParent, "Hero character sheet", content,
+        buttons = {__("Copy data"): self.on_copy_hero}
+        dlg = controls.HtmlDialog(self._panel.TopLevelParent, __("Hero character sheet"), content,
                                   links, buttons, autowidth_links=True, style=wx.RESIZE_BORDER)
         def after(dlg):
             if not self._panel: return
@@ -650,7 +651,7 @@ class HeroPlugin(object):
         index = event.EventObject.Selection
         hero2 = self._heroes[index] if index < len(self._heroes) else None
         if not hero2:
-            wx.MessageBox("Hero '%s' not found." % event.EventObject.Value,
+            wx.MessageBox(__("Hero '%s' not found.", event.EventObject.Value),
                           conf.Title, wx.OK | wx.ICON_ERROR)
             return
         focusctrl = self._panel.FindFocus()
@@ -675,7 +676,7 @@ class HeroPlugin(object):
         """Handler for exporting heroes to file, opens file dialog and exports data."""
         if not self._index["visible"]: return
         basename = os.path.splitext(os.path.basename(self.savefile.filename))[0]
-        self._dialog_export.Filename = "Heroes from %s" % basename
+        self._dialog_export.Filename = __("Heroes from %s", basename)
         if wx.ID_OK != self._dialog_export.ShowModal(): return
 
         wx.YieldIfNeeded() # Allow dialog to disappear
@@ -720,7 +721,7 @@ class HeroPlugin(object):
             return
 
         combo, tabs = self._ctrls["hero"], self._ctrls["tabs"]
-        busy = controls.BusyPanel(self._panel, "Loading %s." % hero2) if status else None
+        busy = controls.BusyPanel(self._panel, __("Loading %s.", hero2)) if status else None
         if status: guibase.status("Loading %s.", hero2, flash=True)
 
         self._ignore_events = True
@@ -746,7 +747,8 @@ class HeroPlugin(object):
                 logger.info("Loading hero %s (bytes %s-%s in savefile).",
                             hero2, hero2.span[0], hero2.span[1] - 1)
             self._hero = hero2
-            self._ctrls["faction"].Label = "Faction: %s" % hero2.profile.format_faction()
+            self._ctrls["faction"].Label = "%s: %s" % (__("Faction"),
+                                                       __(hero2.profile.format_faction()))
             for p in self._plugins:
                 self.render_plugin(p["name"], reload=True, log=not page_existed)
 

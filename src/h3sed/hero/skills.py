@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  28.03.2026
+@modified  31.03.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -19,8 +19,8 @@ except ImportError: wx = None
 import h3sed
 from .. lib import controls
 from .. lib.i18n import translate as __
-from .. import metadata
 from .. import conf
+from .. import metadata
 
 
 logger = logging.getLogger(__package__)
@@ -133,7 +133,7 @@ class SkillsPlugin(object):
             focused_index = self._panel.Children.index(focused_ctrl)
 
         h3sed.gui.build(self, self._panel)
-        label = wx.StaticText(self._panel, label=HINT)
+        label = wx.StaticText(self._panel, label=__(HINT))
         controls.ColourManager.Manage(label, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         self._panel.Sizer.Add(label, border=10, flag=wx.TOP, proportion=1)
         self._panel.Layout()
@@ -152,8 +152,8 @@ class SkillsPlugin(object):
 
         menu = wx.Menu()
         menu_level = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, "Remove all skills")
-        menu.AppendSubMenu(menu_level, "Set skill levels to ..")
+        item_clear = menu.Append(wx.ID_ANY, __("Remove all skills"))
+        menu.AppendSubMenu(menu_level, __("Set skill levels to") + " ..")
         for level_name in SKILL_LEVELS:
             item = menu_level.Append(wx.ID_ANY, __(level_name))
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_set_level, level_name=level_name), item)
@@ -163,16 +163,17 @@ class SkillsPlugin(object):
 
     def make_item_menu(self, plugin, prop, rowindex):
         """Returms wx.Menu for a skills-row options."""
-        SKILLS = sorted(metadata.Store.get("skills", version=self.version))
+        SKILLS = metadata.Store.get("skills", version=self.version)
+        labels = [__(x) for x in SKILLS]
+        SKILLS, labels = zip(*sorted(zip(SKILLS, labels), key=lambda x: x[1].lower()))
 
         menu = wx.Menu()
         menu_change = wx.Menu()
         menu_swap   = wx.Menu()
-        item_change = menu.AppendSubMenu(menu_change, "Change skill to ..")
-        item_swap   = menu.AppendSubMenu(menu_swap,   "Swap skill slot with ..")
-        for skill_name in SKILLS:
-            #if skill_name in self._state: continue # for skill_name
-            item = menu_change.Append(wx.ID_ANY, __(skill_name))
+        item_change = menu.AppendSubMenu(menu_change, __("Change skill to") + " ..")
+        item_swap   = menu.AppendSubMenu(menu_swap,   __("Swap skill slot with") + " ..")
+        for skill_name, skill_label in zip(SKILLS, labels):
+            item = menu_change.Append(wx.ID_ANY, skill_label)
             kwargs = dict(rowindex=rowindex, skill_name2=skill_name)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_item_menu_option, **kwargs), item)
             if skill_name in self._state:

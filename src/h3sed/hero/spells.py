@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  27.09.2025
+@modified  31.03.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -18,6 +18,7 @@ try: import wx
 except ImportError: wx = None
 
 import h3sed
+from .. lib.i18n import translate as __
 from .. import conf
 from .. import metadata
 
@@ -106,7 +107,7 @@ class SpellsPlugin(object):
             row, column = lastrow + drow * 2, lastcolumn + dcol
             if   drow and row    > maxrows:  row, column = 0, column + 1
             elif dcol and column >= maxcols: row, column = row + 1, 0
-            infolabel = wx.StaticText(self._panel, label="Hero has no spellbook.")
+            infolabel = wx.StaticText(self._panel, label=__("Hero has no spellbook."))
             sizer.Add(infolabel, pos=(row, column), border=10)
             sizer.Layout()
         return True
@@ -116,11 +117,11 @@ class SpellsPlugin(object):
         """Returns wx.Menu with plugin-specific actions, like selecting or clearing all spells."""
         menu = wx.Menu()
         menu_schools = wx.Menu()
-        item_select = menu.Append(wx.ID_ANY, "Add all spells")
-        item_clear  = menu.Append(wx.ID_ANY, "Remove all spells")
-        item_school = menu.AppendSubMenu(menu_schools, "Toggle all ..")
+        item_select = menu.Append(wx.ID_ANY, __("Add all spells"))
+        item_clear  = menu.Append(wx.ID_ANY, __("Remove all spells"))
+        item_school = menu.AppendSubMenu(menu_schools, __("Toggle all") + " ..")
         for school_name in sorted(metadata.Store.get("spell_schools", version=self.version)):
-            item = menu_schools.Append(wx.ID_ANY, "%s spells" % school_name)
+            item = menu_schools.Append(wx.ID_ANY, __(school_name))
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, school=school_name), item)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, clear=False), item_select)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, clear=True),  item_clear)

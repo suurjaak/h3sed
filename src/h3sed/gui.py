@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    28.03.2026
+@modified    31.03.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -1600,11 +1600,11 @@ class SavefilePage(wx.Panel):
         splitter = wx.SplitterWindow(self, style=wx.BORDER_NONE)
         filepanel = wx.Panel(splitter)
 
-        nlabel = wx.StaticText(filepanel, label="Map:", name="label_name")
+        nlabel = wx.StaticText(filepanel, label=__("Map") + ":", name="label_name")
         nctrl  = self.edit_name = wx.TextCtrl(filepanel, style=wx.BORDER_NONE, name="name")
-        vlabel = wx.StaticText(filepanel, label="Game version:", name="label_version")
+        vlabel = wx.StaticText(filepanel, label=__("Game version") + ":", name="label_version")
         vctrl = self.edit_vers = wx.TextCtrl(filepanel, style=wx.BORDER_NONE, name="version")
-        dlabel = wx.StaticText(filepanel, label="Description:", name="label_desc")
+        dlabel = wx.StaticText(filepanel, label=__("Description") + ":", name="label_desc")
         dctrl  = self.edit_desc = wx.TextCtrl(filepanel, style=wx.TE_MULTILINE | wx.BORDER_NONE, name="desc")
 
         for c in (nctrl, vctrl, dctrl): c.SetEditable(False), c.SetMargins(0)
@@ -1947,7 +1947,7 @@ def build(plugin, panel):
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
             if name is not None: namelbl += (" " if namelbl else "") + name
-            valuelbl = "<blank>" if value in ("", None) else __(value)
+            valuelbl = __("<blank>") if value in ("", None) else __(value)
             cname = "set %s: %s %s" % (label, namelbl, valuelbl)
             logger.info("Setting %s: %s to %s.", label, namelbl, valuelbl)
             plugin.parent.command(functools.partial(on_do, value), cname)
@@ -2092,11 +2092,11 @@ def build(plugin, panel):
         if callable(opts):
             c = opts(prop)
         elif "button" == opts["type"]:
-            c = wx.Button(panel, label=opts["label"])
+            c = wx.Button(panel, label=__(opts["label"]))
             c.Bind(wx.EVT_BUTTON, functools.partial(opts["handler"], prop))
         if c:
             if isinstance(opts, dict) and opts.get("tooltip") and hasattr(c, "ToolTip"):
-                c.ToolTip = opts["tooltip"]
+                c.ToolTip = __(opts["tooltip"])
             sizerargs = dict(flag=wx.ALIGN_CENTER_VERTICAL) if isinstance(c, wx.Sizer) else {}
             sizer.Add(c, pos=pos, **sizerargs)
             build_result["%s-extra" % prop["name"]] = c
@@ -2118,7 +2118,7 @@ def build(plugin, panel):
                                 lambda x: list(map(__, x)) if isinstance(x, list) else __(x)
                     if "label" == itemprop.get("type"):
                         values_present.append(v)
-                        v = itemprop["label"] if itemprop.get("label") else formatter(v)
+                        v = __(itemprop["label"]) if itemprop.get("label") else formatter(v)
                         if prop.get("orderable"): v = "%s. %s" % (i + 1, v)
                         c0 = wx.StaticText(panel, label=v, name="%s_%s_label" % (plugin.name, i))
                         sizer.Add(c0, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
@@ -2166,25 +2166,25 @@ def build(plugin, panel):
                     bsizer.AddSpacer(10)
                 if prop.get("menu"):
                     c = wx.Button(panel, label="..", size=(20 + BTN_WPLUS, -1), name="options")
-                    c.ToolTip = "Open options menu"
+                    c.ToolTip = __("Open options menu")
                     c.Bind(wx.EVT_BUTTON, make_menu_handler(c, prop, rowindex=i))
                     bsizer.Add(c)
                 if prop.get("orderable"):
                     c1, c2 = (wx.Button(panel, label=l, name=n, size=(20 + BTN_WPLUS, -1))
                               for l, n in zip(("v", "ʌ"), ("down", "up")))
-                    c1.ToolTip, c2.ToolTip = "Move down", "Move up"
+                    c1.ToolTip, c2.ToolTip = __("Move down"), __("Move up")
                     c1.Enabled, c2.Enabled = (i < len(state) - 1), bool(i)
                     c1.Bind(wx.EVT_BUTTON, make_move_handler(c1, i, +1, ("v", "ʌ")))
                     c2.Bind(wx.EVT_BUTTON, make_move_handler(c2, i, -1, ("v", "ʌ")))
                     bsizer.Add(c1), bsizer.Add(c2)
                 if prop.get("removable"):
                     c = wx.Button(panel, label="x", name="remove", size=(20 + BTN_WPLUS, -1))
-                    c.ToolTip = "Remove item"
+                    c.ToolTip = __("Remove item")
                     c.Bind(wx.EVT_BUTTON, make_remove_handler(c, i))
                     bsizer.Add(c)
                 if prop.get("nullable"):
                     c = wx.Button(panel, label="x", name="clear", size=(20 + BTN_WPLUS, -1))
-                    c.ToolTip = "Clear item"
+                    c.ToolTip = __("Clear item")
                     c.Bind(wx.EVT_BUTTON, make_clear_handler(c, prop, rowindex=i))
                     bsizer.Add(c)
                 if prop.get("info"):
@@ -2199,8 +2199,10 @@ def build(plugin, panel):
                 if prop.get("exclusive"):
                     choices = [x for x in choices if x not in values_present]
                 c1 = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-                c2 = wx.Button(panel, label="Add", name="add")
+                c2 = wx.Button(panel, label=__("Add"), name="add")
                 labels = [__(x) for x in choices]
+                if not prop.get("sequence"):
+                    choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
                 c1.SetItems(labels)
                 for j, x in enumerate(choices): c1.SetClientData(j, x)
                 c2.Bind(wx.EVT_BUTTON, make_add_handler(c1, prop))
@@ -2233,7 +2235,7 @@ def build(plugin, panel):
 
 
         elif "number" == prop.get("type"):
-            c1 = wx.StaticText(panel, label=prop.get("label", prop["name"]),
+            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])),
                                name="%s_label" % prop["name"])
             c2 = wx.SpinCtrlDouble(panel, name=prop["name"], size=(100 + SPIN_WPLUS, -1),
                                    style=wx.ALIGN_RIGHT)
@@ -2257,7 +2259,7 @@ def build(plugin, panel):
 
 
         elif "combo" == prop.get("type"):
-            c1 = wx.StaticText(panel, label=prop.get("label", prop["name"]),
+            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])),
                                name="%s_label" % prop["name"])
             c2 = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY, name=prop["name"])
 
@@ -2287,11 +2289,12 @@ def build(plugin, panel):
                 bsizer = wx.BoxSizer(wx.HORIZONTAL)
                 if prop.get("menu"):
                     c = wx.Button(panel, label="..", size=(20 + BTN_WPLUS, -1), name="options")
-                    c.ToolTip = "Open options menu"
+                    c.ToolTip = __("Open options menu")
                     c.Bind(wx.EVT_BUTTON, make_menu_handler(c, prop))
                     bsizer.Add(c)
                 if prop.get("nullable"):
                     c3 = wx.Button(panel, label="x", name="clear", size=(20 + BTN_WPLUS, -1))
+                    c3.ToolTip = __("Clear item")
                     c3.Bind(wx.EVT_BUTTON, make_clear_handler(c3, prop))
                     bsizer.Add(c3)
                 sizer.Add(bsizer, pos=(count, col))
@@ -2303,7 +2306,7 @@ def build(plugin, panel):
 
 
         elif "check" == prop.get("type"):
-            c1 = wx.StaticText(panel, label=prop.get("label", prop["name"]),
+            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])),
                                name="%s_label" % prop["name"])
             c2 = wx.CheckBox(panel, name=prop["name"])
 
@@ -2321,7 +2324,7 @@ def build(plugin, panel):
 
 
         elif "label" == prop.get("type"):
-            c = wx.StaticText(panel, label=prop.get("label", ""))
+            c = wx.StaticText(panel, label=__(prop.get("label", "")))
             ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
             sizer.Add(c, pos=(count, 0), span=(1, 2))
             count += 1

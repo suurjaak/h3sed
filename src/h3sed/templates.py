@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  28.03.2026
+@modified  30.03.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -28,6 +28,10 @@ from . lib import util
 #from h3sed.lib import util
 #from h3sed import conf, images, metadata, templates
 
+
+## Supported export formats, as {dotless format suffix: format label}
+EXPORT_FORMATS = {"csv": "CSV spreadsheet", "html": "HTML document",
+                  "json": "JSON document", "yaml": "YAML document"}
 
 ## Hero property categories for hero index and exports
 HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army",
@@ -293,15 +297,16 @@ HTML text shown for hero full character sheet, toggleable between unsaved change
 HERO_CHARSHEET_HTML = """<%
 import step
 from h3sed import conf, templates
+from h3sed.lib.i18n import translate as __
 texts0 = get("texts0") or []
 mode = get("mode")
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
 <table cellpadding="0" cellspacing="0" width="100%"><tr>
-  <td><b>{{ name }}{{ " unsaved changes" if "changes" == mode else " unsaved changes only" if "changesonly" == mode else "" }}</b></td>
+  <td><b>{{ name }}{{ " %s" % __("unsaved changes") if "changes" == mode else " %s" % __("unsaved changes only") if "changesonly" == mode else "" }}</b></td>
 %if texts0:
   <td align="right">
-    <a href="{{ "normal" if "changesonly" == mode else "changesonly" if "changes" == mode else "changes" }}"><font color="{{ conf.LinkColour }}">{{ "Normal view" if "changesonly" == mode else "Unsaved changes only" if "changes" == mode else "Unsaved changes" }}</font></a>
+    <a href="{{ "normal" if "changesonly" == mode else "changesonly" if "changes" == mode else "changes" }}"><font color="{{ conf.LinkColour }}">{{ __("Normal view" if "changesonly" == mode else "Unsaved changes only" if "changes" == mode else "Unsaved changes") }}</font></a>
   </td>
 %endif
 </tr></table>
@@ -446,7 +451,7 @@ category = get("category")
 {{ hero.name }}
 %endif
 %if category is None or "faction" == category:
-{{ hero.profile.format_faction() }}
+{{ __(hero.profile.format_faction()) }}
 %endif
 %if category is None or "stats" == category:
 {{ hero.stats["level"] }}
@@ -457,7 +462,7 @@ category = get("category")
 %if category is None or "devices" == category:
     %for prop in deviceprops:
         %if hero.stats.get(prop["name"]):
-{{ __(prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]]) }}
+{{ __(prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]].capitalize()) }}
         %endif
     %endfor
 %endif
@@ -529,12 +534,12 @@ def sortarrow(col):
 <table>
   <tr>
     <th align="right" valign="bottom" nowrap><a href="sort:index"><font color="{{ conf.FgColour }}">#</font></a></th>
-    <th align="left" valign="bottom" nowrap><a href="sort:name"><font color="{{ conf.FgColour }}">Name{{! sortarrow("name") }}</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:name"><font color="{{ conf.FgColour }}">{{ __("Name") }}{{! sortarrow("name") }}</font></a></th>
 %if not categories or categories["faction"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:faction"><font color="{{ conf.FgColour }}">Faction{{! sortarrow("faction") }}</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:faction"><font color="{{ conf.FgColour }}">{{ __("Faction") }}{{! sortarrow("faction") }}</font></a></th>
 %endif
 %if not categories or categories["stats"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:level"><font color="{{ conf.FgColour }}">Level{{! sortarrow("level") }}</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:level"><font color="{{ conf.FgColour }}">{{ __("Level") }}{{! sortarrow("level") }}</font></a></th>
     %for name, label in metadata.PRIMARY_ATTRIBUTES.items():
 <%
 label_text = __(name.title() if " " in label else label)
@@ -544,22 +549,22 @@ if len(label_text) > 7: label_text = label_text[:5]
     %endfor
 %endif
 %if not categories or categories["devices"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:devices"><font color="{{ conf.FgColour }}">Devices{{! sortarrow("devices") }}</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:devices"><font color="{{ conf.FgColour }}">{{ __("Devices") }}{{! sortarrow("devices") }}</font></a></th>
 %endif
 %if not categories or categories["skills"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:skills"><font color="{{ conf.FgColour }}">Skills{{! sortarrow("skills") }}</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:skills"><font color="{{ conf.FgColour }}">{{ __("Skills") }}{{! sortarrow("skills") }}</font></a></th>
 %endif
 %if not categories or categories["army"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:army"><font color="{{ conf.FgColour }}">Army{{! sortarrow("army") }}</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:army"><font color="{{ conf.FgColour }}">{{ __("Army") }}{{! sortarrow("army") }}</font></a></th>
 %endif
 %if not categories or categories["equipment"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:equipment"><font color="{{ conf.FgColour }}">Equipment{{! sortarrow("equipment") }}</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:equipment"><font color="{{ conf.FgColour }}">{{ __("Equipment") }}{{! sortarrow("equipment") }}</font></a></th>
 %endif
 %if not categories or categories["inventory"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:inventory"><font color="{{ conf.FgColour }}">Inventory{{! sortarrow("inventory") }}</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:inventory"><font color="{{ conf.FgColour }}">{{ __("Inventory") }}{{! sortarrow("inventory") }}</font></a></th>
 %endif
 %if not categories or categories["spells"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:spells"><font color="{{ conf.FgColour }}">Spells{{! sortarrow("spells") }}</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:spells"><font color="{{ conf.FgColour }}">{{ __("Spells") }}{{! sortarrow("spells") }}</font></a></th>
 %endif
   </tr>
 %elif count and (get("text") or "").strip():
@@ -579,7 +584,7 @@ if len(label_text) > 7: label_text = label_text[:5]
 %endif
     </td>
 %if not categories or categories["faction"]:
-    <td align="left" valign="top" nowrap>{{ hero.profile.format_faction() }}</td>
+    <td align="left" valign="top" nowrap>{{ __(hero.profile.format_faction()) }}</td>
 %endif
 %if not categories or categories["stats"]:
     <td align="left" valign="top" nowrap>{{ hero.stats["level"] }}</td>
@@ -591,7 +596,7 @@ if len(label_text) > 7: label_text = label_text[:5]
     <td align="left" valign="top" nowrap>
     %for prop in deviceprops:
         %if hero.stats.get(prop["name"]):
-        {{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}<br />
+        {{ __(prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]]) }}<br />
         %endif
     %endfor
     </td>

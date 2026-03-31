@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  11.01.2026
+@modified  28.03.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -20,6 +20,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import controls, util
+from .. lib.i18n import translate as __
 from .. import conf
 from .. import metadata
 
@@ -268,7 +269,7 @@ class StatsPlugin(object):
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
             wx.PostEvent(self._panel, evt)
             return True
-        label = "%s stats: %s %s" % (self._hero.name, TARGET, value)
+        label = "%s %s: %s %s" % (self._hero.name, self.name, TARGET, value)
         h3sed.guibase.status("Setting %s from %s", label, source_prop["label"].lower(),
                              flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, {TARGET: value})
@@ -285,7 +286,7 @@ class StatsPlugin(object):
             return True
 
         if self._state.movement_left >= self._state.movement_total: return
-        label = "%s stats: refill movement points" % self._hero.name
+        label = "%s %s: refill movement points" % (self._hero.name, self.name)
         h3sed.guibase.status("Setting %s", label, flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, {"movement_left": self._state.movement_total})
         self.parent.command(callable, name="set %s" % label)
@@ -307,7 +308,7 @@ class StatsPlugin(object):
             current_level = self._hero.skills[self._hero.skills.index("Intelligence")].level
             mana_total *= HERO_RANGES["Intelligence"][SKILL_LEVELS.index(current_level)]
         if self._state.mana_left >= mana_total: return
-        label = "%s stats: refill spell points" % self._hero.name
+        label = "%s %s: refill spell points" % (self._hero.name, self.name)
         h3sed.guibase.status("Setting %s", label, flash=conf.StatusShortFlashLength, log=True)
         callable = functools.partial(on_do, self, {"mana_left": mana_total})
         self.parent.command(callable, name="set %s" % label)
@@ -386,8 +387,9 @@ class StatsPlugin(object):
             return ""
 
         pairs = [(("%s" if v < 0 else "+%s") % v, k) for k in artifacts for v in [STATS[k][INDEX]]]
-        textpairs, toolpairs = ([(v, k[:i] + ".." if i else k) for v, k in pairs] for i in (4, 0))
-        text = tooltip = "base %s" % base
+        textpairs, toolpairs = ([(v, __(k)[:i] + ".." if i else __(k)) for v, k in pairs]
+                                for i in (4, 0))
+        text = tooltip = __("base %s", base)
         text    += " %s"  % " " .join(map(" ".join, textpairs)) if artifacts else ""
         tooltip += "\n%s" % "\n".join(map(" ".join, toolpairs)) if artifacts else ""
         if captext: text, tooltip = "%s %s" % (text, captext), "%s\n%s" % (tooltip, captext)

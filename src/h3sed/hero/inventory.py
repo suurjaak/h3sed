@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  28.03.2026
+@modified  31.03.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -147,14 +147,14 @@ class InventoryPlugin(object):
         """Returns wx.Menu with plugin-specific actions, like removing all inventory."""
         menu = wx.Menu()
         menu_compact = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, "Remove all inventory")
-        item_send  = menu.Append(wx.ID_ANY, "Equip all possible inventory")
-        item_swap  = menu.Append(wx.ID_ANY, "Swap all possible inventory with equipment")
-        menu.AppendSubMenu(menu_compact,    "Compact inventory ..")
-        item_current   = menu_compact.Append(wx.ID_ANY, "In &current order")
-        item_name      = menu_compact.Append(wx.ID_ANY, "In &name order")
-        item_slot_name = menu_compact.Append(wx.ID_ANY, "In &slot and name order")
-        item_reverse   = menu_compact.Append(wx.ID_ANY, "In &reverse order")
+        item_clear = menu.Append(wx.ID_ANY, __("Remove all inventory"))
+        item_send  = menu.Append(wx.ID_ANY, __("Equip all possible inventory"))
+        item_swap  = menu.Append(wx.ID_ANY, __("Swap all possible inventory with equipment"))
+        menu.AppendSubMenu(menu_compact,    __("Compact inventory") + " ..")
+        item_current   = menu_compact.Append(wx.ID_ANY, __("In &current order"))
+        item_name      = menu_compact.Append(wx.ID_ANY, __("In &name order"))
+        item_slot_name = menu_compact.Append(wx.ID_ANY, __("In &slot and name order"))
+        item_reverse   = menu_compact.Append(wx.ID_ANY, __("In &reverse order"))
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, swap=None),  item_clear)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, swap=False), item_send)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, swap=True),  item_swap)
@@ -181,27 +181,27 @@ class InventoryPlugin(object):
         menu_set   = wx.Menu()
         menu_swap  = wx.Menu()
         menu_move  = wx.Menu()
-        item_set   = menu.AppendSubMenu(menu_set,   "Set artifact by category ..")
-        item_equip = menu.AppendSubMenu(menu_equip, "Swap with equipment slot ..")
+        item_set   = menu.AppendSubMenu(menu_set,   __("Set artifact by category") + " ..")
+        item_equip = menu.AppendSubMenu(menu_equip, __("Swap with equipment slot") + " ..")
 
         if artifact_on_row in COMBINATION_ARTIFACTS:
-            item_combo = menu.Append(wx.ID_ANY, "Disassemble combination artifact")
+            item_combo = menu.Append(wx.ID_ANY, __("Disassemble combination artifact"))
             kwargs = dict(rowindex=rowindex)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item_combo)
         elif artifact_on_row in COMBINATION_COMPONENTS:
             components = COMBINATION_ARTIFACTS[COMBINATION_COMPONENTS[artifact_on_row]]
             if all(x in self._state for x in components):
                 menu_combo = wx.Menu()
-                menu.AppendSubMenu(menu_combo, "Assemble combination artifact")
-                item = menu_combo.Append(wx.ID_ANY, COMBINATION_COMPONENTS[artifact_on_row])
+                menu.AppendSubMenu(menu_combo, __("Assemble combination artifact"))
+                item = menu_combo.Append(wx.ID_ANY, __(COMBINATION_COMPONENTS[artifact_on_row]))
                 kwargs = dict(rowindex=rowindex)
                 menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item)
 
         menu.AppendSeparator()
-        item_blank = menu.Append(wx.ID_ANY, "Insert blank")
-        item_drop  = menu.Append(wx.ID_ANY, "Remove row")
-        item_move  = menu.AppendSubMenu(menu_move,  "Move to inventory ..")
-        item_swap  = menu.AppendSubMenu(menu_swap,  "Swap with inventory slot ..")
+        item_blank = menu.Append(wx.ID_ANY, __("Insert blank"))
+        item_drop  = menu.Append(wx.ID_ANY, __("Remove row"))
+        item_move  = menu.AppendSubMenu(menu_move, __("Move to inventory") + " ..")
+        item_swap  = menu.AppendSubMenu(menu_swap, __("Swap with inventory slot") + " ..")
 
         for category in list(SLOT_TO_LOCATIONS) + ["scroll", "inventory", "combined"]:
             candidates = metadata.Store.get("artifacts", category=category, version=self.version)
@@ -211,11 +211,12 @@ class InventoryPlugin(object):
             elif "side" == category:
                 candidates = [x for x in candidates if x not in SCROLL_ARTIFACTS]
             elif "combined" == category:
-                candidates = sorted(COMBINATION_ARTIFACTS, key=self.format_artifact)
+                candidates = COMBINATION_ARTIFACTS
             if not candidates: continue # for category
+            candidates = sorted(candidates, key=self.format_artifact)
 
             menu_category = wx.Menu()
-            item_category = wx.MenuItem(menu_set, wx.ID_ANY, category, subMenu=menu_category)
+            item_category = wx.MenuItem(menu_set, wx.ID_ANY, __(category), subMenu=menu_category)
             if artifact_on_row in ARTIFACT_TO_SLOTS:
                 if ARTIFACT_TO_SLOTS[artifact_on_row][0] == category \
                 or "scroll" == category and artifact_on_row in SCROLL_ARTIFACTS \
@@ -223,7 +224,7 @@ class InventoryPlugin(object):
                     item_category.Font = item_category.Font.Bold()
             menu_set.Append(item_category)
             for artifact_candidate in candidates:
-                label = self.format_artifact(artifact_candidate)
+                label = (__ if "combined" == category else self.format_artifact)(artifact_candidate)
                 item_candidate = wx.MenuItem(menu_category, wx.ID_ANY, label)
                 if artifact_candidate == artifact_on_row:
                     item_candidate.Font = item_candidate.Font.Bold()
@@ -241,20 +242,20 @@ class InventoryPlugin(object):
             if location not in self._hero.equipment: continue # for location
             artifact_equipped = self._hero.equipment[location]
             if artifact_equipped is None and location in reserved_locations:
-                label = "<taken by %s>" % __(self._hero.equipment[reserved_locations[location]])
-            elif artifact_equipped is None: label = "<blank>"
+                label = __("<taken by %s>", __(self._hero.equipment[reserved_locations[location]]))
+            elif artifact_equipped is None: label = __("<blank>")
             else: label = self.format_artifact(artifact_equipped)
-            item_location = menu_equip.Append(wx.ID_ANY, "%s:\t%s" % (location, label))
+            item_location = menu_equip.Append(wx.ID_ANY, "%s:\t%s" % (__(location), label))
             kwargs = dict(rowindex=rowindex, location=location)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_location)
 
         for direction, label in [(-1, "top"), (1, "bottom")]:
-            item = menu_move.Append(wx.ID_ANY, label)
+            item = menu_move.Append(wx.ID_ANY, __(label))
             kwargs = dict(rowindex=rowindex, direction=direction)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item)
 
         for i, artifact in enumerate(self._state):
-            label = self.format_artifact(artifact) or "<blank>"
+            label = __("<blank>") if artifact is None else self.format_artifact(artifact)
             item_slot = menu_swap.Append(wx.ID_ANY, "%s:\t%s" % (i + 1, label))
             kwargs = dict(rowindex=rowindex, rowindex2=i)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_row, **kwargs), item_slot)
@@ -282,7 +283,7 @@ class InventoryPlugin(object):
         if not artifact: return ""
         STATS = metadata.Store.get("artifact_stats", version=self.version)
         if artifact not in STATS: return ""
-        return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, k)
+        return ", ".join("%s%s %s" % ("" if v < 0 else "+", v, __(k))
                          for k, v in zip(metadata.PRIMARY_ATTRIBUTES.values(), STATS[artifact]) if v)
 
 
@@ -469,7 +470,7 @@ def parse(hero_bytes, version):
         artifact_id = parse_id(hero_bytes, BYTEPOS["inventory"] + i*8)
         if artifact_id and artifact_id not in ID_TO_NAME:
             logger.warning("Unknown artifact for version %r: 0x%X.", version, artifact_id)
-            artifact_name = "<unknown 0x%X>" % artifact_id
+            artifact_name = __("<unknown 0x%X>", artifact_id)
             metadata.Store.add("artifacts", [artifact_name], category="inventory", version=version)
             metadata.Store.add("ids", {artifact_name: artifact_id}, version=version)
             ID_TO_NAME[artifact_id] = artifact_name

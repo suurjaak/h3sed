@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.03.2026
+@modified  31.03.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -146,7 +146,7 @@ def format_artifacts(value, version=None):
     """
     if not value: return value
     COMBINATION_ARTIFACTS = metadata.Store.get("combination_artifacts", version=version)
-    COMBINATION_SUFFIX = "  (combined artifact)"
+    COMBINATION_SUFFIX = "  (%s)" % __("combined artifact")
     if not COMBINATION_ARTIFACTS: return __(value)
     result = []
     for v in (value if isinstance(value, list) else [value]):
@@ -423,15 +423,15 @@ class Equipment(SlotCheckerMixin, SlotsDict, DataClass):
         lines = []
         for slot, others in slot_conflicts.items():
             needed_count = sum(s == slot for s in ARTIFACT_TO_SLOTS[artifact][1:])
-            countstr = "; need %s free" % needed_count if needed_count > 1 else ""
+            countstr = ("; " + __("need %s free", needed_count)) if needed_count > 1 else ""
             items, conflict_counts = [], collections.Counter(others)
             for location2 in others:
                 count = conflict_counts.pop(location2, None)
                 if count:
-                    items.append("%s%s" % (eq[location2], " x %s" % count if count > 1 else ""))
-            lines.append("- %s (by %s)%s" % (slot, ", ".join(items), countstr))
-        return "Cannot equip %s on %s, required slot taken:\n\n%s" % \
-               (artifact, location, "\n".join(lines))
+                    items.append("%s%s" % (__(eq[location2]), " x %s" % count if count > 1 else ""))
+            lines.append("- %s (%s)%s" % (__(slot), __("by %s", ", ".join(items)), countstr))
+        return __("Cannot equip %s on %s, required slot taken", __(artifact), __(location)) + \
+               "\n\n" + "\n".join(lines)
 
 
 class Inventory(TypedArray, DataClass):

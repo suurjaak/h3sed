@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  28.03.2026
+@modified  31.03.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -176,9 +176,9 @@ class ArmyPlugin(object):
     def make_common_menu(self):
         """Returns wx.Menu with plugin-specific actions, like removing all army stacks."""
         menu = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, "Remove all army")
-        item_reset = menu.Append(wx.ID_ANY, "Set army counts to 1")
-        menu.AppendSubMenu(self.make_rounding_menu(), "Round army counts to ..")
+        item_clear = menu.Append(wx.ID_ANY, __("Remove all army"))
+        item_reset = menu.Append(wx.ID_ANY, __("Set army counts to 1"))
+        menu.AppendSubMenu(self.make_rounding_menu(), __("Round army counts to") + " ..")
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_round_army, number=-1), item_reset)
         menu.Bind(wx.EVT_MENU, self.on_remove_all, item_clear)
         return menu
@@ -188,15 +188,16 @@ class ArmyPlugin(object):
         """Returms wx.Menu for army row options."""
         menu = wx.Menu()
         menu_swap = wx.Menu()
-        menu.AppendSubMenu(menu_swap, "Swap army slot with ..")
+        menu.AppendSubMenu(menu_swap, __("Swap army slot with") + " ..")
         for stack_index, army_stack in enumerate(self._state):
-            label = "%s: %s" % (__(army_stack.name), army_stack.count) if army_stack else "<blank>"
+            label = "%s: %s" % (__(army_stack.name), army_stack.count) if army_stack else __("<blank>")
             item = menu_swap.Append(wx.ID_ANY, "%s. %s" % (stack_index + 1, label))
             kwargs = dict(index1=rowindex, index2=stack_index)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_swap_stack, **kwargs), item)
             if stack_index == rowindex:
                 menu_swap.Enable(item.Id, False)
-        item_round = menu.AppendSubMenu(self.make_rounding_menu(rowindex), "Round army count to ..")
+        item_round = menu.AppendSubMenu(self.make_rounding_menu(rowindex),
+                                        __("Round army count to") + " ..")
         if not self._state[rowindex]: menu.Enable(item_round.Id, False)
         return menu
 
@@ -208,7 +209,7 @@ class ArmyPlugin(object):
             if number is None:
                 menu.AppendSeparator()
                 continue # for number
-            label = "Lower %s" % abs(number) if number < 0 else "Upper %s" % number
+            label = __("Lower %s" if number < 0 else "Upper %s", abs(number))
             item = menu.Append(wx.ID_ANY, label)
             kwargs = dict(number=number, rowindex=rowindex)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_round_army, **kwargs), item)
@@ -336,7 +337,7 @@ def parse(hero_bytes, version):
 
         if creature_id not in ID_TO_NAME:
             logger.warning("Unknown army creature for version %r: 0x%X.", version, creature_id)
-            creature_name = "<unknown 0x%X>" % creature_id
+            creature_name = __("<unknown 0x%X>", creature_id)
             metadata.Store.add("creatures", [creature_name], version=version)
             metadata.Store.add("ids", {creature_name: creature_id}, version=version)
             ID_TO_NAME[creature_id] = creature_name
