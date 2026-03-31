@@ -2,12 +2,14 @@
 """
 Internationalization support, uses gettext-based translation files (.po and .mo).
 
+Translations by default are case-sensitive, with case-insensitve fallback.
+
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     23.03.2026
-@modified    25.03.2026
+@modified    31.03.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -23,13 +25,13 @@ import polib
 logger = logging.getLogger(__name__)
 
 
-## {language code: {"code", "name", ?"path", ?"data", ?"auto", ?"extra"}}
+## {language code: {"code", "name", ?"path", ?"data", ?"auto", ?"extra", ?"lower"}}
 LANGUAGES = {"en": {"code": "en", "name": "English"}}
 
 ## Supported translation file formats, as {dotless format suffix: format label}
 FORMATS = {"mo": "Machine Object translation file", "po": "Portable Object translation file"}
 
-## Translation loaded from directory on init, as {language code: {"code", "name", "path", "data"}}
+## Directory-loaded translations, as {language code: {"code", "name", "path", "data", "lower"}}
 AUTOLOADED = {}
 
 DEFAULTLANG = "en"
@@ -134,7 +136,7 @@ def get_config():
 
 def translate(text, *args, **kwargs):
     """
-    Returns text translated to current language, or original text if no translation available..
+    Returns text translated to current language, or original text if no translation available.
 
     Optionally formatted with positional and keyword arguments.
     """
@@ -152,15 +154,24 @@ def translate_from_context(stack_depth, text, *args, **kwargs):
 
     Optionally formatted with positional and keyword arguments.
     """
-    if "data" not in LANGUAGES[CURRENTLANG] or text not in LANGUAGES[CURRENTLANG]["data"]:
+    if "data" not in LANGUAGES[CURRENTLANG]:
         return format_text(text, *args, **kwargs)
-    entries = LANGUAGES[CURRENTLANG]["data"][text] # [(translation, filename, line number)]
+    textkey, lowertext = text, None
+    if textkey not in LANGUAGES[CURRENTLANG]["data"]:
+        lowertext = text.lower() if hasattr(text, "lower") else text
+        textkey = LANGUAGES[CURRENTLANG]["lower"].get(lowertext, text) # Case-insensitive match
+    if textkey not in LANGUAGES[CURRENTLANG]["data"]:
+        return format_text(text, *args, **kwargs)
+
+    entries = LANGUAGES[CURRENTLANG]["data"][textkey] # [(translation, filename, line number)]
     if len(entries) > 1:
         filename, line = get_calling_stack(stack_depth)
         entries2 = [e for e in entries if e[1] == filename]
         if entries2: # Narrow to closest line number in source file
             entries = sorted(entries2, key=lambda e: abs(line - e[2]))
-    return format_text(entries[0][0], *args, **kwargs)
+    text2 = entries[0][0]
+    if text == lowertext: text2 = text2.lower() # Force lowercase translation if lowercase input
+    return format_text(text2, *args, **kwargs)
 
 
 def get_calling_stack(depth=1):
@@ -225,6 +236,7 @@ def read_translation(filepath):
         records = [(entry.msgstr, to_os(fname), to_int(line)) for fname, line in entry.occurrences]
         if not records: records = [(entry.msgstr, None, 0)]
         data.setdefault(entry.msgid, []).extend(records)
+    lowers = {ltext: text for text in data for ltext in [text.lower()] if text != ltext}
     del langfile
     logger.info("Read %r %s %s", filepath, lang, name)
-    return ({"code": lang, "name": name, "path": filepath, "data": data}, None)
+    return ({"code": lang, "name": name, "path": filepath, "data": data, "lower": lowers}, None)
