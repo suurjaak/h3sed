@@ -3,6 +3,7 @@ import step
 import h3sed
 
 
+
 def show_combination_artifacts(savefile=None, heroes=(), **kwargs):
     """
     Returns text overview of complete and incomplete combination artifacts over player factions.
@@ -129,29 +130,31 @@ def show_combination_artifacts(savefile=None, heroes=(), **kwargs):
 TEMPLATE = """
 <%
 import h3sed
+from h3sed.lib.i18n import translate as __
+sortkey = lambda x: [__(y) for y in x] if isinstance(x, (list, tuple)) else __(x)
 %>
 Faction: {{ h3sed.hero.Profile.make_faction_text(faction, version) }}
 %if assembled_artifacts:
 
 Assembled combination artifacts:
-    %for artifact, owners in sorted(assembled_artifacts.items()):
-- {{ artifact }}:
+    %for artifact, owners in sorted(assembled_artifacts.items(), key=sortkey):
+- {{ __(artifact) }}:
 <%
 entries = [(hero, prop) for prop, heroes in owners.items() for hero in heroes]
 %>
-        %for hero, property in sorted(entries):
-  - {{ hero.name }} {{ property }}
+        %for hero, property in sorted(entries, key=sortkey):
+  - {{ hero.name }} {{ __(property) }}
         %endfor
     %endfor
 %endif
 %if available_artifacts:
 
 Unassembled but complete combination artifacts:
-    %for combination_artifact, available_sets in sorted(available_artifacts.items()):
+    %for combination_artifact, available_sets in sorted(available_artifacts.items(), key=sortkey):
         %for component_set in available_sets:
-- {{ combination_artifact }}:
-            %for component_artifact, hero, property in sorted(component_set):
-  - {{ component_artifact }} ({{ hero.name }} {{ property }})
+- {{ __(combination_artifact) }}:
+            %for component_artifact, hero, property in sorted(component_set, key=sortkey):
+  - {{ __(component_artifact) }} ({{ hero.name }} {{ __(property) }})
             %endfor
         %endfor
     %endfor
@@ -159,16 +162,16 @@ Unassembled but complete combination artifacts:
 %if incomplete_artifacts:
 
 Incomplete combination artifacts:
-    %for combination_artifact, existing_pieces in sorted(incomplete_artifacts.items()):
-- {{ combination_artifact }}:
+    %for combination_artifact, existing_pieces in sorted(incomplete_artifacts.items(), key=sortkey):
+- {{ __(combination_artifact) }}:
     Available:
-        %for component_artifact, hero, property in sorted(existing_pieces):
-    - {{ component_artifact }} ({{ hero.name }} {{ property }})
+        %for component_artifact, hero, property in sorted(existing_pieces, key=sortkey):
+    - {{ __(component_artifact) }} ({{ hero.name }} {{ __(property) }})
         %endfor
     Missing:
-        %for component_artifact in sorted(missing_artifacts[combination_artifact]):
-    - {{ component_artifact }}
+        %for component_artifact in sorted(missing_artifacts[combination_artifact], key=sortkey):
+    - {{ __(component_artifact) }}
         %endfor
     %endfor
 %endif
-    """
+"""
