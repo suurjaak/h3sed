@@ -25,10 +25,9 @@ Uses primitive heuristic analysis to detect connected label-control pairs:
   e.g. "iptext" and "iptext_label"|"iptext.label"|"iptext label"|"labeliptext"
 
 ------------------------------------------------------------------------------
-This file is part of SQLitely - SQLite database tool.
+This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
-@author      Erki Suurjaak
 @created     19.11.2011
 @modified    24.05.2020
 ------------------------------------------------------------------------------
