@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  31.03.2026
+@modified  02.04.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -753,6 +753,7 @@ class HeroPlugin(object):
                 self.render_plugin(p["name"], reload=True, log=not page_existed)
 
         finally:
+            if not self._panel: return
             if index in self._subtab_focus:
                 self._ctrls["properties"].SetSelection(self._subtab_focus[index])
             else:

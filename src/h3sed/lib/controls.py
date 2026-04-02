@@ -576,34 +576,38 @@ class ColourManager(object):
 
         @return  ctrl
         """
-        PROPS = {wx.Button:     {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
-                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
-                 wx.Choice:     {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
-                                 "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
-                 wx.ComboBox:   {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
-                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
-                 wx.CheckBox:   {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT},
-                 wx.Dialog:     {"BackgroundColour":  wx.SYS_COLOUR_WINDOW},
-                 wx.ListBox:    {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
-                                 "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
-                 wx.ListCtrl:   {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
-                                 "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
-                 wx.Notebook:   {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
-                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
-                 wx.SpinCtrl:   {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
-                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
-                 wx.StaticText: {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT},
-                 wx.TextCtrl:   {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
-                                 "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
-                 wx.ToolBar:    {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
-                                 "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+        PROPS = {wx.Button:         {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.Choice:         {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.ComboBox:       {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.CheckBox:       {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT},
+                 wx.Dialog:         {"BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.ListBox:        {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.ListCtrl:       {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.Notebook:       {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.SpinCtrl:       {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.SpinCtrlDouble: {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
+                 wx.StaticText:     {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT},
+                 wx.TextCtrl:       {"ForegroundColour":  wx.SYS_COLOUR_WINDOWTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_WINDOW},
+                 wx.ToolBar:        {"ForegroundColour":  wx.SYS_COLOUR_BTNTEXT,
+                                     "BackgroundColour":  wx.SYS_COLOUR_BTNFACE},
                  wx.stc.StyledTextCtrl:
-                                {"CaretForeground":  wx.SYS_COLOUR_WINDOWTEXT,
-                                 "FoldMarginColour": wx.SYS_COLOUR_WINDOW,
-                                 "StyleForeground":  wx.SYS_COLOUR_WINDOWTEXT,
-                                 "StyleBackground":  wx.SYS_COLOUR_WINDOW}, }
+                                    {"CaretForeground":  wx.SYS_COLOUR_WINDOWTEXT,
+                                     "FoldMarginColour": wx.SYS_COLOUR_WINDOW,
+                                     "StyleForeground":  wx.SYS_COLOUR_WINDOWTEXT,
+                                     "StyleBackground":  wx.SYS_COLOUR_WINDOW}, }
         for myctrl in [ctrl] + get_all_children(ctrl):
-            for proptype in (t for t in PROPS if issubclass(type(myctrl), t)):
+            for proptype in (t for t in PROPS if isinstance(myctrl, t)):
+                if proptype is wx.TextCtrl and isinstance(myctrl.Parent, wx.SpinCtrlDouble):
+                    continue # Child of omposite control: handled via parent already
                 for prop, colour in PROPS[proptype].items():
                     if myctrl not in cls.ctrlprops or prop not in cls.ctrlprops[myctrl]:
                         cls.Manage(myctrl, prop, colour)
@@ -614,6 +618,7 @@ class ColourManager(object):
     @classmethod
     def ClearDestroyed(cls):
         """Discards destroyed components from managed controls."""
+        wx.SafeYield() # Allow idle events to be processed and component cleanup executed
         children = sum(map(list, cls.ctrlchildren.values()), [])
         for ctrl in set(cls.ctrlprops) | set(cls.regctrls) | set(cls.ctrlchildren) | set(children):
             cls.DiscardIfDead(ctrl)
