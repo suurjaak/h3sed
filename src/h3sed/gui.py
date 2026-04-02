@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    31.03.2026
+@modified    02.04.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -111,7 +111,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         self.create_page_main(notebook)
         self.page_log = self.create_log_panel(notebook)
-        notebook.AddPage(self.page_log, "Log")
+        notebook.AddPage(self.page_log, __("Log"))
         notebook.RemovePage(notebook.GetPageCount() - 1) # Hide log window
         # Kludge for being able to close log window repeatedly, as SavefilePage
         # get automatically deleted on closing.
@@ -206,21 +206,21 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Creates the main page with files list and buttons."""
         page = self.page_main = wx.Panel(notebook)
         ColourManager.Manage(page, "BackgroundColour", "MainBgColour")
-        notebook.AddPage(page, "Choose file")
+        notebook.AddPage(page, __("Choose file"))
         sizer = page.Sizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         text_file = self.text_file = wx.TextCtrl(page)
-        button_open    = self.button_open    = wx.Button(page, label="&Open")
-        button_refresh = self.button_refresh = wx.Button(page, label="&Refresh")
-        button_browse  = self.button_browse  = wx.Button(page, label="&Browse..")
+        button_open    = self.button_open    = wx.Button(page, label=__("&Open"))
+        button_refresh = self.button_refresh = wx.Button(page, label=__("&Refresh"))
+        button_browse  = self.button_browse  = wx.Button(page, label=__("&Browse") + "..")
         dir_ctrl = self.dir_ctrl = wx.GenericDirCtrl(page, filter="*.*", style=wx.DIRCTRL_SHOW_FILTERS)
 
         text_file.SetEditable(False)
         button_open.SetDefault()
-        button_open.ToolTip    = "Open currently selected file"
-        button_refresh.ToolTip = "Refresh file panel  (F5)"
-        button_browse.ToolTip  = "Open dialog for selecting a file"
+        button_open.ToolTip    = __("Open currently selected file")
+        button_refresh.ToolTip = __("Refresh file panel  (F5)")
+        button_browse.ToolTip  = __("Open dialog for selecting a file")
         dir_ctrl.ShowHidden(True)
         choice, tree = dir_ctrl.GetFilterListCtrl(), dir_ctrl.GetTreeCtrl()
         ColourManager.Manage(dir_ctrl, "ForegroundColour", wx.SYS_COLOUR_WINDOWTEXT)
@@ -259,108 +259,108 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.SetMenuBar(menu)
 
         menu_file = wx.Menu()
-        menu.Append(menu_file, "&File")
+        menu.Append(menu_file, __("&File"))
 
         menu_open = self.menu_open = menu_file.Append(
-            wx.ID_ANY, "&Open savefile...\tCtrl-O", "Choose a savefile to open"
+            wx.ID_ANY, __("&Open savefile...\tCtrl-O"), __("Choose a savefile to open")
         )
         menu_close = self.menu_close = menu_file.Append(
-            wx.ID_ANY, "&Close file\tCtrl-F4", "Close current savefile"
+            wx.ID_ANY, __("&Close file\tCtrl-F4"), __("Close current savefile")
         )
         menu_reload = self.menu_reload = menu_file.Append(
-            wx.ID_ANY, "Re&load", "Reload savefile, losing any current changes"
+            wx.ID_ANY, __("Re&load"), __("Reload savefile, losing any current changes")
         )
         menu_save = self.menu_save = menu_file.Append(
-            wx.ID_ANY, "&Save", "Save the active file"
+            wx.ID_ANY, __("&Save"), __("Save the active file")
         )
         menu_save_as = self.menu_save_as = menu_file.Append(
-            wx.ID_ANY, "Save &as...", "Save the active file under a new name"
+            wx.ID_ANY, __("Save &as..."), __("Save the active file under a new name")
         )
         menu_recent = wx.Menu()
-        menu_file.AppendSubMenu(menu_recent, "&Recent files", "Recently opened files")
+        menu_file.AppendSubMenu(menu_recent, __("&Recent files"), __("Recently opened files"))
         menu_file.AppendSeparator()
         menu_recent_hero = wx.Menu()
-        menu_file.AppendSubMenu(menu_recent_hero, "Recent &heroes", "Recently opened heroes")
+        menu_file.AppendSubMenu(menu_recent_hero, __("Recent &heroes"), __("Recently opened heroes"))
         menu_file.AppendSeparator()
         menu_options = wx.Menu()
-        menu_file.AppendSubMenu(menu_options, "Opt&ions")
+        menu_file.AppendSubMenu(menu_options, __("Opt&ions"))
         menu_darkmode = wx.Menu()
-        menu_options.AppendSubMenu(menu_darkmode, "&Dark mode")
+        menu_options.AppendSubMenu(menu_darkmode, __("&Dark mode"))
         menu_darkmode_auto = self.menu_darkmode_auto = menu_darkmode.Append(wx.ID_ANY,
-            "&System",
-            "Dark mode applied automatically from system settings", kind=wx.ITEM_RADIO)
+            __("&System"),
+            __("Dark mode applied automatically from system settings"), kind=wx.ITEM_RADIO)
         menu_darkmode_on = self.menu_darkmode_on = menu_darkmode.Append(wx.ID_ANY,
-            "&Enabled", "Dark mode on", kind=wx.ITEM_RADIO)
+            __("&Enabled"), __("Dark mode on"), kind=wx.ITEM_RADIO)
         menu_darkmode_off = self.menu_darkmode_off = menu_darkmode.Append(wx.ID_ANY,
-            "&Off", "Dark mode off", kind=wx.ITEM_RADIO)
+            __("&Off"), __("Dark mode off"), kind=wx.ITEM_RADIO)
         if conf.DarkTheme is None: menu_darkmode_auto.Check(True)
         else: menu_darkmode_on.Check(True) if conf.DarkTheme else menu_darkmode_off.Check(True)
         menu_languages = self.menu_languages = wx.Menu()
-        menu_options.AppendSubMenu(menu_languages, "Interface &language")
+        menu_options.AppendSubMenu(menu_languages, __("Interface &language"))
         self.populate_menu_languages()
         menu_autoupdate_check = self.menu_autoupdate_check = menu_options.Append(
-            wx.ID_ANY, "Automatic &update check",
-            "Automatically check for program updates periodically", kind=wx.ITEM_CHECK
+            wx.ID_ANY, __("Automatic &update check"),
+            __("Automatically check for program updates periodically"), kind=wx.ITEM_CHECK
         )
         menu_autoupdate_check.Check(conf.UpdateCheckAutomatic)
         menu_backup = self.menu_backup = menu_options.Append(
-            wx.ID_ANY, "&Back up files before saving", "Create backup copy of savefile before saving changes",
+            wx.ID_ANY, __("&Back up files before saving"), __("Create backup copy of savefile before saving changes"),
             kind=wx.ITEM_CHECK
         )
         menu_backup.Check(conf.Backup)
         menu_confirm = self.menu_confirm = menu_options.Append(
-            wx.ID_ANY, "&Confirm unsaved changes", "Ask for confirmation on closing files with unsaved changes",
+            wx.ID_ANY, __("&Confirm unsaved changes"), __("Ask for confirmation on closing files with unsaved changes"),
             kind=wx.ITEM_CHECK
         )
         menu_confirm.Check(conf.ConfirmUnsaved)
         menu_newformat = self.menu_newformat = menu_options.Append(
-            wx.ID_ANY, "&New format in Armageddon's Blade", 
-            "Parse Armageddon's Blade savegames from newer game version",
+            wx.ID_ANY, __("&New format in Armageddon's Blade"),
+            __("Parse Armageddon's Blade savegames from newer game version"),
             kind=wx.ITEM_CHECK
         )
         menu_newformat.Check(conf.SavegameNewFormat)
         menu_options.AppendSeparator()
         menu_clear = self.menu_clear = menu_options.Append(
-            wx.ID_ANY, "Clear &recent items", "Clear recent files and heroes list",
+            wx.ID_ANY, __("Clear &recent items"), __("Clear recent files and heroes list"),
         )
         menu_file.AppendSeparator()
         menu_exit = self.menu_exit = \
-            menu_file.Append(wx.ID_ANY, "E&xit\tAlt-X", "Exit")
+            menu_file.Append(wx.ID_ANY, __("E&xit\tAlt-X"), __("Exit"))
 
 
         menu_edit = self.menu_edit = wx.Menu()
-        menu.Append(menu_edit, "&Edit")
+        menu.Append(menu_edit, __("&Edit"))
         menu_undo = self.menu_undo = menu_edit.Append(
-            wx.ID_UNDO, "&Undo", "Undo the last action"
+            wx.ID_UNDO, __("&Undo"), __("Undo the last action")
         )
         menu_redo = self.menu_redo = menu_edit.Append(
-            wx.ID_REDO, "&Redo", "Redo the previously undone action"
+            wx.ID_REDO, __("&Redo"), __("Redo the previously undone action")
         )
         menu_history = self.menu_history = menu_edit.Append(
-            wx.ID_ANY, "Command &history", "View current changes done to savegame"
+            wx.ID_ANY, __("Command &history"), __("View current changes done to savegame")
         )
         menu_edit.AppendSeparator()
         menu_changes = self.menu_changes = menu_edit.Append(
-            wx.ID_ANY, "Show unsaved &changes", "Show pending changes to savegame"
+            wx.ID_ANY, __("Show unsaved &changes"), __("Show pending changes to savegame")
         )
 
         menu_help = wx.Menu()
-        menu.Append(menu_help, "&Help")
+        menu.Append(menu_help, __("&Help"))
 
         menu_update = self.menu_update = menu_help.Append(wx.ID_ANY,
-            "Check for &updates",
-            "Check whether a new version of %s is available" % conf.Title
+            __("Check for &updates"),
+            __("Check whether a new version of %s is available", conf.Title)
         )
         menu_log = self.menu_log = menu_help.Append(wx.ID_ANY,
-            "Show &log window", "Show/hide the log messages window",
+            __("Show &log window"), __("Show/hide the log messages window"),
             kind=wx.ITEM_CHECK)
         menu_console = self.menu_console = menu_help.Append(wx.ID_ANY,
-            "Show Python &console\tCtrl-E",
-            "Show/hide a Python shell environment window", kind=wx.ITEM_CHECK)
+            __("Show Python &console\tCtrl-E"),
+            __("Show/hide a Python shell environment window"), kind=wx.ITEM_CHECK)
         menu_help.AppendSeparator()
         menu_about = self.menu_about = menu_help.Append(
-            wx.ID_ANY, "&About %s" % conf.Title,
-            "Show program information and copyright")
+            wx.ID_ANY, __("&About %s", conf.Title),
+            __("Show program information and copyright"))
 
         for x in (menu_close, menu_reload, menu_save, menu_save_as): x.Enable(False)
         for x in menu_edit.MenuItems: x.Enable(False)
@@ -436,7 +436,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             label, toolid, art, handler = tool
             bmp = getattr(images, art).Bitmap if isinstance(art, str) and hasattr(images, art) else \
                   wx.ArtProvider.GetBitmap(art, wx.ART_TOOLBAR, (16, 16))
-            tb.AddTool(toolid, label, bmp, shortHelp=TOOL_HELPS[toolid])
+            tb.AddTool(toolid, __(label), bmp, shortHelp=__(TOOL_HELPS[toolid]))
             tb.EnableTool(toolid, False)
             tb.Bind(wx.EVT_TOOL, handler, id=toolid)
 
@@ -449,10 +449,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def on_add_language(self, event):
         """Handler adding new language, opens dialog for selecting translation file and loads it."""
         formats = {"*.%s" % format: label for format, label in i18n.FORMATS.items()}
-        wildcard = "{0} ({1})|{1}".format("Translation file", ";".join(sorted(formats)))
-        wildcard += "|" + "|".join("{0} ({1})|{1}".format(label, pattern)
+        wildcard = "{0} ({1})|{1}".format(__("Translation file"), ";".join(sorted(formats)))
+        wildcard += "|" + "|".join("{0} ({1})|{1}".format(__(label), pattern)
                                    for pattern, label in formats.items())
-        with wx.FileDialog(self, "Select translation file", wildcard=wildcard,
+        with wx.FileDialog(self, __("Select translation file"), wildcard=wildcard,
             style=wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.RESIZE_BORDER
         ) as dialog:
             if wx.ID_OK != dialog.ShowModal(): return
@@ -460,7 +460,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         opts, err = i18n.add_translation(filename)
         if err:
-            wx.MessageBox("%s\n\n%s" % ("Error loading translation.", err),
+            wx.MessageBox("%s\n\n%s" % (__("Error loading translation."), __(err)),
                           conf.Title, wx.OK | wx.ICON_ERROR)
         else:
             self.select_language(opts["code"])
@@ -471,21 +471,21 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         droppables = [opts for opts in i18n.get_all_languages().values() if opts.get("extra")]
         droppables.sort(key=lambda x: x["name"].lower())
         choices = [opts["name"] for opts in droppables]
-        with wx.SingleChoiceDialog(self, "", "Drop translation", choices) as dlg:
+        with wx.SingleChoiceDialog(self, "", __("Drop translation"), choices) as dlg:
             if wx.ID_OK != dlg.ShowModal(): return
             opts = droppables[dlg.GetSelection()]
 
         was_current = (opts["code"] == conf.Language)
         i18n.drop_language(opts["code"])
         logger.info("Dropped translation language %(name)s (%(code)s, %(path)s).", opts)
-        msgs = ["Dropped translation for %(name)s (%(code)s)." % opts]
+        msgs = [__("Dropped translation for %(name)s (%(code)s).", **opts)]
 
         if was_current:
             conf.Language = i18n.get_current_language()
             current_opts = i18n.get_language(conf.Language)
             logger.info("Application language set to %(name)s (%(code)s).", current_opts)
-            msgs.append("Application language set to %(name)s (%(code)s). "
-                        "Relaunch for full effect." % current_opts)
+            msgs.append(__("Application language set to %(name)s (%(code)s). "
+                           "Relaunch for full effect.", **current_opts))
         conf.Translations = i18n.get_config()
         conf.save()
         guibase.status(" ".join(msgs), flash=True)
@@ -510,7 +510,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         def on_copy(text):
             with wx.TheClipboard: wx.TheClipboard.SetData(wx.TextDataObject(text))
-            guibase.status("Copied to clipboard.", flash=conf.StatusShortFlashLength)
+            guibase.status(__("Copied to clipboard."), flash=conf.StatusShortFlashLength)
 
         def on_call(entry, *_):
             """Handler for invoking a user function with current value, sets result as new value."""
@@ -520,7 +520,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             try: value = functions.execute_function(entry["target"], **kwargs)
             except Exception as e:
                 logger.exception("Error invoking function %r.", function_title)
-                wx.MessageBox("Error invoking function %r: %s" % (function_title, e),
+                wx.MessageBox(__("Error invoking function %r: %s", function_title, e),
                               conf.Title, wx.OK | wx.ICON_ERROR)
                 return 
             if value is None: return
@@ -532,7 +532,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             if not re.search("<[a-z][^>]*/?>", text, re.I): # Wrap in simple HTML if no tags evident
                 text = '<font size="2" face="%s" color="%s"><pre>%s</pre></font>' % \
                        (conf.HtmlFontName, conf.FgColour, text.rstrip())
-            buttons = {"&Copy": functools.partial(on_copy, value)}
+            buttons = {__("&Copy"): functools.partial(on_copy, value)}
             with controls.HtmlDialog(self, function_title, text, buttons=buttons) as dlg:
                 dlg.ShowModal()
 
@@ -560,7 +560,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 # Function may accept any of the following arguments:
 # (%s).
             """.lstrip() % (", ".join(sorted(kwargs)))
-            title = "User-defined functions"
+            title = __("User-defined functions")
             validator = functools.partial(functions.validate_function, **kwargs)
             dialog = controls.CallableManagerDialog(self, title, entries, validator, tester=on_call,
                                                     compiler=functions.compile_code, body=defaultbody)
@@ -578,7 +578,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             menu.Bind(wx.EVT_MENU, functools.partial(on_call, entry), item_entry)
             if "target" not in entry: item_entry.Enable(False)
 
-        item_edit = wx.MenuItem(menu, -1, "Edit user functions")
+        item_edit = wx.MenuItem(menu, -1, __("Edit user functions"))
         menu.AppendSeparator()
         menu.Append(item_edit)
 
@@ -614,7 +614,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 err = e
                 logger.exception("Error opening %s.", filename)
                 if not silent:
-                    wx.MessageBox("Error opening %s.\n\n%s" % (filename, e),
+                    wx.MessageBox(__("Error opening %s.", filename) + "\n\n%s" % e,
                                   conf.Title, wx.OK | wx.ICON_ERROR)
             if savefile:
                 # Add filename to Recent Files menu and conf, if needed
@@ -628,7 +628,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 conf.save()
         elif not silent:
             err = ValueError("No such file.")
-            wx.MessageBox("No such file:\n\n%s." % filename, conf.Title, wx.OK | wx.ICON_ERROR)
+            wx.MessageBox(__("No such file") + ":\n\n%s." % filename, conf.Title, wx.OK | wx.ICON_ERROR)
         return savefile, err
 
 
@@ -653,7 +653,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         savefile = savefile or self.load_savefile(filename)[0]
         if not savefile: return None
 
-        guibase.status("Opening page for %s." % filename, flash=True)
+        guibase.status(__("Opening page for %s.", filename), flash=True)
         tab_title = self.get_unique_tab_title(filename)
         opts.update(filename=filename, savefile=savefile, title=tab_title)
         page = opts["page"] = SavefilePage(self.notebook, tab_title, savefile)
@@ -686,17 +686,17 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 if savefile: savefiles[f] = savefile
                 else:
                     notsave_filenames.append(f)
-                    err = err if isinstance(err, ValueError) else "Not a valid gzipped file?"
-                    guibase.status("Failed to open %s. %s", f, err, log=True, flash=True)
+                    err = err if isinstance(err, ValueError) else __("Not a valid gzipped file?")
+                    guibase.status(__("Failed to open %s.", f) + " %s" % err, log=True, flash=True)
 
         for filename, savefile in savefiles.items():
             self.load_savefile_page(filename, savefile)
         if notsave_filenames or missing_filenames:
             texts = []
             if missing_filenames:
-                texts.append("No such file:\n\n%s" % ("\n".join(missing_filenames)))
+                texts.append(__("No such file") + ":\n\n%s" % ("\n".join(missing_filenames)))
             if notsave_filenames:
-                texts.append("Not a valid savefile:\n\n%s" % ("\n".join(notsave_filenames)))
+                texts.append(__("Not a valid savefile") + ":\n\n%s" % ("\n".join(notsave_filenames)))
             wx.MessageBox("\n\n".join(texts), conf.Title, wx.OK | wx.ICON_ERROR)
 
 
@@ -708,18 +708,18 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         for lang in sorted(language_map, key=lambda x: language_map[x]["name"].lower()):
             opts = language_map[lang]
             menu_lang = self.menu_languages.Append(wx.ID_ANY, opts["name"],
-                "Application interface in %(name)s (%(code)s)" % opts, kind=wx.ITEM_RADIO)
+                __("Application interface in %(name)s (%(code)s)", **opts), kind=wx.ITEM_RADIO)
             if lang == conf.Language: menu_lang.Check(True)
             else:
                 handler = (lambda lang: lambda event: self.select_language(lang))(lang)
                 self.menu_languages.Bind(wx.EVT_MENU, handler, menu_lang)
         self.menu_languages.AppendSeparator()
-        menu_add = self.menu_languages.Append(wx.ID_ANY, "Add language ..",
-            "Add another language from a translation file")
+        menu_add = self.menu_languages.Append(wx.ID_ANY, __("Add language") + " ..",
+            __("Add another language from a translation file"))
         self.menu_languages.Bind(wx.EVT_MENU, self.on_add_language, menu_add)
         if any(opts.get("extra") for opts in language_map.values()):
-            menu_drop = self.menu_languages.Append(wx.ID_ANY, "Remove language",
-                "Remove an added translation language")
+            menu_drop = self.menu_languages.Append(wx.ID_ANY, __("Remove language"),
+                __("Remove an added translation language"))
             self.menu_languages.Bind(wx.EVT_MENU, self.on_drop_language, menu_drop)
 
 
@@ -786,7 +786,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         opts = i18n.get_language(lang)
         logger.info("Application language set to %(name)s (%(code)s).", opts)
-        t = "Application language set to %(name)s (%(code)s). Relaunch for full effect." % opts
+        t = __("Application language set to %(name)s (%(code)s). Relaunch for full effect.", **opts)
         guibase.status(t, flash=True)
         self.populate_menu_languages()
 
@@ -815,7 +815,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """Deletes specified path and refreshes files list after confirmation popup."""
         if not os.path.exists(path): return
         category = "directory" if os.path.isdir(path) else "file"
-        msg = "Delete this %s from disk?\n\n%s" % (category, path)
+        msg = __("Delete this %s from disk?", __(category)) + "\n\n%s" % path
         if wx.OK != wx.MessageBox(msg, conf.Title,
                                   wx.OK | wx.CANCEL | wx.CANCEL_DEFAULT | wx.ICON_WARNING):
             return
@@ -825,16 +825,16 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         else:
             files_blocking = [f for f in conf.FilesOpen if f.startswith(path + os.sep)]
         if files_blocking:
-            info = "currently" if "file" == category else util.plural("file", files_blocking)
-            wx.MessageBox("Cannot delete %s, %s open." % (path, info), conf.Title, wx.ICON_ERROR)
+            info = __("currently") if "file" == category else util.plural("file", files_blocking)
+            wx.MessageBox(__("Cannot delete %s, %s open.", path, info), conf.Title, wx.ICON_ERROR)
             return
 
-        guibase.status("Deleting %s" % path, flash=conf.StatusShortFlashLength, log=True)
+        guibase.status(__("Deleting %s", path), flash=conf.StatusShortFlashLength, log=True)
         try:
             (shutil.rmtree if "file" != category else os.unlink)(path)
         except Exception as e:
             logger.exception("Error deleting %s.", path)
-            wx.MessageBox("Error deleting %s:\n\n%s" % (path, util.format_exc(e)), conf.Title,
+            wx.MessageBox(__("Error deleting %s", path) + ":\n\n%s" % util.format_exc(e), conf.Title,
                           wx.OK | wx.ICON_ERROR)
             return
 
@@ -860,7 +860,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def save_file_as(self, path):
         """Opens file dialog and saves file under new name."""
         filename1 = filename2 = path
-        title = "Save %s as.." % os.path.split(filename1)[-1]
+        title = __("Save %s as..", os.path.split(filename1)[-1])
         with wx.FileDialog(self,
             message=title, defaultDir=os.path.split(filename1)[0],
             defaultFile=os.path.basename(filename1),
@@ -872,7 +872,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         if filename2 in conf.FilesOpen:
             wx.MessageBox(
-                "%s is already open in %s." % (filename2, conf.Title),
+                __("%s is already open in %s.", filename2, conf.Title),
                 conf.Title, wx.OK | wx.ICON_WARNING
             )
             return
@@ -884,7 +884,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             logger.exception("Error saving %s as %s.", filename1, filename2)
             return
 
-        guibase.status("Saved %s." % filename2, flash=conf.StatusShortFlashLength)
+        guibase.status(__("Saved %s.", filename2), flash=conf.StatusShortFlashLength)
         self.refresh_dir_ctrl(filename2)
 
 
@@ -917,13 +917,13 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         boldfont = self.Font.Bold()
 
         item_name    = wx.MenuItem(menu, -1, os.path.basename(path) or path)
-        item_open    = wx.MenuItem(menu, -1, "&Open file") if is_file else None
-        item_folder  = wx.MenuItem(menu, -1, "&Go to directory")
-        item_copy    = wx.MenuItem(menu, -1, "&Copy path")
-        item_saveas  = wx.MenuItem(menu, -1, "Save %s &as" % category) if is_file else None
-        item_delete  = wx.MenuItem(menu, -1, "&Delete %s" % category)
-        item_toggle  = wx.MenuItem(menu, -1, "&Expand/collapse") if is_dir else None
-        item_refresh = wx.MenuItem(menu, -1, "&Refresh list")
+        item_open    = wx.MenuItem(menu, -1, __("&Open file")) if is_file else None
+        item_folder  = wx.MenuItem(menu, -1, __("&Go to directory"))
+        item_copy    = wx.MenuItem(menu, -1, __("&Copy path"))
+        item_saveas  = wx.MenuItem(menu, -1, __("Save %s &as", __(category))) if is_file else None
+        item_delete  = wx.MenuItem(menu, -1, __("&Delete %s", __(category)))
+        item_toggle  = wx.MenuItem(menu, -1, __("&Expand/collapse")) if is_dir else None
+        item_refresh = wx.MenuItem(menu, -1, __("&Refresh list"))
 
         item_name.Font = boldfont
 
@@ -988,7 +988,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         """
         Handler for checking for updates, starts a background process for checking and feedback.
         """
-        guibase.status("Checking for new version of %s.", conf.Title)
+        guibase.status(__("Checking for new version of %s.", conf.Title))
         wx.CallAfter(check_newest_version, self.on_check_update_callback)
 
 
@@ -1005,19 +1005,19 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         guibase.status("")
         if check_result:
             version = check_result
-            guibase.status("New %s version %s available.", conf.Title, version)
-            message = "Newer version (%s) available. You are currently on version %s.\n\n" \
-                      "Open the program homepage?" % (version, conf.Version)
+            guibase.status(__("New %s version %s available.", conf.Title, version))
+            message = __("Newer version (%s) available. You are currently on version %s.",
+                         version, conf.Version) + "\n\n" + __("Open the program homepage?")
             style = wx.ICON_INFORMATION | wx.OK | wx.CANCEL
-            if wx.OK == wx.MessageBox(message, "Update information", style):
+            if wx.OK == wx.MessageBox(message, __("Update information"), style):
                 webbrowser.open(conf.HomeUrl)
         elif full_response and check_result is not None:
-            wx.MessageBox("You are using the latest version of %s, %s.\n\n " %
-                (conf.Title, conf.Version), "Update information",
-                wx.OK | wx.ICON_INFORMATION)
+            wx.MessageBox(__("You are using the latest version of %s, %s.",
+                             conf.Title, conf.Version) + "\n\n ",
+                __("Update information"), wx.OK | wx.ICON_INFORMATION)
         elif full_response:
-            wx.MessageBox("Could not contact server.",
-                          "Update information", wx.OK | wx.ICON_WARNING)
+            wx.MessageBox(__("Could not contact server."),
+                          __("Update information"), wx.OK | wx.ICON_WARNING)
         if check_result is not None:
             conf.UpdateCheckLast = datetime.date.today().strftime("%Y%m%d")
             conf.save()
@@ -1149,7 +1149,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def on_showhide_log(self, event=None):
         """Handler for clicking to show/hide the log window."""
         if self.notebook.GetPageIndex(self.page_log) < 0:
-            self.notebook.AddPage(self.page_log, "Log")
+            self.notebook.AddPage(self.page_log, __("Log"))
             self.page_log.is_hidden = False
             self.page_log.Show()
             self.notebook.SetSelection(self.notebook.GetPageCount() - 1)
@@ -1226,7 +1226,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
             page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage) and page.undoredo.CanUndo():
-            guibase.status("Undoing %s" % page.undoredo.CurrentCommand.Name,
+            guibase.status(__("Undoing %s", page.undoredo.CurrentCommand.Name),
                            flash=conf.StatusShortFlashLength, log=True)
             page.undoredo.Undo()
 
@@ -1239,7 +1239,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if isinstance(page, SavefilePage) and page.undoredo.CanRedo():
             cmdpos = 0 if not page.undoredo.CurrentCommand else \
                      page.undoredo.Commands.index(page.undoredo.CurrentCommand) + 1
-            guibase.status("Redoing %s" % page.undoredo.Commands[cmdpos].Name,
+            guibase.status(__("Redoing %s", page.undoredo.Commands[cmdpos].Name),
                            flash=conf.StatusShortFlashLength, log=True)
             page.undoredo.Redo()
 
@@ -1306,28 +1306,28 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         cando, do = page.undoredo.CanUndo, page.undoredo.Undo
         if count >= 0: cando, do = page.undoredo.CanRedo, page.undoredo.Redo
         verb = "Undo" if count < 0 else "Redo"
-        guibase.status("%sing %s", verb, util.plural("action", abs(count)),
+        guibase.status(__("%sing %%s" % verb, util.plural("action", abs(count))),
                        flash=conf.StatusShortFlashLength, log=True)
         for _ in range(abs(count)):
             if not cando(): break  # for
             cmd = page.undoredo.CurrentCommand or page.undoredo.Commands[0]
             if count >= 0 and page.undoredo.CurrentCommand:
                 cmd = page.undoredo.Commands[page.undoredo.Commands.index(cmd) + 1]
-            guibase.status("%sing %s", verb, cmd.Name, flash=conf.StatusShortFlashLength, log=True)
+            guibase.status(__("%sing %%s" % verb, cmd.Name), flash=conf.StatusShortFlashLength, log=True)
             do()
 
 
     def on_about(self, event=None):
         """Handler for clicking "About program" menu, opens a small info frame."""
         maketext = lambda: step.Template(templates.ABOUT_HTML).expand()
-        buttons = {"Check for &updates": self.on_check_update}
-        with controls.HtmlDialog(self, "About %s" % conf.Title, maketext, buttons=buttons) as dlg:
+        buttons = {__("Check for &updates"): self.on_check_update}
+        with controls.HtmlDialog(self, __("About %s", conf.Title), maketext, buttons=buttons) as dlg:
             dlg.ShowModal()
 
 
     def on_browse(self, event=None):
         """Handler for clicking Browse-button, opens file dialog and selects file in dir ctrl."""
-        with wx.FileDialog(parent=self, message="Select file",
+        with wx.FileDialog(parent=self, message=__("Select file"),
             style=wx.FD_FILE_MUST_EXIST | wx.FD_OPEN | wx.RESIZE_BORDER
         ) as dialog:
             self.set_savegame_filters(dialog)
@@ -1393,7 +1393,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         Handler for open savefile menu or button, displays a file dialog and
         loads the chosen file.
         """
-        with wx.FileDialog(self, message="Open",
+        with wx.FileDialog(self, message=__("Open"),
             style=wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_OPEN | wx.RESIZE_BORDER
         ) as dialog:
             self.set_savegame_filters(dialog)
@@ -1494,14 +1494,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             if opts["page"].get_unsaved(): unsaved_pages[fn] = opts["page"]
 
         if unsaved_pages:
-            resp = wx.MessageBox(
-                "There are unsaved changes in %s:\n\n%s\n\n"
-                "Do you want to save the changes?" % (
-                    util.plural("file", unsaved_pages, single="this"),
-                    "\n".join(sorted(unsaved_pages))
-                ),
-                conf.Title, wx.YES | wx.NO | wx.CANCEL | wx.ICON_INFORMATION
-            )
+            msg = __("There are unsaved changes in %s", util.plural("file", unsaved_pages, single="this"))
+            msg += ":\n\n%s\n\n" % "\n".join(sorted(unsaved_pages))
+            msg += __("Do you want to save the changes?")
+            resp = wx.MessageBox(msg, conf.Title, wx.YES | wx.NO | wx.CANCEL | wx.ICON_INFORMATION)
             if wx.CANCEL == resp: return
             for fn, page in unsaved_pages.items() if wx.YES == resp else ():
                 if not page.save_file(): return
@@ -1537,9 +1533,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             return
 
         if conf.ConfirmUnsaved and page.get_unsaved():
-            msg = "%s has modifications.\n\n" % page.filename
-            resp = wx.MessageBox(msg + "Do you want to save the changes?", conf.Title,
-                                 wx.YES | wx.NO | wx.CANCEL | wx.ICON_INFORMATION)
+            msg = __("%s has modifications.", page.filename)
+            msg += "\n\n" + __("Do you want to save the changes?")
+            resp = wx.MessageBox(msg, conf.Title, wx.YES | wx.NO | wx.CANCEL | wx.ICON_INFORMATION)
             if wx.CANCEL == resp:
                 event.Veto()
                 return
@@ -1594,7 +1590,7 @@ class SavefilePage(wx.Panel):
         self.undoredo.MarkAsSaved()
 
         parent_notebook.InsertPage(1, self, title)
-        busy = controls.BusyPanel(self, 'Loading "%s".' % self.filename)
+        busy = controls.BusyPanel(self, __('Loading "%s".', self.filename))
         ColourManager.Manage(self, "BackgroundColour", "WidgetColour")
 
         splitter = wx.SplitterWindow(self, style=wx.BORDER_NONE)
@@ -1654,7 +1650,7 @@ class SavefilePage(wx.Panel):
         wx_accel.accelerate(self)
         try:
             self.load_data()
-            guibase.status("Opened %s." % self.filename, flash=True)
+            guibase.status(__("Opened %s.", self.filename), flash=True)
         finally:
             busy.Close()
 
@@ -1667,21 +1663,21 @@ class SavefilePage(wx.Panel):
     def reload_file(self):
         """Asks for confirmation if changed and reloads current file."""
         if self.savefile.is_changed() and wx.CANCEL == wx.MessageBox(
-            "Are you sure you want to lose all changes?", conf.Title,
+            __("Are you sure you want to lose all changes?"), conf.Title,
             wx.OK | wx.CANCEL | wx.ICON_INFORMATION
         ): return
         try:
             self.savefile.read()
         except Exception as e:
             logger.exception("Error reloading %s.", self.filename)
-            wx.MessageBox("Error reloading %s:\n\n%s" % (self.filename, util.format_exc(e)),
+            wx.MessageBox(__("Error reloading %s", self.filename) + ":\n\n%s" % util.format_exc(e),
                           wx.OK | wx.ICON_ERROR)
             return
         self.undoredo.ClearCommands()
         self.undoredo.SetMenuStrings()
         evt = SavefilePageEvent(self.Id, source=self, modified=False)
         wx.PostEvent(self.Parent, evt)
-        busy = controls.BusyPanel(self.Parent, "Reloading file.")
+        busy = controls.BusyPanel(self.Parent, __("Reloading file."))
         self.Freeze()
         try:
             self.update_metadata()
@@ -1697,7 +1693,7 @@ class SavefilePage(wx.Panel):
         filename1 = filename2 = self.filename
 
         if rename:
-            title = "Save %s as.." % os.path.split(self.filename)[-1]
+            title = __("Save %s as..", os.path.split(self.filename)[-1])
             with wx.FileDialog(self,
                 message=title, defaultDir=os.path.split(self.filename)[0],
                 defaultFile=os.path.basename(self.filename),
@@ -1708,7 +1704,7 @@ class SavefilePage(wx.Panel):
 
             if filename1 != filename2 and filename2 in conf.FilesOpen:
                 wx.MessageBox(
-                    "%s is already open in %s." % (filename2, conf.Title),
+                    __("%s is already open in %s.", filename2, conf.Title),
                     conf.Title, wx.OK | wx.ICON_WARNING
                 )
                 return False
@@ -1743,8 +1739,8 @@ class SavefilePage(wx.Panel):
             logger.exception("Error saving %s as %s.", filename1, filename2)
             try: os.unlink(tempname)
             except Exception: pass
-            wx.MessageBox("Error saving %s as %s:\n\n%s" %
-                          (filename1, filename2, util.format_exc(e)),
+            wx.MessageBox(__("Error saving %s as %s", filename1, filename2) +
+                          ":\n\n%s" % util.format_exc(e),
                           conf.Title, wx.OK | wx.ICON_ERROR)
             return False
 
@@ -1764,14 +1760,14 @@ class SavefilePage(wx.Panel):
             self.savefile.write_ranges(spans, tempname) if spans else self.savefile.write(tempname)
         except Exception as e:
             logger.exception("Error saving changes in %s.", filename2)
-            error = "Error saving changes:\n\n%s" % util.format_exc(e)
+            error = __("Error saving changes") + ":\n\n%s" % util.format_exc(e)
 
         if not error and rename:
             try:
                 shutil.copy(tempname, filename2)
             except Exception as e:
-                error = "Error saving %s as %s:\n\n%s" % \
-                        (self.filename, filename2, util.format_exc(e))
+                error = __("Error saving %s as %s", self.filename, filename2) + \
+                        ":\n\n%s" % util.format_exc(e)
                 logger.exception("Error saving temporary file %s as %s.", tempname, filename2)
 
         try: tempname and os.unlink(tempname)
@@ -1796,7 +1792,7 @@ class SavefilePage(wx.Panel):
             wx.PostEvent(self.Parent, evt)
         actionargs = dict(save=True, rename=rename, **{"spans": spans} if spans else {})
         for p in self.plugins: p.action(**actionargs)
-        guibase.status("Saved %s." % filename2, flash=conf.StatusShortFlashLength)
+        guibase.status(__("Saved %s.", filename2), flash=conf.StatusShortFlashLength)
         return True
 
 
@@ -1806,7 +1802,7 @@ class SavefilePage(wx.Panel):
             self.savefile.parse_heroes()
             icon_index = self.notebook.GetImageList().Add(images.PageHero.Bitmap)
             panel = wx.Panel(self.notebook)
-            self.notebook.AddPage(panel, "Hero", imageId=icon_index)
+            self.notebook.AddPage(panel, __("Hero"), imageId=icon_index)
             self.plugins.append(hero_gui.HeroPlugin(self.savefile, panel, self.undoredo))
 
             if self.notebook.PageCount < 2:
@@ -1840,7 +1836,7 @@ class SavefilePage(wx.Panel):
 
     def show_changes(self):
         """Shows unsaved changes in a popup dialog."""
-        title = "Changes in %s" % self.savefile.filename
+        title = __("Changes in %s", self.savefile.filename)
         content = "".join(p.get_changes() for p in self.plugins)
         with controls.HtmlDialog(self, title, content, style=wx.RESIZE_BORDER) as dlg:
             dlg.ShowModal()
@@ -2373,10 +2369,10 @@ def check_newest_version(callback=None):
 
 def make_wildcards():
     """Returns savegame wildcard strings for file controls, as ["label (*.ext)|*.ext", ]."""
-    result = ["All files (*.*)|*"]
+    result = ["%s (*.*)|*" % __("All files")]
     for name, exts in conf.FileExtensions:
         exts1 = exts2 = ";".join("*" + x for x in exts)
         if "linux" in sys.platform:  # Case-sensitive operating system
             exts2 = ";".join("*%s;*%s" % (x.lower(), x.upper()) for x in exts)
-        result.append("%s (%s)|%s" % (name, exts1, exts2))
+        result.append("%s (%s)|%s" % (__(name), exts1, exts2))
     return result

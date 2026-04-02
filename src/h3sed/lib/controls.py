@@ -28,7 +28,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    24.03.2026
+@modified    02.04.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -682,31 +682,31 @@ class CallableManagerDialog(wx.Dialog):
 
         list_items  = wx.ListView(panel_left, style=wx.LC_REPORT | wx.LC_SINGLE_SEL |
                                                     wx.LC_NO_HEADER)
-        button_up   = wx.Button(panel_left, label="Up")
-        button_down = wx.Button(panel_left, label="Down")
+        button_up   = wx.Button(panel_left, label=__("Up"))
+        button_down = wx.Button(panel_left, label=__("Down"))
 
-        label_title = wx.StaticText(panel_right, label="Tit&le:")
+        label_title = wx.StaticText(panel_right, label=__("Tit&le:"))
         edit_title = wx.TextCtrl(panel_right)
-        label_body = wx.StaticText(panel_right, label="&Body:")
+        label_body = wx.StaticText(panel_right, label=__("&Body:"))
         stc_body = wx.stc.StyledTextCtrl(panel_right)
-        label_name = wx.StaticText(panel_right, label="Ta&rget:")
+        label_name = wx.StaticText(panel_right, label=__("Ta&rget:"))
         combo_name = wx.ComboBox(panel_right, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        button_test = wx.Button(panel_right, label="&Test")
-        label_active = wx.StaticText(panel_right, label="&Active:")
+        button_test = wx.Button(panel_right, label=__("&Test"))
+        label_active = wx.StaticText(panel_right, label=__("&Active:"))
         cb_active    = wx.CheckBox(panel_right)
 
         label_error = wx.StaticText(panel_right, label="Error:")
         edit_error  = wx.TextCtrl(panel_right, style=wx.TE_MULTILINE | wx.TE_NO_VSCROLL |
                                                      wx.BORDER_NONE)
 
-        button_compile = wx.Button(panel_right, label="&Compile")
-        button_edit    = wx.Button(panel_right, label="&Edit")
-        button_save    = wx.Button(panel_right, label="&Save")
-        button_delete  = wx.Button(panel_right, label="Delete")
-        button_cancel  = wx.Button(panel_right, label="Canc&el")
+        button_compile = wx.Button(panel_right, label=__("&Compile"))
+        button_edit    = wx.Button(panel_right, label=__("&Edit"))
+        button_save    = wx.Button(panel_right, label=__("&Save"))
+        button_delete  = wx.Button(panel_right, label=__("Delete"))
+        button_cancel  = wx.Button(panel_right, label=__("Canc&el"))
 
-        button_new     = wx.Button(self, label="&New entry")
-        button_close   = wx.Button(self, label="Close")
+        button_new     = wx.Button(self, label=__("&New entry"))
+        button_close   = wx.Button(self, label=__("Close"))
 
         self.Sizer        = wx.BoxSizer(wx.VERTICAL)
         panel.Sizer       = wx.BoxSizer(wx.VERTICAL)
@@ -776,20 +776,20 @@ class CallableManagerDialog(wx.Dialog):
         ColourManager.SetShellStyles(stc_body)
         button_test.Show(bool(tester))
 
-        label_title.ToolTip    = edit_title.ToolTip = "Title for %s; ampersand makes hotkey" % alias
-        label_body.ToolTip     = "Python code to compile for %s" % alias
-        label_active.ToolTip   = cb_active.ToolTip  = "Enable %s for use" % alias
-        label_name.ToolTip     = combo_name.ToolTip = "Callable name from body to invoke as %s" % alias
-        button_new.ToolTip     = "Enter new %s" % alias
-        button_close.ToolTip   = "Close dialog"
-        button_up.ToolTip      = "Move selected entry one step higher"
-        button_down.ToolTip    = "Move selected entry one step higher"
-        button_test.ToolTip    = "Invoke %s with content from popup" % alias
-        button_compile.ToolTip = "Compile and verify code"
-        button_edit.ToolTip    = "Edit current %s" % alias
-        button_save.ToolTip    = "Save %s" % alias
-        button_delete.ToolTip  = "Delete %s" % alias
-        button_cancel.ToolTip  = "Discard changes"
+        label_title.ToolTip    = edit_title.ToolTip = __("Title for %s; ampersand makes hotkey", alias)
+        label_body.ToolTip     = __("Python code to compile for %s", alias)
+        label_active.ToolTip   = cb_active.ToolTip  = __("Enable %s for use", alias)
+        label_name.ToolTip     = combo_name.ToolTip = __("Callable name from body to invoke as %s", alias)
+        button_new.ToolTip     = __("Enter new %s", alias)
+        button_close.ToolTip   = __("Close dialog")
+        button_up.ToolTip      = __("Move selected entry one step higher")
+        button_down.ToolTip    = __("Move selected entry one step higher")
+        button_test.ToolTip    = __("Invoke %s with content from popup", alias)
+        button_compile.ToolTip = __("Compile and verify code")
+        button_edit.ToolTip    = __("Edit current %s", alias)
+        button_save.ToolTip    = __("Save %s", alias)
+        button_delete.ToolTip  = __("Delete %s", alias)
+        button_cancel.ToolTip  = __("Discard changes")
 
         self.list_items     = list_items
         self.edit_title     = edit_title
@@ -909,7 +909,7 @@ class CallableManagerDialog(wx.Dialog):
             candidates = [x for x in (self.combo_name.Value, self.item.get("name")) if x]
             name_selected = next((k for k in candidates if k in ns), None)
         elif not err:
-            err = "No suitable %s found in body." % self.alias
+            err = __("No suitable %s found in body.", __(self.alias))
 
         self.combo_name.SetItems(list(ns or {}))
         self.label_error.Shown = bool(err)
@@ -972,12 +972,51 @@ class CallableManagerDialog(wx.Dialog):
         self.stc_body.SetMarginWidth(1, width)
 
 
+    def RefreshTexts(self):
+        """Updates all texts in UI controls."""
+        self.button_up     .Label = __("Up")
+        self.button_down   .Label = __("Down")
+        self.label_title   .Label = __("Tit&le") + ":"
+        self.label_body    .Label = __("&Body") + ":"
+        self.label_name    .Label = __("Ta&rget") + ":"
+        self.button_test   .Label = __("&Test")
+        self.label_active  .Label = __("&Active") + ":"
+        self.label_error   .Label = __("Error") + ":"
+        self.button_compile.Label = __("&Compile")
+        self.button_edit   .Label = __("&Edit")
+        self.button_save   .Label = __("&Save")
+        self.button_delete .Label = __("Delete")
+        self.button_cancel .Label = __("Canc&el")
+        self.button_new    .Label = __("&New entry")
+        self.button_close  .Label = __("Close")
+
+        self.label_title   .ToolTip = __("Title for %s; ampersand makes hotkey", __(self.alias))
+        self.label_body    .ToolTip = __("Python code to compile for %s", __(self.alias))
+        self.label_active  .ToolTip = __("Enable %s for use", __(self.alias))
+        self.label_name    .ToolTip = __("Callable name from body to invoke as %s", __(self.alias))
+        self.button_new    .ToolTip = __("Enter new %s", __(self.alias))
+        self.button_close  .ToolTip = __("Close dialog")
+        self.button_up     .ToolTip = __("Move selected entry one step higher")
+        self.button_down   .ToolTip = __("Move selected entry one step lower")
+        self.button_test   .ToolTip = __("Invoke %s with content from popup", __(self.alias))
+        self.button_compile.ToolTip = __("Compile and verify code")
+        self.button_edit   .ToolTip = __("Edit current %s", __(self.alias))
+        self.button_save   .ToolTip = __("Save %s", __(self.alias))
+        self.button_delete .ToolTip = __("Delete %s", __(self.alias))
+        self.button_cancel .ToolTip = __("Discard changes")
+        self.edit_title    .ToolTip = self.label_title.ToolTip.Tip
+        self.cb_active     .ToolTip = self.label_active.ToolTip.Tip
+        self.combo_name    .ToolTip = self.label_name.ToolTip.Tip
+
+        self.label_title.ContainingSizer.Layout()
+
+
     def _CheckUnsaved(self):
         """Returns true if form has unsaved changes and user prompted to cancel in popup."""
         if not self.editmode or not self.GetChanges(): return False
-        return wx.OK != wx.MessageBox("There are unsaved changes.\n\n"
-                                      "Are you sure you want to discard them?",
-                                      "Unsaved changes", wx.OK | wx.CANCEL)
+        return wx.OK != wx.MessageBox(__("There are unsaved changes.") + "\n\n" +
+                                      __("Are you sure you want to discard them?"),
+                                      __("Unsaved changes"), wx.OK | wx.CANCEL)
 
 
     def _PostEvent(self):
@@ -1031,13 +1070,14 @@ class CallableManagerDialog(wx.Dialog):
         changes = self.GetChanges()
         if not changes.get("title", self.item.get("title")):
             self.edit_title.SetFocus()
-            wx.MessageBox("Title is mandatory.", "Unsaved changes", wx.ICON_WARNING | wx.OK)
+            wx.MessageBox(__("Title is mandatory."), __("Unsaved changes"), wx.ICON_WARNING | wx.OK)
             return
         if changes:
             self.Compile()
             if self.state["error"] and wx.OK != wx.MessageBox(
-                "Are you sure you want to save invalid state?\n\nError: %s" % self.state["error"],
-                "Unsaved changes", wx.ICON_WARNING | wx.OK | wx.CANCEL
+                __("Are you sure you want to save invalid state?") + "\n\n" + 
+                __("Error: %s", self.state["error"]),
+                __("Unsaved changes"), wx.ICON_WARNING | wx.OK | wx.CANCEL
             ): return
 
             self.item.update(changes, **self.GetChanges())
@@ -1070,7 +1110,7 @@ class CallableManagerDialog(wx.Dialog):
 
     def _OnDelete(self, event):
         """Handler for deleting item, asks for confirmation and posts event."""
-        if wx.OK != wx.MessageBox("Are you sure you want to delete this item?", "Delete",
+        if wx.OK != wx.MessageBox(__("Are you sure you want to delete this item?"), __("Delete"),
                                   wx.OK | wx.CANCEL): return
         self.list_items.DeleteItem(self.items.index(self.item))
         self.items.remove(self.item)
@@ -1097,21 +1137,21 @@ class CommandHistoryDialog(wx.Dialog):
     """
 
     def __init__(self, parent, cmdproc, title="Command History", style=0):
-        wx.Dialog.__init__(self, parent, title=title,
+        wx.Dialog.__init__(self, parent, title=__(title),
                            style=wx.CAPTION | wx.CLOSE_BOX | wx.RESIZE_BORDER | style)
         self.edge = -1  # Choice index for first undo command
         cmdpos = cmdproc.Commands.index(cmdproc.CurrentCommand) if cmdproc.CurrentCommand else None
         if cmdpos is not None: self.edge = len(cmdproc.Commands) - cmdpos - 1
         headertext, choices = self._MakeTexts(cmdproc)
 
-        label = wx.StaticText(self, label="Select command(s) to undo or redo:")
+        label = wx.StaticText(self, label=__("Select commands to undo or redo") + ":")
         header = wx.StaticText(self)
         listbox = wx.ListBox(self, choices=choices, style=wx.LB_MULTIPLE)
         sizer_buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
 
         header.Label = headertext
         okbutton = next(c for c in self.Children if isinstance(c, wx.Button) and wx.ID_OK == c.Id)
-        okbutton.Label = "Redo" if self.edge < 0 else "Undo"
+        okbutton.Label = __("Redo" if self.edge < 0 else "Undo")
         self.listbox = listbox
         self.okbutton = okbutton
 
@@ -1153,7 +1193,7 @@ class CommandHistoryDialog(wx.Dialog):
                 rng = [index, self.listbox.Count - 1 if self.edge < 0 else self.edge - 1]
             for i in range(self.listbox.Count):
                 (self.listbox.SetSelection if rng[0] <= i <= rng[1] else self.listbox.Deselect)(i)
-            self.okbutton.Label = "Redo" if self.edge < 0 or index < self.edge else "Undo"
+            self.okbutton.Label = __("Redo" if self.edge < 0 or index < self.edge else "Undo")
 
 
     def _MakeTexts(self, cmdproc):
@@ -1169,18 +1209,18 @@ class CommandHistoryDialog(wx.Dialog):
         getw = lambda x: self.GetTextExtent(str(x))[0]
         spacew = self.GetTextExtent(" ")[0]
         for i, c in enumerate(columns):
-            inter = "" if not i else INTER + ("" if c else " " * int(getw("Undo") / spacew))
-            headertext += inter + c
-            maxwidths[i] = max(maxwidths.get(i, 0), getw(c))
+            inter = "" if not i else INTER + ("" if c else " " * int(getw(__("Undo")) / spacew))
+            headertext += inter + __(c)
+            maxwidths[i] = max(maxwidths.get(i, 0), getw(__(c or "Undo")))
         for index, c in enumerate(x.Name for x in reversed(cmdproc.Commands)):
             category = "Redo" if self.edge < 0 or index < self.edge else "Undo"
-            item = [len(cmdproc.Commands) - index, category, c]
+            item = [len(cmdproc.Commands) - index, __(category), c]
             if has_stamps:
                 cmd = cmdproc.Commands[len(cmdproc.Commands) - index - 1]
                 since = str(datetime.timedelta(seconds=int(now - cmd.Timestamp)))
                 item.insert(1, since[2:] if since.startswith("0:") else since)
             text = ""
-            for i, (c, v) in enumerate(zip(columns, item)):
+            for i, v in enumerate(item):
                 pad = " " * int((maxwidths[i] - getw(v)) / spacew) if i < len(columns) - 1 else ""
                 lpad, rpad = ("", pad) if i > 1 else (pad[:-1], " ")
                 text += ("%s%s%s%s" % (INTER if i else "", lpad, v, rpad))
