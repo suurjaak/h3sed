@@ -5,6 +5,7 @@ CHANGELOG
 ---------------
 - add user-defined functions
 - add user function to show combination artifacts over player factions
+- fix crashing issues with patching controls for dark mode
 - set map description as tooltip to map description box
 
 
