@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    02.04.2026
+@modified    03.04.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -55,6 +55,7 @@ logger = logging.getLogger(__name__)
 OpenSavefileEvent, EVT_OPEN_SAVEFILE = wx.lib.newevent.NewCommandEvent()
 SavefilePageEvent, EVT_SAVEFILE_PAGE = wx.lib.newevent.NewCommandEvent()
 PluginEvent,       EVT_PLUGIN        = wx.lib.newevent.NewCommandEvent()
+LanguageEvent,     EVT_LANGUAGE      = wx.lib.newevent.NewCommandEvent()
 
 
 
@@ -489,6 +490,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         conf.Translations = i18n.get_config()
         conf.save()
         guibase.status(" ".join(msgs), flash=True)
+        wx.PostEvent(self, LanguageEvent(self.Id))
         self.populate_menu_languages()
 
 
@@ -788,6 +790,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         logger.info("Application language set to %(name)s (%(code)s).", opts)
         t = __("Application language set to %(name)s (%(code)s). Relaunch for full effect.", **opts)
         guibase.status(t, flash=True)
+        wx.PostEvent(self, LanguageEvent(self.Id))
         self.populate_menu_languages()
 
 
@@ -1596,11 +1599,11 @@ class SavefilePage(wx.Panel):
         splitter = wx.SplitterWindow(self, style=wx.BORDER_NONE)
         filepanel = wx.Panel(splitter)
 
-        nlabel = wx.StaticText(filepanel, label=__("Map") + ":", name="label_name")
+        nlabel = self.label_name = wx.StaticText(filepanel, label=__("Map") + ":", name="label_name")
         nctrl  = self.edit_name = wx.TextCtrl(filepanel, style=wx.BORDER_NONE, name="name")
-        vlabel = wx.StaticText(filepanel, label=__("Game version") + ":", name="label_version")
-        vctrl = self.edit_vers = wx.TextCtrl(filepanel, style=wx.BORDER_NONE, name="version")
-        dlabel = wx.StaticText(filepanel, label=__("Description") + ":", name="label_desc")
+        vlabel = self.label_vers = wx.StaticText(filepanel, label=__("Game version") + ":", name="label_version")
+        vctrl  = self.edit_vers = wx.TextCtrl(filepanel, style=wx.BORDER_NONE, name="version")
+        dlabel = self.label_desc = wx.StaticText(filepanel, label=__("Description") + ":", name="label_desc")
         dctrl  = self.edit_desc = wx.TextCtrl(filepanel, style=wx.TE_MULTILINE | wx.BORDER_NONE, name="desc")
 
         for c in (nctrl, vctrl, dctrl): c.SetEditable(False), c.SetMargins(0)
@@ -1621,6 +1624,8 @@ class SavefilePage(wx.Panel):
 
         self.TopLevelParent.page_file_latest = self
         self.Bind(EVT_SAVEFILE_PAGE, self.on_page_event)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy)
+        self.TopLevelParent.Bind(EVT_LANGUAGE, self.on_change_language)
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda e: (splitter.SetSashPosition(SASH_DEFAULTPOS),
                       conf.Positions.update(savepage_splitter=SASH_DEFAULTPOS)))
         splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED,
@@ -1840,6 +1845,28 @@ class SavefilePage(wx.Panel):
         content = "".join(p.get_changes() for p in self.plugins)
         with controls.HtmlDialog(self, title, content, style=wx.RESIZE_BORDER) as dlg:
             dlg.ShowModal()
+
+
+    def on_change_language(self, event):
+        """Handler for changing application interface language, re-renders child plugins."""
+        with controls.BusyPanel(self, __("Changing language.")):
+            wx.BeginBusyCursor()
+            self.Freeze()
+            try:
+                self.label_name.Label = __("Map") + ":"
+                self.label_vers.Label = __("Game version") + ":"
+                self.label_desc.Label = __("Description") + ":"
+                self.label_name.ContainingSizer.Layout()
+                for p in self.plugins: p.render(rebuild=True)
+            finally:
+                self.Thaw()
+                wx.EndBusyCursor()
+
+
+    def on_destroy(self, event):
+        """Handler for page destruction, unbinds events from parent."""
+        if event.EventObject is self:
+            self.TopLevelParent.Unbind(EVT_LANGUAGE, handler=self.on_change_language)
 
 
     def on_page_event(self, event):
