@@ -2014,7 +2014,9 @@ def build(plugin, panel):
 
         def handler(event):
             value = ctrl.Value
-            if isinstance(ctrl, wx.ComboBox): value = ctrl.GetClientData(ctrl.Selection) or value
+            if isinstance(ctrl, wx.ComboBox):
+                if ctrl.Selection < 0: return
+                value = ctrl.GetClientData(ctrl.Selection) or value
             if not value: return
             label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
             cname = "add %s: %s" % (label, __(value))
