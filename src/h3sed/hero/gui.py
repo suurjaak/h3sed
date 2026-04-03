@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  02.04.2026
+@modified  03.04.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -132,12 +132,16 @@ class HeroPlugin(object):
 
         self._heroes = self.savefile.heroes[:]
         self.prebuild()
+        panel.Bind(wx.EVT_CHAR_HOOK, self.on_key)
         panel.Bind(h3sed.gui.EVT_PLUGIN, self.on_plugin_event)
+        panel.TopLevelParent.bind_status_clearer(self._panel)
 
 
     def prebuild(self):
         """Builds general UI components."""
         self._panel.Freeze()
+        self._panel.DestroyChildren()
+        self._panel.Sizer and self._panel.Sizer.Clear()
         label  = wx.StaticText(self._panel, name="selectherolabel", label=__("&Select hero") + ":")
         combo  = wx.ComboBox(self._panel, name="selecthero", style=wx.CB_DROPDOWN | wx.CB_READONLY)
         search = wx.SearchCtrl(self._panel)
@@ -261,7 +265,6 @@ class HeroPlugin(object):
         heropanel.Disable()
         heropanel.Hide()
 
-        self._panel.Bind(wx.EVT_CHAR_HOOK, self.on_key)
         wx_accel.accelerate(self._panel, accelerators=[(wx.ACCEL_CMD, ord("I"), wx.ID_INFO)])
         self._panel.Layout()
         self._panel.Thaw()
@@ -275,7 +278,6 @@ class HeroPlugin(object):
         self._ctrls["faction"] = faction
         self._ctrls["menubutton"] = menubutton
         controls.ColourManager.Patch(self._panel)
-        self._panel.TopLevelParent.bind_status_clearer(self._panel)
 
 
     def build(self):
@@ -325,17 +327,24 @@ class HeroPlugin(object):
         self._undoredo.Submit(h3sed.gui.PluginCommand(self, callable, name))
 
 
-    def render(self, reparse=False, reload=False, log=True):
+    def render(self, reparse=False, reload=False, rebuild=False, log=True):
         """
         Renders hero selection and editing subtabs into our panel.
 
         @param   reparse  whether plugins should re-parse state from savefile
         @param   reload   whether plugins should reload state from hero
+        @param   rebuild  whether all UI should be rebuilt
         @param   log      whether plugin should log actions
         """
-        if reparse or reload: self._index["stale"] = True
+        if reparse or reload or rebuild: self._index["stale"] = True
 
-        if reparse:
+        if rebuild:
+            self.prebuild()
+            self.refresh_file()
+            wildcard = "|".join("{0} (*.{1})|*.{1}".format(__(label), format)
+                                for format, label in sorted(templates.EXPORT_FORMATS.items()))
+            self._dialog_export.Wildcard = wildcard
+        elif reparse:
             self.refresh_file()
         elif self._hero and self._propspanel.Children:
             for p in self._plugins:
@@ -743,14 +752,14 @@ class HeroPlugin(object):
         self._heropanel.Show()
         try:
             if self._hero: self.patch()
-            if not page_existed:
+            if not page_existed and status:
                 logger.info("Loading hero %s (bytes %s-%s in savefile).",
                             hero2, hero2.span[0], hero2.span[1] - 1)
             self._hero = hero2
             self._ctrls["faction"].Label = "%s: %s" % (__("Faction"),
                                                        __(hero2.profile.format_faction()))
             for p in self._plugins:
-                self.render_plugin(p["name"], reload=True, log=not page_existed)
+                self.render_plugin(p["name"], reload=True, log=not page_existed and status)
 
         finally:
             if not self._panel: return
