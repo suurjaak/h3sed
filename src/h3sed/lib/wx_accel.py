@@ -29,7 +29,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    24.05.2020
+@modified    03.04.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -344,7 +344,7 @@ def accelerate(window, use_heuristics=True, skipclicklabels=None, accelerators=N
     if hasattr(window, "__ampersand_shortcut_menu"):
         # Remove previously created menu, if any
         for menu_item in window.__ampersand_shortcut_menu.MenuItems:
-            if DEBUG: print("Removing dummy menu item '%s'" % menu_item.Label)
+            if DEBUG: print("Removing dummy menu item '%s'" % menu_item.GetItemLabel())
             window.Unbind(wx.EVT_MENU, menu_item)
         del window.__ampersand_shortcut_menu
     accelerators = list(accelerators or [])
@@ -363,8 +363,7 @@ def accelerate(window, use_heuristics=True, skipclicklabels=None, accelerators=N
             if DEBUG: print("Binding %s to targets %s." %
                             (key, [type(t) for t in ctrls]))
             menu_item = dummy_menu.Append(wx.ID_ANY, "&%s" % key)
-            window.Bind(wx.EVT_MENU, functools.partial(eventhandler, ctrls, key),
-                        menu_item)
+            window.Bind(wx.EVT_MENU, functools.partial(eventhandler, ctrls, key), menu_item)
             accelerators.append((wx.ACCEL_ALT, ord(key), menu_item.Id))
         window.SetAcceleratorTable(wx.AcceleratorTable(accelerators))
         window.__ampersand_shortcut_menu = dummy_menu
