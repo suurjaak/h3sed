@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    03.04.2026
+@modified    06.04.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -256,11 +256,22 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def create_menu(self):
         """Creates the program menu."""
-        menu = wx.MenuBar()
-        self.SetMenuBar(menu)
+        if not self.MenuBar:
+            menu = wx.MenuBar()
+            self.SetMenuBar(menu)
+        else:
+            menu = self.MenuBar
+            menu.Freeze()
+            while menu.GetMenuCount(): menu.Remove(0)
+            menu.Thaw()
 
         menu_file = wx.Menu()
+        menu_edit = self.menu_edit = wx.Menu()
+        menu_help = wx.Menu()
         menu.Append(menu_file, __("&File"))
+        menu.Append(menu_edit, __("&Edit"))
+        menu.Append(menu_help, __("&Help"))
+        menu.Freeze()
 
         menu_open = self.menu_open = menu_file.Append(
             wx.ID_ANY, __("&Open savefile...\tCtrl-O"), __("Choose a savefile to open")
@@ -329,8 +340,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             menu_file.Append(wx.ID_ANY, __("E&xit\tAlt-X"), __("Exit"))
 
 
-        menu_edit = self.menu_edit = wx.Menu()
-        menu.Append(menu_edit, __("&Edit"))
         menu_undo = self.menu_undo = menu_edit.Append(
             wx.ID_UNDO, __("&Undo"), __("Undo the last action")
         )
@@ -344,9 +353,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu_changes = self.menu_changes = menu_edit.Append(
             wx.ID_ANY, __("Show unsaved &changes"), __("Show pending changes to savegame")
         )
-
-        menu_help = wx.Menu()
-        menu.Append(menu_help, __("&Help"))
 
         menu_update = self.menu_update = menu_help.Append(wx.ID_ANY,
             __("Check for &updates"),
@@ -363,14 +369,15 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             wx.ID_ANY, __("&About %s", conf.Title),
             __("Show program information and copyright"))
 
-        for x in (menu_close, menu_reload, menu_save, menu_save_as): x.Enable(False)
-        for x in menu_edit.MenuItems: x.Enable(False)
+        if not isinstance(self.notebook.GetCurrentPage(), SavefilePage):
+            for x in (menu_close, menu_reload, menu_save, menu_save_as): x.Enable(False)
+            for x in menu_edit.MenuItems: x.Enable(False)
 
         self.history_file = wx.FileHistory(conf.MaxRecentFiles)
         self.history_file.UseMenu(menu_recent)
         for f in conf.RecentFiles[::-1]: self.history_file.AddFileToHistory(f)
-        self.Bind(wx.EVT_MENU_RANGE, self.on_recent_file, id=self.history_file.BaseId,
-                  id2=self.history_file.BaseId + conf.MaxRecentFiles)
+        menu_file.Bind(wx.EVT_MENU_RANGE, self.on_recent_file, id=self.history_file.BaseId,
+                       id2=self.history_file.BaseId + conf.MaxRecentFiles)
 
         self.history_hero = controls.ItemHistory(conf.MaxRecentHeroes)
         self.history_hero.UseMenu(menu_recent_hero)
@@ -379,35 +386,44 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         format_item   = lambda x: make_counter(x) if needs_counter(x) else "\t".join(x[:2])
         self.history_hero.Formatter = format_item
         for x in conf.RecentHeroes[::-1]: self.history_hero.AddItem(x)
-        self.Bind(wx.EVT_MENU_RANGE, self.on_recent_hero, id=self.history_hero.BaseId,
-                  id2=self.history_hero.BaseId + conf.MaxRecentHeroes)
+        menu_file.Bind(wx.EVT_MENU_RANGE, self.on_recent_hero, id=self.history_hero.BaseId,
+                       id2=self.history_hero.BaseId + conf.MaxRecentHeroes)
 
-        self.Bind(wx.EVT_MENU,       self.on_open_savefile,    menu_open)
-        self.Bind(wx.EVT_MENU,       self.on_close_savefile,   menu_close)
-        self.Bind(wx.EVT_MENU,       self.on_reload_savefile,  menu_reload)
-        self.Bind(wx.EVT_MENU,       self.on_save_savefile,    menu_save)
-        self.Bind(wx.EVT_MENU,       self.on_save_savefile_as, menu_save_as)
-        self.Bind(wx.EVT_MENU,       self.on_menu_darkmode,    menu_darkmode_auto)
-        self.Bind(wx.EVT_MENU,       self.on_menu_darkmode,    menu_darkmode_on)
-        self.Bind(wx.EVT_MENU,       self.on_menu_darkmode,    menu_darkmode_off)
-        self.Bind(wx.EVT_MENU,       self.on_menu_autoupdate,  menu_autoupdate_check)
-        self.Bind(wx.EVT_MENU,       self.on_menu_backup,      menu_backup)
-        self.Bind(wx.EVT_MENU,       self.on_menu_confirm,     menu_confirm)
-        self.Bind(wx.EVT_MENU,       self.on_menu_newformat,   menu_newformat)
-        self.Bind(wx.EVT_MENU,       self.on_clear_recent,     menu_clear)
-        self.Bind(wx.EVT_MENU,       self.on_exit,             menu_exit)
-        self.Bind(wx.EVT_MENU,       self.on_undo_savefile,    menu_undo)
-        self.Bind(wx.EVT_MENU,       self.on_redo_savefile,    menu_redo)
-        self.Bind(wx.EVT_MENU,       self.on_check_update,     menu_update)
-        self.Bind(wx.EVT_MENU,       self.on_showhide_log,     menu_log)
-        self.Bind(wx.EVT_MENU,       self.on_toggle_console,   menu_console)
-        self.Bind(wx.EVT_MENU,       self.on_about,            menu_about)
-        self.Bind(wx.EVT_MENU,       self.on_show_changes,     menu_changes)
-        self.Bind(wx.EVT_MENU,       self.on_open_history,     menu_history)
+        menu_file.Bind(wx.EVT_MENU,       self.on_open_savefile,    menu_open)
+        menu_file.Bind(wx.EVT_MENU,       self.on_close_savefile,   menu_close)
+        menu_file.Bind(wx.EVT_MENU,       self.on_reload_savefile,  menu_reload)
+        menu_file.Bind(wx.EVT_MENU,       self.on_save_savefile,    menu_save)
+        menu_file.Bind(wx.EVT_MENU,       self.on_save_savefile_as, menu_save_as)
+        menu_file.Bind(wx.EVT_MENU,       self.on_menu_darkmode,    menu_darkmode_auto)
+        menu_file.Bind(wx.EVT_MENU,       self.on_menu_darkmode,    menu_darkmode_on)
+        menu_file.Bind(wx.EVT_MENU,       self.on_menu_darkmode,    menu_darkmode_off)
+        menu_file.Bind(wx.EVT_MENU,       self.on_menu_autoupdate,  menu_autoupdate_check)
+        menu_file.Bind(wx.EVT_MENU,       self.on_menu_backup,      menu_backup)
+        menu_file.Bind(wx.EVT_MENU,       self.on_menu_confirm,     menu_confirm)
+        menu_file.Bind(wx.EVT_MENU,       self.on_menu_newformat,   menu_newformat)
+        menu_file.Bind(wx.EVT_MENU,       self.on_clear_recent,     menu_clear)
+        menu_file.Bind(wx.EVT_MENU,       self.on_exit,             menu_exit)
+        menu_edit.Bind(wx.EVT_MENU,       self.on_undo_savefile,    menu_undo)
+        menu_edit.Bind(wx.EVT_MENU,       self.on_redo_savefile,    menu_redo)
+        menu_edit.Bind(wx.EVT_MENU,       self.on_open_history,     menu_history)
+        menu_edit.Bind(wx.EVT_MENU,       self.on_show_changes,     menu_changes)
+        menu_help.Bind(wx.EVT_MENU,       self.on_check_update,     menu_update)
+        menu_help.Bind(wx.EVT_MENU,       self.on_showhide_log,     menu_log)
+        menu_help.Bind(wx.EVT_MENU,       self.on_toggle_console,   menu_console)
+        menu_help.Bind(wx.EVT_MENU,       self.on_about,            menu_about)
+        menu.Thaw()
 
 
     def create_toolbar(self):
         """Creates the program toolbar."""
+        if not self.ToolBar:
+            tb = self.CreateToolBar(wx.TB_FLAT | wx.TB_HORIZONTAL | wx.TB_TEXT)
+            tb.SetToolBitmapSize((20, 20))
+        else:
+            tb = self.ToolBar
+            while tb.GetToolsCount(): tb.DeleteToolByPos(0)
+            wx.CallAfter(tb.Realize)
+
         TOOLS = [("Open",      wx.ID_OPEN,     wx.ART_FILE_OPEN,    self.on_open_savefile),
                  ("Save",      wx.ID_SAVE,     wx.ART_FILE_SAVE,    self.on_save_savefile),
                  ("Save as",   wx.ID_SAVEAS,   wx.ART_FILE_SAVE_AS, self.on_save_savefile_as),
@@ -428,8 +444,6 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                       wx.ID_REFRESH:  "Reload savefile, losing any current changes",
                       wx.ID_HARDDISK: "Open file directory in file manager program",
                       wx.ID_EXECUTE:  "Select function to run"}
-        tb = self.CreateToolBar(wx.TB_FLAT | wx.TB_HORIZONTAL | wx.TB_TEXT)
-        tb.SetToolBitmapSize((20, 20))
         for tool in TOOLS:
             if tool is None: tb.AddStretchableSpace()
             elif not tool: tb.AddSeparator()
@@ -478,20 +492,21 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         was_current = (opts["code"] == conf.Language)
         i18n.drop_language(opts["code"])
-        logger.info("Dropped translation language %(name)s (%(code)s, %(path)s).", opts)
-        msgs = [__("Dropped translation for %(name)s (%(code)s).", **opts)]
+        logger.info("Dropped translation language %s (%s, %s).",
+                    opts["name"], opts["code"], opts["path"])
+        msgs = [__("Dropped translation for %s (%s).", opts["name"], opts["code"])]
 
         if was_current:
             conf.Language = i18n.get_current_language()
             current_opts = i18n.get_language(conf.Language)
-            logger.info("Application language set to %(name)s (%(code)s).", current_opts)
-            msgs.append(__("Application language set to %(name)s (%(code)s). "
-                           "Relaunch for full effect.", **current_opts))
+            msg = "Application language set to %s (%s)."
+            logger.info(msg, opts["name"], opts["code"])
+            msgs.append(__(msg, current_opts["name"], current_opts["code"]))
         conf.Translations = i18n.get_config()
         conf.save()
         guibase.status(" ".join(msgs), flash=True)
         wx.PostEvent(self, LanguageEvent(self.Id))
-        self.populate_menu_languages()
+        self.translate_ui()
 
 
     def on_function_menu(self, event):
@@ -710,7 +725,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         for lang in sorted(language_map, key=lambda x: language_map[x]["name"].lower()):
             opts = language_map[lang]
             menu_lang = self.menu_languages.Append(wx.ID_ANY, opts["name"],
-                __("Application interface in %(name)s (%(code)s)", **opts), kind=wx.ITEM_RADIO)
+                __("Application interface in %s (%s)", opts["name"], opts["code"]),
+                kind=wx.ITEM_RADIO)
             if lang == conf.Language: menu_lang.Check(True)
             else:
                 handler = (lambda lang: lambda event: self.select_language(lang))(lang)
@@ -787,11 +803,44 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         conf.save()
 
         opts = i18n.get_language(lang)
-        logger.info("Application language set to %(name)s (%(code)s).", opts)
-        t = __("Application language set to %(name)s (%(code)s). Relaunch for full effect.", **opts)
-        guibase.status(t, flash=True)
+        msg = "Application language set to %s (%s)."
+        logger.info(msg, opts["name"], opts["code"])
+        guibase.status(__(msg, opts["name"], opts["code"]), flash=True)
         wx.PostEvent(self, LanguageEvent(self.Id))
-        self.populate_menu_languages()
+        self.translate_ui()
+
+
+    def translate_ui(self):
+        """Refreshes texts and tooltips of UI controls to current language."""
+        self.Freeze()
+        self.button_clear_log.Label = __("C&lear log")
+        self.button_open   .Label   = __("&Open")
+        self.button_refresh.Label   = __("&Refresh")
+        self.button_browse .Label   = __("&Browse..")
+        self.button_open   .ToolTip = __("Open currently selected file")
+        self.button_refresh.ToolTip = __("Refresh file panel  (F5)")
+        self.button_browse .ToolTip = __("Open dialog for selecting a file")
+        self.frame_console.Title    = __("%s Console", conf.Title)
+        self.button_clear_log.Parent.Layout()
+
+        self.set_savegame_filters(self.dir_ctrl)
+        self.create_menu()
+        self.create_toolbar()
+
+        page = self.notebook.GetCurrentPage()
+        self.update_toolbar(page)
+        if isinstance(page, SavefilePage):
+            page.undoredo.SetEditMenu(self.menu_edit)
+            page.undoredo.SetMenuStrings()
+
+        if self.dialog_functions:
+            self.dialog_functions.RefreshTexts()
+            self.dialog_functions.Title = __("User-defined functions")
+
+        self.notebook.SetPageText(self.notebook.GetPageIndex(self.page_main), __("Choose file"))
+        logpage_idx = self.notebook.GetPageIndex(self.page_log)
+        if logpage_idx >= 0: self.notebook.SetPageText(logpage_idx, __("Log"))
+        self.Thaw()
 
 
     def set_savegame_filters(self, ctrl):
@@ -1547,8 +1596,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                     event.Veto()
                     return
 
-        page.undoredo.ClearCommands()
-        page.undoredo.SetMenuStrings()
+        if page is self.notebook.GetCurrentPage:
+            page.undoredo.ClearCommands()
+            page.undoredo.SetMenuStrings()
 
         self.files.pop(page.filename, None)
         conf.FilesOpen.discard(page.filename)

@@ -12,7 +12,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    26.02.2026
+@modified    06.04.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -26,7 +26,9 @@ import wx.lib.inspection
 import wx.lib.newevent
 import wx.py
 
-from . lib.controls import ColourManager, NewId, get_all_children
+from . lib.controls import ColourManager, NewId, get_all_children, __
+try: from . lib.i18n import translate as __
+except ImportError: pass
 from . lib import util, wx_accel
 from . import conf
 
@@ -99,7 +101,7 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
         self.flags = {} # {name: various flags for UI flow}
         self.console_commands = set() # Commands from run_console()
         self.frame_console = wx.py.shell.ShellFrame(parent=self,
-            title=u"%s Console" % conf.Title, size=conf.ConsoleSize)
+            title=__("%s Console", conf.Title), size=conf.ConsoleSize)
         self.frame_console.Bind(wx.EVT_CLOSE, self.on_toggle_console)
         self.frame_console_shown = False # Init flag
         console = self.console = self.frame_console.shell
@@ -120,16 +122,16 @@ class TemplateFrameMixIn(wx_accel.AutoAcceleratorMixIn):
         sizer = panel.Sizer = wx.BoxSizer(wx.VERTICAL)
         ColourManager.Manage(panel, "BackgroundColour", wx.SYS_COLOUR_BTNFACE)
 
-        button_clear = wx.Button(parent=panel, label="C&lear log", size=(100, -1))
+        button_clear = wx.Button(parent=panel, label=__("C&lear log"))
         button_clear.Bind(wx.EVT_BUTTON, lambda event: self.log.Clear())
+        self.button_clear_log = button_clear
         edit_log = self.log = wx.TextCtrl(panel, style=wx.TE_MULTILINE)
         edit_log.SetEditable(False)
         # Read-only controls tend to be made grey by default
         ColourManager.Manage(edit_log, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         ColourManager.Manage(edit_log, "BackgroundColour", wx.SYS_COLOUR_WINDOW)
 
-        sizer.Add(button_clear, border=5, flag=wx.ALIGN_RIGHT | wx.TOP |
-                  wx.RIGHT)
+        sizer.Add(button_clear, border=5, flag=wx.ALIGN_RIGHT | wx.TOP | wx.RIGHT)
         sizer.Add(edit_log, border=5, proportion=1, flag=wx.GROW | wx.ALL)
         return panel
 
