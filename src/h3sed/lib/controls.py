@@ -28,7 +28,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    02.04.2026
+@modified    06.04.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -690,17 +690,17 @@ class CallableManagerDialog(wx.Dialog):
         button_up   = wx.Button(panel_left, label=__("Up"))
         button_down = wx.Button(panel_left, label=__("Down"))
 
-        label_title = wx.StaticText(panel_right, label=__("Tit&le:"))
+        label_title = wx.StaticText(panel_right, label=__("Tit&le") + ":")
         edit_title = wx.TextCtrl(panel_right)
-        label_body = wx.StaticText(panel_right, label=__("&Body:"))
+        label_body = wx.StaticText(panel_right, label=__("&Body") + ":")
         stc_body = wx.stc.StyledTextCtrl(panel_right)
-        label_name = wx.StaticText(panel_right, label=__("Ta&rget:"))
+        label_name = wx.StaticText(panel_right, label=__("Ta&rget") + ":")
         combo_name = wx.ComboBox(panel_right, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         button_test = wx.Button(panel_right, label=__("&Test"))
         label_active = wx.StaticText(panel_right, label=__("&Active:"))
         cb_active    = wx.CheckBox(panel_right)
 
-        label_error = wx.StaticText(panel_right, label="Error:")
+        label_error = wx.StaticText(panel_right, label=__("Error") + ":")
         edit_error  = wx.TextCtrl(panel_right, style=wx.TE_MULTILINE | wx.TE_NO_VSCROLL |
                                                      wx.BORDER_NONE)
 
@@ -781,21 +781,10 @@ class CallableManagerDialog(wx.Dialog):
         ColourManager.SetShellStyles(stc_body)
         button_test.Show(bool(tester))
 
-        label_title.ToolTip    = edit_title.ToolTip = __("Title for %s; ampersand makes hotkey", alias)
-        label_body.ToolTip     = __("Python code to compile for %s", alias)
-        label_active.ToolTip   = cb_active.ToolTip  = __("Enable %s for use", alias)
-        label_name.ToolTip     = combo_name.ToolTip = __("Callable name from body to invoke as %s", alias)
-        button_new.ToolTip     = __("Enter new %s", alias)
-        button_close.ToolTip   = __("Close dialog")
-        button_up.ToolTip      = __("Move selected entry one step higher")
-        button_down.ToolTip    = __("Move selected entry one step higher")
-        button_test.ToolTip    = __("Invoke %s with content from popup", alias)
-        button_compile.ToolTip = __("Compile and verify code")
-        button_edit.ToolTip    = __("Edit current %s", alias)
-        button_save.ToolTip    = __("Save %s", alias)
-        button_delete.ToolTip  = __("Delete %s", alias)
-        button_cancel.ToolTip  = __("Discard changes")
-
+        self.label_title    = label_title
+        self.label_body     = label_body
+        self.label_active   = label_active
+        self.label_name     = label_name
         self.list_items     = list_items
         self.edit_title     = edit_title
         self.stc_body       = stc_body
@@ -837,6 +826,7 @@ class CallableManagerDialog(wx.Dialog):
         ColourManager.Manage(label_error, "ForegroundColour", wx.SYS_COLOUR_HOTLIGHT)
         ColourManager.Manage(edit_error,  "ForegroundColour", wx.SYS_COLOUR_HOTLIGHT)
 
+        self.RefreshTexts()
         self.Populate(items)
         self.SetEditmode(False)
 
@@ -1465,7 +1455,7 @@ class ItemHistory(wx.Object):
         evtId = self._baseId + self._item_ids[menu][event.Id]
         evt = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, evtId)
         evt.EventObject = menu
-        wx.PostEvent(menu.Window, evt)
+        wx.PostEvent(menu.Parent, evt)
 
 
 class Patch(object):
