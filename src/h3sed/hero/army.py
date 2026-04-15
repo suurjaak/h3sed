@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  31.03.2026
+@modified  15.04.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -36,7 +36,7 @@ DATAPROPS = [{
     "menu":        None, # Populated later
     "item": [{
         "type":    "label",
-        "label":   "Army slot",
+        "label":   "slot",
       }, {
         "name":    "name",
         "type":    "combo",

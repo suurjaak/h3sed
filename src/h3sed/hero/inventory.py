@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  31.03.2026
+@modified  15.04.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -37,7 +37,7 @@ DATAPROPS = [{
     "info":        None, # Populated later
     "item": [{
         "type":    "label",
-        "label":   "Inventory slot",
+        "label":   "slot",
       }, {
         "type":    "combo",
         "choices": None, # Populated later
