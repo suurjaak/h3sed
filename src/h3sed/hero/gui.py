@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  03.04.2026
+@modified  20.04.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -140,6 +140,7 @@ class HeroPlugin(object):
     def prebuild(self):
         """Builds general UI components."""
         self._panel.Freeze()
+        controls.ColourManager.DiscardManaged(self._panel)
         self._panel.DestroyChildren()
         self._panel.Sizer and self._panel.Sizer.Clear()
         label  = wx.StaticText(self._panel, name="selectherolabel", label=__("&Select hero") + ":")
@@ -285,6 +286,7 @@ class HeroPlugin(object):
         self._panel.Freeze()
         self._heropanel.Enable()
         self._heropanel.Show()
+        controls.ColourManager.DiscardManaged(self._propspanel)
         self._propspanel.DestroyChildren()
         self._propspanel.Sizer.Clear()
         del self._plugins[:]
@@ -320,6 +322,41 @@ class HeroPlugin(object):
             self.populate_index()
 
 
+    def rebuild(self):
+        """Rebuilds all current UI state from scratch."""
+        wildcard = "|".join("{0} (*.{1})|*.{1}".format(__(label), format)
+                            for format, label in sorted(templates.EXPORT_FORMATS.items()))
+        self._dialog_export.Wildcard = wildcard
+
+        indexes_open = [self._pages[p] for i in range(self._ctrls["tabs"].GetPageCount())
+                        for p in [self._ctrls["tabs"].GetPage(i)] if p in self._pages]
+        hero0 = self._hero if self._ctrls["tabs"].GetSelection() else None
+        self.prebuild()
+
+        self._hero = None
+        self._pages.clear()
+        for k, v in list(self._index.items()):
+            if isinstance(v, (str, list)): self._index[k] = type(v)()
+        self._hero_yamls.clear()
+
+        self._panel.Freeze()
+        self._ignore_events = True
+        try:
+            self.build()
+            for index in indexes_open:
+                hero = self._heroes[index]
+                page = wx.Window(self._ctrls["tabs"])
+                self._pages[page] = index
+                self._ctrls["tabs"].AddPage(page, str(hero), select=hero is self._hero)
+
+            index = next(i for i, x in enumerate(self._heroes) if x is hero0) if hero0 else None
+            self.select_index() if index is None else self.select_hero(index, status=False)
+            self._panel.Layout()
+        finally:
+            self._ignore_events = False
+            self._panel.Thaw()
+
+
     def command(self, callable, name=None):
         """Submits callable to undo-redo command processor to be invoked."""
         if not self._panel: return
@@ -339,11 +376,7 @@ class HeroPlugin(object):
         if reparse or reload or rebuild: self._index["stale"] = True
 
         if rebuild:
-            self.prebuild()
-            self.refresh_file()
-            wildcard = "|".join("{0} (*.{1})|*.{1}".format(__(label), format)
-                                for format, label in sorted(templates.EXPORT_FORMATS.items()))
-            self._dialog_export.Wildcard = wildcard
+            self.rebuild()
         elif reparse:
             self.refresh_file()
         elif self._hero and self._propspanel.Children:
@@ -402,7 +435,6 @@ class HeroPlugin(object):
             if isinstance(v, (str, list)): self._index[k] = type(v)()
 
         self._heroes = self.savefile.heroes[:]
-        self._index["herotexts"] = []
         self._hero_yamls.clear()
         self._panel.Freeze()
         self._ignore_events = True
@@ -964,4 +996,4 @@ class HeroPlugin(object):
                 wx_accel.accelerate(p["panel"])
         finally:
             controls.ColourManager.Patch(p["panel"])
-            p["panel"].Thaw()
+            p["panel"] and p["panel"].Thaw()
