@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.04.2026
+@modified    20.04.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -505,7 +505,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         conf.Translations = i18n.get_config()
         conf.save()
         guibase.status(" ".join(msgs), flash=True)
-        wx.PostEvent(self, LanguageEvent(self.Id))
+        self.ProcessEvent(LanguageEvent(self.Id)) # Run handlers synchronously for stable state
         self.translate_ui()
 
 
@@ -703,8 +703,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 if savefile: savefiles[f] = savefile
                 else:
                     notsave_filenames.append(f)
-                    err = err if isinstance(err, ValueError) else __("Not a valid gzipped file?")
-                    guibase.status(__("Failed to open %s.", f) + " %s" % err, log=True, flash=True)
+                    if not isinstance(err, ValueError): err = __("Not a valid gzipped file?")
+                    guibase.status(__("Failed to open %s.", f) + " %s" % err,
+                                   log=True, flash=True)
 
         for filename, savefile in savefiles.items():
             self.load_savefile_page(filename, savefile)
@@ -713,7 +714,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             if missing_filenames:
                 texts.append(__("No such file") + ":\n\n%s" % ("\n".join(missing_filenames)))
             if notsave_filenames:
-                texts.append(__("Not a valid savefile") + ":\n\n%s" % ("\n".join(notsave_filenames)))
+                texts.append(__("Not a valid savefile") +
+                             ":\n\n%s" % ("\n".join(notsave_filenames)))
             wx.MessageBox("\n\n".join(texts), conf.Title, wx.OK | wx.ICON_ERROR)
 
 
@@ -806,7 +808,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         msg = "Application language set to %s (%s)."
         logger.info(msg, opts["name"], opts["code"])
         guibase.status(__(msg, opts["name"], opts["code"]), flash=True)
-        wx.PostEvent(self, LanguageEvent(self.Id))
+        self.ProcessEvent(LanguageEvent(self.Id)) # Run handlers synchronously for stable state
         self.translate_ui()
 
 
@@ -1915,7 +1917,7 @@ class SavefilePage(wx.Panel):
 
     def on_destroy(self, event):
         """Handler for page destruction, unbinds events from parent."""
-        if event.EventObject is self:
+        if event.EventObject is self and self.TopLevelParent:
             self.TopLevelParent.Unbind(EVT_LANGUAGE, handler=self.on_change_language)
 
 

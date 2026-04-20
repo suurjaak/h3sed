@@ -28,7 +28,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.04.2026
+@modified    20.04.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -122,7 +122,7 @@ class BusyPanel(wx.Window):
         self.CenterOnParent()
         self.Show()
         parent.Refresh()
-        wx.Yield()
+        wx.SafeYield()
         timer.Start(self.REFRESH_INTERVAL)
 
 
@@ -622,6 +622,17 @@ class ColourManager(object):
         children = sum(map(list, cls.ctrlchildren.values()), [])
         for ctrl in set(cls.ctrlprops) | set(cls.regctrls) | set(cls.ctrlchildren) | set(children):
             cls.DiscardIfDead(ctrl)
+
+
+    @classmethod
+    def DiscardManaged(cls, ctrl):
+        """Discards component and all its children from managed controls."""
+        ctrl_collections = [cls.ctrlprops, cls.regctrls, cls.ctrlchildren]
+        ctrl_collections.extend(cls.ctrlchildren.values())
+        for ctrl in [ctrl] + get_all_children(ctrl):
+            for collection in ctrl_collections:
+                if ctrl in collection:
+                    (collection.discard if isinstance(collection, set) else collection.pop)(ctrl)
 
 
     @classmethod
