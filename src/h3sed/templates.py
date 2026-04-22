@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  30.03.2026
+@modified  22.04.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -90,14 +90,16 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
                     while state and not state[-1]: state.pop()  # Strip empty trailing values
                 hero_data[category] = state
             data["heroes"].append(hero_data)
-        with open(filename, "w") as f:
-            f.write(json.dumps(data, indent=2) + os.linesep)
+        data["heroes"] = util.recurse_convert(data["heroes"], {str: __})
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(json.dumps(data, indent=2, ensure_ascii=False) + os.linesep)
         return
 
     if "yaml" == format:
         hero_yamls = [make_hero_yamls(h, categories, as_list=True)["full"] for h in heroes]
         with open(filename, "wb") as f: # Binary to avoid linefeed auto-conversion issues
-            f.write(yaml.safe_dump(data, sort_keys=False, line_break=os.linesep).encode("utf-8"))
+            fdata = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, line_break=os.linesep)
+            f.write(fdata.encode("utf-8"))
             f.write(("%sheroes:%s" % (os.linesep, os.linesep)).encode("utf-8"))
             for hero_yaml in hero_yamls:
                 f.write(os.linesep.encode("utf-8"))
@@ -185,10 +187,9 @@ def make_hero_yamls(hero, categories=None, as_list=False):
     if "currents" not in result: result["currents"] = result["originals"]
 
     if as_list:
-        header = "- name:".ljust(maxlen) + INDENT + hero.name
+        header = "- name:".ljust(maxlen) + INDENT + encode_yaml_scalar(hero.name)
     else:
-        name = yaml.safe_dump([hero.name], default_flow_style=True).strip()[1:-1] # Strip []
-        header = "%s:" % name
+        header = "%s:" % encode_yaml_scalar(hero.name)
     result["full"] = header + LF + "".join(result["currents"])
     return result
 
@@ -205,8 +206,7 @@ def make_savefile_data(savefile):
 def serialize_property_yaml(state, indent="  "):
     """Returns hero property data as ([(formatted prefix, formatted value)], max key length)."""
     pairs, maxlen = [], 0
-    fmt = lambda v: "" if v in (None, {}) else \
-                    yaml.safe_dump([__(v)], default_flow_style=True).strip()[1:-1] # Strip []
+    fmt = lambda v: "" if v in (None, {}) else encode_yaml_scalar(__(v))
 
     if isinstance(state, (list, set)):
         state = list(state)
@@ -230,6 +230,12 @@ def serialize_property_yaml(state, indent="  "):
                 value = state.format_faction()
             pairs += [("%s%s:" % (indent, key), fmt(value))]
     return pairs, maxlen
+
+
+def encode_yaml_scalar(value):
+    """Returns scalar value encoded as YAML, unquoted if possible."""
+    encoded = yaml.safe_dump([value], allow_unicode=True, default_flow_style=True)
+    return encoded.strip()[1:-1] # Strip []: "[MyValue]\n" to "MyValue"
 
 
 
@@ -260,6 +266,8 @@ This program is based on unofficial information gathered from observation and on
 <ul>
   <li>Python,
       <a href="https://www.python.org/"><font color="{{ conf.LinkColour }}">python.org</font></a></li>
+  <li>polib,
+      <a href="https://github.com/izimobil/polib/"><font color="{{ conf.LinkColour }}">github.com/izimobil/polib</font></a></li>
   <li>pyyaml,
       <a href="https://pyyaml.org/"><font color="{{ conf.LinkColour }}">pyyaml.org</font></a></li>
   <li>step, Simple Template Engine for Python,
