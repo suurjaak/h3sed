@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  20.04.2026
+@modified  22.04.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -76,6 +76,7 @@ import wx.lib.agw.flatnotebook
 
 import h3sed
 from .. lib import controls
+from .. lib import i18n
 from .. lib import util
 from .. lib import wx_accel
 from .. lib.i18n import translate as __
@@ -727,7 +728,7 @@ class HeroPlugin(object):
         templates.export_heroes(path, format, self._index["visible"], self.savefile,
                                 categories=self._index["toggles"])
         guibase.status("Exported %s (%s).", path, util.format_bytes(os.path.getsize(path)),
-                       flash=True)
+                       flash=True, log=True)
         util.start_file(path)
 
 
@@ -861,6 +862,7 @@ class HeroPlugin(object):
 
         new_states = {}  # {property name: state}
         pluginmap = {p["name"]: p["instance"] for p in self._plugins}
+        states = util.recurse_convert(states, {str: i18n.translate_back})
         for category, state in states.items():
             plugin = pluginmap.get(category)
             if not plugin:
