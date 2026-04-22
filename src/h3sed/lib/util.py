@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    14.02.2026
+@modified    22.02.2026
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -948,6 +948,24 @@ def plural(word, items=None, numbers=True, single="1", sep="", pref="", suf=""):
         fmtcount = pref + fmtcount + suf
         result = "%s %s" % (single if 1 == count else fmtcount, result)
     return result.strip()
+
+
+def recurse_convert(value, converters):
+    """
+    Returns Python structure with nested elements run through given conversion functions.
+
+    @param   value       any Python value, like nested dicts and lists and sets and tuples
+    @param   converters  {value type: converter function} like {str: str.lower}
+    """
+    for value_type, converter in converters.items():
+        if isinstance(value, value_type):
+            return converter(value)
+    if isinstance(value, dict):
+        return {k: recurse_convert(v, converters) for k, v in value.items()}
+    elif isinstance(value, (list, set, tuple)):
+        return type(value)(recurse_convert(v, converters) for v in value)
+    else:
+        return value
 
 
 def select_file(path):

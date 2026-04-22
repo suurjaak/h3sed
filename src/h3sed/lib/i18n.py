@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     23.03.2026
-@modified    01.04.2026
+@modified    22.04.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -136,11 +136,25 @@ def get_config():
 
 def translate(text, *args, **kwargs):
     """
-    Returns text translated to current language, or original text if no translation available.
+    Returns text translated to current language, or given text if no translation available.
 
     Optionally formatted with positional and keyword arguments.
     """
     return translate_from_context(2, text, *args, **kwargs)
+
+
+def translate_back(text):
+    """Returns original text for given translation in current language, or given text if no match."""
+    lang = CURRENTLANG
+    if lang not in LANGUAGES or not LANGUAGES[lang].get("data"): return text
+
+    has_entry = lambda entries, text, conv=None: any(text == (t if conv is None else conv(t))
+                                                     for t, _, _ in entries)
+    results = [k for k, v in LANGUAGES[lang]["data"].items() if has_entry(v, text)]
+    if not results and hasattr(text, "lower"):
+        ltext = text.lower()
+        results = [k for k, v in LANGUAGES[lang]["data"].items() if has_entry(v, ltext, str.lower)]
+    return min(results, default=text, key=lambda x: abs(len(x) - len(text))) # Closest-length match
 
 
 def make_translate(stack_depth):
