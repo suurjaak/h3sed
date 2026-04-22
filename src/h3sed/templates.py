@@ -978,21 +978,21 @@ colptr = max(col_indexes) + 1
 <body>
 <div id="content">
   <table id="info">
-    <tr><td>Source:</td><td>{{ savefile.filename }}</td></tr>
-    <tr><td>Modified:</td><td title="{{ savefile.dt }}">{{ savefile.dt.strftime("%d.%m.%Y %H:%M") }}</td></tr>
-    <tr><td>Size:</td><td title="{{ savefile.size }}">{{ util.format_bytes(savefile.size) }}</td></tr>
-    <tr><td>Heroes:</td><td>{{ len(heroes) if len(heroes) == count else "%s exported (%s total)" % (len(heroes), count) }}</td></tr>
-    <tr><td>Game version:</td><td>{{ h3sed.version.VERSIONS[savefile.version].TITLE }}</td></tr>
+    <tr><td>{{ __("Source") }}:</td><td>{{ savefile.filename }}</td></tr>
+    <tr><td>{{ __("Modified") }}:</td><td title="{{ savefile.dt }}">{{ savefile.dt.strftime("%d.%m.%Y %H:%M") }}</td></tr>
+    <tr><td>{{ __("Size") }}:</td><td title="{{ savefile.size }}">{{ util.format_bytes(savefile.size) }}</td></tr>
+    <tr><td>{{ __("Heroes") }}:</td><td>{{ len(heroes) if len(heroes) == count else __("%s exported (%s total)", len(heroes), count) }}</td></tr>
+    <tr><td>{{ __("Game version") }}:</td><td>{{ h3sed.version.VERSIONS[savefile.version].TITLE }}</td></tr>
 %if savefile.mapdata.get("name"):
-    <tr><td>Map:</td><td>{{ savefile.mapdata["name"] }}</td></tr>
+    <tr><td>{{ __("Map") }}:</td><td>{{ savefile.mapdata["name"] }}</td></tr>
 %endif
 %if savefile.mapdata.get("desc"):
   <tr>
-    <td>Description:</td>
+    <td>{{ __("Description") }}:</td>
     <td>
       <span class="short" title="{{ savefile.mapdata["desc"] }}">{{ savefile.mapdata["desc"].splitlines()[0].strip()[:100] }}</span>
       <span class="hidden long">{{ savefile.mapdata["desc"] }}</span>
-      <a class="toggle" title="Toggle full description" onclick="onToggle(this, '.short', '.long')"> </a>
+      <a class="toggle" title="{{ __("Toggle full description") }}" onclick="onToggle(this, '.short', '.long')"> </a>
     </td>
   </tr>
 %endif
@@ -1001,41 +1001,41 @@ colptr = max(col_indexes) + 1
 <div id="opts">
   <div id="toggles">
 %for category in filter(categories.get, templates.HERO_PROPERTY_CATEGORIES):
-    <label for="toggle-{{ category }}" title="Show or hide {{ category }} column{{ "s" if "stats" == category else "" }}"><input type="checkbox" id="toggle-{{ category }}" onclick="onToggleCategory('{{ category }}', this)" checked />{{ category.capitalize() }}</label>
+    <label for="toggle-{{ category }}" title="{{ __("Show or hide %s column" + ("s" if "stats" == category else ""), __(category)) }}"><input type="checkbox" id="toggle-{{ category }}" onclick="onToggleCategory('{{ category }}', this)" checked />{{ __(category).capitalize() }}</label>
 %endfor
   </div>
-  <input type="search" placeholder="Filter heroes" title="Filter heroes on any matching text" onkeyup="onSearch(event)" onsearch="onSearch(event)">
+  <input type="search" placeholder="{{ __("Filter heroes") }}" title="{{ __("Filter heroes on any matching text") }}" onkeyup="onSearch(event)" onsearch="onSearch(event)">
 </div>
 <table id="heroes">
   <tr>
-    <th class="index asc"><a class="sort asc" title="Sort by index" onclick="onSort(this)">#</a></th>
-    <th><a class="sort" title="Sort by name" onclick="onSort(this)">Name</a></th>
+    <th class="index asc"><a class="sort asc" title="{{ __("Sort by %s", __("index")) }}" onclick="onSort(this)">#</a></th>
+    <th><a class="sort" title="{{ __("Sort by %s", __("name")) }}" onclick="onSort(this)">{{ __("Name") }}</a></th>
 %if not categories or categories["faction"]:
-    <th><a class="sort" title="Sort by faction" onclick="onSort(this)">Faction</a></th>
+    <th><a class="sort" title="{{ __("Sort by %s", __("faction")) }}" onclick="onSort(this)">{{ __("Faction") }}</a></th>
 %endif
 %if not categories or categories["stats"]:
-    <th><a class="sort" title="Sort by level" onclick="onSort(this)">Level</a></th>
-    %for label in metadata.PRIMARY_ATTRIBUTES.values():
-    <th><a class="sort" title="Sort by {{ label.lower() }}" onclick="onSort(this)">{{ label.split()[-1] }}</a></th>
+    <th><a class="sort" title="{{__ ("Sort by %s", __("level")) }}" onclick="onSort(this)">{{ __("Level") }}</a></th>
+    %for name, label in metadata.PRIMARY_ATTRIBUTES.items():
+    <th><a class="sort" title="{{ __("Sort by %s", __(label).lower()) }}" onclick="onSort(this)">{{ __(name.title() if " " in label else label) }}</a></th>
     %endfor
 %endif
 %if not categories or categories["devices"]:
-    <th><a class="sort" title="Sort by devices" onclick="onSort(this)">Devices</a></th>
+    <th><a class="sort" title="{{ __("Sort by %s", __("devices")) }}" onclick="onSort(this)">{{ __("Devices") }}</a></th>
 %endif
 %if not categories or categories["skills"]:
-    <th><a class="sort" title="Sort by skills" onclick="onSort(this)">Skills</a></th>
+    <th><a class="sort" title="{{ __("Sort by %s", __("skills")) }}" onclick="onSort(this)">{{ __("Skills") }}</a></th>
 %endif
 %if not categories or categories["army"]:
-    <th><a class="sort" title="Sort by army" onclick="onSort(this)">Army</a></th>
+    <th><a class="sort" title="{{ __("Sort by %s", __("army")) }}" onclick="onSort(this)">{{ __("Army") }}</a></th>
 %endif
 %if not categories or categories["equipment"]:
-    <th><a class="sort" title="Sort by equipment" onclick="onSort(this)">Equipment</a></th>
+    <th><a class="sort" title="{{ __("Sort by %s", __("equipment")) }}" onclick="onSort(this)">{{ __("Equipment") }}</a></th>
 %endif
 %if not categories or categories["inventory"]:
-    <th><a class="sort" title="Sort by inventory" onclick="onSort(this)">Inventory</a></th>
+    <th><a class="sort" title="{{ __("Sort by %s", __("inventory")) }}" onclick="onSort(this)">{{ __("Inventory") }}</a></th>
 %endif
 %if not categories or categories["spells"]:
-    <th><a class="sort" title="Sort by spells" onclick="onSort(this)">Spells</a></th>
+    <th><a class="sort" title="{{ __("Sort by %s", __("spells")) }}" onclick="onSort(this)">{{ __("Spells") }}</a></th>
 %endif
   </tr>
 
@@ -1043,13 +1043,13 @@ colptr = max(col_indexes) + 1
   <tr>
     <td class="index">{{ i + 1 }}</td>
     <td>
-      <a href="#{{ hero.name }}" title="Show {{ hero.name }} character sheet" onclick="showHero({{ i }})">{{ hero.name }}</a>
+      <a href="#{{ hero.name }}" title="{{ __("Show %s character sheet", hero.name) }}" onclick="showHero({{ i }})">{{ hero.name }}</a>
 %if hero.name_counter > 1:
  ({{ hero.name_counter }})
 %endif
     </td>
 %if not categories or categories["faction"]:
-    <td>{{ hero.profile.format_faction() }}</td>
+    <td>{{ __(hero.profile.format_faction()) }}</td>
 %endif
 %if not categories or categories["stats"]:
     <td>{{ hero.stats["level"] }}</td>
@@ -1061,7 +1061,7 @@ colptr = max(col_indexes) + 1
     <td>
     %for prop in deviceprops:
         %if hero.stats.get(prop["name"]):
-        {{ prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]] }}<br />
+        {{ __(prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]]) }}<br />
         %endif
     %endfor
     </td>
@@ -1106,7 +1106,7 @@ colptr = max(col_indexes) + 1
 
 </table>
 </div>
-<div id="footer">{{ "Exported with %s on %s." % (conf.Title, datetime.datetime.now().strftime("%d.%m.%Y %H:%M")) }}</div>
-<div id="overlay" class="hidden"><div id="overshadow" onclick="showHero()"></div><div id="overbox"><a href="" title="Close" onclick="showHero()">x</a><div id="overcontent"></div></div></div>
+<div id="footer">{{ __("Exported with %s on %s.", conf.Title, datetime.datetime.now().strftime("%d.%m.%Y %H:%M")) }}</div>
+<div id="overlay" class="hidden"><div id="overshadow" onclick="showHero()"></div><div id="overbox"><a href="" title="{{ _("Close") }}" onclick="showHero()">x</a><div id="overcontent"></div></div></div>
 </body>
 """
