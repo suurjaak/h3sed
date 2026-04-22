@@ -1107,6 +1107,6 @@ colptr = max(col_indexes) + 1
 </table>
 </div>
 <div id="footer">{{ __("Exported with %s on %s.", conf.Title, datetime.datetime.now().strftime("%d.%m.%Y %H:%M")) }}</div>
-<div id="overlay" class="hidden"><div id="overshadow" onclick="showHero()"></div><div id="overbox"><a href="" title="{{ _("Close") }}" onclick="showHero()">x</a><div id="overcontent"></div></div></div>
+<div id="overlay" class="hidden"><div id="overshadow" onclick="showHero()"></div><div id="overbox"><a href="" title="{{ _("Close") }}" onclick="showHero(); return false">x</a><div id="overcontent"></div></div></div>
 </body>
 """
