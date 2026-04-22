@@ -866,7 +866,8 @@ class HeroPlugin(object):
         for category, state in states.items():
             plugin = pluginmap.get(category)
             if not plugin:
-                logger.warning("Unknown category in hero data: %r", category)
+                if category not in h3sed.hero.PROPERTIES:
+                    logger.warning("Unknown category in hero data: %r", category)
                 continue  # for
 
             state0 = plugin.state()
