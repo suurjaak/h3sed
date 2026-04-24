@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  22.04.2026
+@modified  24.04.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -88,9 +88,10 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
                 if isinstance(state, (list, set)):
                     state = list(state)
                     while state and not state[-1]: state.pop()  # Strip empty trailing values
+                state = util.recurse_convert(state, {str: __})
+                if "spells" == category: state.sort()
                 hero_data[category] = state
             data["heroes"].append(hero_data)
-        data["heroes"] = util.recurse_convert(data["heroes"], {str: __})
         with open(filename, "w", encoding="utf-8") as f:
             f.write(json.dumps(data, indent=2, ensure_ascii=False) + os.linesep)
         return
@@ -209,6 +210,7 @@ def serialize_property_yaml(state, indent="  "):
     fmt = lambda v: "" if v in (None, {}) else encode_yaml_scalar(__(v))
 
     if isinstance(state, (list, set)):
+        do_order = isinstance(state, set)
         state = list(state)
         while state and not state[-1]: state.pop()  # Strip empty trailing values
         for entry in state:
@@ -222,6 +224,7 @@ def serialize_property_yaml(state, indent="  "):
                     lead = " " if itempairs else "-"
                     itempairs += [("%s %s:" % (lead, key), fmt(entry[key]))]
                 pairs.extend(itempairs)
+        if do_order: pairs.sort()
     else:
         for key in state.__slots__:
             maxlen = max(maxlen, len(key))
@@ -640,7 +643,7 @@ if len(label_text) > 7: label_text = label_text[:5]
 %endif
 %if not categories or categories["spells"]:
     <td align="left" valign="top" nowrap>
-    %for spell in hero.spells:
+    %for spell in sorted(hero.spells, key=__):
     {{ __(spell) }}<br />
     %endfor
     </td>
@@ -686,7 +689,7 @@ deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_AR
 {{ __(army["name"]) }}: {{ army["count"] }}
     %endfor
 %elif "spells" == column:
-    %for spell in hero.spells:
+    %for spell in sorted(hero.spells, key=__):
 {{ __(spell) }}
     %endfor
 %elif "equipment" == column:
@@ -1096,7 +1099,7 @@ colptr = max(col_indexes) + 1
 %endif
 %if not categories or categories["spells"]:
     <td>
-    %for spell in hero.spells:
+    %for spell in sorted(hero.spells, key=__):
     {{ __(spell) }}<br />
     %endfor
     </td>
@@ -1107,6 +1110,6 @@ colptr = max(col_indexes) + 1
 </table>
 </div>
 <div id="footer">{{ __("Exported with %s on %s.", conf.Title, datetime.datetime.now().strftime("%d.%m.%Y %H:%M")) }}</div>
-<div id="overlay" class="hidden"><div id="overshadow" onclick="showHero()"></div><div id="overbox"><a href="" title="{{ _("Close") }}" onclick="showHero(); return false">x</a><div id="overcontent"></div></div></div>
+<div id="overlay" class="hidden"><div id="overshadow" onclick="showHero()"></div><div id="overbox"><a href="" title="{{ __("Close") }}" onclick="showHero(); return false">x</a><div id="overcontent"></div></div></div>
 </body>
 """
