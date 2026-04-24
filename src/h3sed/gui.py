@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    22.04.2026
+@modified    24.04.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -65,6 +65,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def __init__(self):
         i18n.init(os.path.join(conf.EtcDirectory, "i18n"), conf.Translations)
         i18n.set_current_language(conf.Language)
+        wx.GetApp().SetLocale(conf.Language)
         controls.Translate.HOOK = i18n.make_translate(stack_depth=2)
         # Override default wx images with ones from 4.1.1 for better looks
         art_imgs = {wx.ART_COPY:  images.ToolbarCopy,  wx.ART_FILE_OPEN: images.ToolbarFileOpen,
@@ -814,6 +815,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def translate_ui(self):
         """Refreshes texts and tooltips of UI controls to current language."""
+        wx.GetApp().SetLocale(conf.Language)
         self.Freeze()
         self.button_clear_log.Label = __("C&lear log")
         self.button_open   .Label   = __("&Open")
