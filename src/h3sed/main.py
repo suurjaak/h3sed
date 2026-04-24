@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    24.03.2025
+@modified    24.04.2026
 ------------------------------------------------------------------------------
 """
 from __future__ import print_function
@@ -214,6 +214,18 @@ class MainApp(wx.App if wx else object):
                 logger.warning("Failed to set locale %r.", name, exc_info=True)
                 try: locale.setlocale(locale.LC_ALL, "")
                 except Exception: logger.warning("Failed to set locale ''.", exc_info=True)
+
+    def SetLocale(self, lang):
+        """Changes wx locale to given language code, or to default English if unknown language."""
+        self.ResetLocale()
+        info = wx.Locale.FindLanguageInfo(lang)
+        if info is None and "-" in lang: info = wx.Locale.FindLanguageInfo(lang.split("-", 1)[0])
+        if info is None and "_" in lang: info = wx.Locale.FindLanguageInfo(lang.split("_", 1)[0])
+        del self._initial_locale
+        try: mylocale = wx.Locale(info.Language, wx.LOCALE_LOAD_DEFAULT)
+        except Exception: mylocale = wx.Locale(wx.LANGUAGE_ENGLISH_US, wx.LOCALE_LOAD_DEFAULT)
+        mylocale.AddCatalog("wxstd")
+        self._initial_locale = mylocale  # Override wx.App._initial_locale
 
 
 
