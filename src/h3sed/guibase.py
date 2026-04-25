@@ -12,7 +12,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.04.2026
+@modified    25.04.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -29,7 +29,7 @@ import wx.py
 from . lib.controls import ColourManager, NewId, get_all_children, __
 try: from . lib.i18n import translate as __
 except ImportError: pass
-from . lib import util, wx_accel
+from . lib import i18n, util, wx_accel
 from . import conf
 
 logger = logging.getLogger(__name__)
@@ -39,21 +39,25 @@ def status(text, *args, **kwargs):
     """
     Sets main window status text, optionally logs the message.
 
-    @param   args   string format arguments, if any, to substitute in text
-    @param   flash  whether to clear the status after timeout,
-                    by default after conf.StatusFlashLength if not given seconds
-    @param   log    whether to log the message to main window
+    @param   args       string format arguments, if any, to substitute in text
+    @param   flash      whether to clear the status after timeout,
+                        by default after conf.StatusFlashLength if not given seconds
+    @param   log        whether to log the message to main window
+    @param   translate  whether to render status text and args with i18n (not applied to log text)
     """
     window = wx.GetApp() and wx.GetApp().GetTopWindow()
     if not window: return
+    log, flash, translate = (kwargs.get(x) for x in ("log", "flash", "translate"))
 
-    try: msg = text % args if args else text
-    except UnicodeError:
-        args = tuple(map(util.to_unicode, args))
-        msg = text % args if args else text
+    if translate:
+        msg = i18n.translate_from_context(2, text, *args) # 2=stack_depth
+    else:
+        try: msg = text % args if args else text
+        except UnicodeError:
+            args = tuple(map(util.to_unicode, args))
+            msg = text % args if args else text
     msg = re.sub("[\n\r\t]+", " ", msg)
-    log, flash = (kwargs.get(x) for x in ("log", "flash"))
-    if log: logger.info(msg)
+    if log: logger.info(text, *args)
     window.set_status(msg, timeout=flash)
 
 
