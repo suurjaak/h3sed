@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  27.04.2026
+@modified  01.05.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -222,6 +222,8 @@ class ArmyPlugin(object):
 
         @param   rowindex  index of single army stack to round if not all
         """
+        if not any(self._state): return
+
         down, number = (number < 0), abs(number)
         def on_do(self, state2):
             self._state[:] = state2
@@ -230,7 +232,6 @@ class ArmyPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        if not self._state: return
         state2 = self._state.copy()
         MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["army.count"]
         for i, army in enumerate(state2):
@@ -264,16 +265,16 @@ class ArmyPlugin(object):
 
     def on_swap_stack(self, event, index1, index2):
         """Handler for swapping two arny positions, carries out and propagates change."""
+        if not any(self._state) or (not self._state[index1] and not self._state[index2]):
+            h3sed.guibase.status("")
+            return
+
         def on_do(self, index1, index2):
             self._state[index1], self._state[index2] = self._state[index2], self._state[index1]
             self.parent.patch()
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
             wx.PostEvent(self._panel, evt)
             return True
-
-        if not self._state or (not self._state[index1] and not self._state[index2]):
-            h3sed.guibase.status("")
-            return
 
         # "swap HERONAME army: slot SLOTNUMBER and SLOTNUMBER"
         actionlbl, actionargs = "%s %s", ("swap", ("%s {}".format(self.name), self._hero.name))
@@ -288,16 +289,16 @@ class ArmyPlugin(object):
 
     def on_remove_all(self, event):
         """Handler for removing all hero army stacks, carries out and propagates change."""
+        if not any(self._state):
+            h3sed.guibase.status("")
+            return
+
         def on_do(self):
             self._state.clear()
             self.parent.patch()
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
             wx.PostEvent(self._panel, evt)
             return True
-
-        if not self._state:
-            h3sed.guibase.status("")
-            return
 
         # "remove HERONAME army"
         cname, cargs = "%s %s", ("remove", ("%s {}".format(self.name), self._hero.name))
