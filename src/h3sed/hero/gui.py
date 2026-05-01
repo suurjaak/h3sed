@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.04.2026
+@modified  01.05.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -141,7 +141,6 @@ class HeroPlugin(object):
     def prebuild(self):
         """Builds general UI components."""
         self._panel.Freeze()
-        controls.ColourManager.DiscardManaged(self._panel)
         self._panel.DestroyChildren()
         self._panel.Sizer and self._panel.Sizer.Clear()
         label  = wx.StaticText(self._panel, name="selectherolabel", label=__("&Select hero") + ":")
@@ -287,7 +286,6 @@ class HeroPlugin(object):
         self._panel.Freeze()
         self._heropanel.Enable()
         self._heropanel.Show()
-        controls.ColourManager.DiscardManaged(self._propspanel)
         self._propspanel.DestroyChildren()
         self._propspanel.Sizer.Clear()
         del self._plugins[:]
