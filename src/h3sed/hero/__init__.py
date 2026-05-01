@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  31.03.2026
+@modified  01.05.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -819,7 +819,9 @@ class Hero(object):
         inventory_slots = {slot: [] for slot in set(LOCATION_TO_SLOT.values())} # {slot: [index, ]}
         for inventory_index, artifact in enumerate(inv2):
             if artifact is None: continue # for inventory_index,
-            inventory_slots[ARTIFACT_TO_SLOTS[artifact][0]].append(inventory_index)
+            slot = ARTIFACT_TO_SLOTS[artifact][0]
+            if slot in inventory_slots:
+                inventory_slots[slot].append(inventory_index)
         reserved_locations = eq2.get_reserved_locations()
 
         locations_handled = set()
