@@ -157,10 +157,11 @@ class ColourManager(object):
     colourmap       = {} # {colour name in container: wx.SYS_COLOUR_XYZ}
     darkcolourmap   = {} # {colour name in container: wx.SYS_COLOUR_XYZ}
     darkoriginals   = {} # {colour name in container: original value}
-    regctrls        = set() # {ctrl, }
-    # {ctrl: (prop name: colour name in container or wx.SYS_COLOUR_XYZ)}
+    regctrls        = set() # {ctrl ID, }
+    # {ctrl ID: (prop name: colour name in container or wx.SYS_COLOUR_XYZ)}
     ctrlprops       = collections.defaultdict(dict)
-    ctrlchildren    = collections.defaultdict(set) # {managed parent ctrl: {managed child controls}}
+    # {managed parent ctrl ID: {managed child control IDs}}
+    ctrlchildren    = collections.defaultdict(set)
 
 
     @classmethod
@@ -221,13 +222,13 @@ class ColourManager(object):
                          or system colour ID like wx.SYS_COLOUR_WINDOW
         """
         if not ctrl: return
-        cls.ctrlprops[ctrl][prop] = colour
+        cls.ctrlprops[ctrl.Id][prop] = colour
         if isinstance(ctrl, wx.stc.StyledTextCtrl):
             cls.UpdateSTCColours(ctrl, {prop: colour})
         else:
             cls.UpdateControlColour(ctrl, prop, colour)
-        if hasattr(ctrl, "GetParent") and ctrl.GetParent() and ctrl.GetParent() in cls.ctrlprops:
-            cls.ctrlchildren[ctrl.GetParent()].add(ctrl)
+        if hasattr(ctrl, "GetParent") and ctrl.GetParent() and ctrl.GetParent().Id in cls.ctrlprops:
+            cls.ctrlchildren[ctrl.GetParent().Id].add(ctrl.Id)
 
 
     @classmethod
@@ -237,10 +238,10 @@ class ColourManager(object):
         for instances of wx.py.shell.Shell on system colour change.
         """
         if isinstance(ctrl, wx.py.shell.Shell):
-            cls.regctrls.add(ctrl)
+            cls.regctrls.add(ctrl.Id)
             cls.SetShellStyles(ctrl)
-            if ctrl.GetParent() in cls.ctrlprops:
-                cls.ctrlchildren[ctrl.GetParent()].add(ctrl)
+            if ctrl.GetParent().Id in cls.ctrlprops:
+                cls.ctrlchildren[ctrl.GetParent().Id].add(ctrl.Id)
 
 
     @classmethod
@@ -380,33 +381,37 @@ class ColourManager(object):
     def UpdateControls(cls):
         """Updates all managed controls."""
         cls.ClearDestroyed()
-        for ctrl, props in list(cls.ctrlprops.items()):
-            if cls.DiscardIfDead(ctrl):
+        for ctrl_id, props in list(cls.ctrlprops.items()):
+            if cls.DiscardIfDead(ctrl_id):
                 continue # for ctrl, props
 
+            ctrl = wx.FindWindowById(ctrl_id)
             if isinstance(ctrl, wx.stc.StyledTextCtrl):
                 cls.UpdateSTCColours(ctrl, props)
             else:
                 for prop, colour in props.items():
                     cls.UpdateControlColour(ctrl, prop, colour)
 
-        for ctrl in list(cls.regctrls):
-            if not cls.DiscardIfDead(ctrl) and isinstance(ctrl, wx.py.shell.Shell):
+        for ctrl_id in list(cls.regctrls):
+            if cls.DiscardIfDead(ctrl_id):
+                continue # for ctrl, props
+            ctrl = wx.FindWindowById(ctrl_id)
+            if isinstance(ctrl, wx.py.shell.Shell):
                 cls.SetShellStyles(ctrl)
 
 
     @classmethod
     def UpdateControl(cls, ctrl):
         """Updates colours for specific managed control."""
-        if cls.DiscardIfDead(ctrl):
+        if not ctrl or cls.DiscardIfDead(ctrl.Id):
             return
-        if ctrl in cls.ctrlprops:
+        if ctrl.Id in cls.ctrlprops:
             if isinstance(ctrl, wx.stc.StyledTextCtrl):
-                cls.UpdateSTCColours(ctrl, cls.ctrlprops[ctrl])
+                cls.UpdateSTCColours(ctrl, cls.ctrlprops[ctrl.Id])
             else:
-                for prop, colour in cls.ctrlprops[ctrl].items():
+                for prop, colour in cls.ctrlprops[ctrl.Id].items():
                     cls.UpdateControlColour(ctrl, prop, colour)
-        if ctrl in cls.regctrls:
+        if ctrl.Id in cls.regctrls:
             if isinstance(ctrl, wx.py.shell.Shell): cls.SetShellStyles(ctrl)
         ctrl.Refresh()
 
@@ -607,9 +612,9 @@ class ColourManager(object):
         for myctrl in [ctrl] + get_all_children(ctrl):
             for proptype in (t for t in PROPS if isinstance(myctrl, t)):
                 if proptype is wx.TextCtrl and isinstance(myctrl.Parent, wx.SpinCtrlDouble):
-                    continue # Child of omposite control: handled via parent already
+                    continue # Child of composite control: handled via parent already
                 for prop, colour in PROPS[proptype].items():
-                    if myctrl not in cls.ctrlprops or prop not in cls.ctrlprops[myctrl]:
+                    if myctrl.Id not in cls.ctrlprops or prop not in cls.ctrlprops[myctrl.Id]:
                         cls.Manage(myctrl, prop, colour)
         cls.ClearDestroyed()
         return ctrl
@@ -620,40 +625,34 @@ class ColourManager(object):
         """Discards destroyed components from managed controls."""
         wx.SafeYield() # Allow idle events to be processed and component cleanup executed
         children = sum(map(list, cls.ctrlchildren.values()), [])
-        for ctrl in set(cls.ctrlprops) | set(cls.regctrls) | set(cls.ctrlchildren) | set(children):
-            cls.DiscardIfDead(ctrl)
+        all_ctrl_ids = set(cls.ctrlprops) | set(cls.regctrls) | set(cls.ctrlchildren) | set(children)
+        for ctrl_id in all_ctrl_ids:
+            cls.DiscardIfDead(ctrl_id)
 
 
     @classmethod
-    def DiscardManaged(cls, ctrl):
-        """Discards component and all its children from managed controls."""
-        ctrl_collections = [cls.ctrlprops, cls.regctrls, cls.ctrlchildren]
-        ctrl_collections.extend(cls.ctrlchildren.values())
-        for ctrl in [ctrl] + get_all_children(ctrl):
-            for collection in ctrl_collections:
-                if ctrl in collection:
-                    (collection.discard if isinstance(collection, set) else collection.pop)(ctrl)
-
-
-    @classmethod
-    def DiscardIfDead(cls, ctrl):
+    def DiscardIfDead(cls, ctrl_id):
         """Discards component from managed controls if destroyed, returns whether was discarded."""
         ctrl_collections = [cls.ctrlprops, cls.regctrls, cls.ctrlchildren]
         ctrl_collections.extend(cls.ctrlchildren.values())
-        if not any(ctrl in collection for collection in ctrl_collections): return False
+        if not any(ctrl_id in collection for collection in ctrl_collections):
+            return False
 
+        ctrl = wx.FindWindowById(ctrl_id)
         is_alive = ctrl and not ctrl.IsBeingDeleted()
-        if is_alive: return False
+        if is_alive:
+            return False
 
         # Must track parents and children explicitly: in Linux, dialog ButtonSizer buttons
         # remain undestroyed but very crash-prone to examine: discard them along with the dialog.
-        children = lambda c: [] if c not in cls.ctrlchildren else \
-                             list(cls.ctrlchildren[c]) + sum(map(children, cls.ctrlchildren[c]), [])
-        for ctrl in [ctrl] + children(ctrl):
+        children = lambda x: [] if x not in cls.ctrlchildren else \
+                             list(cls.ctrlchildren[x]) + sum(map(children, cls.ctrlchildren[x]), [])
+        for ctrl_id in [ctrl_id] + children(ctrl_id):
             for collection in ctrl_collections:
-                if ctrl in collection:
-                    (collection.discard if isinstance(collection, set) else collection.pop)(ctrl)
+                if ctrl_id in collection:
+                    (collection.discard if isinstance(collection, set) else collection.pop)(ctrl_id)
         return True
+
 
 
 CallableManagerEvent, EVT_CALLABLE_MANAGER = wx.lib.newevent.NewCommandEvent()
