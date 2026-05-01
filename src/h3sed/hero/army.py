@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  15.04.2026
+@modified  27.04.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -18,7 +18,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import util
-from .. lib.i18n import translate as __
+from .. lib.i18n import format_nested, translate as __
 from .. import conf
 from .. import metadata
 
@@ -176,7 +176,7 @@ class ArmyPlugin(object):
     def make_common_menu(self):
         """Returns wx.Menu with plugin-specific actions, like removing all army stacks."""
         menu = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, __("Remove all army"))
+        item_clear = menu.Append(wx.ID_ANY, __("Remove all"))
         item_reset = menu.Append(wx.ID_ANY, __("Set army counts to 1"))
         menu.AppendSubMenu(self.make_rounding_menu(), __("Round army counts to") + " ..")
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_round_army, number=-1), item_reset)
@@ -239,18 +239,27 @@ class ArmyPlugin(object):
             elif army.count % number and (not down or army.count > number):
                 army.count += (0 if down else number) - (army.count % number)
                 army.count = min(MAX, max(MIN, army.count))
-
-        label = "%s army " % self._hero.name
-        label += "counts " if rowindex is None else "slot %s count " % (rowindex + 1)
-        label += "%s to %s" % ("down " if down else "up", number)
         if state2 == self._state:
-            h3sed.guibase.status("No change from rounding %s" % label,
-                                 flash=conf.StatusShortFlashLength)
+            h3sed.guibase.status("")
             return
 
-        h3sed.guibase.status("Rounding %s" % label, flash=conf.StatusShortFlashLength, log=True)
+        # "set HERONAME army: count 1"
+        # "round HERONAME army: up|down NUMBER"
+        # "round HERONAME army: slot #%s up|down NUMBER"
+        action = "set" if number == 1 else "round"
+        actionlbl, actionargs = "%s %s", (action, ("%s {}".format(self.name), self._hero.name))
+        if "set" == action: afterlbl, afterargs = "%s %s", ("count", number)
+        else:
+            afterargs = ("down" if down else "up", number)
+            if rowindex is not None:
+                afterargs = ("slot", rowindex + 1) + afterargs
+            afterlbl = " ".join(["%s"] * len(afterargs))
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), (afterlbl, afterargs))
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self, state2)
-        self.parent.command(callable, name="round %s" % label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_swap_stack(self, event, index1, index2):
@@ -263,11 +272,18 @@ class ArmyPlugin(object):
             return True
 
         if not self._state or (not self._state[index1] and not self._state[index2]):
+            h3sed.guibase.status("")
             return
-        label = "%s army slot %s and %s" % (self._hero.name, index1 + 1, index2 + 1)
-        h3sed.guibase.status("Swapping %s" % label, flash=conf.StatusShortFlashLength, log=True)
+
+        # "swap HERONAME army: slot SLOTNUMBER and SLOTNUMBER"
+        actionlbl, actionargs = "%s %s", ("swap", ("%s {}".format(self.name), self._hero.name))
+        cname = "%s: %s %s %s %s"
+        cargs = ((actionlbl, actionargs), "slot", index1 + 1, "and", index2 + 1)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self, index1, index2)
-        self.parent.command(callable, name="swap %s" % label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_remove_all(self, event):
@@ -280,11 +296,16 @@ class ArmyPlugin(object):
             return True
 
         if not self._state:
+            h3sed.guibase.status("")
             return
-        h3sed.guibase.status("Removing all %s army stacks" % self._hero.name,
-                             flash=conf.StatusShortFlashLength, log=True)
+
+        # "remove HERONAME army"
+        cname, cargs = "%s %s", ("remove", ("%s {}".format(self.name), self._hero.name))
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self)
-        self.parent.command(callable, name="remove %s army" % self._hero.name)
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_change(self, prop, value, ctrl, rowindex):

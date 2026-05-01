@@ -704,9 +704,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                 if savefile: savefiles[f] = savefile
                 else:
                     notsave_filenames.append(f)
+                    logger.info("Failed to open %s. %s", f, err)
                     if not isinstance(err, ValueError): err = __("Not a valid gzipped file?")
-                    guibase.status(__("Failed to open %s.", f) + " %s" % err,
-                                   log=True, flash=True)
+                    guibase.status(__("Failed to open %s.", f) + " %s" % err, flash=True)
 
         for filename, savefile in savefiles.items():
             self.load_savefile_page(filename, savefile)
@@ -806,9 +806,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         conf.save()
 
         opts = i18n.get_language(lang)
-        msg = "Application language set to %s (%s)."
-        logger.info(msg, opts["name"], opts["code"])
-        guibase.status(__(msg, opts["name"], opts["code"]), flash=True)
+        guibase.status("Application language set to %s (%s).", opts["name"], opts["code"],
+                       flash=True, log=True, translate=True)
         self.ProcessEvent(LanguageEvent(self.Id)) # Run handlers synchronously for stable state
         self.translate_ui()
 
@@ -885,7 +884,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             wx.MessageBox(__("Cannot delete %s, %s open.", path, info), conf.Title, wx.ICON_ERROR)
             return
 
-        guibase.status(__("Deleting %s", path), flash=conf.StatusShortFlashLength, log=True)
+        guibase.status("Deleting %s", path, flash=conf.StatusShortFlashLength,
+                       log=True, translate=True)
         try:
             (shutil.rmtree if "file" != category else os.unlink)(path)
         except Exception as e:
@@ -1282,8 +1282,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
             page = next(iter(self.files.values()))["page"]
         if isinstance(page, SavefilePage) and page.undoredo.CanUndo():
-            guibase.status(__("Undoing %s", page.undoredo.CurrentCommand.Name),
-                           flash=conf.StatusShortFlashLength, log=True)
+            guibase.status("Undoing %s", page.undoredo.CurrentCommand.Name,
+                           flash=conf.StatusShortFlashLength)
+            logger.info("Undoing %s", page.undoredo.CurrentCommand.NameRaw)
             page.undoredo.Undo()
 
 
@@ -1295,8 +1296,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         if isinstance(page, SavefilePage) and page.undoredo.CanRedo():
             cmdpos = 0 if not page.undoredo.CurrentCommand else \
                      page.undoredo.Commands.index(page.undoredo.CurrentCommand) + 1
-            guibase.status(__("Redoing %s", page.undoredo.Commands[cmdpos].Name),
-                           flash=conf.StatusShortFlashLength, log=True)
+            guibase.status("Redoing %s", page.undoredo.Commands[cmdpos].Name,
+                           flash=conf.StatusShortFlashLength)
+            logger.info("Redoing %s", page.undoredo.Commands[cmdpos].NameRaw)
             page.undoredo.Redo()
 
 
@@ -1362,14 +1364,17 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         cando, do = page.undoredo.CanUndo, page.undoredo.Undo
         if count >= 0: cando, do = page.undoredo.CanRedo, page.undoredo.Redo
         verb = "Undo" if count < 0 else "Redo"
-        guibase.status(__("%sing %%s" % verb, util.plural("action", abs(count))),
-                       flash=conf.StatusShortFlashLength, log=True)
+        logger.info("%sing %%s" % verb, util.plural("action", abs(count)))
+        guibase.status(__("%sing %%s" % verb,
+                          __("%s action" if count in (1, -1) else "%s actions", abs(count))
+                       ), flash=conf.StatusShortFlashLength)
         for _ in range(abs(count)):
             if not cando(): break  # for
             cmd = page.undoredo.CurrentCommand or page.undoredo.Commands[0]
             if count >= 0 and page.undoredo.CurrentCommand:
                 cmd = page.undoredo.Commands[page.undoredo.Commands.index(cmd) + 1]
-            guibase.status(__("%sing %%s" % verb, cmd.Name), flash=conf.StatusShortFlashLength, log=True)
+            guibase.status("%sing %%s" % verb, cmd.Name,
+                           flash=conf.StatusShortFlashLength, log=True, translate=True)
             do()
 
 
@@ -1944,13 +1949,33 @@ class PluginCommand(wx.Command):
     """
 
     def __init__(self, plugin, do, name=""):
+        """
+        @param   plugin  plugin instance like HeroPlugin
+        @param   do      callable doing action and returning whether state changed
+        @param   name    info label for command, potentially nested (format string, args)
+                         for translating. Arguments are translated as well, and can contain
+                         nested (format string, args) elements, processed recursively.
+        """
+        name, name_args = name if isinstance(name, (list, tuple)) else (name, ())
         super(PluginCommand, self).__init__(canUndo=True, name=name)
+        self._name = name
+        self._name_args = tuple(name_args)
         self._do = do
         self._done = False
         self._data1 = None
         self._data2 = None
         self._plugin = plugin
         self._timestamp = time.time()
+
+    def GetName(self):
+        """Returns command name, translated in current application language."""
+        return i18n.format_nested(self._name, *self._name_args, do_translate=True)
+    Name = property(GetName)
+
+    def GetNameRaw(self):
+        """Returns command name in priginal language."""
+        return i18n.format_nested(self._name, *self._name_args, do_translate=False)
+    NameRaw = property(GetNameRaw)
 
     def Do(self):
         if self._done:
@@ -2021,13 +2046,16 @@ def build(plugin, panel):
             if value == value0:
                 return  # Avoid double events like EVT_TEXT vs EVT_SPIN
 
-            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
-            if name is not None: namelbl += (" " if namelbl else "") + name
-            valuelbl = __("<blank>") if value in ("", None) else __(value)
-            cname = "set %s: %s %s" % (label, namelbl, valuelbl)
-            logger.info("Setting %s: %s to %s.", label, namelbl, valuelbl)
-            plugin.parent.command(functools.partial(on_do, value), cname)
+            # "set HERONAME CATEGORY: TARGET VALUE"
+            # TARGET = "PROPNAME" or "SLOTNUMBER" or "SLOTNUMBER PROPNAME"
+            actionlbl, actionargs = "%s %s", ("set", ("%s {}".format(plugin.name), plugin.item()))
+            targetargs = () if rowindex is None else ("slot", rowindex + 1)
+            if name is not None: targetargs += (name, )
+            targetlbl = " ".join(["%s"] * len(targetargs))
+            valuelbl = "<blank>" if value in ("", None) else value
+            cname, cargs = "%s: %s %s", ((actionlbl, actionargs), (targetlbl, targetargs), valuelbl)
+            logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
+            plugin.parent.command(functools.partial(on_do, value), name=(cname, cargs))
         return handler
 
     def make_move_handler(ctrl, index, direction, labels=()):
@@ -2051,10 +2079,13 @@ def build(plugin, panel):
         def handler(event):
             state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             if state[index] == state[index + direction]: return
-            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            cname = "swap %s: #%s and #%s" % (label, index + 1, index + direction + 1)
-            logger.info("Swapping %s: #%s and #%s.", label, index + 1, index + direction + 1)
-            plugin.parent.command(on_do, cname)
+
+            # "swap HERONAME CATEGORY: slot SLOTNUMBER and SLOTNUMBER"
+            actionlbl, actionargs = "%s %s", ("swap", ("%s {}".format(plugin.name), plugin.item()))
+            cname = "%s: %s %s %s %s"
+            cargs = ((actionlbl, actionargs), "slot", index + 1, "and", index + direction + 1)
+            logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
+            plugin.parent.command(on_do, name=(cname, cargs))
         return handler
 
     def make_add_handler(ctrl, myprops):
@@ -2072,10 +2103,12 @@ def build(plugin, panel):
                 if ctrl.Selection < 0: return
                 value = ctrl.GetClientData(ctrl.Selection) or value
             if not value: return
-            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            cname = "add %s: %s" % (label, __(value))
-            logger.info("Adding %s: %s.", label, value)
-            plugin.parent.command(functools.partial(on_do, value), cname)
+
+            # "add HERONAME CATEGORY: VALUE"
+            actionlbl, actionargs = "%s %s", ("add", ("%s {}".format(plugin.name), plugin.item()))
+            cname, cargs = "%s: %s", ((actionlbl, actionargs), value)
+            logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
+            plugin.parent.command(functools.partial(on_do, value), name=(cname, cargs))
         return handler
 
     def make_remove_handler(ctrl, index):
@@ -2088,12 +2121,14 @@ def build(plugin, panel):
 
         def handler(event):
             state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
-            v = state[index]
-            if isinstance(v, dict): v = v.get("name", v)
-            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            cname = "remove %s: %s" % (label, __(v))
-            logger.info("Removing %s: %s.", label, v)
-            plugin.parent.command(on_do, cname)
+            value = state[index]
+            if isinstance(value, dict): value = value.get("name", value)
+
+            # "remove HERONAME CATEGORY: VALUE"
+            actionlbl, actionargs = "%s %s", ("remove", ("%s {}".format(plugin.name), plugin.item()))
+            cname, cargs = "%s: %s", ((actionlbl, actionargs), value)
+            logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
+            plugin.parent.command(on_do, name=(cname, cargs))
         return handler
 
     def make_clear_handler(ctrl, myprops, rowindex=None):
@@ -2114,12 +2149,15 @@ def build(plugin, panel):
             return True
 
         def handler(event):
-            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            namelbl = "" if rowindex is None else "slot %s" % (rowindex + 1)
-            if name is not None: namelbl += (" " if namelbl else "") + __(name)
-            cname = "set %s: %s <blank>" % (label, namelbl)
-            logger.info("Setting %s: %s to <blank>.", label, namelbl)
-            plugin.parent.command(on_do, cname)
+            # "set HERONAME CATEGORY: TARGET <blank>"
+            # TARGET = "PROPNAME" or "SLOTNUMBER" or "SLOTNUMBER PROPNAME"
+            actionlbl, actionargs = "%s %s", ("set", ("%s {}".format(plugin.name), plugin.item()))
+            targetargs = () if rowindex is None else ("slot", rowindex + 1)
+            if name is not None: targetargs += (name, )
+            targetlbl = " ".join(["%s"] * len(targetargs))
+            cname, cargs = "%s: %s %s", ((actionlbl, actionargs), (targetlbl, targetargs), "<blank>")
+            logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
+            plugin.parent.command(on_do, name=(cname, cargs))
         return handler
 
     def make_check_handler(ctrl, myprops, value):
@@ -2138,11 +2176,12 @@ def build(plugin, panel):
             return True
 
         def handler(event):
-            action, doing = ("add", "Adding") if ctrl.Value else ("remove", "Removing")
-            label = " ".join(map(str, filter(bool, [plugin.item(), plugin.name])))
-            cname = "%s %s: %s" % (action, label, __(value))
-            logger.info("%s %s: %s.", doing, label, __(value))
-            plugin.parent.command(functools.partial(on_do, ctrl.Value), cname)
+            # "add|remove HERONAME CATEGORY: VALUE"
+            action = "add" if ctrl.Value else "remove"
+            actionlbl, actionargs = "%s %s", (action, ("%s {}".format(plugin.name), plugin.item()))
+            cname, cargs = "%s: %s", ((actionlbl, actionargs), value)
+            logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
+            plugin.parent.command(functools.partial(on_do, ctrl.Value), name=(cname, cargs))
         return handler
 
     def make_menu_handler(ctrl, myprops, rowindex=None):

@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  28.03.2026
+@modified  28.04.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -20,7 +20,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import controls, util
-from .. lib.i18n import translate as __
+from .. lib.i18n import format_nested, translate as __
 from .. import conf
 from .. import metadata
 
@@ -257,8 +257,9 @@ class StatsPlugin(object):
         elif "exp" == TARGET:
             value = self._state.get_level_experience()
         if value == self._state[TARGET]:
-            h3sed.guibase.status("%s already matching %s %s", prop["label"].capitalize(),
-                                 source_prop["label"].lower(), self._state[source_prop["name"]])
+            h3sed.guibase.status(format_nested("%s already matching %s %s", prop["label"].capitalize(),
+                                 source_prop["label"].lower(), self._state[source_prop["name"]],
+                                 do_translate=True))
             value = None
         if value is None:
             return
@@ -269,11 +270,15 @@ class StatsPlugin(object):
             evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
             wx.PostEvent(self._panel, evt)
             return True
-        label = "%s %s: %s %s" % (self._hero.name, self.name, TARGET, value)
-        h3sed.guibase.status("Setting %s from %s", label, source_prop["label"].lower(),
-                             flash=conf.StatusShortFlashLength, log=True)
+
+        # "set HERONAME stats: exp|level NUMBER"
+        cname = "%s %s: %s %s"
+        cargs = ("set", ("%s {}".format(self.name), self._hero.name), TARGET, value)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self, {TARGET: value})
-        self.parent.command(callable, name="set %s" % label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_refill_movement(self, prop, event=None):
@@ -285,11 +290,18 @@ class StatsPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        if self._state.movement_left >= self._state.movement_total: return
-        label = "%s %s: refill movement points" % (self._hero.name, self.name)
-        h3sed.guibase.status("Setting %s", label, flash=conf.StatusShortFlashLength, log=True)
-        callable = functools.partial(on_do, self, {"movement_left": self._state.movement_total})
-        self.parent.command(callable, name="set %s" % label)
+        TARGET, VALUE = prop["name"], self._state.movement_total
+        if self._state[TARGET] > VALUE:
+            return
+
+        # "set HERONAME stats: movement_left NUMBER"
+        cname = "%s %s: %s %s"
+        cargs = ("set", ("%s {}".format(self.name), self._hero.name), TARGET, VALUE)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
+        callable = functools.partial(on_do, self, {TARGET: VALUE})
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_refill_mana(self, prop, event=None):
@@ -301,17 +313,22 @@ class StatsPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        mana_total = 10 * self._hero.gamestats["knowledge"]
+        TARGET, VALUE = prop["name"], 10 * self._hero.gamestats["knowledge"]
         if "Intelligence" in self._hero.skills:
             HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
             SKILL_LEVELS = metadata.Store.get("skill_levels", version=self.version)
             current_level = self._hero.skills[self._hero.skills.index("Intelligence")].level
-            mana_total *= HERO_RANGES["Intelligence"][SKILL_LEVELS.index(current_level)]
-        if self._state.mana_left >= mana_total: return
-        label = "%s %s: refill spell points" % (self._hero.name, self.name)
-        h3sed.guibase.status("Setting %s", label, flash=conf.StatusShortFlashLength, log=True)
-        callable = functools.partial(on_do, self, {"mana_left": mana_total})
-        self.parent.command(callable, name="set %s" % label)
+            VALUE *= HERO_RANGES["Intelligence"][SKILL_LEVELS.index(current_level)]
+        if self._state[TARGET] >= VALUE:
+            return
+
+        cname = "%s %s: %s %s"
+        cargs = ("set", ("%s {}".format(self.name), self._hero.name), TARGET, VALUE)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
+        callable = functools.partial(on_do, self, {TARGET: VALUE})
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def make_primary_extra(self, prop):

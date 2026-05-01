@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  31.03.2026
+@modified  29.04.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -18,7 +18,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import util
-from .. lib.i18n import translate as __
+from .. lib.i18n import format_nested, translate as __
 from .. import conf
 from .. import metadata
 
@@ -268,7 +268,7 @@ class EquipmentPlugin(object):
     def make_common_menu(self):
         """Returns wx.Menu with plugin-specific actions, like removing all equipment."""
         menu = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, __("Remove all equipment"))
+        item_clear = menu.Append(wx.ID_ANY, __("Remove all"))
         item_send  = menu.Append(wx.ID_ANY, __("Send all equipment to inventory"))
         item_recv  = menu.Append(wx.ID_ANY, __("Equip all possible equipment from inventory"))
         item_swap  = menu.Append(wx.ID_ANY, __("Swap all possible equipment with inventory"))
@@ -441,25 +441,36 @@ class EquipmentPlugin(object):
         """
         if send and recv:
             eq2, inv2 = self._hero.make_equipment_swap()
-            acting, action = "Swapping all equipment with inventory", "swap all with inventory"
+            afterargs = ("swap all", "with inventory")
         elif not send and not recv:
             eq2, inv2 = h3sed.hero.Equipment.factory(self.version), None
-            acting, action = "Removing all equipment", "remove all"
+            afterargs = ("remove all", )
         elif recv:
             eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=False)
-            acting, action = "Equipping all from inventory", "equip all from inventory"
+            afterargs = ("equip all", "from inventory")
         else:
             eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=True)
-            acting, action = "Sending all equipment to inventory", "send all to inventory"
+            afterargs = ("send all", "to inventory")
+        afterlbl = " ".join(["%s"] * len(afterargs))
 
         if eq2 == self._state and inv2 in (None, self._hero.inventory):
-            h3sed.guibase.status("No change from %s" % acting.lower(),
-                                 flash=conf.StatusShortFlashLength, log=True)
+            h3sed.guibase.status(format_nested("No change from: %s", (afterlbl, afterargs),
+                                               do_translate=True),
+                                 flash=conf.StatusShortFlashLength)
             return
-        label = "change %s equipment: %s" % (self._hero.name, action)
-        h3sed.guibase.status(acting, flash=conf.StatusShortFlashLength, log=True)
+
+        # "change HERO equipment: swap all with inventory"
+        # "change HERO equipment: remove all"
+        # "change HERO equipment: equip all from inventory"
+        # "change HERO equipment: send all to inventory"
+        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), (afterlbl, afterargs))
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(self.change_artifacts, eq2, inv2)
-        self.parent.command(callable, name=label)
+        self.parent.command(callable, name=(cname, cargs))
+        return
 
 
     def on_combo_artifact(self, event, location):
@@ -474,7 +485,7 @@ class EquipmentPlugin(object):
         combo_artifact = None
         reserved_locations = self._state.get_reserved_locations()
         if location in reserved_locations or self._state[location] in COMBINATION_ARTIFACTS:
-            action, acting = "disassemble", "Disassembling"
+            action = "disassemble"
             combo_artifact = self._state[location] or self._state[reserved_locations[location]]
             components = COMBINATION_ARTIFACTS[combo_artifact]
             primary_location = reserved_locations.get(location, location)
@@ -487,7 +498,7 @@ class EquipmentPlugin(object):
                 eq2[component_location] = component_artifact
                 locations.remove(component_location)
         else:
-            action, acting = "assemble", "Assembling"
+            action = "assemble"
             combo_artifact = next(a for a, bb in COMBINATION_ARTIFACTS.items()
                                   if self._state[location] in bb)
             components = COMBINATION_ARTIFACTS[combo_artifact]
@@ -499,11 +510,14 @@ class EquipmentPlugin(object):
             eq2.update({l: None for l in locations})
             eq2[primary_location] = combo_artifact
 
-        label = "change %s equipment: %s %s" % (self._hero.name, action, __(combo_artifact))
-        h3sed.guibase.status("%s equipment %s" % (acting, __(combo_artifact)),
-                             flash=conf.StatusShortFlashLength, log=True)
+        # "change HERONAME equipment: assemble|disassemble ARTIFACT"
+        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        cname, cargs = "%s: %s %s", ((actionlbl, actionargs), action, combo_artifact)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(self.change_artifacts, eq2)
-        self.parent.command(callable, name=label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_transact_inventory(self, event, location, inventory_index=None):
@@ -517,12 +531,24 @@ class EquipmentPlugin(object):
         inv2 = inv2.make_compact()
         artifact_name1 = self._state[location]
         artifact_name2 = None if inventory_index is None else self._hero.inventory[inventory_index]
-        action = "send %s" % __(artifact_name1) if inventory_index is None else \
-                 "swap %s with" % __(artifact_name1) if artifact_name1 else "equip %s from" % location
-        label = "%s equipment: %s inventory %s" % (self._hero.name, action, __(artifact_name2))
-        h3sed.guibase.status("Changing %s" % label, flash=conf.StatusShortFlashLength, log=True)
+
+        # "change HERO equipment: send ARTIFACT to inventory"
+        # "change HERO equipment: swap ARTIFACT with ARTIFACT from inventory"
+        # "change HERO equipment: set LOCATION ARTIFACT from inventory"
+        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        if inventory_index is None:
+            afterargs = ("send", artifact_name1, "to inventory")
+        elif artifact_name1 is not None:
+            afterargs = ("swap", artifact_name1, "with", artifact_name2, "from inventory")
+        else:
+            afterargs = ("set", location, artifact_name2, "from inventory")
+        afterlbl = " ".join(["%s"] * len(afterargs))
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), (afterlbl, afterargs))
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(self.change_artifacts, eq2, inv2)
-        self.parent.command(callable, name="change %s" % label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_swap_location(self, event, location, location2):
@@ -531,10 +557,15 @@ class EquipmentPlugin(object):
 
         eq2 = self._state.copy()
         eq2.update({location: eq2[location2], location2: eq2[location]})
-        label = "%s equipment: swap %s with %s" % (self._hero.name, location, location2)
-        h3sed.guibase.status("Changing %s" % label, flash=conf.StatusShortFlashLength, log=True)
+
+        # "swap HERONAME equipment: LOCATION and LOCATION"
+        actionlbl, actionargs = "%s %s", ("swap", ("%s {}".format(self.name), self._hero.name))
+        cname, cargs = "%s: %s %s %s", ((actionlbl, actionargs), location, "and", location2)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(self.change_artifacts, eq2)
-        self.parent.command(callable, name="change %s" % label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
 def parse(hero_bytes, version):

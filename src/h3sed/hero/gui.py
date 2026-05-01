@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  22.04.2026
+@modified  27.04.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -524,8 +524,8 @@ class HeroPlugin(object):
         if self._hero and wx.TheClipboard.Open():
             d = wx.TextDataObject(self._hero_yamls[self._hero]["full"])
             wx.TheClipboard.SetData(d), wx.TheClipboard.Close()
-            guibase.status("Copied hero %s data to clipboard.",
-                           self._hero, flash=conf.StatusShortFlashLength, log=True)
+            guibase.status("Copied hero %s data to clipboard.", self._hero,
+                           flash=conf.StatusShortFlashLength, log=True, translate=True)
 
 
     def on_paste_hero(self, event=None):
@@ -538,8 +538,8 @@ class HeroPlugin(object):
                 value = o.Text
             wx.TheClipboard.Close()
         if value:
-            guibase.status("Pasting data to hero %s from clipboard.",
-                           self._hero, flash=conf.StatusShortFlashLength, log=True)
+            guibase.status("Pasting data to hero %s from clipboard.", self._hero,
+                           flash=conf.StatusShortFlashLength, log=True, translate=True)
             self.parse_hero_yaml(value)
 
 
@@ -724,11 +724,11 @@ class HeroPlugin(object):
         wx.YieldIfNeeded() # Allow dialog to disappear
         path = controls.get_dialog_path(self._dialog_export)
         format = os.path.splitext(path)[-1].strip(".").lower()
-        guibase.status("Exporting %s..", path, flash=True)
+        guibase.status(__("Exporting %s..", path), flash=True)
         templates.export_heroes(path, format, self._index["visible"], self.savefile,
                                 categories=self._index["toggles"])
         guibase.status("Exported %s (%s).", path, util.format_bytes(os.path.getsize(path)),
-                       flash=True, log=True)
+                       flash=True, log=True, translate=True)
         util.start_file(path)
 
 
@@ -764,7 +764,7 @@ class HeroPlugin(object):
 
         combo, tabs = self._ctrls["hero"], self._ctrls["tabs"]
         busy = controls.BusyPanel(self._panel, __("Loading %s.", hero2)) if status else None
-        if status: guibase.status("Loading %s.", hero2, flash=True)
+        if status: guibase.status(__("Loading %s.", hero2), flash=True)
 
         self._ignore_events = True
         self._panel.Freeze()
@@ -857,7 +857,8 @@ class HeroPlugin(object):
             assert isinstance(states, dict)
         except Exception as e:
             logger.warning("Error loading hero data from clipboard: %s", e)
-            guibase.status("No valid hero data in clipboard.", flash=conf.StatusShortFlashLength)
+            guibase.status(__("No valid hero data in clipboard."),
+                           flash=conf.StatusShortFlashLength)
             return
 
         new_states = {}  # {property name: state}
