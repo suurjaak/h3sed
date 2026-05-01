@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  31.03.2026
+@modified  28.04.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -18,7 +18,7 @@ try: import wx
 except ImportError: wx = None
 
 import h3sed
-from .. lib.i18n import translate as __
+from .. lib.i18n import format_nested, translate as __
 from .. import conf
 from .. import metadata
 
@@ -117,8 +117,8 @@ class SpellsPlugin(object):
         """Returns wx.Menu with plugin-specific actions, like selecting or clearing all spells."""
         menu = wx.Menu()
         menu_schools = wx.Menu()
-        item_select = menu.Append(wx.ID_ANY, __("Add all spells"))
-        item_clear  = menu.Append(wx.ID_ANY, __("Remove all spells"))
+        item_select = menu.Append(wx.ID_ANY, __("Add all"))
+        item_clear  = menu.Append(wx.ID_ANY, __("Remove all"))
         item_school = menu.AppendSubMenu(menu_schools, __("Toggle all") + " ..")
         for school_name in sorted(metadata.Store.get("spell_schools", version=self.version)):
             item = menu_schools.Append(wx.ID_ANY, __(school_name))
@@ -146,8 +146,6 @@ class SpellsPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        acting, action = ("Toggling all %s" % school, "toggle all %s" % school) if school else \
-                         ("Removing all", "remove all") if clear else ("Adding all", "add all")
         spells2 = self._state.copy()
         if school:
             school_spells = metadata.Store.get("spell_schools", version=self.version)[school]
@@ -159,10 +157,17 @@ class SpellsPlugin(object):
         if spells2 == self._state:
             return
 
-        label = "change %s spells: %s" % (self._hero.name, action)
-        h3sed.guibase.status("%s spells" % acting, flash=conf.StatusShortFlashLength, log=True)
+        # "change HERONAME spells: add|remove all"
+        # "change HERONAME spells: toggle SCHOOLNAME"
+        afterlbl = "toggle all %s" if school else "remove all" if clear else "add all"
+        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), )
+        cargs += ((afterlbl, school), ) if school else (afterlbl, )
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self, spells2)
-        self.parent.command(callable, name=label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_add(self, prop, value):

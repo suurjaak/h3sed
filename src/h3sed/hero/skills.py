@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  31.03.2026
+@modified  27.04.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -18,7 +18,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import controls
-from .. lib.i18n import translate as __
+from .. lib.i18n import format_nested, translate as __
 from .. import conf
 from .. import metadata
 
@@ -152,7 +152,7 @@ class SkillsPlugin(object):
 
         menu = wx.Menu()
         menu_level = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, __("Remove all skills"))
+        item_clear = menu.Append(wx.ID_ANY, __("Remove all"))
         menu.AppendSubMenu(menu_level, __("Set skill levels to") + " ..")
         for level_name in SKILL_LEVELS:
             item = menu_level.Append(wx.ID_ANY, __(level_name))
@@ -213,14 +213,20 @@ class SkillsPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        skill_name1 = self._state[rowindex].name
-        skill_name2 = skill_name2 if rowindex2 is None else self._state[rowindex2].name
-        if rowindex2 is None: acting, action, adverb = ("Changing", "change", "to")
-        else: acting, action, adverb = ("Swapping", "swap", "with")
-        label = "%s skills: %s %s %s" % (self._hero.name, __(skill_name1), adverb, __(skill_name2))
-        h3sed.guibase.status("%s %s" % (acting, label), flash=conf.StatusShortFlashLength, log=True)
+        # set HERONAME skills: slot SLOTNUMBER name SKILLNAME
+        # swap HERONAME skills: slot SLOTNUMBER and SLOTNUMBER
+        action = "set" if rowindex2 is None else "swap"
+        actionlbl, actionargs = "%s %s", (action, ("%s {}".format(self.name), self._hero.name))
+        afterargs = ("slot", rowindex + 1)
+        afterargs += ("name", skill_name2) if rowindex2 is None else ("and", rowindex2 + 1)
+        afterlbl = " ".join(["%s"] * len(afterargs))
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), (afterlbl, afterargs))
+
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self, rowindex, rowindex2, skill_name2)
-        self.parent.command(callable, name="%s %s" % (action, label))
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_remove_all(self, event):
@@ -234,10 +240,14 @@ class SkillsPlugin(object):
 
         if not self._state:
             return
-        h3sed.guibase.status("Removing all %s skills" % self._hero.name,
-                             flash=conf.StatusShortFlashLength, log=True)
+
+        # "remove HERONAME skills"
+        cname, cargs = "%s %s", ("remove", ("%s {}".format(self.name), self._hero.name))
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self)
-        self.parent.command(callable, name="remove %s skills" % self._hero.name)
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_set_level(self, event, level_name):
@@ -251,10 +261,15 @@ class SkillsPlugin(object):
 
         if not self._state or all(x.level == level_name for x in self._state):
             return
-        label = "%s skills to %s" % (self._hero.name, __(level_name))
-        h3sed.guibase.status("Setting %s" % label, flash=conf.StatusShortFlashLength, log=True)
+
+        # "set HERONAME skills: level LEVELNAME"
+        cname = "%s %s: %s %s"
+        cargs = ("set", ("%s {}".format(self.name), self._hero.name), "level", level_name)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self, level_name)
-        self.parent.command(callable, name="set %s" % label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
 def parse(hero_bytes, version):

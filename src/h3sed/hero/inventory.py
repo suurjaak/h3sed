@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  15.04.2026
+@modified  01.05.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -18,7 +18,7 @@ except ImportError: wx = None
 
 import h3sed
 from .. lib import util
-from .. lib.i18n import translate as __
+from .. lib.i18n import format_nested, translate as __
 from .. import conf
 from .. import metadata
 
@@ -147,10 +147,10 @@ class InventoryPlugin(object):
         """Returns wx.Menu with plugin-specific actions, like removing all inventory."""
         menu = wx.Menu()
         menu_compact = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, __("Remove all inventory"))
+        item_clear = menu.Append(wx.ID_ANY, __("Remove all"))
         item_send  = menu.Append(wx.ID_ANY, __("Equip all possible inventory"))
         item_swap  = menu.Append(wx.ID_ANY, __("Swap all possible inventory with equipment"))
-        menu.AppendSubMenu(menu_compact,    __("Compact inventory") + " ..")
+        menu.AppendSubMenu(menu_compact,    __("Compact %s", __("inventory")) + " ..")
         item_current   = menu_compact.Append(wx.ID_ANY, __("In &current order"))
         item_name      = menu_compact.Append(wx.ID_ANY, __("In &name order"))
         item_slot_name = menu_compact.Append(wx.ID_ANY, __("In &slot and name order"))
@@ -305,9 +305,13 @@ class InventoryPlugin(object):
 
     def compact_items(self, order=(), reverse=False):
         """Compacts inventory items to top, in specified order if any."""
+        orderlbl = " and ".join(order) if order else "reverse" if reverse else "current"
+        afterlbl, afterargs = "compact %s", ("in %s order" % orderlbl, )
+
         items = self._state.make_compact(order, reverse)
         if items == self._state:
-            h3sed.guibase.status("No change from compacting inventory",
+            h3sed.guibase.status(format_nested("No change from: %s", (afterlbl, afterargs),
+                                               do_translate=True),
                                  flash=conf.StatusShortFlashLength)
             return
 
@@ -317,11 +321,14 @@ class InventoryPlugin(object):
             self.render()
             return True
 
-        label = " and ".join(order) if order else "reverse" if reverse else "current"
-        h3sed.guibase.status("Compacting inventory in %s order", label,
-                             flash=conf.StatusShortFlashLength, log=True)
+        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), (afterlbl, afterargs))
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self, items)
-        self.parent.command(callable, name="compact inventory in %s order" % label)
+        self.parent.command(callable, name=(cname, cargs))
+        return
 
 
     def on_change(self, prop, value, ctrl, rowindex):
@@ -347,8 +354,7 @@ class InventoryPlugin(object):
         """
         if not any(self._state):
             return
-        acting, action = ("Swapping", "swap") if swap else ("Removing", "remove") if swap is None \
-                         else ("Equipping", "equip")
+        action = "swap all" if swap else "remove all" if swap is None else "equip all"
         if swap:
             eq2, inv2 = self._hero.make_equipment_swap()
         elif swap is None:
@@ -356,13 +362,18 @@ class InventoryPlugin(object):
         else:
             eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=False)
         if inv2 == self._state and eq2 in (None, self._hero.equipment):
-            h3sed.guibase.status("No change from %s all inventory" % acting.lower(),
-                                 flash=conf.StatusShortFlashLength, log=True)
+            h3sed.guibase.status(format_nested("No change from: %s", action, do_translate=True),
+                                 flash=conf.StatusShortFlashLength)
             return
-        label = "change %s inventory: %s all" % (self._hero.name, action)
-        h3sed.guibase.status("%s all inventory" % acting, flash=conf.StatusShortFlashLength, log=True)
+
+        # "change HERONAME inventory: swap|remove|equip all"
+        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), action)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(self.change_artifacts, inv2, eq2)
-        self.parent.command(callable, name=label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
     def on_change_row(self, event, rowindex,
@@ -377,16 +388,17 @@ class InventoryPlugin(object):
         @param   direction  -1 to move to inventory top, +1 to move to inventory bottom
         @param   delete     whether to delete inventory row instead
         """
+        action = "change"
         if location is not None:
             try: eq2, inv2 = self._hero.make_artifact_swap(location, rowindex)
             except Exception as e:
                 wx.MessageBox(str(e), conf.Title, wx.OK | wx.ICON_WARNING)
                 return
-            action, detail = "change", "swap with equipment %s" % location
+            afterargs = (("swap %s", "slot"), rowindex + 1, "and", "equipment", location)
         elif rowindex2 is not None:
             eq2, inv2 = None, self._state.copy()
             inv2[rowindex], inv2[rowindex2] = inv2[rowindex2], inv2[rowindex]
-            action, detail = "change", "swap with slot %s" % (rowindex2 + 1)
+            afterargs = (("swap %s", "slot"), rowindex + 1, "and", "slot", rowindex2 + 1)
         elif direction:
             eq2, inv2 = None, self._state.copy()
             current_value = inv2[rowindex]
@@ -395,25 +407,40 @@ class InventoryPlugin(object):
                 lastindex = next((len(inv2) - i for i, x in enumerate(inv2[::-1], 1) if x), -1)
                 inv2[lastindex + 1] = current_value
             else: inv2.insert(0, current_value)
-            action, detail = ("change", "move to %s" % ("top" if direction < 0 else "bottom"))
+            afterargs = (("move %s to", [("%s %s", "slot", rowindex + 1)]),
+                         "top" if direction < 0 else "bottom")
         elif delete:
             eq2, inv2 = None, self._state.copy()
             inv2.pop(rowindex)
-            action, detail = ("change", "delete")
+            afterargs = ("delete", "slot", rowindex + 1)
         elif artifact:
             eq2, inv2 = None, self._state.copy()
             inv2[rowindex] = artifact
-            action, detail = ("set", artifact)
+            action = "set"
+            afterargs = ("slot", rowindex + 1, artifact)
         else:
             eq2, inv2 = None, self._state.copy()
             inv2.insert(rowindex, None)
-            action, detail = ("change", "insert <blank>")
+            afterargs = ("slot", rowindex + 1, "insert blank")
 
         if inv2 == self._state and eq2 in (None, self._hero.equipment):
             return
-        label = "%s %s inventory: slot %s %s" % (action, self._hero.name, rowindex + 1, detail)
+
+        # "change HERONAME inventory: swap slot SLOTNUMBER and equipment LOCATION"
+        # "change HERONAME inventory: swap slot SLOTNUMBER and slot SLOTNUMBER"
+        # "change HERONAME inventory: move slot SLOTNUMBER to top|bottom"
+        # "change HERONAME inventory: delete slot SLOTNUMBER"
+        # "set HERONAME inventory: slot SLOTNUMBER ARTIFACT"
+        # "change HERONAME inventory: slot SLOTNUMBER insert <blank>"
+        actionlbl, actionargs = "%s %s", (action, ("%s {}".format(self.name), self._hero.name))
+        afterlbl = " ".join(["%s"] * len(afterargs))
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), (afterlbl, afterargs))
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(self.change_artifacts, inv2, eq2)
-        self.parent.command(callable, name=label)
+        self.parent.command(callable, name=(cname, cargs))
+        return
 
 
     def on_combo_artifact(self, event, rowindex):
@@ -424,18 +451,17 @@ class InventoryPlugin(object):
 
         inv2 = self._state.copy()
         if artifact_on_row in COMBINATION_ARTIFACTS:
-            action, acting = "disassemble", "Disassembling"
+            action = "disassemble"
             combo_artifact = artifact_on_row
             components = COMBINATION_ARTIFACTS[combo_artifact]
             if len(components) + sum(map(bool, self._state)) - 1 > len(self._state):
-                h3sed.guibase.status("Inventory too full to disassemble %s" % __(combo_artifact),
-                                     flash=conf.StatusShortFlashLength)
-                return # Inventory too full
+                h3sed.guibase.status(__("Inventory too full"), flash=conf.StatusShortFlashLength)
+                return
             inv2[rowindex] = components[0]
             inv2 = inv2.make_compact()
             inv2.extend(components[1:])
         else:
-            action, acting = "assemble", "Assembling"
+            action = "assemble"
             combo_artifact = COMBINATION_COMPONENTS[artifact_on_row]
             components = list(COMBINATION_ARTIFACTS[combo_artifact])
             components.remove(artifact_on_row)
@@ -443,11 +469,14 @@ class InventoryPlugin(object):
             while components: inv2.remove(components.pop())
             inv2 = inv2.make_compact()
 
-        label = "change %s inventory: %s %s" % ((self._hero.name), action, __(combo_artifact))
-        h3sed.guibase.status("%s inventory %s" % (acting, __(combo_artifact)),
-                             flash=conf.StatusShortFlashLength, log=True)
+        # "change HERONAME inventory: assemble|disassemble ARTIFACT"
+        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        cname, cargs = "%s: %s %s", ((actionlbl, actionargs), action, combo_artifact)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
         callable = functools.partial(self.change_artifacts, inv2)
-        self.parent.command(callable, name=label)
+        self.parent.command(callable, name=(cname, cargs))
 
 
 def parse(hero_bytes, version):
