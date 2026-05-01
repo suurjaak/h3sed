@@ -169,6 +169,7 @@ Source Dependencies
 
 If running from source code, h3sed needs Python 2.7 or Python 3.6 or higher,
 and the following 3rd-party Python packages:
+* polib (https://github.com/izimobil/polib/)
 * pyyaml (https://pyyaml.org)
 * step (https://pypi.org/project/step-template)
 * wxPython 4.0+ (https://wxpython.org) (optional, required for graphical interface)
