@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  29.04.2026
+@modified  01.05.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -243,6 +243,7 @@ class EquipmentPlugin(object):
         """
         result = False
         if self._ctrls and all(self._ctrls.values()): # All built and still valid
+            self._panel.Freeze()
             for prop in self.props():
                 name, slot = prop["name"], prop.get("slot", prop["name"])
                 cc = [""] + metadata.Store.get("artifacts", category=slot, version=self.version)
@@ -259,6 +260,7 @@ class EquipmentPlugin(object):
                 infoctrl = self._ctrls["%s-info" % name]
                 infoctrl.Label = self.format_stats_bonus(prop)
                 infoctrl.ToolTip = infoctrl.Label
+            self._panel.Thaw()
         else:
             self._ctrls, result = h3sed.gui.build(self, self._panel), True
         self.update_reserved_slots()
