@@ -3,13 +3,14 @@
 Internationalization support, uses gettext-based translation files (.po and .mo).
 
 Translations by default are case-sensitive, with case-insensitve fallback.
+Finally with ampersand-less fallback.
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     23.03.2026
-@modified    22.04.2026
+@modified    01.05.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -34,6 +35,7 @@ FORMATS = {"mo": "Machine Object translation file", "po": "Portable Object trans
 ## Directory-loaded translations, as {language code: {"code", "name", "path", "data", "lower"}}
 AUTOLOADED = {}
 
+ACCELKEY = "&"
 DEFAULTLANG = "en"
 DEFAULTNAME = "English"
 CURRENTLANG = "en"
@@ -145,13 +147,14 @@ def translate(text, *args, **kwargs):
 
 def translate_back(text):
     """Returns original text for given translation in current language, or given text if no match."""
+    if not isinstance(text, str): return text
     lang = CURRENTLANG
     if lang not in LANGUAGES or not LANGUAGES[lang].get("data"): return text
 
     has_entry = lambda entries, text, conv=None: any(text == (t if conv is None else conv(t))
                                                      for t, _, _ in entries)
     results = [k for k, v in LANGUAGES[lang]["data"].items() if has_entry(v, text)]
-    if not results and hasattr(text, "lower"):
+    if not results:
         ltext = text.lower()
         results = [k for k, v in LANGUAGES[lang]["data"].items() if has_entry(v, ltext, str.lower)]
     return min(results, default=text, key=lambda x: abs(len(x) - len(text))) # Closest-length match
@@ -181,17 +184,27 @@ def translate_from_context(stack_depth, text, *args, **kwargs):
 
 def get_entries(lang, text):
     """Returns translations matching text, as [(translation, filename, line number)] if any."""
+    if not isinstance(text, str): return []
     if lang not in LANGUAGES or not LANGUAGES[lang].get("data"): return []
     if text in LANGUAGES[lang]["data"]: return LANGUAGES[lang]["data"][text]
 
-    lowertext = text.lower() if hasattr(text, "lower") else text
+    lowertext = text.lower()
     textkey = LANGUAGES[lang]["lower"].get(lowertext, lowertext) # Case-insensitive match
+    strip = lambda x: x
+
+    if textkey not in LANGUAGES[lang]["data"] and ACCELKEY: # Find ampersand-less match
+        strip = lambda x: x.replace(ACCELKEY, "")
+        textkey = next((v for k, v in LANGUAGES[lang]["lower"].items()
+                        if strip(k) in (lowertext, strip(lowertext))), None)
+        textkey = textkey or next((x for x in LANGUAGES[lang]["data"]
+                                   if strip(x) in (text, strip(text))), textkey)
+
     if textkey in LANGUAGES[lang]["data"]:
-        xform = str.lower
+        transform = str.lower
         if text != lowertext:
             CASE_TRANSFORMERS = (str.upper, str.title, str.capitalize)
-            xform = next((f for f in CASE_TRANSFORMERS if f(text) == text), xform)
-        return [(xform(t), f, n) for t, f, n in LANGUAGES[lang]["data"][textkey]]
+            transform = next((f for f in CASE_TRANSFORMERS if f(text) == text), transform)
+        return [(transform(strip(t)), f, n) for t, f, n in LANGUAGES[lang]["data"][textkey]]
     return []
 
 
@@ -224,6 +237,22 @@ def format_text(text, *args, **kwargs):
         except (KeyError, IndexError, TypeError, ValueError): pass
         else:   break # for fmter
     return result
+
+
+def format_nested(text, *args, do_translate=False):
+    """
+    Returns text formatted with positional % arguments, arguments processed recursively
+    for nested (text, *args), all texts and arguments optionally translated.
+    """
+    args2 = []
+    for arg in args:
+        if isinstance(arg, (list, tuple)) and len(arg) > 1 and isinstance(arg[0], str):
+            subargs = arg[1] if isinstance(arg[1], (list, tuple)) else arg[1:]
+            arg = format_nested(arg[0], *subargs, do_translate=do_translate)
+        elif do_translate: arg = translate_from_context(2, arg)
+        args2.append(arg)
+    if do_translate: return translate_from_context(2, text, *args2)
+    return format_text(text, *args2)
 
 
 def read_translation(filepath):
