@@ -52,6 +52,20 @@ This program is based on unofficial information
 gathered from observation and online forums.
 
 
+Interface language
+------------------
+
+h3sed supports translating all texts in the user interface, especially all game-related
+content, including creatures and artifacts like Water Elemental and Boots of Speed.
+
+Some languages have been included with the program, and more can be added via program menu
+File -> Options -> Interface language -> Add language. For creating a new translation,
+use the template file [etc/i18n/h3sed.en.pot](src/h3sed/etc/i18n/h3sed.en.pot) as basis;
+this contains all translatable texts in the user interface.
+
+Please contact the author to include your language file with the program, or to amend an included one.
+
+
 Command-line Interface
 ----------------------
 
