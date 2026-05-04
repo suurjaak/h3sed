@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    24.04.2026
+@modified    04.05.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -221,7 +221,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         text_file.SetEditable(False)
         button_open.SetDefault()
         button_open.ToolTip    = __("Open currently selected file")
-        button_refresh.ToolTip = __("Refresh file panel  (F5)")
+        button_refresh.ToolTip = __("Refresh file panel") + "  (F5)"
         button_browse.ToolTip  = __("Open dialog for selecting a file")
         dir_ctrl.ShowHidden(True)
         choice, tree = dir_ctrl.GetFilterListCtrl(), dir_ctrl.GetTreeCtrl()
@@ -274,11 +274,12 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         menu.Append(menu_help, __("&Help"))
         menu.Freeze()
 
+        CTRL = "Cmd" if "darwin" == sys.platform else "Ctrl"
         menu_open = self.menu_open = menu_file.Append(
-            wx.ID_ANY, __("&Open savefile...\tCtrl-O"), __("Choose a savefile to open")
+            wx.ID_ANY, __("&Open savefile") + "..\t%s-O" % CTRL, __("Choose a savefile to open")
         )
         menu_close = self.menu_close = menu_file.Append(
-            wx.ID_ANY, __("&Close file\tCtrl-F4"), __("Close current savefile")
+            wx.ID_ANY, __("&Close file") + "\t%s-F4" % CTRL, __("Close current savefile")
         )
         menu_reload = self.menu_reload = menu_file.Append(
             wx.ID_ANY, __("Re&load"), __("Reload savefile, losing any current changes")
@@ -287,7 +288,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             wx.ID_ANY, __("&Save"), __("Save the active file")
         )
         menu_save_as = self.menu_save_as = menu_file.Append(
-            wx.ID_ANY, __("Save &as..."), __("Save the active file under a new name")
+            wx.ID_ANY, __("Save &as") + "..", __("Save the active file under a new name")
         )
         menu_recent = wx.Menu()
         menu_file.AppendSubMenu(menu_recent, __("&Recent files"), __("Recently opened files"))
@@ -338,7 +339,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         )
         menu_file.AppendSeparator()
         menu_exit = self.menu_exit = \
-            menu_file.Append(wx.ID_ANY, __("E&xit\tAlt-X"), __("Exit"))
+            menu_file.Append(wx.ID_ANY, __("E&xit") + "\tAlt-X", __("Exit"))
 
 
         menu_undo = self.menu_undo = menu_edit.Append(
@@ -363,7 +364,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             __("Show &log window"), __("Show/hide the log messages window"),
             kind=wx.ITEM_CHECK)
         menu_console = self.menu_console = menu_help.Append(wx.ID_ANY,
-            __("Show Python &console\tCtrl-E"),
+            __("Show Python &console") + "\t%s-E" % CTRL,
             __("Show/hide a Python shell environment window"), kind=wx.ITEM_CHECK)
         menu_help.AppendSeparator()
         menu_about = self.menu_about = menu_help.Append(
@@ -819,9 +820,9 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         self.button_clear_log.Label = __("C&lear log")
         self.button_open   .Label   = __("&Open")
         self.button_refresh.Label   = __("&Refresh")
-        self.button_browse .Label   = __("&Browse..")
+        self.button_browse .Label   = __("&Browse") + ".."
         self.button_open   .ToolTip = __("Open currently selected file")
-        self.button_refresh.ToolTip = __("Refresh file panel  (F5)")
+        self.button_refresh.ToolTip = __("Refresh file panel") + "  (F5)"
         self.button_browse .ToolTip = __("Open dialog for selecting a file")
         self.frame_console.Title    = __("%s Console", conf.Title)
         self.button_clear_log.Parent.Layout()
@@ -916,7 +917,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     def save_file_as(self, path):
         """Opens file dialog and saves file under new name."""
         filename1 = filename2 = path
-        title = __("Save %s as..", os.path.split(filename1)[-1])
+        title = __("Save %s as", os.path.split(filename1)[-1]) + ".."
         with wx.FileDialog(self,
             message=title, defaultDir=os.path.split(filename1)[0],
             defaultFile=os.path.basename(filename1),
@@ -1757,7 +1758,7 @@ class SavefilePage(wx.Panel):
         filename1 = filename2 = self.filename
 
         if rename:
-            title = __("Save %s as..", os.path.split(self.filename)[-1])
+            title = __("Save %s as", os.path.split(self.filename)[-1]) + ".."
             with wx.FileDialog(self,
                 message=title, defaultDir=os.path.split(self.filename)[0],
                 defaultFile=os.path.basename(self.filename),

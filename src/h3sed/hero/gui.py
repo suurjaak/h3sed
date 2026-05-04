@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  01.05.2026
+@modified  04.05.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -178,11 +178,11 @@ class HeroPlugin(object):
         html = wx.html.HtmlWindow(indexpanel)
         tabs.AddPage(wx.Window(tabs), " %s " % __("INDEX"))
 
+        CTRL = "Cmd" if "darwin" == sys.platform else "Ctrl"
         search.SetDescriptiveText(__("Search heroes"))
         search.ShowSearchButton(True)
         search.ShowCancelButton(True)
-        search.ToolTip = __("Filter hero index on any matching text (%s-F)",
-                            "Cmd" if "darwin" == sys.platform else "Ctrl")
+        search.ToolTip = __("Filter hero index on any matching text") + " (%s-F)" % CTRL
         search.Bind(wx.EVT_CHAR, self.on_search)
         search.Bind(wx.EVT_TEXT, self.on_search)
         search.Bind(wx.EVT_SEARCH, self.on_search) if hasattr(wx, "EVT_SEARCH") else None
@@ -200,17 +200,16 @@ class HeroPlugin(object):
         combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
         combo.Bind(wx.EVT_KEY_DOWN, self.on_key_select)
 
-        CTRL = "Cmd" if "darwin" == sys.platform else "Ctrl"
         bmp1 = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR, (20, 20))
         bmp2 = wx.ArtProvider.GetBitmap(wx.ART_COPY,        wx.ART_TOOLBAR, (20, 20))
         bmp3 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,       wx.ART_TOOLBAR, (20, 20))
         bmp4 = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE,   wx.ART_TOOLBAR, (16, 16))
-        tb.AddTool(wx.ID_INFO,    "", bmp1, shortHelp=__("Show hero full character sheet\t%s-I", CTRL))
+        tb.AddTool(wx.ID_INFO,  "", bmp1, shortHelp=__("Show hero full character sheet") + "\t%s-I" % CTRL)
         tb.AddSeparator()
-        tb.AddTool(wx.ID_COPY,    "", bmp2, shortHelp=__("Copy current hero data to clipboard"))
-        tb.AddTool(wx.ID_PASTE,   "", bmp3, shortHelp=__("Paste data from clipboard to current hero"))
+        tb.AddTool(wx.ID_COPY,  "", bmp2, shortHelp=__("Copy current hero data to clipboard"))
+        tb.AddTool(wx.ID_PASTE, "", bmp3, shortHelp=__("Paste data from clipboard to current hero"))
         tb.AddSeparator()
-        tb.AddTool(wx.ID_SAVE,    "", bmp4, shortHelp=__("Save current hero to file"))
+        tb.AddTool(wx.ID_SAVE,  "", bmp4, shortHelp=__("Save current hero to file"))
         tb.Bind(wx.EVT_TOOL, self.on_charsheet,  id=wx.ID_INFO)
         tb.Bind(wx.EVT_TOOL, self.on_copy_hero,  id=wx.ID_COPY)
         tb.Bind(wx.EVT_TOOL, self.on_paste_hero, id=wx.ID_PASTE)
@@ -722,7 +721,7 @@ class HeroPlugin(object):
         wx.YieldIfNeeded() # Allow dialog to disappear
         path = controls.get_dialog_path(self._dialog_export)
         format = os.path.splitext(path)[-1].strip(".").lower()
-        guibase.status(__("Exporting %s..", path), flash=True)
+        guibase.status(__("Exporting %s", path) + "..", flash=True)
         templates.export_heroes(path, format, self._index["visible"], self.savefile,
                                 categories=self._index["toggles"])
         guibase.status("Exported %s (%s).", path, util.format_bytes(os.path.getsize(path)),
