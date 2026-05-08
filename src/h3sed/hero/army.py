@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  01.05.2026
+@modified  08.05.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -176,7 +176,7 @@ class ArmyPlugin(object):
     def make_common_menu(self):
         """Returns wx.Menu with plugin-specific actions, like removing all army stacks."""
         menu = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, __("Remove all"))
+        item_clear = menu.Append(wx.ID_ANY, __("Remove %s", __("all")))
         item_reset = menu.Append(wx.ID_ANY, __("Set army counts to 1"))
         menu.AppendSubMenu(self.make_rounding_menu(), __("Round army counts to") + " ..")
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_round_army, number=-1), item_reset)
@@ -188,7 +188,7 @@ class ArmyPlugin(object):
         """Returms wx.Menu for army row options."""
         menu = wx.Menu()
         menu_swap = wx.Menu()
-        menu.AppendSubMenu(menu_swap, __("Swap army slot with") + " ..")
+        menu.AppendSubMenu(menu_swap, __("Swap %s with", __("army slot")) + " ..")
         for stack_index, army_stack in enumerate(self._state):
             label = "%s: %s" % (__(army_stack.name), army_stack.count) if army_stack else __("<blank>")
             item = menu_swap.Append(wx.ID_ANY, "%s. %s" % (stack_index + 1, label))

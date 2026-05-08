@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  04.05.2026
+@modified  08.05.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -218,7 +218,7 @@ class HeroPlugin(object):
         tb.Realize()
 
         faction = wx.StaticText(heropanel)
-        menubutton = wx.Button(heropanel, label=__("Change all") + " ..")
+        menubutton = wx.Button(heropanel, label=__("Change %s", __("all")) + " ..")
         menubutton.ToolTip = __("Change multiple properties on page")
         menubutton.Bind(wx.EVT_BUTTON, self.on_hero_subtab_button)
 

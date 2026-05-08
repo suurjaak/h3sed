@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  28.04.2026
+@modified  08.05.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -117,9 +117,9 @@ class SpellsPlugin(object):
         """Returns wx.Menu with plugin-specific actions, like selecting or clearing all spells."""
         menu = wx.Menu()
         menu_schools = wx.Menu()
-        item_select = menu.Append(wx.ID_ANY, __("Add all"))
-        item_clear  = menu.Append(wx.ID_ANY, __("Remove all"))
-        item_school = menu.AppendSubMenu(menu_schools, __("Toggle all") + " ..")
+        item_select = menu.Append(wx.ID_ANY, __("Add %s", __("all")))
+        item_clear  = menu.Append(wx.ID_ANY, __("Remove %s", __("all")))
+        item_school = menu.AppendSubMenu(menu_schools, __("Toggle %s", __("all")) + " ..")
         for school_name in sorted(metadata.Store.get("spell_schools", version=self.version)):
             item = menu_schools.Append(wx.ID_ANY, __(school_name))
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_all, school=school_name), item)
@@ -158,8 +158,8 @@ class SpellsPlugin(object):
             return
 
         # "change HERONAME spells: add|remove all"
-        # "change HERONAME spells: toggle SCHOOLNAME"
-        afterlbl = "toggle all %s" if school else "remove all" if clear else "add all"
+        # "change HERONAME spells: toggle all SCHOOLNAME"
+        afterlbl = "toggle all %s" if school else ("remove %s" if clear else "add %s", ["all"])
         actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
         cname, cargs = "%s: %s", ((actionlbl, actionargs), )
         cargs += ((afterlbl, school), ) if school else (afterlbl, )
