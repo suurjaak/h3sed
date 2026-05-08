@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.04.2026
+@modified  08.05.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -152,7 +152,7 @@ class SkillsPlugin(object):
 
         menu = wx.Menu()
         menu_level = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, __("Remove all"))
+        item_clear = menu.Append(wx.ID_ANY, __("Remove %s", __("all")))
         menu.AppendSubMenu(menu_level, __("Set skill levels to") + " ..")
         for level_name in SKILL_LEVELS:
             item = menu_level.Append(wx.ID_ANY, __(level_name))
@@ -171,7 +171,7 @@ class SkillsPlugin(object):
         menu_change = wx.Menu()
         menu_swap   = wx.Menu()
         item_change = menu.AppendSubMenu(menu_change, __("Change skill to") + " ..")
-        item_swap   = menu.AppendSubMenu(menu_swap,   __("Swap skill slot with") + " ..")
+        item_swap   = menu.AppendSubMenu(menu_swap,   __("Swap %s with", __("skill slot")) + " ..")
         for skill_name, skill_label in zip(SKILLS, labels):
             item = menu_change.Append(wx.ID_ANY, skill_label)
             kwargs = dict(rowindex=rowindex, skill_name2=skill_name)

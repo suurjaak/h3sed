@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  01.05.2026
+@modified  08.05.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -270,7 +270,7 @@ class EquipmentPlugin(object):
     def make_common_menu(self):
         """Returns wx.Menu with plugin-specific actions, like removing all equipment."""
         menu = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, __("Remove all"))
+        item_clear = menu.Append(wx.ID_ANY, __("Remove %s", __("all")))
         item_send  = menu.Append(wx.ID_ANY, __("Send all equipment to inventory"))
         item_recv  = menu.Append(wx.ID_ANY, __("Equip all possible equipment from inventory"))
         item_swap  = menu.Append(wx.ID_ANY, __("Swap all possible equipment with inventory"))
@@ -294,7 +294,7 @@ class EquipmentPlugin(object):
         swap_label = "Swap with" if self._state[location] else "Equip from"
         menu = wx.Menu()
         menu_equip = wx.Menu()
-        item_send  = menu.Append(wx.ID_ANY, __("Send to inventory"))
+        item_send  = menu.Append(wx.ID_ANY, __("Send %s", __("to inventory")))
         item_equip = menu.AppendSubMenu(menu_equip, __("%s inventory" % swap_label) + " ..")
 
         sorted_inv = sorted(enumerate(self._hero.inventory),
@@ -323,12 +323,12 @@ class EquipmentPlugin(object):
                 menu.Bind(wx.EVT_MENU, functools.partial(self.on_swap_location, **kwargs), item)
                 if location == location2:
                     menu_swap.Enable(item.Id, False)
-            item_swap = menu.AppendSubMenu(menu_swap, __("Swap with location") + " ..")
+            item_swap = menu.AppendSubMenu(menu_swap, __("Swap %s", __("with location")) + " ..")
             if not any(self._state[l] for l in SLOT_TO_LOCATIONS[slot]):
                 menu.Enable(item_swap.Id, False)
 
         if location in reserved_locations or self._state[location] in COMBINATION_ARTIFACTS:
-            item_combo = menu.Append(wx.ID_ANY, __("Disassemble combination artifact"))
+            item_combo = menu.Append(wx.ID_ANY, __("Disassemble %s", __("combination artifact")))
             kwargs = dict(location=location)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item_combo)
         elif self._state[location]:
@@ -336,7 +336,7 @@ class EquipmentPlugin(object):
                                   if self._state[location] in bb), (None, None))
             if combo and all(x in self._state for x in others):
                 menu_combo = wx.Menu()
-                menu.AppendSubMenu(menu_combo, __("Assemble combination artifact"))
+                menu.AppendSubMenu(menu_combo, __("Assemble %s", __("combination artifact")))
                 item = menu_combo.Append(wx.ID_ANY, __(combo))
                 kwargs = dict(location=location)
                 menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item)
@@ -443,16 +443,16 @@ class EquipmentPlugin(object):
         """
         if send and recv:
             eq2, inv2 = self._hero.make_equipment_swap()
-            afterargs = ("swap all", "with inventory")
+            afterargs = (("swap %s", ["all"]), "with inventory")
         elif not send and not recv:
             eq2, inv2 = h3sed.hero.Equipment.factory(self.version), None
-            afterargs = ("remove all", )
+            afterargs = (("remove %s", ["all"]), )
         elif recv:
             eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=False)
-            afterargs = ("equip all", "from inventory")
+            afterargs = (("equip %s", ["all"]), "from inventory")
         else:
             eq2, inv2 = self._hero.make_artifacts_transfer(to_inventory=True)
-            afterargs = ("send all", "to inventory")
+            afterargs = (("send %s", ["all"]), "to inventory")
         afterlbl = " ".join(["%s"] * len(afterargs))
 
         if eq2 == self._state and inv2 in (None, self._hero.inventory):
@@ -514,7 +514,7 @@ class EquipmentPlugin(object):
 
         # "change HERONAME equipment: assemble|disassemble ARTIFACT"
         actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
-        cname, cargs = "%s: %s %s", ((actionlbl, actionargs), action, combo_artifact)
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), ("{} %s".format(action), combo_artifact))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)

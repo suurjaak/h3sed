@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    04.05.2026
+@modified    08.05.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -2291,7 +2291,7 @@ def build(plugin, panel):
                 if prop.get("orderable"):
                     c1, c2 = (wx.Button(panel, label=l, name=n, size=(20 + BTN_WPLUS, -1))
                               for l, n in zip(("v", "ʌ"), ("down", "up")))
-                    c1.ToolTip, c2.ToolTip = __("Move down"), __("Move up")
+                    c1.ToolTip, c2.ToolTip = __("Move %s", __("down")), __("Move %s", __("up"))
                     c1.Enabled, c2.Enabled = (i < len(state) - 1), bool(i)
                     c1.Bind(wx.EVT_BUTTON, make_move_handler(c1, i, +1, ("v", "ʌ")))
                     c2.Bind(wx.EVT_BUTTON, make_move_handler(c2, i, -1, ("v", "ʌ")))

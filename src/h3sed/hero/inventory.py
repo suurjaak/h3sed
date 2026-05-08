@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  01.05.2026
+@modified  08.05.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -147,7 +147,7 @@ class InventoryPlugin(object):
         """Returns wx.Menu with plugin-specific actions, like removing all inventory."""
         menu = wx.Menu()
         menu_compact = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, __("Remove all"))
+        item_clear = menu.Append(wx.ID_ANY, __("Remove %s", __("all")))
         item_send  = menu.Append(wx.ID_ANY, __("Equip all possible inventory"))
         item_swap  = menu.Append(wx.ID_ANY, __("Swap all possible inventory with equipment"))
         menu.AppendSubMenu(menu_compact,    __("Compact %s", __("inventory")) + " ..")
@@ -185,14 +185,14 @@ class InventoryPlugin(object):
         item_equip = menu.AppendSubMenu(menu_equip, __("Swap with equipment slot") + " ..")
 
         if artifact_on_row in COMBINATION_ARTIFACTS:
-            item_combo = menu.Append(wx.ID_ANY, __("Disassemble combination artifact"))
+            item_combo = menu.Append(wx.ID_ANY, __("Disassemble %s", __("combination artifact")))
             kwargs = dict(rowindex=rowindex)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item_combo)
         elif artifact_on_row in COMBINATION_COMPONENTS:
             components = COMBINATION_ARTIFACTS[COMBINATION_COMPONENTS[artifact_on_row]]
             if all(x in self._state for x in components):
                 menu_combo = wx.Menu()
-                menu.AppendSubMenu(menu_combo, __("Assemble combination artifact"))
+                menu.AppendSubMenu(menu_combo, __("Assemble %s", __("combination artifact")))
                 item = menu_combo.Append(wx.ID_ANY, __(COMBINATION_COMPONENTS[artifact_on_row]))
                 kwargs = dict(rowindex=rowindex)
                 menu.Bind(wx.EVT_MENU, functools.partial(self.on_combo_artifact, **kwargs), item)
@@ -200,8 +200,8 @@ class InventoryPlugin(object):
         menu.AppendSeparator()
         item_blank = menu.Append(wx.ID_ANY, __("Insert blank"))
         item_drop  = menu.Append(wx.ID_ANY, __("Remove row"))
-        item_move  = menu.AppendSubMenu(menu_move, __("Move to inventory") + " ..")
-        item_swap  = menu.AppendSubMenu(menu_swap, __("Swap with inventory slot") + " ..")
+        item_move  = menu.AppendSubMenu(menu_move, __("Move %s", __("to inventory")) + " ..")
+        item_swap  = menu.AppendSubMenu(menu_swap, __("Swap %s", __("with inventory slot")) + " ..")
 
         for category in list(SLOT_TO_LOCATIONS) + ["scroll", "inventory", "combined"]:
             candidates = metadata.Store.get("artifacts", category=category, version=self.version)
@@ -354,7 +354,7 @@ class InventoryPlugin(object):
         """
         if not any(self._state):
             return
-        action = "swap all" if swap else "remove all" if swap is None else "equip all"
+        action = ("swap %s" if swap else "remove %s" if swap is None else "equip %s", ["all"])
         if swap:
             eq2, inv2 = self._hero.make_equipment_swap()
         elif swap is None:
@@ -471,7 +471,7 @@ class InventoryPlugin(object):
 
         # "change HERONAME inventory: assemble|disassemble ARTIFACT"
         actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
-        cname, cargs = "%s: %s %s", ((actionlbl, actionargs), action, combo_artifact)
+        cname, cargs = "%s: %s", ((actionlbl, actionargs), ("{} %s".format(action), combo_artifact))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)
