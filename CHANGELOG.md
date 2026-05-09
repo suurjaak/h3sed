@@ -1,12 +1,13 @@
 CHANGELOG
 =========
 
-3.6, 2026-05-01
+3.6, 2026-05-09
 ---------------
 - add support for switching UI language
 - add user-defined functions
 - add user function to show combination artifacts over player factions
 - set map description as tooltip to map description box
+- minor UI tweaks and fixes
 
 
 3.5, 2026-02-27
