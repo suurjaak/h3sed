@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  08.05.2026
+@modified  09.05.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -203,7 +203,9 @@ class InventoryPlugin(object):
         item_move  = menu.AppendSubMenu(menu_move, __("Move %s", __("to inventory")) + " ..")
         item_swap  = menu.AppendSubMenu(menu_swap, __("Swap %s", __("with inventory slot")) + " ..")
 
-        for category in list(SLOT_TO_LOCATIONS) + ["scroll", "inventory", "combined"]:
+        categories = [LOCATION_TO_SLOT.get(x) for x in self._hero.equipment]
+        categories = sorted(set(categories), key=categories.index)
+        for category in categories + ["scroll", "inventory", "combined"]:
             candidates = metadata.Store.get("artifacts", category=category, version=self.version)
             if "inventory" == category:
                 candidates = [x for x in candidates
@@ -223,6 +225,7 @@ class InventoryPlugin(object):
                 or "combined" == category and artifact_on_row in COMBINATION_ARTIFACTS:
                     item_category.Font = item_category.Font.Bold()
             menu_set.Append(item_category)
+            if category == categories[-1]: menu_set.AppendSeparator()
             for artifact_candidate in candidates:
                 label = (__ if "combined" == category else self.format_artifact)(artifact_candidate)
                 item_candidate = wx.MenuItem(menu_category, wx.ID_ANY, label)
