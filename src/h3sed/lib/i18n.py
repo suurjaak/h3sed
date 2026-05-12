@@ -2,15 +2,15 @@
 """
 Internationalization support, uses gettext-based translation files (.po and .mo).
 
-Translations by default are case-sensitive, with case-insensitve fallback.
-Finally with ampersand-less fallback.
+Translations by default are case-sensitive, with case-insensitve fallback,
+finally with fuzzy match fallback (without normalization characters).
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     23.03.2026
-@modified    01.05.2026
+@modified    12.05.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -26,29 +26,33 @@ import polib
 logger = logging.getLogger(__name__)
 
 
-## {language code: {"code", "name", ?"path", ?"data", ?"auto", ?"extra", ?"lower"}}
+## {language code: {"code", "name", ?"path", ?"data", ?"auto", ?"extra", ?"normal"}}
 LANGUAGES = {"en": {"code": "en", "name": "English"}}
 
 ## Supported translation file formats, as {dotless format suffix: format label}
 FORMATS = {"mo": "Machine Object translation file", "po": "Portable Object translation file"}
 
-## Directory-loaded translations, as {language code: {"code", "name", "path", "data", "lower"}}
+## Directory-loaded translations, as {language code: {"code", "name", "path", "data", "normal"}}
 AUTOLOADED = {}
 
-ACCELKEY = "&"
+NORMALIZE = "&"
 DEFAULTLANG = "en"
 DEFAULTNAME = "English"
 CURRENTLANG = "en"
 
 
-def init(directory, config=None):
+def init(directory=None, config=None, normalize="&"):
     """
     Initializes translation
 
     @param   directory  path where to seek translation files
     @param   config     additional configuration as {language code: {path, ?name}}
+    @param   normalize  characters to strip when falling back to fuzzy match
     """
-    for path in glob.glob(os.path.join(directory, "*")):
+    global NORMALIZE
+    NORMALIZE = normalize or ""
+    
+    for path in glob.glob(os.path.join(directory, "*")) if directory else ():
         if not os.path.isfile(path) or not os.path.getsize(path) \
         or not path.lower().endswith(tuple(".%s" % x for x in FORMATS)):
             continue # for path
@@ -59,17 +63,13 @@ def init(directory, config=None):
             LANGUAGES[lang] = dict(opts, auto=True)
 
     for lang, opts in config.items() if config else ():
-        myopts = {"name": opts["name"]} if opts.get("name") else {}
-        if not opts.get("path") and myopts and lang in LANGUAGES:
-            LANGUAGES[lang].update(myopts, extra=True)
+        if not opts.get("path") and opts.get("name") and lang in LANGUAGES:
+            LANGUAGES[lang].update(name=opts["name"], extra=True) # Allow adding name for language
             continue # for lang
         if not os.path.isfile(opts.get("path") or ""):
             logger.warning("Nonexistent translation file for language %r: %s.", lang, opts)
             continue # for lang
-        opts, err = read_translation(opts["path"])
-        if opts:
-            lang = opts["code"]
-            LANGUAGES.setdefault(lang, {}).update(opts, extra=True)
+        add_translation(opts["path"], name=opts.get("name"))
 
 
 def get_current_language():
@@ -94,18 +94,20 @@ def get_all_languages():
     return {lang: dict(opts) for lang, opts in LANGUAGES.items()}
 
 
-def add_translation(filepath):
+def add_translation(filepath, name=None):
     """Adds a language from translation file, returns (language options, None) or (None, error)."""
     opts, err = read_translation(filepath)
     if err: return (None, err)
+    if name: opts["name"] = name
     lang = opts["code"]
     if lang in LANGUAGES and lang == opts["name"]:
         opts["name"] = LANGUAGES[lang]["name"] # Hopefully the existing name is more than just code
 
-    LANGUAGES.setdefault(lang, {}).update(opts, extra=True)
     if lang in AUTOLOADED:
-        for key in ("data", "lower"): # Retain auto-loaded base texts
-            LANGUAGES[lang][key] = dict(AUTOLOADED[lang][key], **opts[key])
+        opts["data"] = dict(AUTOLOADED[lang]["data"], **opts["data"]) # Override auto with new
+        for textkey, texts in AUTOLOADED[lang]["normal"].items():
+            opts["normal"].setdefault(textkey, set()).update(texts)
+    LANGUAGES.setdefault(lang, {}).update(opts, extra=True)
     return (dict(LANGUAGES[lang]), None)
 
 
@@ -174,7 +176,7 @@ def translate_from_context(stack_depth, text, *args, **kwargs):
     entries = get_entries(CURRENTLANG, text) # [(translation, filename, line number)]
     if not entries:
         return format_text(text, *args, **kwargs)
-    if len(entries) > 1:
+    if len(entries) > 1 and any(f for t, f, n in entries):
         filename, line = get_calling_stack(stack_depth)
         entries2 = [e for e in entries if e[1] == filename]
         if entries2: # Narrow to closest line number in source file
@@ -185,27 +187,24 @@ def translate_from_context(stack_depth, text, *args, **kwargs):
 def get_entries(lang, text):
     """Returns translations matching text, as [(translation, filename, line number)] if any."""
     if not isinstance(text, str): return []
-    if lang not in LANGUAGES or not LANGUAGES[lang].get("data"): return []
-    if text in LANGUAGES[lang]["data"]: return LANGUAGES[lang]["data"][text]
+    OPTS = LANGUAGES.get(lang) or {}
+    if not OPTS.get("data"): return []
 
-    lowertext = text.lower()
-    textkey = LANGUAGES[lang]["lower"].get(lowertext, lowertext) # Case-insensitive match
+    if text in OPTS["data"]:
+        return OPTS["data"][text][:] # Perfect case-sensitive match
+
+    matchkey = text.translate({ord(c): "" for c in NORMALIZE}).lower()
+    textkeys = OPTS["normal"].get(matchkey) or ([matchkey] if matchkey in OPTS["data"] else [])
+    if not textkeys: return []
+
+    closest_len = min(map(len, textkeys), key=lambda x: abs(x - len(text)))
+    textkeys = [x for x in textkeys if len(x) == closest_len]
     strip = lambda x: x
-
-    if textkey not in LANGUAGES[lang]["data"] and ACCELKEY: # Find ampersand-less match
-        strip = lambda x: x.replace(ACCELKEY, "")
-        textkey = next((v for k, v in LANGUAGES[lang]["lower"].items()
-                        if strip(k) in (lowertext, strip(lowertext))), None)
-        textkey = textkey or next((x for x in LANGUAGES[lang]["data"]
-                                   if strip(x) in (text, strip(text))), textkey)
-
-    if textkey in LANGUAGES[lang]["data"]:
-        transform = str.lower
-        if text != lowertext:
-            CASE_TRANSFORMERS = (str.upper, str.title, str.capitalize)
-            transform = next((f for f in CASE_TRANSFORMERS if f(text) == text), transform)
-        return [(transform(strip(t)), f, n) for t, f, n in LANGUAGES[lang]["data"][textkey]]
-    return []
+    if len(textkeys[0]) != len(text):
+        strip = lambda x: x.translate({ord(c): "" for c in NORMALIZE})
+    CASE_TRANSFORMERS = (str.lower, str.capitalize, str.title, str.upper)
+    transform = next((f for f in CASE_TRANSFORMERS if f(strip(text)) == strip(text)), lambda x: x)
+    return [(transform(strip(t)), f, n) for k in textkeys for t, f, n in OPTS["data"][k]]
 
 
 def get_calling_stack(depth=1):
@@ -255,12 +254,23 @@ def format_nested(text, *args, do_translate=False):
     return format_text(text, *args2)
 
 
+def make_normalized(texts):
+    """Returns normalized texts mapped to originals, as {normalized: set([text, ])}."""
+    result = {}
+    for text in texts:
+        textkey = text.translate({ord(c): "" for c in NORMALIZE}).lower()
+        if text != textkey:
+            result.setdefault(textkey, set()).add(text)
+    return result
+
+
 def read_translation(filepath):
     """
     Parses and returns translation file contents and metadata.
 
-    @return  ({"code", "name", "path", "data": {text: [(translation, filename, line)]}}, None)
-             or (None, error)
+    @return  (result, None) or (None, error string), where result is
+             {"code", "name", "path", "data": {text: [(translation, filename, line)],
+              "normal": {normalized text: set([original text, ])}}
     """
     ctor = polib.mofile if filepath.lower().endswith(".mo") else polib.pofile
     try: langfile = ctor(filepath)
@@ -269,12 +279,12 @@ def read_translation(filepath):
         return (None, str(e))
 
     lang = langfile.metadata.get("Language")
-    if not lang: # Detect from filename like myfile.en.po
+    if not lang: # Detect from filename like myfile.pl.po
         parts = os.path.basename(filepath).rsplit(".", 2)
         if len(parts) > 1: lang = parts[-2]
     if not lang:
         logger.warning("Error in translation file %s: no language information.", filepath)
-        del langfile
+        del langfile # Mandatory for polib to close the file handle
         return (None, "No language information in file")
 
     data = {}
@@ -286,10 +296,10 @@ def read_translation(filepath):
         records = [(entry.msgstr, to_os(fname), to_int(line)) for fname, line in entry.occurrences]
         if not records: records = [(entry.msgstr, None, 0)]
         data.setdefault(entry.msgid, []).extend(records)
-    lowers = {ltext: text for text in data for ltext in [text.lower()] if text != ltext}
-    del langfile
+    del langfile # Mandatory for polib to close the file handle
     if not data:
         return (None, "No translations in file")
 
-    logger.info("Read %r %s %s", filepath, lang, name)
-    return ({"code": lang, "name": name, "path": filepath, "data": data, "lower": lowers}, None)
+    logger.info("Read %r %s %s (%s entries).", filepath, lang, name, sum(map(len, data.values())))
+    normaled = make_normalized(data)
+    return ({"code": lang, "name": name, "path": filepath, "data": data, "normal": normaled}, None)
