@@ -5,6 +5,7 @@ CHANGELOG
 ---------------
 - add support for switching UI language
 - add partial support for Chinese language UI (pull request #28)
+- add support for Russian language UI
 - add user-defined functions
 - add user function to show combination artifacts over player factions
 - set map description as tooltip to map description box
