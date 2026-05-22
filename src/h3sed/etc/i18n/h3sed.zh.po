@@ -1,0 +1,1818 @@
+# Chinese (Simplified) translation file for h3sed
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: zh\n"
+"Language-Name: Chinese (Simplified)\n"
+
+
+# - Hero property sections --------------------
+
+msgid "Main attributes"
+msgstr "主要属性"
+
+msgid "Army"
+msgstr "军队"
+
+msgid "Equipment"
+msgstr "装备"
+
+msgid "Inventory"
+msgstr "背包"
+
+msgid "Skills"
+msgstr "技能"
+
+msgid "Spells"
+msgstr "法术"
+
+
+# - Hero primary attributes --------------------
+
+msgid "Attack"
+msgstr "攻击力"
+
+msgid "Defense"
+msgstr "防御力"
+
+msgid "Spell Power"
+msgstr "法术攻击力"
+
+msgid "Knowledge"
+msgstr "法术防御力"
+
+
+# - Hero main attributes --------------------
+
+msgid "Experience"
+msgstr "经验值"
+
+msgid "Level"
+msgstr "等级"
+
+msgid "Movement points in total"
+msgstr "移动点数总量"
+
+msgid "Movement points remaining"
+msgstr "剩余移动点数"
+
+msgid "Spell points remaining"
+msgstr "剩余魔法点数"
+
+msgid "Spellbook"
+msgstr "魔法书"
+
+msgid "Ballista"
+msgstr "弩车"
+
+msgid "Cannon"
+msgstr "大炮"
+
+msgid "Ammo Cart"
+msgstr "弹药车"
+
+msgid "First Aid Tent"
+msgstr "急救帐篷"
+
+
+# - Hero factions --------------------
+
+msgid "Blue Player"
+msgstr "蓝色球员"
+
+msgid "Green Player"
+msgstr "绿色球员"
+
+msgid "Orange Player"
+msgstr "橙色球员"
+
+msgid "Pink Player"
+msgstr "粉色球员"
+
+msgid "Purple Player"
+msgstr "紫色球员"
+
+msgid "Red Player"
+msgstr "红色球员"
+
+msgid "Tan Player"
+msgstr "棕色球员"
+
+msgid "Teal Player"
+msgstr "青色球员"
+
+msgid "neutral"
+msgstr "中立"
+
+
+# - Hero equipment slots --------------------
+
+msgid "armor"
+msgstr "盔甲"
+
+msgid "cloak"
+msgstr "披风"
+
+msgid "feet"
+msgstr "靴子"
+
+msgid "hand"
+msgstr "手"
+
+msgid "helm"
+msgstr "头盔"
+
+msgid "lefthand"
+msgstr "左手"
+
+msgid "left hand"
+msgstr "左手"
+
+msgid "neck"
+msgstr "项链"
+
+msgid "righthand"
+msgstr "右手"
+
+msgid "right hand"
+msgstr "右手"
+
+msgid "shield"
+msgstr "盾牌"
+
+msgid "side"
+msgstr "侧边"
+
+msgid "side1"
+msgstr "侧边1"
+
+msgid "side2"
+msgstr "侧边2"
+
+msgid "side3"
+msgstr "侧边3"
+
+msgid "side4"
+msgstr "侧边4"
+
+msgid "side5"
+msgstr "侧边5"
+
+msgid "side 1"
+msgstr "侧边 1"
+
+msgid "side 2"
+msgstr "侧边 2"
+
+msgid "side 3"
+msgstr "侧边 3"
+
+msgid "side 4"
+msgstr "侧边 4"
+
+msgid "side 5"
+msgstr "侧边 5"
+
+msgid "weapon"
+msgstr "武器"
+
+
+# - Hero skill levels --------------------
+
+msgid "Basic"
+msgstr "基础"
+
+msgid "Advanced"
+msgstr "高级"
+
+msgid "Expert"
+msgstr "专家"
+
+
+# - Hero skills --------------------
+
+msgid "Air Magic"
+msgstr "气魔法"
+
+msgid "Archery"
+msgstr "箭术"
+
+msgid "Armorer"
+msgstr "装甲术"
+
+msgid "Artillery"
+msgstr "炮术"
+
+msgid "Ballistics"
+msgstr "弹道学"
+
+msgid "Diplomacy"
+msgstr "外交术"
+
+msgid "Eagle Eye"
+msgstr "鹰眼"
+
+msgid "Earth Magic"
+msgstr "土魔法"
+
+msgid "Estates"
+msgstr "理财术"
+
+msgid "Fire Magic"
+msgstr "火魔法"
+
+msgid "First Aid"
+msgstr "急救"
+
+msgid "Intelligence"
+msgstr "智力"
+
+msgid "Interference"
+msgstr "干扰"
+
+msgid "Leadership"
+msgstr "领导力"
+
+msgid "Learning"
+msgstr "学习"
+
+msgid "Logistics"
+msgstr "后勤学"
+
+msgid "Luck"
+msgstr "幸运术"
+
+msgid "Mysticism"
+msgstr "神秘术"
+
+msgid "Navigation"
+msgstr "航海术"
+
+msgid "Necromancy"
+msgstr "招魂术"
+
+msgid "Offense"
+msgstr "进攻"
+
+msgid "Pathfinding"
+msgstr "寻路术"
+
+msgid "Resistance"
+msgstr "抗魔"
+
+msgid "Runes"
+msgstr "符文"
+
+msgid "Scholar"
+msgstr "学者"
+
+msgid "Scouting"
+msgstr "侦察术"
+
+msgid "Sorcery"
+msgstr "魔法"
+
+msgid "Tactics"
+msgstr "战术"
+
+msgid "Water Magic"
+msgstr "水魔法"
+
+msgid "Wisdom"
+msgstr "智慧"
+
+
+# - Hero spells --------------------
+
+msgid "Air Shield"
+msgstr "气盾术"
+
+msgid "Animate Dead"
+msgstr "复活死尸"
+
+msgid "Anti-Magic"
+msgstr "抗魔大法"
+
+msgid "Armageddon"
+msgstr "末日审判"
+
+msgid "Berserk"
+msgstr "疯狂"
+
+msgid "Bless"
+msgstr "祝福术"
+
+msgid "Blind"
+msgstr "失明术"
+
+msgid "Bloodlust"
+msgstr "嗜血术"
+
+msgid "Chain Lightning"
+msgstr "连锁闪电"
+
+msgid "Clone"
+msgstr "镜像"
+
+msgid "Counterstrike"
+msgstr "反击术"
+
+msgid "Cure"
+msgstr "治疗术"
+
+msgid "Curse"
+msgstr "诅咒术"
+
+msgid "Death Ripple"
+msgstr "死亡波纹"
+
+msgid "Destroy Undead"
+msgstr "灭亡灵"
+
+msgid "Dimension Door"
+msgstr "次元门"
+
+msgid "Disguise"
+msgstr "伪装术"
+
+msgid "Dispel"
+msgstr "驱散术"
+
+msgid "Disrupting Ray"
+msgstr "瓦解射线"
+
+msgid "Earthquake"
+msgstr "地震术"
+
+msgid "Fire Shield"
+msgstr "火盾术"
+
+msgid "Fire Wall"
+msgstr "火墙术"
+
+msgid "Fireball"
+msgstr "火球术"
+
+msgid "Fly"
+msgstr "飞行术"
+
+msgid "Force Field"
+msgstr "力场术"
+
+msgid "Forgetfulness"
+msgstr "遗忘术"
+
+msgid "Fortune"
+msgstr "幸运术"
+
+msgid "Frenzy"
+msgstr "狂热术"
+
+msgid "Frost Ring"
+msgstr "霜环术"
+
+msgid "Haste"
+msgstr "加速术"
+
+msgid "Hypnotize"
+msgstr "催眠术"
+
+msgid "Ice Bolt"
+msgstr "冰箭术"
+
+msgid "Implosion"
+msgstr "内爆术"
+
+msgid "Inferno"
+msgstr "地狱火"
+
+msgid "Land Mine"
+msgstr "地雷术"
+
+msgid "Lightning Bolt"
+msgstr "闪电术"
+
+msgid "Magic Arrow"
+msgstr "魔法箭"
+
+msgid "Magic Mirror"
+msgstr "魔镜"
+
+msgid "Meteor Shower"
+msgstr "流星雨"
+
+msgid "Mirth"
+msgstr "欢乐术"
+
+msgid "Misfortune"
+msgstr "厄运术"
+
+msgid "Prayer"
+msgstr "祈祷术"
+
+msgid "Precision"
+msgstr "精准术"
+
+msgid "Protection from Air"
+msgstr "气系防护"
+
+msgid "Protection from Earth"
+msgstr "土系防护"
+
+msgid "Protection from Fire"
+msgstr "火系防护"
+
+msgid "Protection from Water"
+msgstr "水系防护"
+
+msgid "Quicksand"
+msgstr "流沙术"
+
+msgid "Remove Obstacle"
+msgstr "移除障碍"
+
+msgid "Resurrection"
+msgstr "复活术"
+
+msgid "Sacrifice"
+msgstr "牺牲术"
+
+msgid "Scuttle Boat"
+msgstr "沉船术"
+
+msgid "Shield"
+msgstr "盾牌"
+
+msgid "Slayer"
+msgstr "屠龙术"
+
+msgid "Slow"
+msgstr "减速术"
+
+msgid "Sorrow"
+msgstr "悲伤术"
+
+msgid "Stone Skin"
+msgstr "石肤术"
+
+msgid "Summon Air Elemental"
+msgstr "召唤气元素"
+
+msgid "Summon Boat"
+msgstr "召唤船只"
+
+msgid "Summon Earth Elemental"
+msgstr "召唤土元素"
+
+msgid "Summon Fire Elemental"
+msgstr "召唤火元素"
+
+msgid "Summon Water Elemental"
+msgstr "召唤水元素"
+
+msgid "Teleport"
+msgstr "传送术"
+
+msgid "Town Portal"
+msgstr "城镇传送"
+
+msgid "View Air"
+msgstr "气系视野"
+
+msgid "View Earth"
+msgstr "探地"
+
+msgid "Visions"
+msgstr "幻象术"
+
+msgid "Water Walk"
+msgstr "水上行走"
+
+msgid "Weakness"
+msgstr "虚弱术"
+
+msgid "Titan's Lightning Bolt"
+msgstr ""
+
+
+# - Hero army creatures --------------------
+
+msgid "Air Elemental"
+msgstr "气元素"
+
+msgid "Ancient Behemoth"
+msgstr "远古比蒙"
+
+msgid "Angel"
+msgstr "天使"
+
+msgid "Arch Devil"
+msgstr "大恶魔"
+
+msgid "Arch Mage"
+msgstr "大法师"
+
+msgid "Archangel"
+msgstr "大天使"
+
+msgid "Archer"
+msgstr "弓箭手"
+
+msgid "Argali"
+msgstr ""
+
+msgid "Armadillo"
+msgstr ""
+
+msgid "Automaton"
+msgstr ""
+
+msgid "Ayssid"
+msgstr ""
+
+msgid "Azure Dragon"
+msgstr ""
+
+msgid "Basilisk"
+msgstr "蜥怪"
+
+msgid "Battle Dwarf"
+msgstr "战斗矮人"
+
+msgid "Behemoth"
+msgstr "比蒙"
+
+msgid "Beholder"
+msgstr "邪眼"
+
+msgid "Bellwether Armadillo"
+msgstr ""
+
+msgid "Black Dragon"
+msgstr "黑龙"
+
+msgid "Black Knight"
+msgstr "黑骑士"
+
+msgid "Boar"
+msgstr ""
+
+msgid "Bone Dragon"
+msgstr "骨龙"
+
+msgid "Bounty Hunter"
+msgstr ""
+
+msgid "Cavalier"
+msgstr "骑士"
+
+msgid "Centaur"
+msgstr "半人马"
+
+msgid "Centaur Captain"
+msgstr "半人马首领"
+
+msgid "Cerberus"
+msgstr "地狱犬"
+
+msgid "Champion"
+msgstr "冠军骑士"
+
+msgid "Chaos Hydra"
+msgstr "混沌九头蛇"
+
+msgid "Corsair"
+msgstr ""
+
+msgid "Couatl"
+msgstr ""
+
+msgid "Crew Mate"
+msgstr ""
+
+msgid "Crimson Couatl"
+msgstr ""
+
+msgid "Crusader"
+msgstr "十字军"
+
+msgid "Crystal Dragon"
+msgstr ""
+
+msgid "Cyclops"
+msgstr "独眼巨人"
+
+msgid "Cyclops King"
+msgstr "独眼巨人王"
+
+msgid "Demon"
+msgstr "恶魔"
+
+msgid "Dendroid Guard"
+msgstr "树妖守卫"
+
+msgid "Dendroid Soldier"
+msgstr "树妖战士"
+
+msgid "Devil"
+msgstr "恶魔"
+
+msgid "Diamond Golem"
+msgstr "钻石傀儡"
+
+msgid "Dragon Fly"
+msgstr "龙蝇"
+
+msgid "Dread Knight"
+msgstr "恐怖骑士"
+
+msgid "Dreadnought"
+msgstr ""
+
+msgid "Dwarf"
+msgstr "矮人"
+
+msgid "Earth Elemental"
+msgstr "土元素"
+
+msgid "Efreet Sultan"
+msgstr "火精灵苏丹"
+
+msgid "Efreeti"
+msgstr "火精灵"
+
+msgid "Enchanter"
+msgstr ""
+
+msgid "Energy Elemental"
+msgstr ""
+
+msgid "Engineer"
+msgstr ""
+
+msgid "Evil Eye"
+msgstr "邪眼王"
+
+msgid "Faerie Dragon"
+msgstr ""
+
+msgid "Familiar"
+msgstr "魔宠"
+
+msgid "Fangarm"
+msgstr ""
+
+msgid "Fire Elemental"
+msgstr "火元素"
+
+msgid "Firebird"
+msgstr ""
+
+msgid "Genie"
+msgstr "神怪"
+
+msgid "Ghost Dragon"
+msgstr "幽灵龙"
+
+msgid "Giant"
+msgstr "巨人"
+
+msgid "Gnoll"
+msgstr "豺狼人"
+
+msgid "Gnoll Marauder"
+msgstr "豺狼人掠夺者"
+
+msgid "Goblin"
+msgstr "哥布林"
+
+msgid "Gog"
+msgstr "玛格"
+
+msgid "Gold Dragon"
+msgstr "金龙"
+
+msgid "Gold Golem"
+msgstr "黄金傀儡"
+
+msgid "Gorgon"
+msgstr "蛇怪"
+
+msgid "Grand Elf"
+msgstr "大精灵"
+
+msgid "Great Shaman"
+msgstr ""
+
+msgid "Greater Basilisk"
+msgstr "巨型蜥怪"
+
+msgid "Green Dragon"
+msgstr "绿龙"
+
+msgid "Gremlin"
+msgstr "小妖精"
+
+msgid "Griffin"
+msgstr "狮鹫"
+
+msgid "Gunslinger"
+msgstr ""
+
+msgid "Halberdier"
+msgstr "长戟兵"
+
+msgid "Halfling"
+msgstr ""
+
+msgid "Halfling Grenadier"
+msgstr ""
+
+msgid "Harpy"
+msgstr "鹰身女妖"
+
+msgid "Harpy Hag"
+msgstr "鹰身女巫"
+
+msgid "Haspid"
+msgstr ""
+
+msgid "Hell Hound"
+msgstr "地狱猎犬"
+
+msgid "Hobgoblin"
+msgstr "霍布哥布林"
+
+msgid "Horned Demon"
+msgstr "角魔"
+
+msgid "Hydra"
+msgstr "九头蛇"
+
+msgid "Ice Elemental"
+msgstr ""
+
+msgid "Imp"
+msgstr "小魔鬼"
+
+msgid "Infernal Troglodyte"
+msgstr "地狱穴居人"
+
+msgid "Iron Golem"
+msgstr "铁傀儡"
+
+msgid "Jotunn"
+msgstr ""
+
+msgid "Jotunn Warlord"
+msgstr ""
+
+msgid "Juggernaut"
+msgstr ""
+
+msgid "Kobold"
+msgstr ""
+
+msgid "Kobold Foreman"
+msgstr ""
+
+msgid "Leprechaun"
+msgstr ""
+
+msgid "Lich"
+msgstr "巫妖"
+
+msgid "Lizard Warrior"
+msgstr "蜥蜴战士"
+
+msgid "Lizardman"
+msgstr "蜥蜴人"
+
+msgid "Mage"
+msgstr "魔法师"
+
+msgid "Magic Elemental"
+msgstr ""
+
+msgid "Magma Elemental"
+msgstr ""
+
+msgid "Magog"
+msgstr "玛格"
+
+msgid "Mammoth"
+msgstr ""
+
+msgid "Manticore"
+msgstr "蝎狮"
+
+msgid "Marksman"
+msgstr "神射手"
+
+msgid "Master Genie"
+msgstr "神怪主"
+
+msgid "Master Gremlin"
+msgstr "高级小妖精"
+
+msgid "Mechanic"
+msgstr ""
+
+msgid "Medusa"
+msgstr "美杜莎"
+
+msgid "Medusa Queen"
+msgstr "美杜莎女王"
+
+msgid "Mighty Gorgon"
+msgstr "强力蛇发女妖"
+
+msgid "Minotaur"
+msgstr "牛头人"
+
+msgid "Minotaur King"
+msgstr "牛头人王"
+
+msgid "Monk"
+msgstr "僧侣"
+
+msgid "Mountain Ram"
+msgstr ""
+
+msgid "Mummy"
+msgstr ""
+
+msgid "Naga"
+msgstr "娜迦"
+
+msgid "Naga Queen"
+msgstr "娜迦女王"
+
+msgid "Nix"
+msgstr ""
+
+msgid "Nix Warrior"
+msgstr ""
+
+msgid "Nomad"
+msgstr ""
+
+msgid "Nymph"
+msgstr ""
+
+msgid "Obsidian Gargoyle"
+msgstr "黑曜石石像鬼"
+
+msgid "Oceanid"
+msgstr ""
+
+msgid "Ogre"
+msgstr "食人魔"
+
+msgid "Ogre Mage"
+msgstr "食人魔法师"
+
+msgid "Olgoi-Khorkhoi"
+msgstr ""
+
+msgid "Orc"
+msgstr "兽人"
+
+msgid "Orc Chieftain"
+msgstr "兽人首领"
+
+msgid "Peasant"
+msgstr ""
+
+msgid "Pegasus"
+msgstr "飞马"
+
+msgid "Phoenix"
+msgstr ""
+
+msgid "Pikeman"
+msgstr "长枪兵"
+
+msgid "Pirate"
+msgstr ""
+
+msgid "Pit Fiend"
+msgstr "深渊恶魔"
+
+msgid "Pit Lord"
+msgstr "深渊领主"
+
+msgid "Pixie"
+msgstr ""
+
+msgid "Power Lich"
+msgstr "强力巫妖"
+
+msgid "Psychic Elemental"
+msgstr ""
+
+msgid "Red Dragon"
+msgstr "红龙"
+
+msgid "Roc"
+msgstr "巨鹏"
+
+msgid "Rogue"
+msgstr ""
+
+msgid "Royal Griffin"
+msgstr "皇家狮鹫"
+
+msgid "Rust Dragon"
+msgstr ""
+
+msgid "Sandworm"
+msgstr ""
+
+msgid "Satyr"
+msgstr ""
+
+msgid "Scorpicore"
+msgstr "蝎狮"
+
+msgid "Sea Dog"
+msgstr ""
+
+msgid "Sea Serpent"
+msgstr ""
+
+msgid "Sea Witch"
+msgstr ""
+
+msgid "Seaman"
+msgstr ""
+
+msgid "Sentinel Automaton"
+msgstr ""
+
+msgid "Serpent Fly"
+msgstr "蛇蝇"
+
+msgid "Shaman"
+msgstr ""
+
+msgid "Sharpshooter"
+msgstr ""
+
+msgid "Silver Pegasus"
+msgstr "银飞马"
+
+msgid "Skeleton"
+msgstr "骷髅兵"
+
+msgid "Skeleton Warrior"
+msgstr "骷髅战士"
+
+msgid "Snow Elf"
+msgstr ""
+
+msgid "Sorceress"
+msgstr ""
+
+msgid "Sprite"
+msgstr ""
+
+msgid "Steel Elf"
+msgstr ""
+
+msgid "Steel Golem"
+msgstr ""
+
+msgid "Stone Gargoyle"
+msgstr "石像鬼"
+
+msgid "Stone Golem"
+msgstr "石傀儡"
+
+msgid "Storm Elemental"
+msgstr ""
+
+msgid "Stormbird"
+msgstr ""
+
+msgid "Swordsman"
+msgstr "剑士"
+
+msgid "Thunderbird"
+msgstr "雷鸟"
+
+msgid "Titan"
+msgstr "泰坦"
+
+msgid "Troglodyte"
+msgstr "穴居人"
+
+msgid "Troll"
+msgstr ""
+
+msgid "Unicorn"
+msgstr "独角兽"
+
+msgid "Vampire"
+msgstr "吸血鬼"
+
+msgid "Vampire Lord"
+msgstr "吸血鬼王"
+
+msgid "Walking Dead"
+msgstr "行尸"
+
+msgid "War Mammoth"
+msgstr ""
+
+msgid "War Unicorn"
+msgstr "战争独角兽"
+
+msgid "Water Elemental"
+msgstr "水元素"
+
+msgid "Wight"
+msgstr "幽灵"
+
+msgid "Wolf Raider"
+msgstr "狼骑兵"
+
+msgid "Wolf Rider"
+msgstr "狼骑士"
+
+msgid "Wood Elf"
+msgstr "木精灵"
+
+msgid "Wraith"
+msgstr "怨灵"
+
+msgid "Wyvern"
+msgstr "飞龙"
+
+msgid "Wyvern Monarch"
+msgstr "飞龙王"
+
+msgid "Yeti"
+msgstr ""
+
+msgid "Yeti Runemaster"
+msgstr ""
+
+msgid "Zealot"
+msgstr "狂热者"
+
+msgid "Zombie"
+msgstr "僵尸"
+
+
+# - Hero artifacts --------------------
+
+msgid "Admiral's Hat"
+msgstr ""
+
+msgid "Ambassador's Sash"
+msgstr "大使腰带"
+
+msgid "Amulet of the Undertaker"
+msgstr "殡葬师护符"
+
+msgid "Angel Feather Arrows"
+msgstr "天使羽箭"
+
+msgid "Angel Wings"
+msgstr "天使翅膀"
+
+msgid "Angelic Alliance"
+msgstr ""
+
+msgid "Armageddon's Blade"
+msgstr ""
+
+msgid "Armor of Wonder"
+msgstr "奇迹盔甲"
+
+msgid "Armor of the Damned"
+msgstr ""
+
+msgid "Arms of Legion"
+msgstr "军团之臂"
+
+msgid "Badge of Courage"
+msgstr "勇气徽章"
+
+msgid "Bird of Perception"
+msgstr "感知之鸟"
+
+msgid "Blackshard of the Dead Knight"
+msgstr "死亡骑士黑刃"
+
+msgid "Boots of Levitation"
+msgstr "悬浮靴"
+
+msgid "Boots of Polarity"
+msgstr "极性靴"
+
+msgid "Boots of Speed"
+msgstr "速度靴"
+
+msgid "Bow of Elven Cherrywood"
+msgstr "精灵樱桃木弓"
+
+msgid "Bow of the Sharpshooter"
+msgstr ""
+
+msgid "Bowstring of the Unicorn's Mane"
+msgstr "独角兽鬃毛弓弦"
+
+msgid "Breastplate of Brimstone"
+msgstr "硫磺胸甲"
+
+msgid "Breastplate of Petrified Wood"
+msgstr "石化木胸甲"
+
+msgid "Buckler of the Gnoll King"
+msgstr "豺狼王小盾"
+
+msgid "Cape of Conjuring"
+msgstr "咒语披风"
+
+msgid "Cape of Silence"
+msgstr ""
+
+msgid "Cape of Velocity"
+msgstr "速度披风"
+
+msgid "Cards of Prophecy"
+msgstr "预言纸牌"
+
+msgid "Celestial Necklace of Bliss"
+msgstr "天赐项链"
+
+msgid "Centaur's Axe"
+msgstr "半人马战斧"
+
+msgid "Charm of Eclipse"
+msgstr ""
+
+msgid "Charm of Mana"
+msgstr "魔力护符"
+
+msgid "Cloak of the Undead King"
+msgstr ""
+
+msgid "Clover of Fortune"
+msgstr "幸运三叶草"
+
+msgid "Collar of Conjuring"
+msgstr "咒语项圈"
+
+msgid "Cornucopia"
+msgstr ""
+
+msgid "Crest of Valor"
+msgstr "勇气纹章"
+
+msgid "Crown of Dragontooth"
+msgstr "龙牙王冠"
+
+msgid "Crown of the Five Seas"
+msgstr ""
+
+msgid "Crown of the Supreme Magi"
+msgstr "大魔法师王冠"
+
+msgid "Dead Man's Boots"
+msgstr "死者之靴"
+
+msgid "Demon's Horseshoe"
+msgstr ""
+
+msgid "Diplomat's Cloak"
+msgstr ""
+
+msgid "Diplomat's Ring"
+msgstr "外交官戒指"
+
+msgid "Dragon Scale Armor"
+msgstr "龙鳞盔甲"
+
+msgid "Dragon Scale Shield"
+msgstr "龙鳞盾牌"
+
+msgid "Dragon Wing Tabard"
+msgstr "龙翼战袍"
+
+msgid "Dragonbone Greaves"
+msgstr "龙骨护腿"
+
+msgid "Elixir of Life"
+msgstr ""
+
+msgid "Emblem of Cognizance"
+msgstr "认知纹章"
+
+msgid "Endless Bag of Gold"
+msgstr "无尽金币袋"
+
+msgid "Endless Purse of Gold"
+msgstr "无尽金币钱包"
+
+msgid "Endless Sack of Gold"
+msgstr "无尽金币袋"
+
+msgid "Equestrian's Gloves"
+msgstr "骑术手套"
+
+msgid "Everflowing Crystal Cloak"
+msgstr "永流水晶披风"
+
+msgid "Everpouring Vial of Mercury"
+msgstr "永流水银瓶"
+
+msgid "Eversmoking Ring of Sulfur"
+msgstr "永烟硫磺戒指"
+
+msgid "Garniture of Interference"
+msgstr "干扰饰物"
+
+msgid "Glyph of Gallantry"
+msgstr "英勇符文"
+
+msgid "Golden Bow"
+msgstr "黄金弓"
+
+msgid "Golden Goose"
+msgstr ""
+
+msgid "Greater Gnoll's Flail"
+msgstr "大豺狼人连枷"
+
+msgid "Head of Legion"
+msgstr "军团之首"
+
+msgid "Hellstorm Helmet"
+msgstr "地狱风暴头盔"
+
+msgid "Helm of Chaos"
+msgstr "混沌头盔"
+
+msgid "Helm of Heavenly Enlightenment"
+msgstr "天堂启示头盔"
+
+msgid "Helm of the Alabaster Unicorn"
+msgstr "雪花独角兽头盔"
+
+msgid "Hideous Mask"
+msgstr ""
+
+msgid "Horn of the Abyss"
+msgstr ""
+
+msgid "Hourglass of the Evil Hour"
+msgstr "邪恶沙漏"
+
+msgid "Inexhaustible Cart of Lumber"
+msgstr "无尽木材车"
+
+msgid "Inexhaustible Cart of Ore"
+msgstr "无尽矿石车"
+
+msgid "Ironfist of the Ogre"
+msgstr ""
+
+msgid "Ladybird of Luck"
+msgstr "幸运瓢虫"
+
+msgid "Legs of Legion"
+msgstr "军团之腿"
+
+msgid "Lion's Shield of Courage"
+msgstr "雄狮勇气盾"
+
+msgid "Loins of Legion"
+msgstr "军团之腰"
+
+msgid "Mystic Orb of Mana"
+msgstr "魔力宝珠"
+
+msgid "Necklace of Dragonteeth"
+msgstr "龙牙项链"
+
+msgid "Necklace of Ocean Guidance"
+msgstr "海洋指引项链"
+
+msgid "Necklace of Swiftness"
+msgstr "迅捷项链"
+
+msgid "Ogre's Club of Havoc"
+msgstr "食人魔的破坏棍棒"
+
+msgid "Orb of Driving Rain"
+msgstr "暴雨球"
+
+msgid "Orb of Inhibition"
+msgstr "抑制球"
+
+msgid "Orb of Silt"
+msgstr "淤泥球"
+
+msgid "Orb of Tempestuous Fire"
+msgstr "狂暴火球"
+
+msgid "Orb of Vulnerability"
+msgstr "脆弱之球"
+
+msgid "Orb of the Firmament"
+msgstr "苍穹球"
+
+msgid "Pendant of Courage"
+msgstr "勇气吊坠"
+
+msgid "Pendant of Death"
+msgstr "死亡吊坠"
+
+msgid "Pendant of Dispassion"
+msgstr "冷静吊坠"
+
+msgid "Pendant of Downfall"
+msgstr ""
+
+msgid "Pendant of Free Will"
+msgstr "自由意志吊坠"
+
+msgid "Pendant of Holiness"
+msgstr "神圣吊坠"
+
+msgid "Pendant of Life"
+msgstr "生命吊坠"
+
+msgid "Pendant of Negativity"
+msgstr "负面 pendant"
+
+msgid "Pendant of Reflection"
+msgstr ""
+
+msgid "Pendant of Second Sight"
+msgstr "第二视觉 pendant"
+
+msgid "Pendant of Total Recall"
+msgstr "完全回忆 pendant"
+
+msgid "Plate of Dying Light"
+msgstr ""
+
+msgid "Power of the Dragon Father"
+msgstr ""
+
+msgid "Quiet Eye of the Dragon"
+msgstr "龙的平静之眼"
+
+msgid "Recanter's Cloak"
+msgstr "禁魔披风"
+
+msgid "Red Dragon Flame Tongue"
+msgstr "红龙火舌剑"
+
+msgid "Rib Cage"
+msgstr "肋骨笼"
+
+msgid "Ring of Conjuring"
+msgstr "咒语戒指"
+
+msgid "Ring of Infinite Gems"
+msgstr "无尽宝石戒指"
+
+msgid "Ring of Life"
+msgstr "生命戒指"
+
+msgid "Ring of Oblivion"
+msgstr ""
+
+msgid "Ring of Suppression"
+msgstr ""
+
+msgid "Ring of Vitality"
+msgstr "活力戒指"
+
+msgid "Ring of the Magi"
+msgstr ""
+
+msgid "Ring of the Wayfarer"
+msgstr "行者之戒"
+
+msgid "Royal Armor of Nix"
+msgstr ""
+
+msgid "Runes of Imminency"
+msgstr ""
+
+msgid "Sandals of the Saint"
+msgstr "圣徒凉鞋"
+
+msgid "Scales of the Greater Basilisk"
+msgstr "巨型蜥怪的鳞片"
+
+msgid "Sea Captain's Hat"
+msgstr "船长帽"
+
+msgid "Seal of Sunset"
+msgstr ""
+
+msgid "Sentinel's Shield"
+msgstr "哨兵盾牌"
+
+msgid "Shackles of War"
+msgstr "战争枷锁"
+
+msgid "Shaman's Puppet"
+msgstr ""
+
+msgid "Shield of Naval Glory"
+msgstr ""
+
+msgid "Shield of the Damned"
+msgstr "诅咒盾牌"
+
+msgid "Shield of the Dwarven Lords"
+msgstr "矮人领主盾牌"
+
+msgid "Shield of the Yawning Dead"
+msgstr "哈欠亡灵盾牌"
+
+msgid "Skull Helmet"
+msgstr "骷髅头盔"
+
+msgid "Sleepkeeper"
+msgstr ""
+
+msgid "Speculum"
+msgstr "透视镜"
+
+msgid "Spellbinder's Hat"
+msgstr "缚法者帽"
+
+msgid "Sphere of Permanence"
+msgstr "永恒球体"
+
+msgid "Spirit of Oppression"
+msgstr "压迫之灵"
+
+msgid "Spyglass"
+msgstr "望远镜"
+
+msgid "Statesman's Medal"
+msgstr "政治家勋章"
+
+msgid "Statue of Legion"
+msgstr ""
+
+msgid "Still Eye of the Dragon"
+msgstr "龙的静止之眼"
+
+msgid "Stoic Watchman"
+msgstr "坚忍守卫"
+
+msgid "Surcoat of Counterpoise"
+msgstr "平衡外袍"
+
+msgid "Sword of Hellfire"
+msgstr "地狱火剑"
+
+msgid "Sword of Judgement"
+msgstr "审判之剑"
+
+msgid "Talisman of Mana"
+msgstr "魔力护身符"
+
+msgid "Targ of the Rampaging Ogre"
+msgstr "狂暴食人魔盾"
+
+msgid "The Grail"
+msgstr ""
+
+msgid "Thunder Helmet"
+msgstr "雷霆头盔"
+
+msgid "Titan's Cuirass"
+msgstr "泰坦胸甲"
+
+msgid "Titan's Gladius"
+msgstr "泰坦短剑"
+
+msgid "Titan's Thunder"
+msgstr ""
+
+msgid "Tome of Air"
+msgstr "气系魔法书"
+
+msgid "Tome of Earth"
+msgstr "土系魔法书"
+
+msgid "Tome of Fire"
+msgstr "火系魔法书"
+
+msgid "Tome of Water"
+msgstr "水系魔法书"
+
+msgid "Torso of Legion"
+msgstr "军团之躯干"
+
+msgid "Trident of Dominion"
+msgstr ""
+
+msgid "Tunic of the Cyclops King"
+msgstr "独眼巨人王的束腰外衣"
+
+msgid "Vampire's Cowl"
+msgstr "吸血鬼斗篷"
+
+msgid "Vial of Dragon Blood"
+msgstr ""
+
+msgid "Vial of Lifeblood"
+msgstr "生命血瓶"
+
+msgid "Wayfarer's Boots"
+msgstr ""
+
+msgid "Wizard's Well"
+msgstr ""
+
+
+# - Hero spell scroll artifacts --------------------
+
+msgid "Spell Scroll: Air Shield"
+msgstr "魔法卷轴: 气盾术"
+
+msgid "Spell Scroll: Animate Dead"
+msgstr "魔法卷轴: 复活死尸"
+
+msgid "Spell Scroll: Anti-Magic"
+msgstr "魔法卷轴: 抗魔大法"
+
+msgid "Spell Scroll: Armageddon"
+msgstr "魔法卷轴: 末日审判"
+
+msgid "Spell Scroll: Berserk"
+msgstr "魔法卷轴: 疯狂"
+
+msgid "Spell Scroll: Bless"
+msgstr "魔法卷轴: 祝福术"
+
+msgid "Spell Scroll: Blind"
+msgstr "魔法卷轴: 失明术"
+
+msgid "Spell Scroll: Bloodlust"
+msgstr "魔法卷轴: 嗜血术"
+
+msgid "Spell Scroll: Chain Lightning"
+msgstr "魔法卷轴: 连锁闪电"
+
+msgid "Spell Scroll: Clone"
+msgstr "魔法卷轴: 镜像"
+
+msgid "Spell Scroll: Counterstrike"
+msgstr "魔法卷轴: 反击术"
+
+msgid "Spell Scroll: Cure"
+msgstr "魔法卷轴: 治疗术"
+
+msgid "Spell Scroll: Curse"
+msgstr "魔法卷轴: 诅咒术"
+
+msgid "Spell Scroll: Death Ripple"
+msgstr "魔法卷轴: 死亡波纹"
+
+msgid "Spell Scroll: Destroy Undead"
+msgstr "魔法卷轴: 灭亡灵"
+
+msgid "Spell Scroll: Dimension Door"
+msgstr "魔法卷轴: 次元门"
+
+msgid "Spell Scroll: Disguise"
+msgstr "魔法卷轴: 伪装术"
+
+msgid "Spell Scroll: Dispel"
+msgstr "魔法卷轴: 驱散术"
+
+msgid "Spell Scroll: Disrupting Ray"
+msgstr "魔法卷轴: 瓦解射线"
+
+msgid "Spell Scroll: Earthquake"
+msgstr "魔法卷轴: 地震术"
+
+msgid "Spell Scroll: Fire Shield"
+msgstr "魔法卷轴: 火盾术"
+
+msgid "Spell Scroll: Fire Wall"
+msgstr "魔法卷轴: 火墙术"
+
+msgid "Spell Scroll: Fireball"
+msgstr "魔法卷轴: 火球术"
+
+msgid "Spell Scroll: Fly"
+msgstr "魔法卷轴: 飞行术"
+
+msgid "Spell Scroll: Force Field"
+msgstr "魔法卷轴: 力场术"
+
+msgid "Spell Scroll: Forgetfulness"
+msgstr "魔法卷轴: 遗忘术"
+
+msgid "Spell Scroll: Fortune"
+msgstr "魔法卷轴: 幸运术"
+
+msgid "Spell Scroll: Frenzy"
+msgstr "魔法卷轴: 狂热术"
+
+msgid "Spell Scroll: Frost Ring"
+msgstr "魔法卷轴: 霜环术"
+
+msgid "Spell Scroll: Haste"
+msgstr "魔法卷轴: 加速术"
+
+msgid "Spell Scroll: Hypnotize"
+msgstr "魔法卷轴: 催眠术"
+
+msgid "Spell Scroll: Ice Bolt"
+msgstr "魔法卷轴: 冰箭术"
+
+msgid "Spell Scroll: Implosion"
+msgstr "魔法卷轴: 内爆术"
+
+msgid "Spell Scroll: Inferno"
+msgstr "魔法卷轴: 地狱火"
+
+msgid "Spell Scroll: Land Mine"
+msgstr "魔法卷轴: 地雷术"
+
+msgid "Spell Scroll: Lightning Bolt"
+msgstr "魔法卷轴: 闪电术"
+
+msgid "Spell Scroll: Magic Arrow"
+msgstr "魔法卷轴: 魔法箭"
+
+msgid "Spell Scroll: Magic Mirror"
+msgstr "魔法卷轴: 魔镜"
+
+msgid "Spell Scroll: Meteor Shower"
+msgstr "魔法卷轴: 流星雨"
+
+msgid "Spell Scroll: Mirth"
+msgstr "魔法卷轴: 欢乐术"
+
+msgid "Spell Scroll: Misfortune"
+msgstr "魔法卷轴: 厄运术"
+
+msgid "Spell Scroll: Prayer"
+msgstr "魔法卷轴: 祈祷术"
+
+msgid "Spell Scroll: Precision"
+msgstr "魔法卷轴: 精准术"
+
+msgid "Spell Scroll: Protection from Air"
+msgstr "魔法卷轴: 气系防护"
+
+msgid "Spell Scroll: Protection from Earth"
+msgstr "魔法卷轴: 土系防护"
+
+msgid "Spell Scroll: Protection from Fire"
+msgstr "魔法卷轴: 火系防护"
+
+msgid "Spell Scroll: Protection from Water"
+msgstr "魔法卷轴: 水系防护"
+
+msgid "Spell Scroll: Quicksand"
+msgstr "魔法卷轴: 流沙术"
+
+msgid "Spell Scroll: Remove Obstacle"
+msgstr "魔法卷轴: 移除障碍"
+
+msgid "Spell Scroll: Resurrection"
+msgstr "魔法卷轴: 复活术"
+
+msgid "Spell Scroll: Sacrifice"
+msgstr "魔法卷轴: 牺牲术"
+
+msgid "Spell Scroll: Scuttle Boat"
+msgstr "魔法卷轴: 沉船术"
+
+msgid "Spell Scroll: Shield"
+msgstr "魔法卷轴: 盾牌"
+
+msgid "Spell Scroll: Slayer"
+msgstr "魔法卷轴: 屠龙术"
+
+msgid "Spell Scroll: Slow"
+msgstr "魔法卷轴: 减速术"
+
+msgid "Spell Scroll: Sorrow"
+msgstr "魔法卷轴: 悲伤术"
+
+msgid "Spell Scroll: Stone Skin"
+msgstr "魔法卷轴: 石肤术"
+
+msgid "Spell Scroll: Summon Air Elemental"
+msgstr "魔法卷轴: 召唤气元素"
+
+msgid "Spell Scroll: Summon Boat"
+msgstr "魔法卷轴: 召唤船只"
+
+msgid "Spell Scroll: Summon Earth Elemental"
+msgstr "魔法卷轴: 召唤土元素"
+
+msgid "Spell Scroll: Summon Fire Elemental"
+msgstr "魔法卷轴: 召唤火元素"
+
+msgid "Spell Scroll: Summon Water Elemental"
+msgstr "魔法卷轴: 召唤水元素"
+
+msgid "Spell Scroll: Teleport"
+msgstr "魔法卷轴: 传送术"
+
+msgid "Spell Scroll: Town Portal"
+msgstr "魔法卷轴: 城镇传送"
+
+msgid "Spell Scroll: View Air"
+msgstr "魔法卷轴: 气系视野"
+
+msgid "Spell Scroll: View Earth"
+msgstr "魔法卷轴: 探地"
+
+msgid "Spell Scroll: Visions"
+msgstr "魔法卷轴: 幻象术"
+
+msgid "Spell Scroll: Water Walk"
+msgstr "魔法卷轴: 水上行走"
+
+msgid "Spell Scroll: Weakness"
+msgstr "魔法卷轴: 虚弱术"
+
+
+# - Hero UI texts --------------------
+
+msgid "Add"
+msgstr "添加"
+
+msgid "Army slot"
+msgstr "军队槽"
+
+msgid "Description"
+msgstr "描述"
+
+msgid "Devices"
+msgstr "装置"
+
+msgid "Faction"
+msgstr "阵营"
+
+msgid "Game version"
+msgstr "游戏版本"
+
+msgid "Inventory slot"
+msgstr "背包槽"
+
+msgid "Map"
+msgstr "地图"
+
+msgid "Move down"
+msgstr "下移"
+
+msgid "Move up"
+msgstr "上移"
+
+msgid "Name"
+msgstr "名字"
+
+msgid "Open options menu"
+msgstr "打开选项菜单"
+
+msgid "Recalculate experience points from hero level"
+msgstr "根据英雄等级重新计算经验值"
+
+msgid "Recalculate level from hero experience points"
+msgstr "根据英雄经验值重新计算等级"
+
+msgid "Refill to total"
+msgstr "恢复满"
+
+msgid "Remove item"
+msgstr "移除项目"
+
+msgid "Set from experience"
+msgstr "从经验值设置"
+
+msgid "Set from level"
+msgstr "从等级设置"
+
+msgid "slot"
+msgstr "槽"
+
+msgid "Stats"
+msgstr "属性"
+
+msgid "Top up remaining movement points to hero total"
+msgstr "将剩余移动点数恢复到最大值"
+
+msgid "Top up remaining spell points to hero maximum"
+msgstr "将剩余魔法点数恢复到最大值"
