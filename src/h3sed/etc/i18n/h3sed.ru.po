@@ -1,0 +1,2897 @@
+# Russian translation file for h3sed
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ru\n"
+"Language-Name: Russian\n"
+
+
+# - Hero property sections --------------------
+
+msgid "Main attributes"
+msgstr "Основное"
+
+msgid "Army"
+msgstr "Армия"
+
+msgid "Equipment"
+msgstr "Снаряжение"
+
+msgid "Inventory"
+msgstr "Рюкзак"
+
+msgid "Skills"
+msgstr "Навыки"
+
+msgid "Spells"
+msgstr "Заклинания"
+
+
+# - Hero primary attributes --------------------
+
+msgid "Attack"
+msgstr "Атака"
+
+msgid "Defense"
+msgstr "Защита"
+
+msgid "Spell Power"
+msgstr "Сила магии"
+
+msgid "Knowledge"
+msgstr "Знания"
+
+
+# - Hero main attributes --------------------
+
+msgid "Experience"
+msgstr "Опыт"
+
+msgid "Level"
+msgstr "Уровень"
+
+msgid "Movement points in total"
+msgstr "Очки хода: всего"
+
+msgid "Movement points remaining"
+msgstr "Очки хода: осталось"
+
+msgid "Spell points remaining"
+msgstr "Мана: осталось"
+
+msgid "Spellbook"
+msgstr "Книга магии"
+
+msgid "Ballista"
+msgstr "Баллиста"
+
+msgid "Cannon"
+msgstr "Пушка"
+
+msgid "Ammo Cart"
+msgstr "Тележка с боеприпасами"
+
+msgid "First Aid Tent"
+msgstr "Палатка первой помощи"
+
+
+# - Hero factions --------------------
+
+msgid "Blue Player"
+msgstr "Синяя"
+
+msgid "Green Player"
+msgstr "Зелёная"
+
+msgid "Orange Player"
+msgstr "Оранжевая"
+
+msgid "Pink Player"
+msgstr "Розовая"
+
+msgid "Purple Player"
+msgstr "Фиолетовая"
+
+msgid "Red Player"
+msgstr "Красная"
+
+msgid "Tan Player"
+msgstr "Коричневая"
+
+msgid "Teal Player"
+msgstr "Бирюзовая"
+
+msgid "neutral"
+msgstr "нейтральная"
+
+
+# - Hero equipment slots --------------------
+
+msgid "armor"
+msgstr "торс"
+
+msgid "cloak"
+msgstr "плащ"
+
+msgid "feet"
+msgstr "ноги"
+
+msgid "hand"
+msgstr "рука"
+
+msgid "helm"
+msgstr "голова"
+
+msgid "lefthand"
+msgstr "левая_рука"
+
+msgid "left hand"
+msgstr "левая рука"
+
+msgid "neck"
+msgstr "шея"
+
+msgid "righthand"
+msgstr "правая_рука"
+
+msgid "right hand"
+msgstr "правая рука"
+
+msgid "shield"
+msgstr "щит"
+
+msgid "side"
+msgstr "разное"
+
+msgid "side1"
+msgstr "разное1"
+
+msgid "side2"
+msgstr "разное2"
+
+msgid "side3"
+msgstr "разное3"
+
+msgid "side4"
+msgstr "разное4"
+
+msgid "side5"
+msgstr "разное5"
+
+msgid "side 1"
+msgstr "разное 1"
+
+msgid "side 2"
+msgstr "разное 2"
+
+msgid "side 3"
+msgstr "разное 3"
+
+msgid "side 4"
+msgstr "разное 4"
+
+msgid "side 5"
+msgstr "разное 5"
+
+msgid "weapon"
+msgstr "оружие"
+
+
+# - Hero skill levels --------------------
+
+msgid "Basic"
+msgstr "Базовый"
+
+msgid "Advanced"
+msgstr "Продвинутый"
+
+msgid "Expert"
+msgstr "Эксперт"
+
+
+# - Hero skills --------------------
+
+msgid "Air Magic"
+msgstr "Магия Воздуха"
+
+msgid "Archery"
+msgstr "Стрельба"
+
+msgid "Armorer"
+msgstr "Доспехи"
+
+msgid "Artillery"
+msgstr "Артиллерия"
+
+msgid "Ballistics"
+msgstr "Баллистика"
+
+msgid "Diplomacy"
+msgstr "Дипломатия"
+
+msgid "Eagle Eye"
+msgstr "Зоркость"
+
+msgid "Earth Magic"
+msgstr "Магия Земли"
+
+msgid "Estates"
+msgstr "Имущество"
+
+msgid "Fire Magic"
+msgstr "Магия Огня"
+
+msgid "First Aid"
+msgstr "Первая Помощь"
+
+msgid "Intelligence"
+msgstr "Интеллект"
+
+msgid "Interference"
+msgstr "Помехи"
+
+msgid "Leadership"
+msgstr "Лидерство"
+
+msgid "Learning"
+msgstr "Обучение"
+
+msgid "Logistics"
+msgstr "Логистика"
+
+msgid "Luck"
+msgstr "Удача"
+
+msgid "Mysticism"
+msgstr "Мистицизм"
+
+msgid "Navigation"
+msgstr "Навигация"
+
+msgid "Necromancy"
+msgstr "Некромантия"
+
+msgid "Offense"
+msgstr "Нападение"
+
+msgid "Pathfinding"
+msgstr "Поиск Пути"
+
+msgid "Resistance"
+msgstr "Сопротивление"
+
+msgid "Runes"
+msgstr "Руны"
+
+msgid "Scholar"
+msgstr "Грамотность"
+
+msgid "Scouting"
+msgstr "Разведка"
+
+msgid "Sorcery"
+msgstr "Волшебство"
+
+msgid "Tactics"
+msgstr "Тактика"
+
+msgid "Water Magic"
+msgstr "Магия Воды"
+
+msgid "Wisdom"
+msgstr "Мудрость"
+
+
+# - Hero spells --------------------
+
+msgid "Air Shield"
+msgstr "Воздушный Щит"
+
+msgid "Animate Dead"
+msgstr "Поднятие Мертвецов"
+
+msgid "Anti-Magic"
+msgstr "Антимагия"
+
+msgid "Armageddon"
+msgstr "Армагеддон"
+
+msgid "Berserk"
+msgstr "Берсерк"
+
+msgid "Bless"
+msgstr "Благословение"
+
+msgid "Blind"
+msgstr "Слепота"
+
+msgid "Bloodlust"
+msgstr "Жажда Крови"
+
+msgid "Chain Lightning"
+msgstr "Цепная Молния"
+
+msgid "Clone"
+msgstr "Клон"
+
+msgid "Counterstrike"
+msgstr "Контрудар"
+
+msgid "Cure"
+msgstr "Лечение"
+
+msgid "Curse"
+msgstr "Проклятие"
+
+msgid "Death Ripple"
+msgstr "Волна Смерти"
+
+msgid "Destroy Undead"
+msgstr "Уничтожить Нежить"
+
+msgid "Dimension Door"
+msgstr "Дверь Измерений"
+
+msgid "Disguise"
+msgstr "Маскировка"
+
+msgid "Dispel"
+msgstr "Снятие Заклинаний"
+
+msgid "Disrupting Ray"
+msgstr "Разрушающий Луч"
+
+msgid "Earthquake"
+msgstr "Землетрясение"
+
+msgid "Fire Shield"
+msgstr "Огненный Щит"
+
+msgid "Fire Wall"
+msgstr "Стена Огня"
+
+msgid "Fireball"
+msgstr "Огненный Шар"
+
+msgid "Fly"
+msgstr "Полёт"
+
+msgid "Force Field"
+msgstr "Силовое Поле"
+
+msgid "Forgetfulness"
+msgstr "Забывчивость"
+
+msgid "Fortune"
+msgstr "Фортуна"
+
+msgid "Frenzy"
+msgstr "Бешенство"
+
+msgid "Frost Ring"
+msgstr "Кольцо Холода"
+
+msgid "Haste"
+msgstr "Ускорение"
+
+msgid "Hypnotize"
+msgstr "Гипноз"
+
+msgid "Ice Bolt"
+msgstr "Ледяная Стрела"
+
+msgid "Implosion"
+msgstr "Взрыв"
+
+msgid "Inferno"
+msgstr "Инферно"
+
+msgid "Land Mine"
+msgstr "Минное Поле"
+
+msgid "Lightning Bolt"
+msgstr "Молния"
+
+msgid "Magic Arrow"
+msgstr "Волшебная Стрела"
+
+msgid "Magic Mirror"
+msgstr "Волшебное Зеркало"
+
+msgid "Meteor Shower"
+msgstr "Метеоритный Дождь"
+
+msgid "Mirth"
+msgstr "Радость"
+
+msgid "Misfortune"
+msgstr "Неудача"
+
+msgid "Prayer"
+msgstr "Молитва"
+
+msgid "Precision"
+msgstr "Точность"
+
+msgid "Protection from Air"
+msgstr "Защита от Воздуха"
+
+msgid "Protection from Earth"
+msgstr "Защита от Земли"
+
+msgid "Protection from Fire"
+msgstr "Защита от Огня"
+
+msgid "Protection from Water"
+msgstr "Защита от Воды"
+
+msgid "Quicksand"
+msgstr "Зыбучие Пески"
+
+msgid "Remove Obstacle"
+msgstr "Устранение Преград"
+
+msgid "Resurrection"
+msgstr "Воскрешение"
+
+msgid "Sacrifice"
+msgstr "Жертва"
+
+msgid "Scuttle Boat"
+msgstr "Уничтожить Корабль"
+
+msgid "Shield"
+msgstr "Щит"
+
+msgid "Slayer"
+msgstr "Палач"
+
+msgid "Slow"
+msgstr "Медлительность"
+
+msgid "Sorrow"
+msgstr "Печаль"
+
+msgid "Stone Skin"
+msgstr "Каменная Кожа"
+
+msgid "Summon Air Elemental"
+msgstr "Элементаль Воздуха"
+
+msgid "Summon Boat"
+msgstr "Вызвать Корабль"
+
+msgid "Summon Earth Elemental"
+msgstr "Элементаль Земли"
+
+msgid "Summon Fire Elemental"
+msgstr "Элементаль Огня"
+
+msgid "Summon Water Elemental"
+msgstr "Элементаль Воды"
+
+msgid "Teleport"
+msgstr "Телепорт"
+
+msgid "Town Portal"
+msgstr "Городской Портал"
+
+msgid "View Air"
+msgstr "Небесное Око"
+
+msgid "View Earth"
+msgstr "Просмотр Земли"
+
+msgid "Visions"
+msgstr "Видения"
+
+msgid "Water Walk"
+msgstr "Хождение по Воде"
+
+msgid "Weakness"
+msgstr "Слабость"
+
+msgid "Titan's Lightning Bolt"
+msgstr "Молния Титана"
+
+
+# - Hero army creatures --------------------
+
+msgid "Air Elemental"
+msgstr "Элементаль Воздуха"
+
+msgid "Ancient Behemoth"
+msgstr "Древнее Чудище"
+
+msgid "Angel"
+msgstr "Ангел"
+
+msgid "Arch Devil"
+msgstr "Архидьявол"
+
+msgid "Arch Mage"
+msgstr "Архимаг"
+
+msgid "Archangel"
+msgstr "Архангел"
+
+msgid "Archer"
+msgstr "Лучник"
+
+msgid "Argali"
+msgstr "Архар"
+
+msgid "Armadillo"
+msgstr "Броненосец"
+
+msgid "Automaton"
+msgstr "Автоматон"
+
+msgid "Ayssid"
+msgstr "Ассида"
+
+msgid "Azure Dragon"
+msgstr "Лазурный Дракон"
+
+msgid "Basilisk"
+msgstr "Василиск"
+
+msgid "Battle Dwarf"
+msgstr "Боевой Гном"
+
+msgid "Behemoth"
+msgstr "Чудище"
+
+msgid "Beholder"
+msgstr "Созерцатель"
+
+msgid "Bellwether Armadillo"
+msgstr "Броненосец-Вожак"
+
+msgid "Black Dragon"
+msgstr "Чёрный Дракон"
+
+msgid "Black Knight"
+msgstr "Чёрный Рыцарь"
+
+msgid "Boar"
+msgstr "Боров"
+
+msgid "Bone Dragon"
+msgstr "Костяной Дракон"
+
+msgid "Bounty Hunter"
+msgstr "Охотник за Головами"
+
+msgid "Cavalier"
+msgstr "Кавалерист"
+
+msgid "Centaur"
+msgstr "Кентавр"
+
+msgid "Centaur Captain"
+msgstr "Капитан Кентавров"
+
+msgid "Cerberus"
+msgstr "Цербер"
+
+msgid "Champion"
+msgstr "Чемпион"
+
+msgid "Chaos Hydra"
+msgstr "Гидра Хаоса"
+
+msgid "Corsair"
+msgstr "Корсар"
+
+msgid "Couatl"
+msgstr "Коатль"
+
+msgid "Crew Mate"
+msgstr "Матрос"
+
+msgid "Crimson Couatl"
+msgstr "Багровый Коатль"
+
+msgid "Crusader"
+msgstr "Крестоносец"
+
+msgid "Crystal Dragon"
+msgstr "Кристальный Дракон"
+
+msgid "Cyclops"
+msgstr "Циклоп"
+
+msgid "Cyclops King"
+msgstr "Король Циклопов"
+
+msgid "Demon"
+msgstr "Демон"
+
+msgid "Dendroid Guard"
+msgstr "Дендроид-Страж"
+
+msgid "Dendroid Soldier"
+msgstr "Дендроид-Солдат"
+
+msgid "Devil"
+msgstr "Дьявол"
+
+msgid "Diamond Golem"
+msgstr "Алмазный Голем"
+
+msgid "Dragon Fly"
+msgstr "Стрекоза"
+
+msgid "Dread Knight"
+msgstr "Зловещий Рыцарь"
+
+msgid "Dreadnought"
+msgstr "Дредноут"
+
+msgid "Dwarf"
+msgstr "Гном"
+
+msgid "Earth Elemental"
+msgstr "Элементаль Земли"
+
+msgid "Efreet Sultan"
+msgstr "Султан Ифритов"
+
+msgid "Efreeti"
+msgstr "Ифрит"
+
+msgid "Enchanter"
+msgstr "Колдун"
+
+msgid "Energy Elemental"
+msgstr "Элементаль Энергии"
+
+msgid "Engineer"
+msgstr "Инженер"
+
+msgid "Evil Eye"
+msgstr "Злобоглаз"
+
+msgid "Faerie Dragon"
+msgstr "Сказочный Дракон"
+
+msgid "Familiar"
+msgstr "Чёрт"
+
+msgid "Fangarm"
+msgstr "Фангарм"
+
+msgid "Fire Elemental"
+msgstr "Элементаль Огня"
+
+msgid "Firebird"
+msgstr "Огненная Птица"
+
+msgid "Genie"
+msgstr "Джинн"
+
+msgid "Ghost Dragon"
+msgstr "Призрачный Дракон"
+
+msgid "Giant"
+msgstr "Гигант"
+
+msgid "Gnoll"
+msgstr "Гнолл"
+
+msgid "Gnoll Marauder"
+msgstr "Гнолл-Мародёр"
+
+msgid "Goblin"
+msgstr "Гоблин"
+
+msgid "Gog"
+msgstr "Гог"
+
+msgid "Gold Dragon"
+msgstr "Золотой Дракон"
+
+msgid "Gold Golem"
+msgstr "Золотой Голем"
+
+msgid "Gorgon"
+msgstr "Горгона"
+
+msgid "Grand Elf"
+msgstr "Благородный Эльф"
+
+msgid "Great Shaman"
+msgstr "Великий Шаман"
+
+msgid "Greater Basilisk"
+msgstr "Великий Василиск"
+
+msgid "Green Dragon"
+msgstr "Зелёный Дракон"
+
+msgid "Gremlin"
+msgstr "Гремлин"
+
+msgid "Griffin"
+msgstr "Грифон"
+
+msgid "Gunslinger"
+msgstr "Стрелок"
+
+msgid "Halberdier"
+msgstr "Алебардщик"
+
+msgid "Halfling"
+msgstr "Полурослик"
+
+msgid "Halfling Grenadier"
+msgstr "Полурослик-Гренадёр"
+
+msgid "Harpy"
+msgstr "Гарпия"
+
+msgid "Harpy Hag"
+msgstr "Гарпия-Ведьма"
+
+msgid "Haspid"
+msgstr "Аспид"
+
+msgid "Hell Hound"
+msgstr "Адская Гончая"
+
+msgid "Hobgoblin"
+msgstr "Хобгоблин"
+
+msgid "Horned Demon"
+msgstr "Рогатый Демон"
+
+msgid "Hydra"
+msgstr "Гидра"
+
+msgid "Ice Elemental"
+msgstr "Элементаль Льда"
+
+msgid "Imp"
+msgstr "Бес"
+
+msgid "Infernal Troglodyte"
+msgstr "Адский Троглодит"
+
+msgid "Iron Golem"
+msgstr "Железный Голем"
+
+msgid "Jotunn"
+msgstr "Ётун"
+
+msgid "Jotunn Warlord"
+msgstr "Ётун-воевода"
+
+msgid "Juggernaut"
+msgstr "Джаггернаут"
+
+msgid "Kobold"
+msgstr "Кобольд"
+
+msgid "Kobold Foreman"
+msgstr "Кобольд-Старшина"
+
+msgid "Leprechaun"
+msgstr "Лепрекон"
+
+msgid "Lich"
+msgstr "Лич"
+
+msgid "Lizard Warrior"
+msgstr "Ящер-Воин"
+
+msgid "Lizardman"
+msgstr "Ящер"
+
+msgid "Mage"
+msgstr "Маг"
+
+msgid "Magic Elemental"
+msgstr "Элементаль Магии"
+
+msgid "Magma Elemental"
+msgstr "Элементаль Магмы"
+
+msgid "Magog"
+msgstr "Магог"
+
+msgid "Mammoth"
+msgstr "Мамонт"
+
+msgid "Manticore"
+msgstr "Мантикора"
+
+msgid "Marksman"
+msgstr "Стрелок"
+
+msgid "Master Genie"
+msgstr "Верховный Джинн"
+
+msgid "Master Gremlin"
+msgstr "Мастер-Гремлин"
+
+msgid "Mechanic"
+msgstr "Механик"
+
+msgid "Medusa"
+msgstr "Медуза"
+
+msgid "Medusa Queen"
+msgstr "Королева Медуз"
+
+msgid "Mighty Gorgon"
+msgstr "Могучая Горгона"
+
+msgid "Minotaur"
+msgstr "Минотавр"
+
+msgid "Minotaur King"
+msgstr "Король Минотавров"
+
+msgid "Monk"
+msgstr "Монах"
+
+msgid "Mountain Ram"
+msgstr "Горный Баран"
+
+msgid "Mummy"
+msgstr "Мумия"
+
+msgid "Naga"
+msgstr "Нага"
+
+msgid "Naga Queen"
+msgstr "Королева Наг"
+
+msgid "Nix"
+msgstr "Никс"
+
+msgid "Nix Warrior"
+msgstr "Никс-Воин"
+
+msgid "Nomad"
+msgstr "Кочевник"
+
+msgid "Nymph"
+msgstr "Нимфа"
+
+msgid "Obsidian Gargoyle"
+msgstr "Обсидиановая Горгулья"
+
+msgid "Oceanid"
+msgstr "Океанида"
+
+msgid "Ogre"
+msgstr "Огр"
+
+msgid "Ogre Mage"
+msgstr "Огр-Маг"
+
+msgid "Olgoi-Khorkhoi"
+msgstr "Олгой-Хорхой"
+
+msgid "Orc"
+msgstr "Орк"
+
+msgid "Orc Chieftain"
+msgstr "Вождь Орков"
+
+msgid "Peasant"
+msgstr "Крестьянин"
+
+msgid "Pegasus"
+msgstr "Пегас"
+
+msgid "Phoenix"
+msgstr "Феникс"
+
+msgid "Pikeman"
+msgstr "Копейщик"
+
+msgid "Pirate"
+msgstr "Пират"
+
+msgid "Pit Fiend"
+msgstr "Демон Бездны"
+
+msgid "Pit Lord"
+msgstr "Владыка Бездны"
+
+msgid "Pixie"
+msgstr "Пикси"
+
+msgid "Power Lich"
+msgstr "Могучий Лич"
+
+msgid "Psychic Elemental"
+msgstr "Элементаль Мысли"
+
+msgid "Red Dragon"
+msgstr "Красный Дракон"
+
+msgid "Roc"
+msgstr "Рух"
+
+msgid "Rogue"
+msgstr "Разбойник"
+
+msgid "Royal Griffin"
+msgstr "Королевский Грифон"
+
+msgid "Rust Dragon"
+msgstr "Ржавый Дракон"
+
+msgid "Sandworm"
+msgstr "Песчаный Червь"
+
+msgid "Satyr"
+msgstr "Сатир"
+
+msgid "Scorpicore"
+msgstr "Скорпикора"
+
+msgid "Sea Dog"
+msgstr "Морской Волк"
+
+msgid "Sea Serpent"
+msgstr "Морской Змей"
+
+msgid "Sea Witch"
+msgstr "Жрица Моря"
+
+msgid "Seaman"
+msgstr "Головорез"
+
+msgid "Sentinel Automaton"
+msgstr "Автоматон-Часовой"
+
+msgid "Serpent Fly"
+msgstr "Змий"
+
+msgid "Shaman"
+msgstr "Шаман"
+
+msgid "Sharpshooter"
+msgstr "Снайпер"
+
+msgid "Silver Pegasus"
+msgstr "Серебряный Пегас"
+
+msgid "Skeleton"
+msgstr "Скелет"
+
+msgid "Skeleton Warrior"
+msgstr "Скелет-Воин"
+
+msgid "Snow Elf"
+msgstr "Снежный Эльф"
+
+msgid "Sorceress"
+msgstr "Заклинательница"
+
+msgid "Sprite"
+msgstr "Фея"
+
+msgid "Steel Elf"
+msgstr "Стальной Эльф"
+
+msgid "Steel Golem"
+msgstr "Стальной Голем"
+
+msgid "Stone Gargoyle"
+msgstr "Каменная Горгулья"
+
+msgid "Stone Golem"
+msgstr "Каменный Голем"
+
+msgid "Storm Elemental"
+msgstr "Элементаль Шторма"
+
+msgid "Stormbird"
+msgstr "Дух Океана"
+
+msgid "Swordsman"
+msgstr "Мечник"
+
+msgid "Thunderbird"
+msgstr "Громовая Птица"
+
+msgid "Titan"
+msgstr "Титан"
+
+msgid "Troglodyte"
+msgstr "Троглодит"
+
+msgid "Troll"
+msgstr "Тролль"
+
+msgid "Unicorn"
+msgstr "Единорог"
+
+msgid "Vampire"
+msgstr "Вампир"
+
+msgid "Vampire Lord"
+msgstr "Вампир-Лорд"
+
+msgid "Walking Dead"
+msgstr "Живой Мертвец"
+
+msgid "War Mammoth"
+msgstr "Боевой Мамонт"
+
+msgid "War Unicorn"
+msgstr "Боевой Единорог"
+
+msgid "Water Elemental"
+msgstr "Элементаль Воды"
+
+msgid "Wight"
+msgstr "Дух"
+
+msgid "Wolf Raider"
+msgstr "Разбойник на Волке"
+
+msgid "Wolf Rider"
+msgstr "Наездник на Волке"
+
+msgid "Wood Elf"
+msgstr "Лесной Эльф"
+
+msgid "Wraith"
+msgstr "Призрак"
+
+msgid "Wyvern"
+msgstr "Виверна"
+
+msgid "Wyvern Monarch"
+msgstr "Виверна-Монарх"
+
+msgid "Yeti"
+msgstr "Йети"
+
+msgid "Yeti Runemaster"
+msgstr "Йети-Рунотворец"
+
+msgid "Zealot"
+msgstr "Фанатик"
+
+msgid "Zombie"
+msgstr "Зомби"
+
+
+# - Hero artifacts --------------------
+
+msgid "Admiral's Hat"
+msgstr "Шляпа Адмирала"
+
+msgid "Ambassador's Sash"
+msgstr "Лента Посла"
+
+msgid "Amulet of the Undertaker"
+msgstr "Амулет Гробовщика"
+
+msgid "Angel Feather Arrows"
+msgstr "Стрелы из Ангельских Перьев"
+
+msgid "Angel Wings"
+msgstr "Крылья Ангела"
+
+msgid "Angelic Alliance"
+msgstr "Альянс Ангелов"
+
+msgid "Armageddon's Blade"
+msgstr "Клинок Армагеддона"
+
+msgid "Armor of the Damned"
+msgstr "Доспехи Проклятого"
+
+msgid "Armor of Wonder"
+msgstr "Магические Доспехи"
+
+msgid "Arms of Legion"
+msgstr "Руки Легионера"
+
+msgid "Badge of Courage"
+msgstr "Медаль Мужества"
+
+msgid "Bird of Perception"
+msgstr "Птица Проницательности"
+
+msgid "Blackshard of the Dead Knight"
+msgstr "Блэкшард Мёртвого Рыцаря"
+
+msgid "Boots of Levitation"
+msgstr "Сапоги Левитации"
+
+msgid "Boots of Polarity"
+msgstr "Сапоги Полярности"
+
+msgid "Boots of Speed"
+msgstr "Сапоги-Скороходы"
+
+msgid "Bow of Elven Cherrywood"
+msgstr "Лук из Вишнёвого Дерева Эльфов"
+
+msgid "Bow of the Sharpshooter"
+msgstr "Лук Снайпера"
+
+msgid "Bowstring of the Unicorn's Mane"
+msgstr "Тетива из Гривы Единорога"
+
+msgid "Breastplate of Brimstone"
+msgstr "Доспехи Самородной Серы"
+
+msgid "Breastplate of Petrified Wood"
+msgstr "Нагрудник из Окаменелого Дерева"
+
+msgid "Buckler of the Gnoll King"
+msgstr "Щит Короля Гноллов"
+
+msgid "Cape of Conjuring"
+msgstr "Магическая Накидка"
+
+msgid "Cape of Silence"
+msgstr "Накидка Молчания"
+
+msgid "Cape of Velocity"
+msgstr "Накидка Скорости"
+
+msgid "Cards of Prophecy"
+msgstr "Карты Пророчества"
+
+msgid "Celestial Necklace of Bliss"
+msgstr "Ожерелье Божественной Благодати"
+
+msgid "Centaur's Axe"
+msgstr "Секира Кентавра"
+
+msgid "Charm of Eclipse"
+msgstr "Амулет Затмения"
+
+msgid "Charm of Mana"
+msgstr "Амулет Маны"
+
+msgid "Cloak of the Undead King"
+msgstr "Плащ Короля Нежити"
+
+msgid "Clover of Fortune"
+msgstr "Клевер Удачи"
+
+msgid "Collar of Conjuring"
+msgstr "Магический Ошейник"
+
+msgid "Cornucopia"
+msgstr "Рог Изобилия"
+
+msgid "Crest of Valor"
+msgstr "Знак Отваги"
+
+msgid "Crown of Dragontooth"
+msgstr "Корона из Зубов Дракона"
+
+msgid "Crown of the Five Seas"
+msgstr "Корона Пяти Морей"
+
+msgid "Crown of the Supreme Magi"
+msgstr "Корона Верховного Мага"
+
+msgid "Dead Man's Boots"
+msgstr "Сапоги Мертвеца"
+
+msgid "Demon's Horseshoe"
+msgstr "Подкова Демона"
+
+msgid "Diplomat's Cloak"
+msgstr "Мантия Дипломата"
+
+msgid "Diplomat's Ring"
+msgstr "Кольцо Дипломата"
+
+msgid "Dragon Scale Armor"
+msgstr "Доспех из Чешуи Дракона"
+
+msgid "Dragon Scale Shield"
+msgstr "Щит из Чешуи Дракона"
+
+msgid "Dragon Wing Tabard"
+msgstr "Плащ из Крыльев Дракона"
+
+msgid "Dragonbone Greaves"
+msgstr "Поножи из Кости Дракона"
+
+msgid "Elixir of Life"
+msgstr "Эликсир Жизни"
+
+msgid "Emblem of Cognizance"
+msgstr "Символ Знания"
+
+msgid "Endless Bag of Gold"
+msgstr "Неиссякаемая Сума Золота"
+
+msgid "Endless Purse of Gold"
+msgstr "Неиссякаемая Мошна Золота"
+
+msgid "Endless Sack of Gold"
+msgstr "Неиссякаемый Мешок Золота"
+
+msgid "Equestrian's Gloves"
+msgstr "Перчатки Всадника"
+
+msgid "Everflowing Crystal Cloak"
+msgstr "Плащ Бесконечных Кристаллов"
+
+msgid "Everpouring Vial of Mercury"
+msgstr "Неиссякаемая Склянка Ртути"
+
+msgid "Eversmoking Ring of Sulfur"
+msgstr "Вечное Кольцо Серы"
+
+msgid "Garniture of Interference"
+msgstr "Колье Неприступности"
+
+msgid "Glyph of Gallantry"
+msgstr "Глиф Доблести"
+
+msgid "Golden Bow"
+msgstr "Золотой Лук"
+
+msgid "Golden Goose"
+msgstr "Золотой Гусь"
+
+msgid "Greater Gnoll's Flail"
+msgstr "Кистень Великого Гнолла"
+
+msgid "Head of Legion"
+msgstr "Голова Легионера"
+
+msgid "Hellstorm Helmet"
+msgstr "Шлем Сатанинской Ярости"
+
+msgid "Helm of Chaos"
+msgstr "Шлем Хаоса"
+
+msgid "Helm of Heavenly Enlightenment"
+msgstr "Шлем Небесного Просветления"
+
+msgid "Helm of the Alabaster Unicorn"
+msgstr "Шлем Белого Единорога"
+
+msgid "Hideous Mask"
+msgstr "Устрашающая Маска"
+
+msgid "Horn of the Abyss"
+msgstr "Рог Бездны"
+
+msgid "Hourglass of the Evil Hour"
+msgstr "Песочные Часы Недоброго Часа"
+
+msgid "Inexhaustible Cart of Lumber"
+msgstr "Неиссякаемая Подвода Древесины"
+
+msgid "Inexhaustible Cart of Ore"
+msgstr "Неистощимая Подвода с Рудой"
+
+msgid "Ironfist of the Ogre"
+msgstr "Железный Кулак Огра"
+
+msgid "Ladybird of Luck"
+msgstr "Голубка Удачи"
+
+msgid "Legs of Legion"
+msgstr "Ноги Легионера"
+
+msgid "Lion's Shield of Courage"
+msgstr "Щит Львиной Храбрости"
+
+msgid "Loins of Legion"
+msgstr "Поясница Легионера"
+
+msgid "Mystic Orb of Mana"
+msgstr "Волшебная Сфера Маны"
+
+msgid "Necklace of Dragonteeth"
+msgstr "Ожерелье из Зубов Дракона"
+
+msgid "Necklace of Ocean Guidance"
+msgstr "Ожерелье Морского Провидения"
+
+msgid "Necklace of Swiftness"
+msgstr "Ожерелье Стремительности"
+
+msgid "Ogre's Club of Havoc"
+msgstr "Карающая Дубина Огра"
+
+msgid "Orb of Driving Rain"
+msgstr "Сфера Проливного Дождя"
+
+msgid "Orb of Inhibition"
+msgstr "Сфера Запрещения"
+
+msgid "Orb of Silt"
+msgstr "Сфера Илистого Озера"
+
+msgid "Orb of Tempestuous Fire"
+msgstr "Сфера Бушующего Огня"
+
+msgid "Orb of the Firmament"
+msgstr "Сфера Небесного Свода"
+
+msgid "Orb of Vulnerability"
+msgstr "Сфера Уязвимости"
+
+msgid "Pendant of Courage"
+msgstr "Кулон Смелости"
+
+msgid "Pendant of Death"
+msgstr "Кулон Смерти"
+
+msgid "Pendant of Dispassion"
+msgstr "Амулет Бесстрастия"
+
+msgid "Pendant of Downfall"
+msgstr "Кулон Разорения"
+
+msgid "Pendant of Free Will"
+msgstr "Кулон Свободной Воли"
+
+msgid "Pendant of Holiness"
+msgstr "Кулон Святости"
+
+msgid "Pendant of Life"
+msgstr "Кулон Жизни"
+
+msgid "Pendant of Negativity"
+msgstr "Кулон Отрицательности"
+
+msgid "Pendant of Reflection"
+msgstr "Кулон Отражения"
+
+msgid "Pendant of Second Sight"
+msgstr "Кулон Ясновидения"
+
+msgid "Pendant of Total Recall"
+msgstr "Кулон Абсолютной Памяти"
+
+msgid "Plate of Dying Light"
+msgstr "Латы Гаснущих Светил"
+
+msgid "Power of the Dragon Father"
+msgstr "Мощь Отца Драконов"
+
+msgid "Quiet Eye of the Dragon"
+msgstr "Неподвижный Глаз Дракона"
+
+msgid "Recanter's Cloak"
+msgstr "Плащ Отречения"
+
+msgid "Red Dragon Flame Tongue"
+msgstr "Языки Пламени Красного Дракона"
+
+msgid "Rib Cage"
+msgstr "Рёбра"
+
+msgid "Ring of Conjuring"
+msgstr "Магическое Кольцо"
+
+msgid "Ring of Infinite Gems"
+msgstr "Кольцо Драгоценных Камней"
+
+msgid "Ring of Life"
+msgstr "Кольцо Жизни"
+
+msgid "Ring of Oblivion"
+msgstr "Кольцо Забвения"
+
+msgid "Ring of Suppression"
+msgstr "Кольцо Подавления"
+
+msgid "Ring of the Magi"
+msgstr "Кольцо Мага"
+
+msgid "Ring of the Wayfarer"
+msgstr "Кольцо Странника"
+
+msgid "Ring of Vitality"
+msgstr "Кольцо Жизненной Силы"
+
+msgid "Royal Armor of Nix"
+msgstr "Королевские Доспехи Никсов"
+
+msgid "Runes of Imminency"
+msgstr "Руны Неизбежности"
+
+msgid "Sandals of the Saint"
+msgstr "Сандалии Святого"
+
+msgid "Scales of the Greater Basilisk"
+msgstr "Кольчуга Великого Василиска"
+
+msgid "Sea Captain's Hat"
+msgstr "Шляпа Морского Капитана"
+
+msgid "Seal of Sunset"
+msgstr "Печать Заката"
+
+msgid "Sentinel's Shield"
+msgstr "Щит Часового"
+
+msgid "Shackles of War"
+msgstr "Оковы Войны"
+
+msgid "Shaman's Puppet"
+msgstr "Кукла Шамана"
+
+msgid "Shield of Naval Glory"
+msgstr "Щит Морской Славы"
+
+msgid "Shield of the Damned"
+msgstr "Щит Проклятых"
+
+msgid "Shield of the Dwarven Lords"
+msgstr "Щит Короля Гномов"
+
+msgid "Shield of the Yawning Dead"
+msgstr "Щит Тоскующих Мертвецов"
+
+msgid "Skull Helmet"
+msgstr "Шлем-Череп"
+
+msgid "Sleepkeeper"
+msgstr "Хранитель снов"
+
+msgid "Speculum"
+msgstr "Телескоп"
+
+msgid "Spellbinder's Hat"
+msgstr "Шляпа Волшебника"
+
+msgid "Sphere of Permanence"
+msgstr "Сфера Постоянства"
+
+msgid "Spirit of Oppression"
+msgstr "Дух Уныния"
+
+msgid "Spyglass"
+msgstr "Подзорная Труба"
+
+msgid "Statesman's Medal"
+msgstr "Медаль Чиновника"
+
+msgid "Statue of Legion"
+msgstr "Статуя Легионера"
+
+msgid "Still Eye of the Dragon"
+msgstr "Застывший Глаз Дракона"
+
+msgid "Stoic Watchman"
+msgstr "Стойкий Часовой"
+
+msgid "Surcoat of Counterpoise"
+msgstr "Туника Равновесия"
+
+msgid "Sword of Hellfire"
+msgstr "Меч Адского Пламени"
+
+msgid "Sword of Judgement"
+msgstr "Меч Правосудия"
+
+msgid "Talisman of Mana"
+msgstr "Талисман Маны"
+
+msgid "Targ of the Rampaging Ogre"
+msgstr "Щит Яростного Огра"
+
+msgid "The Grail"
+msgstr "Грааль"
+
+msgid "Thunder Helmet"
+msgstr "Шлем Небесного Грома"
+
+msgid "Titan's Cuirass"
+msgstr "Кираса Титана"
+
+msgid "Titan's Gladius"
+msgstr "Гладиус Титана"
+
+msgid "Titan's Thunder"
+msgstr "Гром Титана"
+
+msgid "Tome of Air"
+msgstr "Книга Магии Воздуха"
+
+msgid "Tome of Earth"
+msgstr "Книга Магии Земли"
+
+msgid "Tome of Fire"
+msgstr "Книга Магии Огня"
+
+msgid "Tome of Water"
+msgstr "Книга Магии Воды"
+
+msgid "Torso of Legion"
+msgstr "Торс Легионера"
+
+msgid "Trident of Dominion"
+msgstr "Трезубец Могущества"
+
+msgid "Tunic of the Cyclops King"
+msgstr "Туника Короля Циклопов"
+
+msgid "Vampire's Cowl"
+msgstr "Мантия Вампира"
+
+msgid "Vial of Dragon Blood"
+msgstr "Пузырёк с Кровью Дракона"
+
+msgid "Vial of Lifeblood"
+msgstr "Склянка Жизненной Силы"
+
+msgid "Wayfarer's Boots"
+msgstr "Сапоги Странника"
+
+msgid "Wizard's Well"
+msgstr "Колодец Волшебника"
+
+
+# - Hero spell scroll artifacts --------------------
+
+msgid "Spell Scroll: Air Shield"
+msgstr "Свиток заклинания: Воздушный Щит"
+
+msgid "Spell Scroll: Animate Dead"
+msgstr "Свиток заклинания: Поднятие Мертвецов"
+
+msgid "Spell Scroll: Anti-Magic"
+msgstr "Свиток заклинания: Антимагия"
+
+msgid "Spell Scroll: Armageddon"
+msgstr "Свиток заклинания: Армагеддон"
+
+msgid "Spell Scroll: Berserk"
+msgstr "Свиток заклинания: Берсерк"
+
+msgid "Spell Scroll: Bless"
+msgstr "Свиток заклинания: Благословение"
+
+msgid "Spell Scroll: Blind"
+msgstr "Свиток заклинания: Слепота"
+
+msgid "Spell Scroll: Bloodlust"
+msgstr "Свиток заклинания: Жажда Крови"
+
+msgid "Spell Scroll: Chain Lightning"
+msgstr "Свиток заклинания: Цепная Молния"
+
+msgid "Spell Scroll: Clone"
+msgstr "Свиток заклинания: Клон"
+
+msgid "Spell Scroll: Counterstrike"
+msgstr "Свиток заклинания: Контрудар"
+
+msgid "Spell Scroll: Cure"
+msgstr "Свиток заклинания: Лечение"
+
+msgid "Spell Scroll: Curse"
+msgstr "Свиток заклинания: Проклятие"
+
+msgid "Spell Scroll: Death Ripple"
+msgstr "Свиток заклинания: Волна Смерти"
+
+msgid "Spell Scroll: Destroy Undead"
+msgstr "Свиток заклинания: Уничтожить Нежить"
+
+msgid "Spell Scroll: Dimension Door"
+msgstr "Свиток заклинания: Дверь Измерений"
+
+msgid "Spell Scroll: Disguise"
+msgstr "Свиток заклинания: Маскировка"
+
+msgid "Spell Scroll: Dispel"
+msgstr "Свиток заклинания: Снятие Заклинаний"
+
+msgid "Spell Scroll: Disrupting Ray"
+msgstr "Свиток заклинания: Разрушающий Луч"
+
+msgid "Spell Scroll: Earthquake"
+msgstr "Свиток заклинания: Землетрясение"
+
+msgid "Spell Scroll: Fire Shield"
+msgstr "Свиток заклинания: Огненный Щит"
+
+msgid "Spell Scroll: Fire Wall"
+msgstr "Свиток заклинания: Стена Огня"
+
+msgid "Spell Scroll: Fireball"
+msgstr "Свиток заклинания: Огненный Шар"
+
+msgid "Spell Scroll: Fly"
+msgstr "Свиток заклинания: Полёт"
+
+msgid "Spell Scroll: Force Field"
+msgstr "Свиток заклинания: Силовое Поле"
+
+msgid "Spell Scroll: Forgetfulness"
+msgstr "Свиток заклинания: Забывчивость"
+
+msgid "Spell Scroll: Fortune"
+msgstr "Свиток заклинания: Фортуна"
+
+msgid "Spell Scroll: Frenzy"
+msgstr "Свиток заклинания: Бешенство"
+
+msgid "Spell Scroll: Frost Ring"
+msgstr "Свиток заклинания: Кольцо Холода"
+
+msgid "Spell Scroll: Haste"
+msgstr "Свиток заклинания: Ускорение"
+
+msgid "Spell Scroll: Hypnotize"
+msgstr "Свиток заклинания: Гипноз"
+
+msgid "Spell Scroll: Ice Bolt"
+msgstr "Свиток заклинания: Ледяная Стрела"
+
+msgid "Spell Scroll: Implosion"
+msgstr "Свиток заклинания: Взрыв"
+
+msgid "Spell Scroll: Inferno"
+msgstr "Свиток заклинания: Инферно"
+
+msgid "Spell Scroll: Land Mine"
+msgstr "Свиток заклинания: Минное Поле"
+
+msgid "Spell Scroll: Lightning Bolt"
+msgstr "Свиток заклинания: Молния"
+
+msgid "Spell Scroll: Magic Arrow"
+msgstr "Свиток заклинания: Волшебная Стрела"
+
+msgid "Spell Scroll: Magic Mirror"
+msgstr "Свиток заклинания: Волшебное Зеркало"
+
+msgid "Spell Scroll: Meteor Shower"
+msgstr "Свиток заклинания: Метеоритный Дождь"
+
+msgid "Spell Scroll: Mirth"
+msgstr "Свиток заклинания: Радость"
+
+msgid "Spell Scroll: Misfortune"
+msgstr "Свиток заклинания: Неудача"
+
+msgid "Spell Scroll: Prayer"
+msgstr "Свиток заклинания: Молитва"
+
+msgid "Spell Scroll: Precision"
+msgstr "Свиток заклинания: Точность"
+
+msgid "Spell Scroll: Protection from Air"
+msgstr "Свиток заклинания: Защита от Воздуха"
+
+msgid "Spell Scroll: Protection from Earth"
+msgstr "Свиток заклинания: Защита от Земли"
+
+msgid "Spell Scroll: Protection from Fire"
+msgstr "Свиток заклинания: Защита от Огня"
+
+msgid "Spell Scroll: Protection from Water"
+msgstr "Свиток заклинания: Защита от Воды"
+
+msgid "Spell Scroll: Quicksand"
+msgstr "Свиток заклинания: Зыбучие Пески"
+
+msgid "Spell Scroll: Remove Obstacle"
+msgstr "Свиток заклинания: Устранение Преград"
+
+msgid "Spell Scroll: Resurrection"
+msgstr "Свиток заклинания: Воскрешение"
+
+msgid "Spell Scroll: Sacrifice"
+msgstr "Свиток заклинания: Жертва"
+
+msgid "Spell Scroll: Scuttle Boat"
+msgstr "Свиток заклинания: Уничтожить Корабль"
+
+msgid "Spell Scroll: Shield"
+msgstr "Свиток заклинания: Щит"
+
+msgid "Spell Scroll: Slayer"
+msgstr "Свиток заклинания: Палач"
+
+msgid "Spell Scroll: Slow"
+msgstr "Свиток заклинания: Медлительность"
+
+msgid "Spell Scroll: Sorrow"
+msgstr "Свиток заклинания: Печаль"
+
+msgid "Spell Scroll: Stone Skin"
+msgstr "Свиток заклинания: Каменная Кожа"
+
+msgid "Spell Scroll: Summon Air Elemental"
+msgstr "Свиток заклинания: Элементаль Воздуха"
+
+msgid "Spell Scroll: Summon Boat"
+msgstr "Свиток заклинания: Вызвать Корабль"
+
+msgid "Spell Scroll: Summon Earth Elemental"
+msgstr "Свиток заклинания: Элементаль Земли"
+
+msgid "Spell Scroll: Summon Fire Elemental"
+msgstr "Свиток заклинания: Элементаль Огня"
+
+msgid "Spell Scroll: Summon Water Elemental"
+msgstr "Свиток заклинания: Элементаль Воды"
+
+msgid "Spell Scroll: Teleport"
+msgstr "Свиток заклинания: Телепорт"
+
+msgid "Spell Scroll: Town Portal"
+msgstr "Свиток заклинания: Городской Портал"
+
+msgid "Spell Scroll: View Air"
+msgstr "Свиток заклинания: Небесное Око"
+
+msgid "Spell Scroll: View Earth"
+msgstr "Свиток заклинания: Просмотр Земли"
+
+msgid "Spell Scroll: Visions"
+msgstr "Свиток заклинания: Видения"
+
+msgid "Spell Scroll: Water Walk"
+msgstr "Свиток заклинания: Хождение по Воде"
+
+msgid "Spell Scroll: Weakness"
+msgstr "Свиток заклинания: Слабость"
+
+
+# - Hero UI texts --------------------
+
+msgid "%s already matching %s %s"
+msgstr "%s уже является %s %s"
+
+msgid "%s army"
+msgstr "армии героя %s"
+
+msgid "%s equipment"
+msgstr "снаряжения героя %s"
+
+msgid "%s exported (%s total)"
+msgstr "%s экспортировано (всего %s)"
+
+msgid "%s inventory"
+msgstr "рюкзака героя %s"
+
+msgid "%s skills"
+msgstr "навыков героя %s"
+
+msgid "%s spells"
+msgstr "заклинаний героя %s"
+
+msgid "%s stats"
+msgstr "основного героя %s"
+
+msgid "%s visible (%s total)"
+msgstr "%s видно (всего %s)"
+
+msgid "<blank>"
+msgstr "<пустой>"
+
+msgid "<taken by %s>"
+msgstr "<занято: %s>"
+
+msgid "<unknown 0x%X>"
+msgstr "<неизвестный 0x%X>"
+
+msgid "add"
+msgstr "добавление"
+
+msgid "Add"
+msgstr "Добавить"
+
+msgid "add %s"
+msgstr "добавить %s"
+
+msgid "all"
+msgstr "всё"
+
+msgid "ammo"
+msgstr "тележка"
+
+msgid "and"
+msgstr "и"
+
+msgid "Army slot"
+msgstr "Слот армии"
+
+msgid "assemble %s"
+msgstr "собрать %s"
+
+msgid "base %s"
+msgstr "база %s"
+
+msgid "bottom"
+msgstr "в конец"
+
+msgid "by %s"
+msgstr "%s"
+
+msgid "Cannot equip %s on %s, required slot taken"
+msgstr "Невозможно надеть %s на %s: слот занят"
+
+msgid "change"
+msgstr "изменение"
+
+msgid "Change %s"
+msgstr "Изменить %s"
+
+msgid "Change multiple properties on page"
+msgstr "Изменить несколько свойств на странице"
+
+msgid "Change skill to"
+msgstr "Изменить навык на"
+
+msgid "Clear item"
+msgstr "Очистить элемент"
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "combination artifact"
+msgstr "сборный артефакт"
+
+msgid "combined"
+msgstr "сборный"
+
+msgid "combined artifact"
+msgstr "сборный артефакт"
+
+msgid "Compact %s"
+msgstr "Уплотнить %s"
+
+msgid "Copied hero %s data to clipboard."
+msgstr "Данные героя %s скопированы в буфер обмена."
+
+msgid "Copy current hero data to clipboard"
+msgstr "Скопировать данные текущего героя в буфер обмена"
+
+msgid "Copy data"
+msgstr "Скопировать данные"
+
+msgid "count"
+msgstr "количество"
+
+msgid "Description"
+msgstr "Описание"
+
+msgid "Devices"
+msgstr "Машины"
+
+msgid "disassemble %s"
+msgstr "разобрать %s"
+
+msgid "Doing %s"
+msgstr "Выполнение: %s"
+
+msgid "down"
+msgstr "вниз"
+
+msgid "equip %s"
+msgstr "надеть %s"
+
+msgid "Equip all possible equipment from inventory"
+msgstr "Надеть всё подходящее снаряжение из рюкзака"
+
+msgid "Equip all possible inventory"
+msgstr "Надеть всё подходящее из рюкзака"
+
+msgid "Equip from inventory"
+msgstr "Надеть из рюкзака"
+
+msgid "exp"
+msgstr "опыт"
+
+msgid "Expo&rt"
+msgstr "Экспо&рт"
+
+msgid "Export heroes to file"
+msgstr "Экспорт героев в файл"
+
+msgid "Export heroes to HTML or data file"
+msgstr "Экспорт героев в HTML или файл данных"
+
+msgid "Exported %s (%s)."
+msgstr "Экспортировано %s (%s)."
+
+msgid "Exported with %s on %s."
+msgstr "Экспортировано с помощью %s %s."
+
+msgid "Exporting %s"
+msgstr "Экспорт %s"
+
+msgid "Faction"
+msgstr "Фракция"
+
+msgid "Filter hero index on any matching text"
+msgstr "Фильтровать индекс героев по любому тексту"
+
+msgid "Filter heroes"
+msgstr "Фильтровать героев"
+
+msgid "Filter heroes on any matching text"
+msgstr "Фильтровать героев по любому тексту"
+
+msgid "from inventory"
+msgstr "из рюкзака"
+
+msgid "Game version"
+msgstr "Версия игры"
+
+msgid "hero"
+msgstr "герой"
+
+msgid "heroes"
+msgstr "героев"
+
+msgid "Hero '%s' not found."
+msgstr "Герой '%s' не найден."
+
+msgid "Hero character sheet"
+msgstr "Лист персонажа героя"
+
+msgid "Hero has no spellbook."
+msgstr "У героя нет книги магии."
+
+msgid "Heroes from %s"
+msgstr "Герои из %s"
+
+msgid "In &current order"
+msgstr "В &текущем порядке"
+
+msgid "In &name order"
+msgstr "В порядке &имен"
+
+msgid "In &reverse order"
+msgstr "В &обратном порядке"
+
+msgid "In &slot and name order"
+msgstr "В порядке &слотов и имен"
+
+msgid "INDEX"
+msgstr "ИНДЕКС"
+
+msgid "Insert blank"
+msgstr "Вставить пустую"
+
+msgid "Inventory too full"
+msgstr "Недостаточно места в рюкзаке"
+
+msgid "Loading %s."
+msgstr "Загрузка %s."
+
+msgid "Loading heroes."
+msgstr "Загрузка героев."
+
+msgid "Lower %s"
+msgstr "Вниз: %s"
+
+msgid "mana_left"
+msgstr "мана"
+
+msgid "Map"
+msgstr "Карта"
+
+msgid "Modified"
+msgstr "Изменён"
+
+msgid ""
+"More than 8 skills can be added.\n"
+"Game will not show them on the hero screen,\n"
+"but they will be in effect."
+msgstr ""
+"Можно добавить более 8 навыков.\n"
+"Игра не покажет их на экране героя,\n"
+"но они будут действовать."
+
+msgid "Move %s"
+msgstr "Переместить %s"
+
+msgid "move %s to"
+msgstr "переместить %s"
+
+msgid "movement_left"
+msgstr "ход"
+
+msgid "Name"
+msgstr "Имя"
+
+msgid "need %s free"
+msgstr "нужно %s свободных"
+
+msgid "No change from: %s"
+msgstr "Нет изменений от действия: %s"
+
+msgid "No valid hero data in clipboard."
+msgstr "В буфере обмена нет корректных данных героя."
+
+msgid "Normal view"
+msgstr "Обычный вид"
+
+msgid "Open options menu"
+msgstr "Меню параметров"
+
+msgid "Paste data from clipboard to current hero"
+msgstr "Вставить данные из буфера обмена в текущего героя"
+
+msgid "Pasting data to hero %s from clipboard."
+msgstr "Вставка данных героя %s из буфера обмена."
+
+msgid "Power"
+msgstr "Сила"
+
+msgid "Recalculate experience points from hero level"
+msgstr "Пересчитать очки опыта от уровне героя"
+
+msgid "Recalculate level from hero experience points"
+msgstr "Пересчитать уровень от опыта героя"
+
+msgid "Refill to total"
+msgstr "Заполнить до максимума"
+
+msgid "remove"
+msgstr "удаление"
+
+msgid "remove %s"
+msgstr "удалить %s"
+
+msgid "Remove item"
+msgstr "Удалить элемент"
+
+msgid "Remove row"
+msgstr "Удалить строку"
+
+msgid "round"
+msgstr "округление"
+
+msgid "Round army count to"
+msgstr "Округлить количество армий до"
+
+msgid "Round army counts to"
+msgstr "Округлить количество армий до"
+
+msgid "Save current hero to file"
+msgstr "Сохранить текущего героя в файл"
+
+msgid "scroll"
+msgstr "свиток"
+
+msgid "Search heroes"
+msgstr "Поиск героев"
+
+msgid "&Select hero"
+msgstr "&Выбор героя"
+
+msgid "send"
+msgstr "отправление"
+
+msgid "send %s"
+msgstr "отправить %s"
+
+msgid "Send all equipment to inventory"
+msgstr "Отправить всё снаряжение в рюкзак"
+
+msgid "set"
+msgstr "установка"
+
+msgid "set %s skills to %s"
+msgstr "установка навыков героя %s на %s"
+
+msgid "Set army counts to 1"
+msgstr "Установить количество армий в 1"
+
+msgid "Set artifact by category"
+msgstr "Установить артефакт по категории"
+
+msgid "Set from experience"
+msgstr "Установить из опыта"
+
+msgid "Set from level"
+msgstr "Установить из уровня"
+
+msgid "Set skill levels to"
+msgstr "Установить уровни навыков на"
+
+msgid "Show %s character sheet"
+msgstr "Показать лист персонажа %s"
+
+msgid "Show hero full character sheet"
+msgstr "Показать полный лист персонажа героя"
+
+msgid "Show or hide %s column"
+msgstr "Показать или скрывать столбец %s"
+
+msgid "Show or hide %s columns"
+msgstr "Показать или скрывать столбцы %s"
+
+msgid "Size"
+msgstr "Размер"
+
+msgid "Skill slot"
+msgstr "Слот навыка"
+
+msgid "slot"
+msgstr "слот"
+
+msgid "Sort by %s"
+msgstr "Сортировать по столбцу %s"
+
+msgid "Source"
+msgstr "Путь"
+
+msgid "Stats"
+msgstr "Статы"
+
+msgid "swap"
+msgstr "обмен"
+
+msgid "swap %s"
+msgstr "поменять %s"
+
+msgid "Swap %s with"
+msgstr "Поменять %s на"
+
+msgid "Swap all possible equipment with inventory"
+msgstr "Поменять всё подходящее снаряжение из рюкзака"
+
+msgid "Swap all possible inventory with equipment"
+msgstr "Поменять всё подходящее снаряжение из рюкзака"
+
+msgid "Swap with equipment slot"
+msgstr "Поменять снаряжение в слоте"
+
+msgid "Swap with inventory"
+msgstr "Поменять с рюкзака"
+
+msgid "tent"
+msgstr "палатка"
+
+msgid "Toggle %s"
+msgstr "Выбрать %s"
+
+msgid "toggle all %s"
+msgstr "выбрать все по %s"
+
+msgid "Toggle full description"
+msgstr "Переключить полное описание"
+
+msgid "to inventory"
+msgstr "в рюкзак"
+
+msgid "top"
+msgstr "в начало"
+
+msgid "Top up remaining movement points to hero total"
+msgstr "Восстановить очки хода полностью"
+
+msgid "Top up remaining spell points to hero maximum"
+msgstr "Восстановить ману полностью"
+
+msgid "Unsaved changes"
+msgstr "Несохраненные изменения"
+
+msgid "Unsaved changes only"
+msgstr "Только несохраненные изменения"
+
+msgid "up"
+msgstr "вверх"
+
+msgid "Upper %s"
+msgstr "Вверх: %s"
+
+msgid "with"
+msgstr "с"
+
+msgid "with inventory"
+msgstr "с рюкзаком"
+
+msgid "with inventory slot"
+msgstr "со слота рюкзака"
+
+msgid "with location"
+msgstr "с ячейки"
+
+
+
+# - General UI texts --------------------
+
+msgid "Log"
+msgstr "Журнал"
+
+msgid "C&lear log"
+msgstr "Очистить &журнал"
+
+msgid "%s Console"
+msgstr "%s: Консоль"
+
+
+# - Main page buttons --------------------
+
+msgid "Choose file"
+msgstr "Выбор файла"
+
+msgid "&Open"
+msgstr "&Открыть"
+
+msgid "&Refresh"
+msgstr "Об&новить"
+
+msgid "&Browse"
+msgstr "О&бзор"
+
+msgid "Select file"
+msgstr "Выбрать файл"
+
+msgid "Open currently selected file"
+msgstr "Открыть выбранный файл"
+
+msgid "Refresh file panel"
+msgstr "Обновить панель файлов"
+
+msgid "Open dialog for selecting a file" 
+msgstr "Открыть диалог выбора файла"
+
+
+# - Application main menu --------------------
+
+msgid "&File"
+msgstr "&Файл"
+
+msgid "&Edit"
+msgstr "&Правка"
+
+msgid "&Help"
+msgstr "&Справка"
+
+
+# - Application file menu --------------------
+
+msgid "&Open savefile"
+msgstr "&Открыть сейв"
+
+msgid "Choose a savefile to open"
+msgstr "Выбрать сейв для открытия"
+
+msgid "&Close file"
+msgstr "&Закрыть файл"
+
+msgid "Close current savefile"
+msgstr "Закрыть текущий сейв"
+
+msgid "Re&load"
+msgstr "&Перезагрузить"
+
+msgid "Reload savefile, losing any current changes"
+msgstr "Перезагрузить сейв, потеряв текущие изменения"
+
+msgid "&Save"
+msgstr "&Сохранить"
+
+msgid "Save the active file"
+msgstr "Сохранить активный файл"
+
+msgid "Save &as"
+msgstr "Сохранить &как"
+
+msgid "Save the active file under a new name"
+msgstr "Сохранить активный файл под новым именем"
+
+msgid "&Recent files"
+msgstr "&Недавние файлы"
+
+msgid "Recently opened files"
+msgstr "Недавно открытые файлы"
+
+msgid "Recent &heroes"
+msgstr "Недавние &герои"
+
+msgid "Recently opened heroes"
+msgstr "Недавно открытые герои"
+
+msgid "Opt&ions"
+msgstr "&Параметры"
+
+msgid "E&xit"
+msgstr "&Выход"
+
+
+# - Application file menu options submenu --------------------
+
+msgid "&Dark mode"
+msgstr "&Тёмный режим"
+
+msgid "&System"
+msgstr "&Системный"
+
+msgid "Dark mode applied automatically from system settings"
+msgstr "Тёмный режим применяется автоматически из настроек системы"
+
+msgid "&Enabled"
+msgstr "&Включить"
+
+msgid "Dark mode on"
+msgstr "Тёмный режим включен"
+
+msgid "&Off"
+msgstr "В&ыключить"
+
+msgid "Dark mode off"
+msgstr "Тёмный режим выключен"
+
+
+msgid "Interface &language"
+msgstr "&Язык интерфейса"
+
+msgid "Set application language to %s (%s)"
+msgstr "Установить язык приложения: %s (%s)"
+
+msgid "Application interface in %s (%s)"
+msgstr "Интерфейс приложения на %s (%s)"
+
+msgid "Add language"
+msgstr "Добавить язык"
+
+msgid "Add another language from a translation file"
+msgstr "Добавить другой язык из файла перевода"
+
+msgid "Remove language"
+msgstr "Удалить язык"
+
+msgid "Remove an added translation language"
+msgstr "Удалить добавленный язык перевода"
+
+
+msgid "Automatic &update check"
+msgstr "Автопроверка &обновлений"
+
+msgid "Automatically check for program updates periodically"
+msgstr "Автоматически проверять обновления программы периодически"
+
+msgid "&Back up files before saving"
+msgstr "&Создавать резервную копию перед сохранением"
+
+msgid "Create backup copy of savefile before saving changes"
+msgstr "Создавать резервную копию сейва перед внесением изменений"
+
+msgid "&Confirm unsaved changes"
+msgstr "&Подтверждать несохраненные изменения"
+
+msgid "Ask for confirmation on closing files with unsaved changes"
+msgstr "Запрашивать подтверждение при закрытии файлов с несохраненными изменениями"
+
+msgid "&New format in Armageddon's Blade"
+msgstr "&Новый формат в Armageddon's Blade"
+
+msgid "Parse Armageddon's Blade savegames from newer game version"
+msgstr "Парсить сейвы Armageddon's Blade из новой версии игры"
+
+msgid "Clear &recent items"
+msgstr "О&чистить недавние элементы"
+
+msgid "Clear recent files and heroes list"
+msgstr "Очистить списки недавних файлов и героев"
+
+
+# - Application edit menu --------------------
+
+msgid "&Undo"
+msgstr "&Отменить"
+
+msgid "Undo the last action"
+msgstr "Отменить последнее действие"
+
+msgid "&Redo"
+msgstr "&Повторить"
+
+msgid "Redo the previously undone action"
+msgstr "Повторить отмененное действие"
+
+msgid "Command &history"
+msgstr "История &команд"
+
+msgid "View current changes done to savegame"
+msgstr "Просмотр текущих изменений в сейве"
+
+msgid "Show unsaved &changes"
+msgstr "Показать несохраненные &изменения"
+
+msgid "Show pending changes to savegame"
+msgstr "Показать ожидающие сохранения изменения"
+
+
+# - Application help menu --------------------
+
+msgid "Check for &updates"
+msgstr "Проверить &обновления"
+
+msgid "Check whether a new version of %s is available"
+msgstr "Проверить наличие новой версии %s"
+
+msgid "Show &log window"
+msgstr "Показать окно &журнала"
+
+msgid "Show/hide the log messages window"
+msgstr "Показать/скрыть окно сообщений журнала"
+
+msgid "Show Python &console"
+msgstr "Показать Python-&консоль"
+
+msgid "Show/hide a Python shell environment window"
+msgstr "Показать/скрыть окно среды Python"
+
+
+msgid "&About %s"
+msgstr "О &программе %s"
+
+msgid "Show program information and copyright"
+msgstr "Показать информацию о программе и авторские права"
+
+
+# - Application toolbar --------------------
+
+msgid "Open"
+msgstr "Открыть"
+
+msgid "Save"
+msgstr "Сохр."
+
+msgid "Save as"
+msgstr "Сохр. как"
+
+msgid "Undo"
+msgstr "Отменить"
+
+msgid "Redo"
+msgstr "Вернуть"
+
+msgid "Reload"
+msgstr "Перезагр."
+
+msgid "Folder"
+msgstr "Папка"
+
+msgid "Open file directory in file manager program"
+msgstr "Открыть папку файла в диспетчере файлов"
+
+msgid "Function"
+msgstr "Функция"
+
+msgid "Select function to run"
+msgstr "Выбрать функцию для запуска"
+
+
+# - Interface language actions --------------------
+
+msgid "Select translation file"
+msgstr "Выбрать файл перевода"
+
+msgid "Error loading translation."
+msgstr "Ошибка загрузки перевода."
+
+msgid "Drop translation"
+msgstr "Удалить перевод"
+
+msgid "Dropped translation for %s (%s)."
+msgstr "Перевод для %s (%s) удален."
+
+msgid "Application language set to %s (%s)."
+msgstr "Язык приложения установлен на %s (%s)."
+
+msgid "No language information in file"
+msgstr "В файле нет информации о языке"
+
+msgid "No translations in file"
+msgstr "В файле нет переводов"
+
+
+# - User function actions --------------------
+
+msgid "Error invoking function %r: %s"
+msgstr "Ошибка вызова функции %r: %s"
+
+msgid "&Copy"
+msgstr "&Копировать"
+
+msgid "Copied to clipboard."
+msgstr "Скопировано в буфер обмена."
+
+msgid "User-defined functions"
+msgstr "Пользовательские функции"
+
+msgid "Edit user functions"
+msgstr "Редактировать пользовательские функции"
+
+
+# - File list popup menu --------------------
+
+msgid "&Open file"
+msgstr "&Открыть файл"
+
+msgid "&Go to directory"
+msgstr "&Перейти в папку"
+
+msgid "&Copy path"
+msgstr "&Копировать путь"
+
+msgid "Save %s &as"
+msgstr "Сохранить %s &как"
+
+msgid "&Delete %s"
+msgstr "&Удалить %s"
+
+msgid "&Expand/collapse"
+msgstr "&Развернуть/свернуть"
+
+msgid "&Refresh list"
+msgstr "&Обновить список"
+
+
+# - File list actions --------------------
+
+msgid "Delete this %s from disk?"
+msgstr "Удалить этот %s с диска?"
+
+msgid "directory"
+msgstr "папку"
+
+msgid "file"
+msgstr "файл"
+
+msgid "Cannot delete %s, %s open."
+msgstr "Невозможно удалить %s, так как %s открыт."
+
+msgid "currently"
+msgstr "в данный момент"
+
+msgid "Deleting %s"
+msgstr "Удаление %s"
+
+msgid "Error deleting %s"
+msgstr "Ошибка при удалении %s"
+
+msgid "Save %s as"
+msgstr "Сохранить %s как"
+
+msgid "%s is already open in %s."
+msgstr "%s уже открыт в %s."
+
+msgid "Saved %s."
+msgstr "%s сохранен."
+
+
+# - Application update --------------------
+
+msgid "Checking for new version of %s."
+msgstr "Проверка новой версии %s."
+
+msgid "Update information"
+msgstr "Информация об обновлении"
+
+msgid "New %s version %s available."
+msgstr "Доступна новая версия %s: %s."
+
+msgid "Newer version (%s) available. You are currently on version %s."
+msgstr "Доступна более новая версия (%s). Вы используете версию %s."
+
+msgid "Open the program homepage?"
+msgstr "Открыть домашнюю страницу программы?"
+
+msgid "You are using the latest version of %s, %s."
+msgstr "Вы используете последнюю версию %s: %s."
+
+msgid "Could not contact server."
+msgstr "Не удалось соединиться с сервером."
+
+
+# - Savefile actions --------------------
+
+msgid "Loading \"%s\"."
+msgstr "Загрузка \"%s\"."
+
+msgid "Opened %s."
+msgstr "%s открыт."
+
+msgid "Error reloading %s"
+msgstr "Ошибка перезагрузки %s"
+
+msgid "Reloading file."
+msgstr "Перезагрузка файла."
+
+
+msgid "Error opening %s."
+msgstr "Ошибка открытия %s."
+
+msgid "Failed to open %s."
+msgstr "Не удалось открыть %s."
+
+msgid "No such file"
+msgstr "Файл не найден"
+
+msgid "Not a valid gzipped file?"
+msgstr "Неверный GZIP файл?"
+
+msgid "Not a valid savefile"
+msgstr "Неверный сейв"
+
+msgid "Opening page for %s."
+msgstr "Открытие страницы для %s."
+
+
+msgid "Undoing %s"
+msgstr "Отмена действия: %s"
+
+msgid "Redoing %s"
+msgstr "Повтор действия: %s"
+
+msgid "%s action"
+msgstr "%s действие"
+
+msgid "%s actions"
+msgstr "%s действия"
+
+
+msgid "There are unsaved changes in %s"
+msgstr "В %s есть несохраненные изменения"
+
+msgid "Do you want to save the changes?"
+msgstr "Сохранить изменения?"
+
+msgid "%s has modifications."
+msgstr "%s имеет изменения."
+
+msgid "Are you sure you want to lose all changes?"
+msgstr "Вы уверены, что хотите потерять все изменения?"
+
+msgid "Changes in %s"
+msgstr "Изменения в %s"
+
+msgid "Error saving %s as %s"
+msgstr "Ошибка сохранения %s как %s"
+
+msgid "Error saving changes"
+msgstr "Ошибка сохранения изменений"
+
+
+# - File format descriptions --------------------
+
+msgid "All files"
+msgstr "Все файлы"
+
+msgid "Heroes3 savefiles"
+msgstr "Heroes3 сейвы"
+
+msgid "Heroes3 single player savefiles"
+msgstr "Heroes3 одиночные сейвы"
+
+msgid "Heroes3 multi-player savefiles"
+msgstr "Heroes3 многопользовательские сейвы"
+
+msgid "Heroes3 campaign savefiles"
+msgstr "Heroes3 сейвы кампании"
+
+msgid "CSV spreadsheet"
+msgstr "Таблица CSV"
+
+msgid "HTML document"
+msgstr "Документ HTML"
+
+msgid "JSON document"
+msgstr "Документ JSON"
+
+msgid "YAML document"
+msgstr "Документ YAML"
+
+msgid "Translation file"
+msgstr "Файл перевода"
+
+msgid "Machine Object translation file"
+msgstr "Файл перевода Machine Object"
+
+msgid "Portable Object translation file"
+msgstr "Файл перевода Portable Object"
+
+
+# - Command history dialog --------------------
+
+#: lib/controls.py
+msgid "Command history"
+msgstr "История команд"
+
+#: lib/controls.py
+msgid "Select commands to undo or redo"
+msgstr "Выберите команды для отмены или повтора"
+
+#: lib/controls.py
+msgid "Number"
+msgstr "Номер"
+
+#: lib/controls.py
+msgid "Command"
+msgstr "Команда"
+
+#: lib/controls.py
+msgid "Timestamp"
+msgstr "Время"
+
+#: lib/controls.py
+msgid "Time since"
+msgstr "Время назад"
+
+
+# - Function editor dialog --------------------
+
+#: lib/controls.py
+msgid "Tit&le"
+msgstr "&Заглавие"
+
+#: lib/controls.py
+msgid "&Body"
+msgstr "Те&ло"
+
+#: lib/controls.py
+msgid "Ta&rget"
+msgstr "Назна&чение"
+
+#: lib/controls.py
+msgid "&Test"
+msgstr "&Тест"
+
+#: lib/controls.py
+msgid "&Active"
+msgstr "&Активно"
+
+#: lib/controls.py
+msgid "Error"
+msgstr "Ошибка"
+
+
+#: lib/controls.py
+msgid "&Compile"
+msgstr "С&компилировать"
+
+#: lib/controls.py
+msgid "Delete"
+msgstr "Удалить"
+
+#: lib/controls.py
+msgid "Canc&el"
+msgstr "Отм&енить"
+
+#: lib/controls.py
+msgid "&New entry"
+msgstr "&Новая запись"
+
+#: lib/controls.py
+msgid "callable"
+msgstr "вызываемый"
+
+
+#: lib/controls.py
+msgid "Title for %s; ampersand makes hotkey"
+msgstr "Заголовок для %s; амперсанд создает горячую клавишу"
+
+#: lib/controls.py
+msgid "Python code to compile for %s"
+msgstr "Код Python для компиляции в %s"
+
+#: lib/controls.py
+msgid "Enable %s for use"
+msgstr "Включить %s для использования"
+
+#: lib/controls.py
+msgid "Callable name from body to invoke as %s"
+msgstr "Имя вызываемого объекта из тела для запуска как %s"
+
+#: lib/controls.py
+msgid "Enter new %s"
+msgstr "Введите новый %s"
+
+
+#: lib/controls.py
+msgid "Close dialog"
+msgstr "Закрыть диалог"
+
+#: lib/controls.py
+msgid "Move selected entry one step higher"
+msgstr "Переместить выбранную запись на шаг выше"
+
+#: lib/controls.py
+msgid "Move selected entry one step lower"
+msgstr "Переместить выбранную запись на шаг ниже"
+
+#: lib/controls.py
+msgid "Invoke %s with content from popup"
+msgstr "Вызвать %s с содержимым из всплывающего окна"
+
+#: lib/controls.py
+msgid "Compile and verify code"
+msgstr "Скомпилировать и проверить код"
+
+#: lib/controls.py
+msgid "Edit current %s"
+msgstr "Редактировать текущий %s"
+
+#: lib/controls.py
+msgid "Save %s"
+msgstr "Сохранить %s"
+
+#: lib/controls.py
+msgid "Delete %s"
+msgstr "Удалить %s"
+
+#: lib/controls.py
+msgid "Discard changes"
+msgstr "Отменить изменения"
+
+#: lib/controls.py
+msgid "No suitable %s found in body."
+msgstr "Подходящий %s не найден в теле."
+
+
+#: lib/controls.py
+msgid "There are unsaved changes."
+msgstr "Есть несохраненные изменения."
+
+#: lib/controls.py
+msgid "Are you sure you want to discard them?"
+msgstr "Вы уверены, что хотите отменить их?"
+
+#: lib/controls.py
+msgid "Title is mandatory."
+msgstr "Заголовок обязателен."
+
+#: lib/controls.py
+msgid "Are you sure you want to save invalid state?"
+msgstr "Вы уверены, что хотите сохранить невалидное состояние?"
+
+#: lib/controls.py
+msgid "Error: %s"
+msgstr "Ошибка: %s"
+
+#: lib/controls.py
+msgid "Are you sure you want to delete this item?"
+msgstr "Вы уверены, что хотите удалить этот элемент?"
+
+
+# - User function texts --------------------
+
+#: lib/show_combination_artifacts.py
+msgid "Assembled combination artifacts"
+msgstr "Собранные сборные артефакты"
+
+#: lib/show_combination_artifacts.py
+msgid "Unassembled but complete combination artifacts"
+msgstr "Несобранные, но полные сборные артефакты"
+
+#: lib/show_combination_artifacts.py
+msgid "Incomplete combination artifacts"
+msgstr "Неполные сборные артефакты"
+
+#: lib/show_combination_artifacts.py
+msgid "Available"
+msgstr "Имеющиеся"
+
+#: lib/show_combination_artifacts.py
+msgid "Missing"
+msgstr "Отсутствующие"
+
+#: lib/show_combination_artifacts.py
+msgid "No savefile open."
+msgstr "Нет открытого сейва."
+
+#: lib/show_combination_artifacts.py
+msgid "No combination artifacts or component parts in any faction."
+msgstr "Ни в одной фракции нет сборных артефактов или компонентов."
