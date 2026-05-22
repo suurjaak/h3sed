@@ -1,0 +1,2897 @@
+# Portable Object Template file for h3sed translations.
+# A translation needs to set language code and name, and provide desired translations in msgstr.
+# Any translation omitted or left empty, will default to English.
+
+# Ampersands in texts like "&File" make shortcut keys in UI controls.
+# Positional arguments %s are placeholders for runtime content.
+
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+"Language-Name: English\n"
+
+
+# - Hero property sections --------------------
+
+msgid "Main attributes"
+msgstr ""
+
+msgid "Army"
+msgstr ""
+
+msgid "Equipment"
+msgstr ""
+
+msgid "Inventory"
+msgstr ""
+
+msgid "Skills"
+msgstr ""
+
+msgid "Spells"
+msgstr ""
+
+
+# - Hero primary attributes --------------------
+
+msgid "Attack"
+msgstr ""
+
+msgid "Defense"
+msgstr ""
+
+msgid "Spell Power"
+msgstr ""
+
+msgid "Knowledge"
+msgstr ""
+
+
+# - Hero main attributes --------------------
+
+msgid "Experience"
+msgstr ""
+
+msgid "Level"
+msgstr ""
+
+msgid "Movement points in total"
+msgstr ""
+
+msgid "Movement points remaining"
+msgstr ""
+
+msgid "Spell points remaining"
+msgstr ""
+
+msgid "Spellbook"
+msgstr ""
+
+msgid "Ballista"
+msgstr ""
+
+msgid "Cannon"
+msgstr ""
+
+msgid "Ammo Cart"
+msgstr ""
+
+msgid "First Aid Tent"
+msgstr ""
+
+
+# - Hero factions --------------------
+
+msgid "Blue Player"
+msgstr ""
+
+msgid "Green Player"
+msgstr ""
+
+msgid "Orange Player"
+msgstr ""
+
+msgid "Pink Player"
+msgstr ""
+
+msgid "Purple Player"
+msgstr ""
+
+msgid "Red Player"
+msgstr ""
+
+msgid "Tan Player"
+msgstr ""
+
+msgid "Teal Player"
+msgstr ""
+
+msgid "neutral"
+msgstr ""
+
+
+# - Hero equipment slots --------------------
+
+msgid "armor"
+msgstr ""
+
+msgid "cloak"
+msgstr ""
+
+msgid "feet"
+msgstr ""
+
+msgid "hand"
+msgstr ""
+
+msgid "helm"
+msgstr ""
+
+msgid "lefthand"
+msgstr ""
+
+msgid "left hand"
+msgstr ""
+
+msgid "neck"
+msgstr ""
+
+msgid "righthand"
+msgstr ""
+
+msgid "right hand"
+msgstr ""
+
+msgid "shield"
+msgstr ""
+
+msgid "side"
+msgstr ""
+
+msgid "side1"
+msgstr ""
+
+msgid "side2"
+msgstr ""
+
+msgid "side3"
+msgstr ""
+
+msgid "side4"
+msgstr ""
+
+msgid "side5"
+msgstr ""
+
+msgid "side 1"
+msgstr ""
+
+msgid "side 2"
+msgstr ""
+
+msgid "side 3"
+msgstr ""
+
+msgid "side 4"
+msgstr ""
+
+msgid "side 5"
+msgstr ""
+
+msgid "weapon"
+msgstr ""
+
+
+# - Hero skill levels --------------------
+
+msgid "Basic"
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "Expert"
+msgstr ""
+
+
+# - Hero skills --------------------
+
+msgid "Air Magic"
+msgstr ""
+
+msgid "Archery"
+msgstr ""
+
+msgid "Armorer"
+msgstr ""
+
+msgid "Artillery"
+msgstr ""
+
+msgid "Ballistics"
+msgstr ""
+
+msgid "Diplomacy"
+msgstr ""
+
+msgid "Eagle Eye"
+msgstr ""
+
+msgid "Earth Magic"
+msgstr ""
+
+msgid "Estates"
+msgstr ""
+
+msgid "Fire Magic"
+msgstr ""
+
+msgid "First Aid"
+msgstr ""
+
+msgid "Intelligence"
+msgstr ""
+
+msgid "Interference"
+msgstr ""
+
+msgid "Leadership"
+msgstr ""
+
+msgid "Learning"
+msgstr ""
+
+msgid "Logistics"
+msgstr ""
+
+msgid "Luck"
+msgstr ""
+
+msgid "Mysticism"
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "Necromancy"
+msgstr ""
+
+msgid "Offense"
+msgstr ""
+
+msgid "Pathfinding"
+msgstr ""
+
+msgid "Resistance"
+msgstr ""
+
+msgid "Runes"
+msgstr ""
+
+msgid "Scholar"
+msgstr ""
+
+msgid "Scouting"
+msgstr ""
+
+msgid "Sorcery"
+msgstr ""
+
+msgid "Tactics"
+msgstr ""
+
+msgid "Water Magic"
+msgstr ""
+
+msgid "Wisdom"
+msgstr ""
+
+
+# - Hero spells --------------------
+
+msgid "Air Shield"
+msgstr ""
+
+msgid "Animate Dead"
+msgstr ""
+
+msgid "Anti-Magic"
+msgstr ""
+
+msgid "Armageddon"
+msgstr ""
+
+msgid "Berserk"
+msgstr ""
+
+msgid "Bless"
+msgstr ""
+
+msgid "Blind"
+msgstr ""
+
+msgid "Bloodlust"
+msgstr ""
+
+msgid "Chain Lightning"
+msgstr ""
+
+msgid "Clone"
+msgstr ""
+
+msgid "Counterstrike"
+msgstr ""
+
+msgid "Cure"
+msgstr ""
+
+msgid "Curse"
+msgstr ""
+
+msgid "Death Ripple"
+msgstr ""
+
+msgid "Destroy Undead"
+msgstr ""
+
+msgid "Dimension Door"
+msgstr ""
+
+msgid "Disguise"
+msgstr ""
+
+msgid "Dispel"
+msgstr ""
+
+msgid "Disrupting Ray"
+msgstr ""
+
+msgid "Earthquake"
+msgstr ""
+
+msgid "Fire Shield"
+msgstr ""
+
+msgid "Fire Wall"
+msgstr ""
+
+msgid "Fireball"
+msgstr ""
+
+msgid "Fly"
+msgstr ""
+
+msgid "Force Field"
+msgstr ""
+
+msgid "Forgetfulness"
+msgstr ""
+
+msgid "Fortune"
+msgstr ""
+
+msgid "Frenzy"
+msgstr ""
+
+msgid "Frost Ring"
+msgstr ""
+
+msgid "Haste"
+msgstr ""
+
+msgid "Hypnotize"
+msgstr ""
+
+msgid "Ice Bolt"
+msgstr ""
+
+msgid "Implosion"
+msgstr ""
+
+msgid "Inferno"
+msgstr ""
+
+msgid "Land Mine"
+msgstr ""
+
+msgid "Lightning Bolt"
+msgstr ""
+
+msgid "Magic Arrow"
+msgstr ""
+
+msgid "Magic Mirror"
+msgstr ""
+
+msgid "Meteor Shower"
+msgstr ""
+
+msgid "Mirth"
+msgstr ""
+
+msgid "Misfortune"
+msgstr ""
+
+msgid "Prayer"
+msgstr ""
+
+msgid "Precision"
+msgstr ""
+
+msgid "Protection from Air"
+msgstr ""
+
+msgid "Protection from Earth"
+msgstr ""
+
+msgid "Protection from Fire"
+msgstr ""
+
+msgid "Protection from Water"
+msgstr ""
+
+msgid "Quicksand"
+msgstr ""
+
+msgid "Remove Obstacle"
+msgstr ""
+
+msgid "Resurrection"
+msgstr ""
+
+msgid "Sacrifice"
+msgstr ""
+
+msgid "Scuttle Boat"
+msgstr ""
+
+msgid "Shield"
+msgstr ""
+
+msgid "Slayer"
+msgstr ""
+
+msgid "Slow"
+msgstr ""
+
+msgid "Sorrow"
+msgstr ""
+
+msgid "Stone Skin"
+msgstr ""
+
+msgid "Summon Air Elemental"
+msgstr ""
+
+msgid "Summon Boat"
+msgstr ""
+
+msgid "Summon Earth Elemental"
+msgstr ""
+
+msgid "Summon Fire Elemental"
+msgstr ""
+
+msgid "Summon Water Elemental"
+msgstr ""
+
+msgid "Teleport"
+msgstr ""
+
+msgid "Town Portal"
+msgstr ""
+
+msgid "View Air"
+msgstr ""
+
+msgid "View Earth"
+msgstr ""
+
+msgid "Visions"
+msgstr ""
+
+msgid "Water Walk"
+msgstr ""
+
+msgid "Weakness"
+msgstr ""
+
+msgid "Titan's Lightning Bolt"
+msgstr ""
+
+
+# - Hero army creatures --------------------
+
+msgid "Air Elemental"
+msgstr ""
+
+msgid "Ancient Behemoth"
+msgstr ""
+
+msgid "Angel"
+msgstr ""
+
+msgid "Arch Devil"
+msgstr ""
+
+msgid "Arch Mage"
+msgstr ""
+
+msgid "Archangel"
+msgstr ""
+
+msgid "Archer"
+msgstr ""
+
+msgid "Argali"
+msgstr ""
+
+msgid "Armadillo"
+msgstr ""
+
+msgid "Automaton"
+msgstr ""
+
+msgid "Ayssid"
+msgstr ""
+
+msgid "Azure Dragon"
+msgstr ""
+
+msgid "Basilisk"
+msgstr ""
+
+msgid "Battle Dwarf"
+msgstr ""
+
+msgid "Behemoth"
+msgstr ""
+
+msgid "Beholder"
+msgstr ""
+
+msgid "Bellwether Armadillo"
+msgstr ""
+
+msgid "Black Dragon"
+msgstr ""
+
+msgid "Black Knight"
+msgstr ""
+
+msgid "Boar"
+msgstr ""
+
+msgid "Bone Dragon"
+msgstr ""
+
+msgid "Bounty Hunter"
+msgstr ""
+
+msgid "Cavalier"
+msgstr ""
+
+msgid "Centaur"
+msgstr ""
+
+msgid "Centaur Captain"
+msgstr ""
+
+msgid "Cerberus"
+msgstr ""
+
+msgid "Champion"
+msgstr ""
+
+msgid "Chaos Hydra"
+msgstr ""
+
+msgid "Corsair"
+msgstr ""
+
+msgid "Couatl"
+msgstr ""
+
+msgid "Crew Mate"
+msgstr ""
+
+msgid "Crimson Couatl"
+msgstr ""
+
+msgid "Crusader"
+msgstr ""
+
+msgid "Crystal Dragon"
+msgstr ""
+
+msgid "Cyclops"
+msgstr ""
+
+msgid "Cyclops King"
+msgstr ""
+
+msgid "Demon"
+msgstr ""
+
+msgid "Dendroid Guard"
+msgstr ""
+
+msgid "Dendroid Soldier"
+msgstr ""
+
+msgid "Devil"
+msgstr ""
+
+msgid "Diamond Golem"
+msgstr ""
+
+msgid "Dragon Fly"
+msgstr ""
+
+msgid "Dread Knight"
+msgstr ""
+
+msgid "Dreadnought"
+msgstr ""
+
+msgid "Dwarf"
+msgstr ""
+
+msgid "Earth Elemental"
+msgstr ""
+
+msgid "Efreet Sultan"
+msgstr ""
+
+msgid "Efreeti"
+msgstr ""
+
+msgid "Enchanter"
+msgstr ""
+
+msgid "Energy Elemental"
+msgstr ""
+
+msgid "Engineer"
+msgstr ""
+
+msgid "Evil Eye"
+msgstr ""
+
+msgid "Faerie Dragon"
+msgstr ""
+
+msgid "Familiar"
+msgstr ""
+
+msgid "Fangarm"
+msgstr ""
+
+msgid "Fire Elemental"
+msgstr ""
+
+msgid "Firebird"
+msgstr ""
+
+msgid "Genie"
+msgstr ""
+
+msgid "Ghost Dragon"
+msgstr ""
+
+msgid "Giant"
+msgstr ""
+
+msgid "Gnoll"
+msgstr ""
+
+msgid "Gnoll Marauder"
+msgstr ""
+
+msgid "Goblin"
+msgstr ""
+
+msgid "Gog"
+msgstr ""
+
+msgid "Gold Dragon"
+msgstr ""
+
+msgid "Gold Golem"
+msgstr ""
+
+msgid "Gorgon"
+msgstr ""
+
+msgid "Grand Elf"
+msgstr ""
+
+msgid "Great Shaman"
+msgstr ""
+
+msgid "Greater Basilisk"
+msgstr ""
+
+msgid "Green Dragon"
+msgstr ""
+
+msgid "Gremlin"
+msgstr ""
+
+msgid "Griffin"
+msgstr ""
+
+msgid "Gunslinger"
+msgstr ""
+
+msgid "Halberdier"
+msgstr ""
+
+msgid "Halfling"
+msgstr ""
+
+msgid "Halfling Grenadier"
+msgstr ""
+
+msgid "Harpy"
+msgstr ""
+
+msgid "Harpy Hag"
+msgstr ""
+
+msgid "Haspid"
+msgstr ""
+
+msgid "Hell Hound"
+msgstr ""
+
+msgid "Hobgoblin"
+msgstr ""
+
+msgid "Horned Demon"
+msgstr ""
+
+msgid "Hydra"
+msgstr ""
+
+msgid "Ice Elemental"
+msgstr ""
+
+msgid "Imp"
+msgstr ""
+
+msgid "Infernal Troglodyte"
+msgstr ""
+
+msgid "Iron Golem"
+msgstr ""
+
+msgid "Jotunn"
+msgstr ""
+
+msgid "Jotunn Warlord"
+msgstr ""
+
+msgid "Juggernaut"
+msgstr ""
+
+msgid "Kobold"
+msgstr ""
+
+msgid "Kobold Foreman"
+msgstr ""
+
+msgid "Leprechaun"
+msgstr ""
+
+msgid "Lich"
+msgstr ""
+
+msgid "Lizard Warrior"
+msgstr ""
+
+msgid "Lizardman"
+msgstr ""
+
+msgid "Mage"
+msgstr ""
+
+msgid "Magic Elemental"
+msgstr ""
+
+msgid "Magma Elemental"
+msgstr ""
+
+msgid "Magog"
+msgstr ""
+
+msgid "Mammoth"
+msgstr ""
+
+msgid "Manticore"
+msgstr ""
+
+msgid "Marksman"
+msgstr ""
+
+msgid "Master Genie"
+msgstr ""
+
+msgid "Master Gremlin"
+msgstr ""
+
+msgid "Mechanic"
+msgstr ""
+
+msgid "Medusa"
+msgstr ""
+
+msgid "Medusa Queen"
+msgstr ""
+
+msgid "Mighty Gorgon"
+msgstr ""
+
+msgid "Minotaur"
+msgstr ""
+
+msgid "Minotaur King"
+msgstr ""
+
+msgid "Monk"
+msgstr ""
+
+msgid "Mountain Ram"
+msgstr ""
+
+msgid "Mummy"
+msgstr ""
+
+msgid "Naga"
+msgstr ""
+
+msgid "Naga Queen"
+msgstr ""
+
+msgid "Nix"
+msgstr ""
+
+msgid "Nix Warrior"
+msgstr ""
+
+msgid "Nomad"
+msgstr ""
+
+msgid "Nymph"
+msgstr ""
+
+msgid "Obsidian Gargoyle"
+msgstr ""
+
+msgid "Oceanid"
+msgstr ""
+
+msgid "Ogre"
+msgstr ""
+
+msgid "Ogre Mage"
+msgstr ""
+
+msgid "Olgoi-Khorkhoi"
+msgstr ""
+
+msgid "Orc"
+msgstr ""
+
+msgid "Orc Chieftain"
+msgstr ""
+
+msgid "Peasant"
+msgstr ""
+
+msgid "Pegasus"
+msgstr ""
+
+msgid "Phoenix"
+msgstr ""
+
+msgid "Pikeman"
+msgstr ""
+
+msgid "Pirate"
+msgstr ""
+
+msgid "Pit Fiend"
+msgstr ""
+
+msgid "Pit Lord"
+msgstr ""
+
+msgid "Pixie"
+msgstr ""
+
+msgid "Power Lich"
+msgstr ""
+
+msgid "Psychic Elemental"
+msgstr ""
+
+msgid "Red Dragon"
+msgstr ""
+
+msgid "Roc"
+msgstr ""
+
+msgid "Rogue"
+msgstr ""
+
+msgid "Royal Griffin"
+msgstr ""
+
+msgid "Rust Dragon"
+msgstr ""
+
+msgid "Sandworm"
+msgstr ""
+
+msgid "Satyr"
+msgstr ""
+
+msgid "Scorpicore"
+msgstr ""
+
+msgid "Sea Dog"
+msgstr ""
+
+msgid "Sea Serpent"
+msgstr ""
+
+msgid "Sea Witch"
+msgstr ""
+
+msgid "Seaman"
+msgstr ""
+
+msgid "Sentinel Automaton"
+msgstr ""
+
+msgid "Serpent Fly"
+msgstr ""
+
+msgid "Shaman"
+msgstr ""
+
+msgid "Sharpshooter"
+msgstr ""
+
+msgid "Silver Pegasus"
+msgstr ""
+
+msgid "Skeleton"
+msgstr ""
+
+msgid "Skeleton Warrior"
+msgstr ""
+
+msgid "Snow Elf"
+msgstr ""
+
+msgid "Sorceress"
+msgstr ""
+
+msgid "Sprite"
+msgstr ""
+
+msgid "Steel Elf"
+msgstr ""
+
+msgid "Steel Golem"
+msgstr ""
+
+msgid "Stone Gargoyle"
+msgstr ""
+
+msgid "Stone Golem"
+msgstr ""
+
+msgid "Storm Elemental"
+msgstr ""
+
+msgid "Stormbird"
+msgstr ""
+
+msgid "Swordsman"
+msgstr ""
+
+msgid "Thunderbird"
+msgstr ""
+
+msgid "Titan"
+msgstr ""
+
+msgid "Troglodyte"
+msgstr ""
+
+msgid "Troll"
+msgstr ""
+
+msgid "Unicorn"
+msgstr ""
+
+msgid "Vampire"
+msgstr ""
+
+msgid "Vampire Lord"
+msgstr ""
+
+msgid "Walking Dead"
+msgstr ""
+
+msgid "War Mammoth"
+msgstr ""
+
+msgid "War Unicorn"
+msgstr ""
+
+msgid "Water Elemental"
+msgstr ""
+
+msgid "Wight"
+msgstr ""
+
+msgid "Wolf Raider"
+msgstr ""
+
+msgid "Wolf Rider"
+msgstr ""
+
+msgid "Wood Elf"
+msgstr ""
+
+msgid "Wraith"
+msgstr ""
+
+msgid "Wyvern"
+msgstr ""
+
+msgid "Wyvern Monarch"
+msgstr ""
+
+msgid "Yeti"
+msgstr ""
+
+msgid "Yeti Runemaster"
+msgstr ""
+
+msgid "Zealot"
+msgstr ""
+
+msgid "Zombie"
+msgstr ""
+
+
+# - Hero artifacts --------------------
+
+msgid "Admiral's Hat"
+msgstr ""
+
+msgid "Ambassador's Sash"
+msgstr ""
+
+msgid "Amulet of the Undertaker"
+msgstr ""
+
+msgid "Angel Feather Arrows"
+msgstr ""
+
+msgid "Angel Wings"
+msgstr ""
+
+msgid "Angelic Alliance"
+msgstr ""
+
+msgid "Armageddon's Blade"
+msgstr ""
+
+msgid "Armor of Wonder"
+msgstr ""
+
+msgid "Armor of the Damned"
+msgstr ""
+
+msgid "Arms of Legion"
+msgstr ""
+
+msgid "Badge of Courage"
+msgstr ""
+
+msgid "Bird of Perception"
+msgstr ""
+
+msgid "Blackshard of the Dead Knight"
+msgstr ""
+
+msgid "Boots of Levitation"
+msgstr ""
+
+msgid "Boots of Polarity"
+msgstr ""
+
+msgid "Boots of Speed"
+msgstr ""
+
+msgid "Bow of Elven Cherrywood"
+msgstr ""
+
+msgid "Bow of the Sharpshooter"
+msgstr ""
+
+msgid "Bowstring of the Unicorn's Mane"
+msgstr ""
+
+msgid "Breastplate of Brimstone"
+msgstr ""
+
+msgid "Breastplate of Petrified Wood"
+msgstr ""
+
+msgid "Buckler of the Gnoll King"
+msgstr ""
+
+msgid "Cape of Conjuring"
+msgstr ""
+
+msgid "Cape of Silence"
+msgstr ""
+
+msgid "Cape of Velocity"
+msgstr ""
+
+msgid "Cards of Prophecy"
+msgstr ""
+
+msgid "Celestial Necklace of Bliss"
+msgstr ""
+
+msgid "Centaur's Axe"
+msgstr ""
+
+msgid "Charm of Eclipse"
+msgstr ""
+
+msgid "Charm of Mana"
+msgstr ""
+
+msgid "Cloak of the Undead King"
+msgstr ""
+
+msgid "Clover of Fortune"
+msgstr ""
+
+msgid "Collar of Conjuring"
+msgstr ""
+
+msgid "Cornucopia"
+msgstr ""
+
+msgid "Crest of Valor"
+msgstr ""
+
+msgid "Crown of Dragontooth"
+msgstr ""
+
+msgid "Crown of the Five Seas"
+msgstr ""
+
+msgid "Crown of the Supreme Magi"
+msgstr ""
+
+msgid "Dead Man's Boots"
+msgstr ""
+
+msgid "Demon's Horseshoe"
+msgstr ""
+
+msgid "Diplomat's Cloak"
+msgstr ""
+
+msgid "Diplomat's Ring"
+msgstr ""
+
+msgid "Dragon Scale Armor"
+msgstr ""
+
+msgid "Dragon Scale Shield"
+msgstr ""
+
+msgid "Dragon Wing Tabard"
+msgstr ""
+
+msgid "Dragonbone Greaves"
+msgstr ""
+
+msgid "Elixir of Life"
+msgstr ""
+
+msgid "Emblem of Cognizance"
+msgstr ""
+
+msgid "Endless Bag of Gold"
+msgstr ""
+
+msgid "Endless Purse of Gold"
+msgstr ""
+
+msgid "Endless Sack of Gold"
+msgstr ""
+
+msgid "Equestrian's Gloves"
+msgstr ""
+
+msgid "Everflowing Crystal Cloak"
+msgstr ""
+
+msgid "Everpouring Vial of Mercury"
+msgstr ""
+
+msgid "Eversmoking Ring of Sulfur"
+msgstr ""
+
+msgid "Garniture of Interference"
+msgstr ""
+
+msgid "Glyph of Gallantry"
+msgstr ""
+
+msgid "Golden Bow"
+msgstr ""
+
+msgid "Golden Goose"
+msgstr ""
+
+msgid "Greater Gnoll's Flail"
+msgstr ""
+
+msgid "Head of Legion"
+msgstr ""
+
+msgid "Hellstorm Helmet"
+msgstr ""
+
+msgid "Helm of Chaos"
+msgstr ""
+
+msgid "Helm of Heavenly Enlightenment"
+msgstr ""
+
+msgid "Helm of the Alabaster Unicorn"
+msgstr ""
+
+msgid "Hideous Mask"
+msgstr ""
+
+msgid "Horn of the Abyss"
+msgstr ""
+
+msgid "Hourglass of the Evil Hour"
+msgstr ""
+
+msgid "Inexhaustible Cart of Lumber"
+msgstr ""
+
+msgid "Inexhaustible Cart of Ore"
+msgstr ""
+
+msgid "Ironfist of the Ogre"
+msgstr ""
+
+msgid "Ladybird of Luck"
+msgstr ""
+
+msgid "Legs of Legion"
+msgstr ""
+
+msgid "Lion's Shield of Courage"
+msgstr ""
+
+msgid "Loins of Legion"
+msgstr ""
+
+msgid "Mystic Orb of Mana"
+msgstr ""
+
+msgid "Necklace of Dragonteeth"
+msgstr ""
+
+msgid "Necklace of Ocean Guidance"
+msgstr ""
+
+msgid "Necklace of Swiftness"
+msgstr ""
+
+msgid "Ogre's Club of Havoc"
+msgstr ""
+
+msgid "Orb of Driving Rain"
+msgstr ""
+
+msgid "Orb of Inhibition"
+msgstr ""
+
+msgid "Orb of Silt"
+msgstr ""
+
+msgid "Orb of Tempestuous Fire"
+msgstr ""
+
+msgid "Orb of Vulnerability"
+msgstr ""
+
+msgid "Orb of the Firmament"
+msgstr ""
+
+msgid "Pendant of Courage"
+msgstr ""
+
+msgid "Pendant of Death"
+msgstr ""
+
+msgid "Pendant of Dispassion"
+msgstr ""
+
+msgid "Pendant of Downfall"
+msgstr ""
+
+msgid "Pendant of Free Will"
+msgstr ""
+
+msgid "Pendant of Holiness"
+msgstr ""
+
+msgid "Pendant of Life"
+msgstr ""
+
+msgid "Pendant of Negativity"
+msgstr ""
+
+msgid "Pendant of Reflection"
+msgstr ""
+
+msgid "Pendant of Second Sight"
+msgstr ""
+
+msgid "Pendant of Total Recall"
+msgstr ""
+
+msgid "Plate of Dying Light"
+msgstr ""
+
+msgid "Power of the Dragon Father"
+msgstr ""
+
+msgid "Quiet Eye of the Dragon"
+msgstr ""
+
+msgid "Recanter's Cloak"
+msgstr ""
+
+msgid "Red Dragon Flame Tongue"
+msgstr ""
+
+msgid "Rib Cage"
+msgstr ""
+
+msgid "Ring of Conjuring"
+msgstr ""
+
+msgid "Ring of Infinite Gems"
+msgstr ""
+
+msgid "Ring of Life"
+msgstr ""
+
+msgid "Ring of Oblivion"
+msgstr ""
+
+msgid "Ring of Suppression"
+msgstr ""
+
+msgid "Ring of Vitality"
+msgstr ""
+
+msgid "Ring of the Magi"
+msgstr ""
+
+msgid "Ring of the Wayfarer"
+msgstr ""
+
+msgid "Royal Armor of Nix"
+msgstr ""
+
+msgid "Runes of Imminency"
+msgstr ""
+
+msgid "Sandals of the Saint"
+msgstr ""
+
+msgid "Scales of the Greater Basilisk"
+msgstr ""
+
+msgid "Sea Captain's Hat"
+msgstr ""
+
+msgid "Seal of Sunset"
+msgstr ""
+
+msgid "Sentinel's Shield"
+msgstr ""
+
+msgid "Shackles of War"
+msgstr ""
+
+msgid "Shaman's Puppet"
+msgstr ""
+
+msgid "Shield of Naval Glory"
+msgstr ""
+
+msgid "Shield of the Damned"
+msgstr ""
+
+msgid "Shield of the Dwarven Lords"
+msgstr ""
+
+msgid "Shield of the Yawning Dead"
+msgstr ""
+
+msgid "Skull Helmet"
+msgstr ""
+
+msgid "Sleepkeeper"
+msgstr ""
+
+msgid "Speculum"
+msgstr ""
+
+msgid "Spellbinder's Hat"
+msgstr ""
+
+msgid "Sphere of Permanence"
+msgstr ""
+
+msgid "Spirit of Oppression"
+msgstr ""
+
+msgid "Spyglass"
+msgstr ""
+
+msgid "Statesman's Medal"
+msgstr ""
+
+msgid "Statue of Legion"
+msgstr ""
+
+msgid "Still Eye of the Dragon"
+msgstr ""
+
+msgid "Stoic Watchman"
+msgstr ""
+
+msgid "Surcoat of Counterpoise"
+msgstr ""
+
+msgid "Sword of Hellfire"
+msgstr ""
+
+msgid "Sword of Judgement"
+msgstr ""
+
+msgid "Talisman of Mana"
+msgstr ""
+
+msgid "Targ of the Rampaging Ogre"
+msgstr ""
+
+msgid "The Grail"
+msgstr ""
+
+msgid "Thunder Helmet"
+msgstr ""
+
+msgid "Titan's Cuirass"
+msgstr ""
+
+msgid "Titan's Gladius"
+msgstr ""
+
+msgid "Titan's Thunder"
+msgstr ""
+
+msgid "Tome of Air"
+msgstr ""
+
+msgid "Tome of Earth"
+msgstr ""
+
+msgid "Tome of Fire"
+msgstr ""
+
+msgid "Tome of Water"
+msgstr ""
+
+msgid "Torso of Legion"
+msgstr ""
+
+msgid "Trident of Dominion"
+msgstr ""
+
+msgid "Tunic of the Cyclops King"
+msgstr ""
+
+msgid "Vampire's Cowl"
+msgstr ""
+
+msgid "Vial of Dragon Blood"
+msgstr ""
+
+msgid "Vial of Lifeblood"
+msgstr ""
+
+msgid "Wayfarer's Boots"
+msgstr ""
+
+msgid "Wizard's Well"
+msgstr ""
+
+
+# - Hero spell scroll artifacts --------------------
+
+msgid "Spell Scroll: Air Shield"
+msgstr ""
+
+msgid "Spell Scroll: Animate Dead"
+msgstr ""
+
+msgid "Spell Scroll: Anti-Magic"
+msgstr ""
+
+msgid "Spell Scroll: Armageddon"
+msgstr ""
+
+msgid "Spell Scroll: Berserk"
+msgstr ""
+
+msgid "Spell Scroll: Bless"
+msgstr ""
+
+msgid "Spell Scroll: Blind"
+msgstr ""
+
+msgid "Spell Scroll: Bloodlust"
+msgstr ""
+
+msgid "Spell Scroll: Chain Lightning"
+msgstr ""
+
+msgid "Spell Scroll: Clone"
+msgstr ""
+
+msgid "Spell Scroll: Counterstrike"
+msgstr ""
+
+msgid "Spell Scroll: Cure"
+msgstr ""
+
+msgid "Spell Scroll: Curse"
+msgstr ""
+
+msgid "Spell Scroll: Death Ripple"
+msgstr ""
+
+msgid "Spell Scroll: Destroy Undead"
+msgstr ""
+
+msgid "Spell Scroll: Dimension Door"
+msgstr ""
+
+msgid "Spell Scroll: Disguise"
+msgstr ""
+
+msgid "Spell Scroll: Dispel"
+msgstr ""
+
+msgid "Spell Scroll: Disrupting Ray"
+msgstr ""
+
+msgid "Spell Scroll: Earthquake"
+msgstr ""
+
+msgid "Spell Scroll: Fire Shield"
+msgstr ""
+
+msgid "Spell Scroll: Fire Wall"
+msgstr ""
+
+msgid "Spell Scroll: Fireball"
+msgstr ""
+
+msgid "Spell Scroll: Fly"
+msgstr ""
+
+msgid "Spell Scroll: Force Field"
+msgstr ""
+
+msgid "Spell Scroll: Forgetfulness"
+msgstr ""
+
+msgid "Spell Scroll: Fortune"
+msgstr ""
+
+msgid "Spell Scroll: Frenzy"
+msgstr ""
+
+msgid "Spell Scroll: Frost Ring"
+msgstr ""
+
+msgid "Spell Scroll: Haste"
+msgstr ""
+
+msgid "Spell Scroll: Hypnotize"
+msgstr ""
+
+msgid "Spell Scroll: Ice Bolt"
+msgstr ""
+
+msgid "Spell Scroll: Implosion"
+msgstr ""
+
+msgid "Spell Scroll: Inferno"
+msgstr ""
+
+msgid "Spell Scroll: Land Mine"
+msgstr ""
+
+msgid "Spell Scroll: Lightning Bolt"
+msgstr ""
+
+msgid "Spell Scroll: Magic Arrow"
+msgstr ""
+
+msgid "Spell Scroll: Magic Mirror"
+msgstr ""
+
+msgid "Spell Scroll: Meteor Shower"
+msgstr ""
+
+msgid "Spell Scroll: Mirth"
+msgstr ""
+
+msgid "Spell Scroll: Misfortune"
+msgstr ""
+
+msgid "Spell Scroll: Prayer"
+msgstr ""
+
+msgid "Spell Scroll: Precision"
+msgstr ""
+
+msgid "Spell Scroll: Protection from Air"
+msgstr ""
+
+msgid "Spell Scroll: Protection from Earth"
+msgstr ""
+
+msgid "Spell Scroll: Protection from Fire"
+msgstr ""
+
+msgid "Spell Scroll: Protection from Water"
+msgstr ""
+
+msgid "Spell Scroll: Quicksand"
+msgstr ""
+
+msgid "Spell Scroll: Remove Obstacle"
+msgstr ""
+
+msgid "Spell Scroll: Resurrection"
+msgstr ""
+
+msgid "Spell Scroll: Sacrifice"
+msgstr ""
+
+msgid "Spell Scroll: Scuttle Boat"
+msgstr ""
+
+msgid "Spell Scroll: Shield"
+msgstr ""
+
+msgid "Spell Scroll: Slayer"
+msgstr ""
+
+msgid "Spell Scroll: Slow"
+msgstr ""
+
+msgid "Spell Scroll: Sorrow"
+msgstr ""
+
+msgid "Spell Scroll: Stone Skin"
+msgstr ""
+
+msgid "Spell Scroll: Summon Air Elemental"
+msgstr ""
+
+msgid "Spell Scroll: Summon Boat"
+msgstr ""
+
+msgid "Spell Scroll: Summon Earth Elemental"
+msgstr ""
+
+msgid "Spell Scroll: Summon Fire Elemental"
+msgstr ""
+
+msgid "Spell Scroll: Summon Water Elemental"
+msgstr ""
+
+msgid "Spell Scroll: Teleport"
+msgstr ""
+
+msgid "Spell Scroll: Town Portal"
+msgstr ""
+
+msgid "Spell Scroll: View Air"
+msgstr ""
+
+msgid "Spell Scroll: View Earth"
+msgstr ""
+
+msgid "Spell Scroll: Visions"
+msgstr ""
+
+msgid "Spell Scroll: Water Walk"
+msgstr ""
+
+msgid "Spell Scroll: Weakness"
+msgstr ""
+
+
+# - Hero UI texts --------------------
+
+msgid "%s already matching %s %s"
+msgstr ""
+
+msgid "%s army"
+msgstr ""
+
+msgid "%s equipment"
+msgstr ""
+
+msgid "%s exported (%s total)"
+msgstr ""
+
+msgid "%s inventory"
+msgstr ""
+
+msgid "%s skills"
+msgstr ""
+
+msgid "%s spells"
+msgstr ""
+
+msgid "%s stats"
+msgstr ""
+
+msgid "%s visible (%s total)"
+msgstr ""
+
+msgid "<blank>"
+msgstr ""
+
+msgid "<taken by %s>"
+msgstr ""
+
+msgid "<unknown 0x%X>"
+msgstr ""
+
+msgid "add"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid "add %s"
+msgstr ""
+
+msgid "all"
+msgstr ""
+
+msgid "ammo"
+msgstr ""
+
+msgid "and"
+msgstr ""
+
+msgid "Army slot"
+msgstr ""
+
+msgid "assemble %s"
+msgstr ""
+
+msgid "base %s"
+msgstr ""
+
+msgid "bottom"
+msgstr ""
+
+msgid "by %s"
+msgstr ""
+
+msgid "Cannot equip %s on %s, required slot taken"
+msgstr ""
+
+msgid "change"
+msgstr ""
+
+msgid "Change %s"
+msgstr ""
+
+msgid "Change multiple properties on page"
+msgstr ""
+
+msgid "Change skill to"
+msgstr ""
+
+msgid "Clear item"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "combination artifact"
+msgstr ""
+
+msgid "combined"
+msgstr ""
+
+msgid "combined artifact"
+msgstr ""
+
+msgid "Compact %s"
+msgstr ""
+
+msgid "Copied hero %s data to clipboard."
+msgstr ""
+
+msgid "Copy current hero data to clipboard"
+msgstr ""
+
+msgid "Copy data"
+msgstr ""
+
+msgid "count"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Devices"
+msgstr ""
+
+msgid "disassemble %s"
+msgstr ""
+
+msgid "Doing %s"
+msgstr ""
+
+msgid "down"
+msgstr ""
+
+msgid "equip %s"
+msgstr ""
+
+msgid "Equip all possible equipment from inventory"
+msgstr ""
+
+msgid "Equip all possible inventory"
+msgstr ""
+
+msgid "Equip from inventory"
+msgstr ""
+
+msgid "exp"
+msgstr ""
+
+msgid "Expo&rt"
+msgstr ""
+
+msgid "Export heroes to file"
+msgstr ""
+
+msgid "Export heroes to HTML or data file"
+msgstr ""
+
+msgid "Exported %s (%s)."
+msgstr ""
+
+msgid "Exported with %s on %s."
+msgstr ""
+
+msgid "Exporting %s"
+msgstr ""
+
+msgid "Faction"
+msgstr ""
+
+msgid "Filter hero index on any matching text"
+msgstr ""
+
+msgid "Filter heroes"
+msgstr ""
+
+msgid "Filter heroes on any matching text"
+msgstr ""
+
+msgid "from inventory"
+msgstr ""
+
+msgid "Game version"
+msgstr ""
+
+msgid "hero"
+msgstr ""
+
+msgid "heroes"
+msgstr ""
+
+msgid "Hero '%s' not found."
+msgstr ""
+
+msgid "Hero character sheet"
+msgstr ""
+
+msgid "Hero has no spellbook."
+msgstr ""
+
+msgid "Heroes from %s"
+msgstr ""
+
+msgid "In &current order"
+msgstr ""
+
+msgid "In &name order"
+msgstr ""
+
+msgid "In &reverse order"
+msgstr ""
+
+msgid "In &slot and name order"
+msgstr ""
+
+msgid "INDEX"
+msgstr ""
+
+msgid "Insert blank"
+msgstr ""
+
+msgid "Inventory too full"
+msgstr ""
+
+msgid "Loading %s."
+msgstr ""
+
+msgid "Loading heroes."
+msgstr ""
+
+msgid "Lower %s"
+msgstr ""
+
+msgid "mana_left"
+msgstr ""
+
+msgid "Map"
+msgstr ""
+
+msgid "Modified"
+msgstr ""
+
+msgid ""
+"More than 8 skills can be added.\n"
+"Game will not show them on the hero screen,\n"
+"but they will be in effect.\n"
+msgstr ""
+
+msgid "Move %s"
+msgstr ""
+
+msgid "move %s to"
+msgstr ""
+
+msgid "movement_left"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "need %s free"
+msgstr ""
+
+msgid "No change from: %s"
+msgstr ""
+
+msgid "No valid hero data in clipboard."
+msgstr ""
+
+msgid "Normal view"
+msgstr ""
+
+msgid "Open options menu"
+msgstr ""
+
+msgid "Paste data from clipboard to current hero"
+msgstr ""
+
+msgid "Pasting data to hero %s from clipboard."
+msgstr ""
+
+msgid "Power"
+msgstr ""
+
+msgid "Recalculate experience points from hero level"
+msgstr ""
+
+msgid "Recalculate level from hero experience points"
+msgstr ""
+
+msgid "Refill to total"
+msgstr ""
+
+msgid "remove"
+msgstr ""
+
+msgid "remove %s"
+msgstr ""
+
+msgid "Remove item"
+msgstr ""
+
+msgid "Remove row"
+msgstr ""
+
+msgid "round"
+msgstr ""
+
+msgid "Round army count to"
+msgstr ""
+
+msgid "Round army counts to"
+msgstr ""
+
+msgid "Save current hero to file"
+msgstr ""
+
+msgid "scroll"
+msgstr ""
+
+msgid "Search heroes"
+msgstr ""
+
+msgid "&Select hero"
+msgstr ""
+
+msgid "send"
+msgstr ""
+
+msgid "send %s"
+msgstr ""
+
+msgid "Send all equipment to inventory"
+msgstr ""
+
+msgid "set"
+msgstr ""
+
+msgid "set %s skills to %s"
+msgstr ""
+
+msgid "Set army counts to 1"
+msgstr ""
+
+msgid "Set artifact by category"
+msgstr ""
+
+msgid "Set from experience"
+msgstr ""
+
+msgid "Set from level"
+msgstr ""
+
+msgid "Set skill levels to"
+msgstr ""
+
+msgid "Show hero full character sheet"
+msgstr ""
+
+msgid "Show %s character sheet"
+msgstr ""
+
+msgid "Show or hide %s column"
+msgstr ""
+
+msgid "Show or hide %s columns"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Skill slot"
+msgstr ""
+
+msgid "Slot"
+msgstr ""
+
+msgid "Sort by %s"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid "Stats"
+msgstr ""
+
+msgid "swap"
+msgstr ""
+
+msgid "swap %s"
+msgstr ""
+
+msgid "Swap %s with"
+msgstr ""
+
+msgid "Swap all possible equipment with inventory"
+msgstr ""
+
+msgid "Swap all possible inventory with equipment"
+msgstr ""
+
+msgid "Swap with equipment slot"
+msgstr ""
+
+msgid "Swap with inventory"
+msgstr ""
+
+msgid "tent"
+msgstr ""
+
+msgid "Toggle %s"
+msgstr ""
+
+msgid "toggle all %s"
+msgstr ""
+
+msgid "Toggle full description"
+msgstr ""
+
+msgid "to inventory"
+msgstr ""
+
+msgid "top"
+msgstr ""
+
+msgid "Top up remaining movement points to hero total"
+msgstr ""
+
+msgid "Top up remaining spell points to hero maximum"
+msgstr ""
+
+msgid "Unsaved changes"
+msgstr ""
+
+msgid "Unsaved changes only"
+msgstr ""
+
+msgid "up"
+msgstr ""
+
+msgid "Upper %s"
+msgstr ""
+
+msgid "with"
+msgstr ""
+
+msgid "with inventory"
+msgstr ""
+
+msgid "with inventory slot"
+msgstr ""
+
+msgid "with location"
+msgstr ""
+
+
+
+# - General UI texts --------------------
+
+msgid "Log"
+msgstr ""
+
+msgid "C&lear log"
+msgstr ""
+
+msgid "%s Console"
+msgstr ""
+
+
+# - Main page buttons --------------------
+
+msgid "Choose file"
+msgstr ""
+
+msgid "&Open"
+msgstr ""
+
+msgid "&Refresh"
+msgstr ""
+
+msgid "&Browse"
+msgstr ""
+
+msgid "Select file"
+msgstr ""
+
+msgid "Open currently selected file"
+msgstr ""
+
+msgid "Refresh file panel"
+msgstr ""
+
+msgid "Open dialog for selecting a file"
+msgstr ""
+
+
+# - Application main menu --------------------
+
+msgid "&File"
+msgstr ""
+
+msgid "&Edit"
+msgstr ""
+
+msgid "&Help"
+msgstr ""
+
+
+# - Application file menu --------------------
+
+msgid "&Open savefile"
+msgstr ""
+
+msgid "Choose a savefile to open"
+msgstr ""
+
+msgid "&Close file"
+msgstr ""
+
+msgid "Close current savefile"
+msgstr ""
+
+msgid "Re&load"
+msgstr ""
+
+msgid "Reload savefile, losing any current changes"
+msgstr ""
+
+msgid "&Save"
+msgstr ""
+
+msgid "Save the active file"
+msgstr ""
+
+msgid "Save &as"
+msgstr ""
+
+msgid "Save the active file under a new name"
+msgstr ""
+
+msgid "&Recent files"
+msgstr ""
+
+msgid "Recently opened files"
+msgstr ""
+
+msgid "Recent &heroes"
+msgstr ""
+
+msgid "Recently opened heroes"
+msgstr ""
+
+msgid "Opt&ions"
+msgstr ""
+
+msgid "E&xit"
+msgstr ""
+
+
+# - Application file menu options submenu --------------------
+
+msgid "&Dark mode"
+msgstr ""
+
+msgid "&System"
+msgstr ""
+
+msgid "Dark mode applied automatically from system settings"
+msgstr ""
+
+msgid "&Enabled"
+msgstr ""
+
+msgid "Dark mode on"
+msgstr ""
+
+msgid "&Off"
+msgstr ""
+
+msgid "Dark mode off"
+msgstr ""
+
+
+msgid "Interface &language"
+msgstr ""
+
+msgid "Set application language to %s (%s)"
+msgstr ""
+
+msgid "Application interface in %s (%s)"
+msgstr ""
+
+msgid "Add language"
+msgstr ""
+
+msgid "Add another language from a translation file"
+msgstr ""
+
+msgid "Remove language"
+msgstr ""
+
+msgid "Remove an added translation language"
+msgstr ""
+
+
+msgid "Automatic &update check"
+msgstr ""
+
+msgid "Automatically check for program updates periodically"
+msgstr ""
+
+msgid "&Back up files before saving"
+msgstr ""
+
+msgid "Create backup copy of savefile before saving changes"
+msgstr ""
+
+msgid "&Confirm unsaved changes"
+msgstr ""
+
+msgid "Ask for confirmation on closing files with unsaved changes"
+msgstr ""
+
+
+msgid "&New format in Armageddon's Blade"
+msgstr ""
+
+msgid "Parse Armageddon's Blade savegames from newer game version"
+msgstr ""
+
+msgid "Clear &recent items"
+msgstr ""
+
+msgid "Clear recent files and heroes list"
+msgstr ""
+
+
+# - Application edit menu --------------------
+
+msgid "&Undo"
+msgstr ""
+
+msgid "Undo the last action"
+msgstr ""
+
+msgid "&Redo"
+msgstr ""
+
+msgid "Redo the previously undone action"
+msgstr ""
+
+msgid "Command &history"
+msgstr ""
+
+msgid "View current changes done to savegame"
+msgstr ""
+
+msgid "Show unsaved &changes"
+msgstr ""
+
+msgid "Show pending changes to savegame"
+msgstr ""
+
+
+# - Application help menu --------------------
+
+msgid "Check for &updates"
+msgstr ""
+
+msgid "Check whether a new version of %s is available"
+msgstr ""
+
+msgid "Show &log window"
+msgstr ""
+
+msgid "Show/hide the log messages window"
+msgstr ""
+
+msgid "Show Python &console"
+msgstr ""
+
+msgid "Show/hide a Python shell environment window"
+msgstr ""
+
+
+msgid "&About %s"
+msgstr ""
+
+msgid "Show program information and copyright"
+msgstr ""
+
+
+# - Application toolbar --------------------
+
+msgid "Open"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save as"
+msgstr ""
+
+msgid "Undo"
+msgstr ""
+
+msgid "Redo"
+msgstr ""
+
+msgid "Reload"
+msgstr ""
+
+msgid "Folder"
+msgstr ""
+
+msgid "Open file directory in file manager program"
+msgstr ""
+
+msgid "Function"
+msgstr ""
+
+msgid "Select function to run"
+msgstr ""
+
+
+# - Interface language actions --------------------
+
+msgid "Select translation file"
+msgstr ""
+
+msgid "Error loading translation."
+msgstr ""
+
+msgid "Drop translation"
+msgstr ""
+
+msgid "Dropped translation for %s (%s)."
+msgstr ""
+
+msgid "Application language set to %s (%s)."
+msgstr ""
+
+msgid "No language information in file"
+msgstr ""
+
+msgid "No translations in file"
+msgstr ""
+
+
+# - User function actions --------------------
+
+msgid "Error invoking function %r: %s"
+msgstr ""
+
+msgid "&Copy"
+msgstr ""
+
+msgid "Copied to clipboard."
+msgstr ""
+
+msgid "User-defined functions"
+msgstr ""
+
+msgid "Edit user functions"
+msgstr ""
+
+
+# - File list popup menu --------------------
+
+msgid "&Open file"
+msgstr ""
+
+msgid "&Go to directory"
+msgstr ""
+
+msgid "&Copy path"
+msgstr ""
+
+msgid "Save %s &as"
+msgstr ""
+
+msgid "&Delete %s"
+msgstr ""
+
+msgid "&Expand/collapse"
+msgstr ""
+
+msgid "&Refresh list"
+msgstr ""
+
+
+# - File list actions --------------------
+
+msgid "Delete this %s from disk?"
+msgstr ""
+
+msgid "directory"
+msgstr ""
+
+msgid "file"
+msgstr ""
+
+msgid "Cannot delete %s, %s open."
+msgstr ""
+
+msgid "currently"
+msgstr ""
+
+msgid "Deleting %s"
+msgstr ""
+
+msgid "Error deleting %s"
+msgstr ""
+
+msgid "Save %s as"
+msgstr ""
+
+msgid "%s is already open in %s."
+msgstr ""
+
+msgid "Saved %s."
+msgstr ""
+
+
+# - Application update --------------------
+
+msgid "Checking for new version of %s."
+msgstr ""
+
+msgid "Update information"
+msgstr ""
+
+msgid "New %s version %s available."
+msgstr ""
+
+msgid "Newer version (%s) available. You are currently on version %s."
+msgstr ""
+
+msgid "Open the program homepage?"
+msgstr ""
+
+msgid "You are using the latest version of %s, %s."
+msgstr ""
+
+msgid "Could not contact server."
+msgstr ""
+
+
+# - Savefile actions --------------------
+
+msgid "Loading \"%s\"."
+msgstr ""
+
+msgid "Opened %s."
+msgstr ""
+
+msgid "Error reloading %s"
+msgstr ""
+
+msgid "Reloading file."
+msgstr ""
+
+
+msgid "Error opening %s."
+msgstr ""
+
+msgid "Failed to open %s."
+msgstr ""
+
+msgid "No such file"
+msgstr ""
+
+msgid "Not a valid gzipped file?"
+msgstr ""
+
+msgid "Not a valid savefile"
+msgstr ""
+
+msgid "Opening page for %s."
+msgstr ""
+
+
+msgid "Undoing %s"
+msgstr ""
+
+msgid "Redoing %s"
+msgstr ""
+
+msgid "%s action"
+msgstr ""
+
+msgid "%s actions"
+msgstr ""
+
+
+msgid "There are unsaved changes in %s"
+msgstr ""
+
+msgid "Do you want to save the changes?"
+msgstr ""
+
+msgid "%s has modifications."
+msgstr ""
+
+msgid "Are you sure you want to lose all changes?"
+msgstr ""
+
+msgid "Changes in %s"
+msgstr ""
+
+msgid "Error saving %s as %s"
+msgstr ""
+
+msgid "Error saving changes"
+msgstr ""
+
+
+# - File format descriptions --------------------
+
+msgid "All files"
+msgstr ""
+
+msgid "Heroes3 savefiles"
+msgstr ""
+
+msgid "Heroes3 single player savefiles"
+msgstr ""
+
+msgid "Heroes3 multi-player savefiles"
+msgstr ""
+
+msgid "Heroes3 campaign savefiles"
+msgstr ""
+
+msgid "CSV spreadsheet"
+msgstr ""
+
+msgid "HTML document"
+msgstr ""
+
+msgid "JSON document"
+msgstr ""
+
+msgid "YAML document"
+msgstr ""
+
+msgid "Translation file"
+msgstr ""
+
+msgid "Machine Object translation file"
+msgstr ""
+
+msgid "Portable Object translation file"
+msgstr ""
+
+
+# - Command history dialog --------------------
+
+#: lib/controls.py
+msgid "Command history"
+msgstr ""
+
+#: lib/controls.py
+msgid "Select commands to undo or redo"
+msgstr ""
+
+#: lib/controls.py
+msgid "Number"
+msgstr ""
+
+#: lib/controls.py
+msgid "Command"
+msgstr ""
+
+#: lib/controls.py
+msgid "Timestamp"
+msgstr ""
+
+#: lib/controls.py
+msgid "Time since"
+msgstr ""
+
+
+# - Function editor dialog --------------------
+
+#: lib/controls.py
+msgid "&Tit&le"
+msgstr ""
+
+#: lib/controls.py
+msgid "&Body"
+msgstr ""
+
+#: lib/controls.py
+msgid "Ta&rget"
+msgstr ""
+
+#: lib/controls.py
+msgid "&Test"
+msgstr ""
+
+#: lib/controls.py
+msgid "&Active"
+msgstr ""
+
+#: lib/controls.py
+msgid "Error"
+msgstr ""
+
+
+#: lib/controls.py
+msgid "&Compile"
+msgstr ""
+
+#: lib/controls.py
+msgid "Delete"
+msgstr ""
+
+#: lib/controls.py
+msgid "Canc&el"
+msgstr ""
+
+#: lib/controls.py
+msgid "&New entry"
+msgstr ""
+
+#: lib/controls.py
+msgid "callable"
+msgstr ""
+
+
+#: lib/controls.py
+msgid "Title for %s; ampersand makes hotkey"
+msgstr ""
+
+#: lib/controls.py
+msgid "Python code to compile for %s"
+msgstr ""
+
+#: lib/controls.py
+msgid "Enable %s for use"
+msgstr ""
+
+#: lib/controls.py
+msgid "Callable name from body to invoke as %s"
+msgstr ""
+
+#: lib/controls.py
+msgid "Enter new %s"
+msgstr ""
+
+
+#: lib/controls.py
+msgid "Close dialog"
+msgstr ""
+
+#: lib/controls.py
+msgid "Move selected entry one step higher"
+msgstr ""
+
+#: lib/controls.py
+msgid "Invoke %s with content from popup"
+msgstr ""
+
+#: lib/controls.py
+msgid "Compile and verify code"
+msgstr ""
+
+#: lib/controls.py
+msgid "Edit current %s"
+msgstr ""
+
+#: lib/controls.py
+msgid "Save %s"
+msgstr ""
+
+#: lib/controls.py
+msgid "Delete %s"
+msgstr ""
+
+#: lib/controls.py
+msgid "Discard changes"
+msgstr ""
+
+#: lib/controls.py
+msgid "No suitable %s found in body."
+msgstr ""
+
+
+#: lib/controls.py
+msgid "There are unsaved changes."
+msgstr ""
+
+#: lib/controls.py
+msgid "Are you sure you want to discard them?"
+msgstr ""
+
+#: lib/controls.py
+msgid "Title is mandatory."
+msgstr ""
+
+#: lib/controls.py
+msgid "Are you sure you want to save invalid state?
+msgstr ""
+
+#: lib/controls.py
+msgid "Error: %s"
+msgstr ""
+
+#: lib/controls.py
+msgid "Are you sure you want to delete this item?"
+msgstr ""
+
+
+# - User function texts --------------------
+
+#: lib/show_combination_artifacts.py
+msgid "Assembled combination artifacts"
+msgstr ""
+
+#: lib/show_combination_artifacts.py
+msgid "Unassembled but complete combination artifacts"
+msgstr ""
+
+#: lib/show_combination_artifacts.py
+msgid "Incomplete combination artifacts"
+msgstr ""
+
+#: lib/show_combination_artifacts.py
+msgid "Available"
+msgstr ""
+
+#: lib/show_combination_artifacts.py
+msgid "Missing"
+msgstr ""
+
+#: lib/show_combination_artifacts.py
+msgid "No savefile open."
+msgstr ""
+
+#: lib/show_combination_artifacts.py
+msgid "No combination artifacts or component parts in any faction."
+msgstr ""
