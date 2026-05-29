@@ -128,6 +128,7 @@ class ColourManager(object):
     darkcolourmap   = {} # {colour name in container: wx.SYS_COLOUR_XYZ}
     darkoriginals   = {} # {colour name in container: original value}
     regctrls        = set() # {ctrl, }
+    destroyctrls    = set() # {ctrl, } controls with bound destroy handler
     # {ctrl: (prop name: colour name in container or wx.SYS_COLOUR_XYZ)}
     ctrlprops       = collections.defaultdict(dict)
     ctrlchildren    = collections.defaultdict(set) # {managed parent ctrl: {managed child controls}}
@@ -191,6 +192,7 @@ class ColourManager(object):
                          or system colour ID like wx.SYS_COLOUR_WINDOW
         """
         if not ctrl: return
+        cls.BindDestroy(ctrl)
         cls.ctrlprops[ctrl][prop] = colour
         if isinstance(ctrl, wx.stc.StyledTextCtrl):
             cls.UpdateSTCColours(ctrl, {prop: colour})
@@ -207,10 +209,29 @@ class ColourManager(object):
         for instances of wx.py.shell.Shell on system colour change.
         """
         if isinstance(ctrl, wx.py.shell.Shell):
+            cls.BindDestroy(ctrl)
             cls.regctrls.add(ctrl)
             cls.SetShellStyles(ctrl)
             if ctrl.GetParent() in cls.ctrlprops:
                 cls.ctrlchildren[ctrl.GetParent()].add(ctrl)
+
+
+    @classmethod
+    def BindDestroy(cls, ctrl):
+        """Binds control destroy event to remove it from managed controls."""
+        if ctrl in cls.destroyctrls: return
+        try:
+            ctrl.Bind(wx.EVT_WINDOW_DESTROY, cls.OnDestroy)
+            cls.destroyctrls.add(ctrl)
+        except Exception:
+            pass
+
+
+    @classmethod
+    def OnDestroy(cls, event):
+        """Handler for managed control destroy, discards it from tracked controls."""
+        event.Skip()
+        cls.Discard(event.EventObject)
 
 
     @classmethod
@@ -592,22 +613,36 @@ class ColourManager(object):
     @classmethod
     def DiscardIfDead(cls, ctrl):
         """Discards component from managed controls if destroyed, returns whether was discarded."""
-        ctrl_collections = [cls.ctrlprops, cls.regctrls, cls.ctrlchildren]
-        ctrl_collections.extend(cls.ctrlchildren.values())
-        if not any(ctrl in collection for collection in ctrl_collections): return False
+        if not cls.IsManaged(ctrl): return False
 
-        is_alive = ctrl and not ctrl.IsBeingDeleted()
+        try: is_alive = ctrl and not ctrl.IsBeingDeleted()
+        except Exception: is_alive = False
         if is_alive: return False
+        cls.Discard(ctrl)
+        return True
 
+
+    @classmethod
+    def IsManaged(cls, ctrl):
+        """Returns whether control is tracked in managed controls."""
+        ctrl_collections = [cls.ctrlprops, cls.regctrls, cls.ctrlchildren, cls.destroyctrls]
+        ctrl_collections.extend(cls.ctrlchildren.values())
+        return any(ctrl in collection for collection in ctrl_collections)
+
+
+    @classmethod
+    def Discard(cls, ctrl):
+        """Discards control and tracked children from managed controls."""
         # Must track parents and children explicitly: in Linux, dialog ButtonSizer buttons
         # remain undestroyed but very crash-prone to examine: discard them along with the dialog.
         children = lambda c: [] if c not in cls.ctrlchildren else \
                              list(cls.ctrlchildren[c]) + sum(map(children, cls.ctrlchildren[c]), [])
+        ctrl_collections = [cls.ctrlprops, cls.regctrls, cls.ctrlchildren, cls.destroyctrls]
+        ctrl_collections.extend(cls.ctrlchildren.values())
         for ctrl in [ctrl] + children(ctrl):
             for collection in ctrl_collections:
                 if ctrl in collection:
                     (collection.discard if isinstance(collection, set) else collection.pop)(ctrl)
-        return True
 
 
 
