@@ -6,7 +6,7 @@ depending on current environment.
 Pyinstaller-provided names and variables: Analysis, EXE, PYZ, SPEC, TOC.
 
 @created   12.04.2020
-@modified  20.03.2026
+@modified  31.05.2026
 """
 import atexit
 import glob
@@ -35,6 +35,10 @@ for path in glob.glob(os.path.join(ROOTPATH, "src", NAME, "functions", "*.py")):
     name = os.path.basename(path)
     if not name.startswith("__"):
         extra_datas += [("functions/%s" % name, path, "DATA")]
+# Include translation files
+for path in glob.glob(os.path.join(ROOTPATH, "src", NAME, "etc", "i18n", "*.po")):
+    name = os.path.basename(path)
+    extra_datas += [("i18n/%s" % name, path, "DATA")]
 
 
 entrypoint = os.path.join(ROOTPATH, "launch.py")

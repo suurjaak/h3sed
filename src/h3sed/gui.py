@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    08.05.2026
+@modified    31.05.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -63,7 +63,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
     """Program main window."""
 
     def __init__(self):
-        i18n.init(os.path.join(conf.EtcDirectory, "i18n"), conf.Translations)
+        i18n.init(conf.TranslationDirectory, conf.Translations)
         i18n.set_current_language(conf.Language)
         wx.GetApp().SetLocale(conf.Language)
         controls.Translate.HOOK = i18n.make_translate(stack_depth=2)
