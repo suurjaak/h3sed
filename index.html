@@ -43,9 +43,9 @@
           <a href="https://github.com/suurjaak/h3sed">View the Project on GitHub <small>suurjaak/h3sed</small></a>
 
           <ul>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.5_setup.exe" title="Setup for Windows">Download <strong>Setup</strong></a></li>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.5.exe" title="Stand-alone program for Windows">Download <strong>Executable</strong></a></li>
-            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.5-src.zip" title="Source distribution">Download <strong>Source</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.6_setup.exe" title="Setup for Windows">Download <strong>Setup</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.6.exe" title="Stand-alone program for Windows">Download <strong>Executable</strong></a></li>
+            <li><a href="https://erki.lap.ee/downloads/h3sed/h3sed_3.6-src.zip" title="Source distribution">Download <strong>Source</strong></a></li>
           </ul>
         </p>
 
@@ -93,6 +93,19 @@ or drag and drop a savegame file onto the program window.</p>
 <p>Note: savegames from different releases of Armageddon's Blade may have different structure for artifacts and inventory. For working with savegames from an earlier version, uncheck "New format in Armageddon's Blade" in program menu File -> Options.</p>
 
 <p><b>Warning:</b> as Heroes3 savefile format is not publicly known, loaded data and saved results may be invalid and cause problems in game. This program is based on unofficial information gathered from observation and online forums.</p>
+
+
+<h2 id="lang">Interface language</h2>
+
+<p>h3sed supports translating all texts in the user interface, especially all game-related
+content, including creatures and artifacts like Water Elemental and Boots of Speed.</p>
+
+<p>Some languages have been included with the program, and more can be added via program menu
+File -> Options -> Interface language -> Add language. For creating a new translation,
+use the template file <a href="https://github.com/suurjaak/h3sed/blob/master/src/h3sed/etc/i18n/h3sed.en.pot">etc/i18n/h3sed.en.pot</a> as basis; this contains
+all translatable texts in the user interface.</p>
+
+<p>Please contact the author to include your language file with the program, or to amend an included one.</p>
 
 
 <h2 id="cli">Command-line Interface</h2>
@@ -204,6 +217,7 @@ savefile.write()
 <p>If running from source code, h3sed needs Python 2.7 or Python 3.6 or higher, and the following 3rd-party Python packages:</p>
 
 <ul>
+  <li>polib (<a href="https://github.com/izimobil/polib/">github.com/izimobil/polib</a>)</li>
   <li>pyyaml (<a href="https://pyyaml.org">pyyaml.org</a>)</li>
   <li>step (<a href="https://pypi.org/project/step-template">pypi.org/project/step-template</a>)</li>
   <li>wxPython 4.0+ (<a href="https://wxpython.org">wxpython.org</a>) (optional, required for graphical interface)</li>
