@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.6, 2026-05-22
+3.6, 2026-05-31
 ---------------
 - add support for switching UI language
 - add partial support for Chinese language UI (pull request #28)
