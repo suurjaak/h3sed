@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  12.05.2026
+@modified  31.05.2026
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
@@ -26,20 +26,22 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "3.6.dev39"
-VersionDate = "12.05.2026"
+Version = "3.6.dev40"
+VersionDate = "31.05.2026"
 
 Frozen = getattr(sys, "frozen", False)
 if Frozen:
     # Running as a pyinstaller executable
     ApplicationDirectory = os.path.dirname(sys.executable)
-    FunctionDirectory = os.path.join(getattr(sys, "_MEIPASS", ""), "h3sed", "functions")
+    FunctionDirectory = os.path.join(getattr(sys, "_MEIPASS", ""), "functions")
     ResourceDirectory = os.path.join(getattr(sys, "_MEIPASS", ""), "res")
+    TranslationDirectory = os.path.join(getattr(sys, "_MEIPASS", ""), "i18n")
     EtcDirectory = ApplicationDirectory
 else:
     ApplicationDirectory = os.path.realpath(os.path.dirname(__file__))
     FunctionDirectory = os.path.join(ApplicationDirectory, "functions")
     ResourceDirectory = os.path.join(ApplicationDirectory, "res")
+    TranslationDirectory = os.path.join(ApplicationDirectory, "etc", "i18n")
     EtcDirectory = os.path.join(ApplicationDirectory, "etc")
 
 """Name of file where FileDirectives are kept."""

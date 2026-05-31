@@ -1,2 +1,2 @@
-recursive-include src *.py *.ini
+recursive-include src *.py *.ini *.po *.pot
 include LICENSE.md README.md MANIFEST.in requirements.txt
