@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  08.05.2026
+@modified  12.07.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -272,7 +272,7 @@ class SkillsPlugin(object):
         self.parent.command(callable, name=(cname, cargs))
 
 
-def parse(hero_bytes, version):
+def parse(hero_bytes, version, savefile=None, span=None):
     """Returns h3sed.hero.Skills() parsed from hero bytearray skills section."""
     IDS = metadata.Store.get("ids", version=version)
     LEVEL_ID_TO_NAME = {IDS[n]: n for n in metadata.Store.get("skill_levels", version=version)}

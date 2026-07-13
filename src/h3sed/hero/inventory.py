@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  09.05.2026
+@modified  12.07.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -482,7 +482,7 @@ class InventoryPlugin(object):
         self.parent.command(callable, name=(cname, cargs))
 
 
-def parse(hero_bytes, version):
+def parse(hero_bytes, version, savefile=None, span=None):
     """Returns h3sed.hero.Inventory() parsed from hero bytearray inventory section."""
     HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)

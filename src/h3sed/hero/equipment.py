@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  08.05.2026
+@modified  12.07.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -570,7 +570,7 @@ class EquipmentPlugin(object):
         self.parent.command(callable, name=(cname, cargs))
 
 
-def parse(hero_bytes, version):
+def parse(hero_bytes, version, savefile=None, span=None):
     """Returns h3sed.hero.Equipment() parsed from hero bytearray equipment section."""
     EQUIPMENT_LOCATIONS = list(metadata.Store.get("equipment_slots", version=version))
     BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,

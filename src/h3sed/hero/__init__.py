@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  01.05.2026
+@modified  13.07.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -466,7 +466,10 @@ class Inventory(TypedArray, DataClass):
 
 class Profile(SlotsDict, DataClass):
     """Hero profile property."""
-    __slots__ = {"faction": make_integer_cast("faction", nullable=True)}
+    __slots__ = {"faction": make_integer_cast("faction", nullable=True), "biography": str,
+                 "x": make_integer_cast("location_x", nullable=True),
+                 "y": make_integer_cast("location_y", nullable=True),
+                 "z": make_integer_cast("location_z", nullable=True)}
 
     def format_faction(self):
         """Returns hero player faction as text."""
@@ -621,11 +624,11 @@ class Hero(object):
         self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 
-    def parse(self):
+    def parse(self, savefile):
         """Parses hero bytes to properties."""
         for section, module in PROPERTIES.items():
             prop = getattr(self, section)
-            state = module.parse(self.bytes, self.version)
+            state = module.parse(self.bytes, self.version, savefile, self.span)
             if isinstance(prop, list): prop[:] = state
             else:
                 prop.clear()

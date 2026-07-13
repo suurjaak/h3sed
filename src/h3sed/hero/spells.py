@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  08.05.2026
+@modified  12.07.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -177,7 +177,7 @@ class SpellsPlugin(object):
         return True
 
 
-def parse(hero_bytes, version):
+def parse(hero_bytes, version, savefile=None, span=None):
     """Returns h3sed.hero.Spells() parsed from hero bytearray spellbook section."""
     SPELL_POSES = {y: x[y] for x in [metadata.Store.get("ids", version=version)]
                    for y in metadata.Store.get("spells", version=version)}

@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  28.04.2026
+@modified  12.07.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -416,7 +416,7 @@ class StatsPlugin(object):
 
 
 
-def parse(hero_bytes, version):
+def parse(hero_bytes, version, savefile=None, span=None):
     """Returns h3sed.hero.Attributes() parsed from hero bytearray attribute sections."""
     IDS = metadata.Store.get("ids", version=version)
     ID_TO_SPECIAL = {IDS[n]: n for n in metadata.Store.get("special_artifacts", version=version)}

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  08.05.2026
+@modified  12.07.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -342,7 +342,7 @@ class ArmyPlugin(object):
         wx.CallLater(100, after)  # Hidden SpinCtrl arrows can become visible on colour change
 
 
-def parse(hero_bytes, version):
+def parse(hero_bytes, version, savefile=None, span=None):
     """Returns h3sed.hero.Army() parsed from hero bytearray army section."""
     HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)
