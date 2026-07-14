@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  08.05.2026
+@modified  13.07.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -217,7 +217,6 @@ class HeroPlugin(object):
         self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
         tb.Realize()
 
-        faction = wx.StaticText(heropanel)
         menubutton = wx.Button(heropanel, label=__("Change %s", __("all")) + " ..")
         menubutton.ToolTip = __("Change multiple properties on page")
         menubutton.Bind(wx.EVT_BUTTON, self.on_hero_subtab_button)
@@ -253,7 +252,6 @@ class HeroPlugin(object):
         sizer_top.AddSpacer(5)
         sizer_tabtop = wx.BoxSizer(wx.HORIZONTAL)
         sizer_tabtop.Add(tb)
-        sizer_tabtop.Add(faction, border=30, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
         sizer_tabtop.AddStretchSpacer()
         sizer_tabtop.Add(menubutton)
         sizer.Add(sizer_top,    border=10, flag=wx.LEFT | wx.GROW)
@@ -275,7 +273,6 @@ class HeroPlugin(object):
         self._ctrls["count"] = info
         self._ctrls["html"] = html
         self._ctrls["toolbar"] = tb
-        self._ctrls["faction"] = faction
         self._ctrls["menubutton"] = menubutton
         controls.ColourManager.Patch(self._panel)
 
@@ -786,8 +783,6 @@ class HeroPlugin(object):
                 logger.info("Loading hero %s (bytes %s-%s in savefile).",
                             hero2, hero2.span[0], hero2.span[1] - 1)
             self._hero = hero2
-            self._ctrls["faction"].Label = "%s: %s" % (__("Faction"),
-                                                       __(hero2.profile.format_faction()))
             for p in self._plugins:
                 self.render_plugin(p["name"], reload=True, log=not page_existed and status)
 

@@ -12,11 +12,88 @@ Released under the MIT License.
 """
 import h3sed
 from .. lib import util
+from .. lib.i18n import translate as __
 from .. import metadata
 
 
+PROPS = {"name": "profile", "label": "Profile", "index": 6}
+DATAPROPS = [{
+    "name":      "faction",
+    "type":      "text",
+    "label":     "Faction",
+    "readonly":  True,
+    "format":    None,  # Populated later
+}, {
+    "name":      "biography",
+    "type":      "text",
+    "label":     "Biography",
+    "multiline": True,
+    "readonly":  True,
+}]
+
+
+def props():
+    """Returns props for profile-tab, as {label, index}."""
+    return PROPS
+
+
+def factory(parent, panel, version):
+    """Returns a new profile-plugin instance."""
+    return ProfilePlugin(parent, panel, version)
+
+
+
+class ProfilePlugin(object):
+    """Provides UI functionality for viewing hero profile data like biography."""
+
+
+    def __init__(self, parent, panel, version):
+        self.name    = PROPS["name"]
+        self.parent  = parent
+        self.version = version
+        self._panel  = panel  # Plugin contents panel
+        self._state  = h3sed.hero.Profile.factory(version)
+        self._hero   = None
+
+
+    def props(self):
+        """Returns UI props for profile-tab, as [{type: "text", ..}]."""
+        result = []
+        for prop in DATAPROPS:
+            if "faction" == prop["name"] and "format" in prop:
+                prop = dict(prop, format=lambda: __(self._state.format_faction()))
+            result.append(prop)
+        return result
+
+
+    def state(self):
+        """Returns data state for profile-plugin, as h3sed.hero.Profile."""
+        return self._state
+
+
+    def item(self):
+        """Returns current hero."""
+        return self._hero
+
+
+    def load(self, hero):
+        """Loads hero to plugin."""
+        self._hero = hero
+        self._state = hero.profile
+
+
+    def load_state(self, state):
+        """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
+        state0 = self._state.copy()
+        self._state.clear()
+        for attribute, value in state.items():
+            if attribute in self._state:
+                self._state[attribute] = value
+        return state0 != self._state
+
+
 def parse(hero_bytes, version, savefile=None, span=None):
-    """Returns h3sed.hero.Profile() parsed from hero bytearray."""
+    """Returns h3sed.hero.Profile() parsed from hero bytearray, and preceding bytes if available."""
     BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
                                   version=version)
 
@@ -31,7 +108,7 @@ def parse(hero_bytes, version, savefile=None, span=None):
         ptr -= 1
     if ptr != fixed_start: # Has bio
         profile.biography = util.to_unicode(savefile.raw[ptr:fixed_start])
-    if "neutral" == h3sed.hero.Profile.make_faction_text(profile.faction, version):
+    if "neutral" == profile.format_faction():
         return profile
 
     location = {}

@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.7, 2026-07-13
+---------------
+- add hero profile tab, with hero faction and biography
+
+
 3.6, 2026-05-31
 ---------------
 - add support for switching UI language

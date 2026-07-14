@@ -34,13 +34,13 @@ logger = logging.getLogger(__name__)
 
 ## Modules for hero properties in order of showing
 PROPERTIES = collections.OrderedDict([
-    ("profile",   profile),
     ("stats",     stats),
     ("skills",    skills),
     ("army",      army),
     ("equipment", equipment),
     ("inventory", inventory),
     ("spells",    spells),
+    ("profile",   profile),
 ])
 
 

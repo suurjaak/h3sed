@@ -2442,6 +2442,28 @@ def build(plugin, panel):
             count += 1
 
 
+        elif "text" == prop.get("type"):
+            ctrl_style = 0
+            if prop.get("readonly"):
+                ctrl_style |= wx.TE_READONLY | wx.BORDER_NONE
+            if prop.get("multiline"): ctrl_style |= wx.TE_MULTILINE
+            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])),
+                               name="%s_label" % prop["name"])
+            c2 = wx.TextCtrl(panel, style=ctrl_style, name=prop["name"])
+
+            producer = prop["format"] if callable(prop.get("format")) else lambda: state.get(prop["name"])
+            c2.Value = producer() or ""
+
+            sizer.Add(c1, pos=(count, 0))
+            sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
+            if not sizer.IsColGrowable(1): sizer.AddGrowableCol(1)
+            if prop.get("multiline"):
+                if not sizer.IsRowGrowable(count): sizer.AddGrowableRow(count)
+            col = 2
+            build_result[prop["name"]] = c2
+            count += 1
+
+
         elif "label" == prop.get("type"):
             c = wx.StaticText(panel, label=__(prop.get("label", "")))
             ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
