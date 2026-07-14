@@ -451,6 +451,8 @@ def serialize(attributes, hero_bytes, version, hero=None):
 
     new_bytes = hero_bytes[:]
     for prop in h3sed.version.adapt("hero.stats.DATAPROPS", DATAPROPS, version=version):
+        if prop.get("readonly"):
+            continue # for prop
         value, pos = attributes[prop["name"]], BYTEPOS[prop["name"]]
         if "check" == prop["type"]:
             binary = (util.itoby(IDS[prop["label"]], 4) if value else metadata.BLANK * 4)

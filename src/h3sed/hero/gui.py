@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  13.07.2026
+@modified  14.07.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -868,12 +868,20 @@ class HeroPlugin(object):
                 state = state0.copy()
                 state.clear()
 
-            if isinstance(state0, type(state)) \
-            or isinstance(state0, (list, set)) and isinstance(state, (list, set)):
-                new_states[category] = state
-            else:
+            if not isinstance(state0, type(state)) \
+            and not all(isinstance(x, (list, set)) for x in (state0, state)):
                 logger.warning("Invalid data type in hero data %r for %s: %s",
                                category, type(state0).__name__, state)
+                continue # for category, state
+
+            if isinstance(state, dict):
+                named_props = [p for p in plugin.props() if isinstance(p, dict) and p.get("name")]
+                keep = set(p["name"] for p in named_props if not p.get("readonly"))
+                state = {k: v for k, v in state.items() if k in keep}
+                if not state:
+                    continue # for category, state
+
+            new_states[category] = state
         if not new_states: return
 
         def on_do(states):
