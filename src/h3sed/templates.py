@@ -168,32 +168,34 @@ def make_hero_yamls(hero, categories=None, as_list=False):
     """
     if categories is None: categories = {k: True for k in HERO_PROPERTY_CATEGORIES}
     if categories.get("devices"): categories = dict(categories, stats=True)
-    if categories.get("faction"): categories = dict(categories, profile=True)
+    for category in ("faction", "location", "biography"):
+        if categories.get(category): categories = dict(categories, profile=True)
     LF, INDENT = os.linesep, "  "
 
     result = {}
-    for original in [True, False] if hero.is_changed() else [True]:
+    for original in [True, False, None] if hero.is_changed() else [True, None]:
         states, maxlen = [], 0  # [[(prefix, value), ]], max key length
+        categories_present = []
         for category in filter(categories.get, h3sed.hero.PROPERTIES):
-            if not categories.get(category): continue # for category
-            prop = (hero.original if original else hero.properties)[category]
+            if not categories.get(category):
+                continue # for category
+            if "profile" == category and original is not None: # Skip profile for diff texts
+                continue # for category
+            prop = (hero.properties if not original else hero.original)[category]
             pairs, prefixlen = serialize_property_yaml(prop, INDENT)
             states.append(pairs)
             maxlen = max(maxlen, prefixlen)
+            categories_present.append(category)
         maxlen += len(INDENT) * 2 + 1 # Add leading and interleaving indent plus place for colon
-        formatteds = ["%s%s:" % (INDENT, category)
-                      for category in filter(categories.get, h3sed.hero.PROPERTIES)]
+        formatteds = ["%s%s:" % (INDENT, category) for category in categories_present]
         for i, pairs in enumerate(states):
             lines = [(a.ljust(maxlen) if b and a.strip() != "-" else a) + b for a, b in pairs]
             formatteds[i] += (LF if lines else "") + LF.join(INDENT + x for x in lines) + LF
-        result["originals" if original else "currents"] = formatteds
+        result["originals" if original else "full" if original is None else "currents"] = formatteds
     if "currents" not in result: result["currents"] = result["originals"]
 
-    if as_list:
-        header = "- name:".ljust(maxlen) + INDENT + encode_yaml_scalar(hero.name)
-    else:
-        header = "%s:" % encode_yaml_scalar(hero.name)
-    result["full"] = header + LF + "".join(result["currents"])
+    header = "- name:".ljust(maxlen) + INDENT + encode_yaml_scalar(hero.name) + LF if as_list else ""
+    result["full"] = header + "".join(result["full"])
     return result
 
 
@@ -228,19 +230,28 @@ def serialize_property_yaml(state, indent="  "):
                 pairs.extend(itempairs)
         if do_order: pairs.sort()
     else:
-        for key in state.__slots__:
+        keys = list(state.__slots__)
+        if isinstance(state, h3sed.hero.Profile):
+            keys = ["faction", "location", "biography"]
+        for key in keys:
             maxlen = max(maxlen, len(key))
-            value = state[key]
             if "faction" == key and isinstance(state, h3sed.hero.Profile):
                 value = state.format_faction()
+            elif "location" == key and isinstance(state, h3sed.hero.Profile):
+                value = state.format_location()
+            else:
+                value = state[key]
+            if isinstance(state, h3sed.hero.Profile) and not value:
+                continue # for key
             pairs += [("%s%s:" % (indent, key), fmt(value))]
     return pairs, maxlen
 
 
 def encode_yaml_scalar(value):
     """Returns scalar value encoded as YAML, unquoted if possible."""
-    encoded = yaml.safe_dump([value], allow_unicode=True, default_flow_style=True)
-    return encoded.strip()[1:-1] # Strip []: "[MyValue]\n" to "MyValue"
+    encoded = yaml.safe_dump(value, allow_unicode=True, default_flow_style=True)
+    # Strip "MyValue\n" or "'MyValue'\n...\n" to "MyValue"
+    return encoded[:-5] if encoded.endswith("\n...\n") else encoded.rstrip()
 
 
 
@@ -302,36 +313,31 @@ Licensing for bundled software:
 HTML text shown for hero full character sheet, toggleable between unsaved changes view.
 
 @param   name     hero name
-@param   texts    [category current content, ]
-@param  ?texts0   [category original content, ] if any, to show changes against current
-@param  ?mode     view mode, "normal" or "changes" or "changesonly"
-
+@param   texts    {mode: content} e.g. {"normal": "..", ?"changes": [..], ?"changesonly": [..]}
+@param  ?mode     view mode, "normal" or "changes" or "changesonly" (defaults to "normal")
 """
 HERO_CHARSHEET_HTML = """<%
 import step
 from h3sed import conf, templates
 from h3sed.lib.i18n import translate as __
-texts0 = get("texts0") or []
-mode = get("mode")
+mode = get("mode") or "normal"
 %>
 <font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
 <table cellpadding="0" cellspacing="0" width="100%"><tr>
   <td><b>{{ name }}{{ " %s" % __("unsaved changes") if "changes" == mode else " %s" % __("unsaved changes only") if "changesonly" == mode else "" }}</b></td>
-%if texts0:
+%if len(texts) > 1:
   <td align="right">
     <a href="{{ "normal" if "changesonly" == mode else "changesonly" if "changes" == mode else "changes" }}"><font color="{{ conf.LinkColour }}">{{ __("Normal view" if "changesonly" == mode else "Unsaved changes only" if "changes" == mode else "Unsaved changes") }}</font></a>
   </td>
 %endif
 </tr></table>
 <font size="2">
-%if mode and "normal" != mode:
-{{! step.Template(templates.HERO_DIFF_HTML, escape=True).expand(mode=mode, changes=list(zip(texts0, texts))) }}
+%if "normal" != mode:
+{{! step.Template(templates.HERO_DIFF_HTML, escape=True).expand(mode=mode, changes=list(zip(texts["originals"], texts["currents"]))) }}
 %else:
 <table cellpadding="0" cellspacing="0">
-    %for text in texts:
-        %for line in text.rstrip().splitlines():
+    %for line in texts["normal"].rstrip().splitlines():
   <tr><td><code>{{! escape(line).rstrip().replace(" ", "&nbsp;") }}</code></td></tr>
-        %endfor
     %endfor
 %endif
 </table>

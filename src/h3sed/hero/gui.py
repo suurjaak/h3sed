@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  14.07.2026
+@modified  15.07.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -516,7 +516,9 @@ class HeroPlugin(object):
     def on_copy_hero(self, event=None):
         """Handler for copying a hero, adds hero data to clipboard."""
         if self._hero and wx.TheClipboard.Open():
-            d = wx.TextDataObject(self._hero_yamls[self._hero]["full"])
+            content = "%s:%s" % (templates.encode_yaml_scalar(self._hero.name), os.linesep)
+            content += self._hero_yamls[self._hero]["full"]
+            d = wx.TextDataObject(content)
             wx.TheClipboard.SetData(d), wx.TheClipboard.Close()
             guibase.status("Copied hero %s data to clipboard.", self._hero,
                            flash=conf.StatusShortFlashLength, log=True, translate=True)
@@ -554,21 +556,28 @@ class HeroPlugin(object):
     def on_charsheet(self, event=None):
         """Opens popup with full hero profile."""
         if not self._heropanel.Shown: return
+
         tpl = step.Template(templates.HERO_CHARSHEET_HTML, escape=True)
-        texts, texts0 = self._hero_yamls[self._hero]["currents"], None
-        if self._hero.is_changed(): texts0 = self._hero_yamls[self._hero]["originals"]
-        tplargs = dict(name=str(self._hero), texts=texts, texts0=texts0)
-        normal, changes = tpl.expand(**tplargs), tpl.expand(mode="changes", **tplargs)
-        changesonly = tpl.expand(mode="changesonly", **tplargs) if texts0 else None
-        htmls = {"normal": normal, "changes": changes, "changesonly": changesonly}
-        content = htmls.get(conf.Positions.get("charsheet_view"), normal) if texts0 else normal
+        mode = "normal"
+        texts, htmls = {"normal": self._hero_yamls[self._hero]["full"]}, {}
+        if self._hero.is_changed():
+            for k in ("currents", "originals"):
+                texts[k] = self._hero_yamls[self._hero][k]
+        tplargs = dict(name=str(self._hero), texts=texts)
+        htmls["normal"] = tpl.expand(**tplargs)
+        if self._hero.is_changed():
+            htmls["changes"] = tpl.expand(mode="changes", **tplargs)
+            htmls["changesonly"] = tpl.expand(mode="changesonly", **tplargs)
+            mode = conf.Positions.get("charsheet_view")
+            if mode not in htmls: mode = "normal"
+
         dlg = None
         def on_link(mode):
             if dlg: conf.Positions["charsheet_view"] = mode
             return htmls.get(mode, htmls["normal"])
-        links = {k: on_link for k in htmls} if texts0 else None
+        links = {k: on_link for k in htmls} if self._hero.is_changed() else None
         buttons = {__("Copy data"): self.on_copy_hero}
-        dlg = controls.HtmlDialog(self._panel.TopLevelParent, __("Hero character sheet"), content,
+        dlg = controls.HtmlDialog(self._panel.TopLevelParent, __("Hero character sheet"), htmls[mode],
                                   links, buttons, autowidth_links=True, style=wx.RESIZE_BORDER)
         def after(dlg):
             if not self._panel: return
