@@ -4,6 +4,7 @@ CHANGELOG
 3.7, 2026-07-13
 ---------------
 - add hero profile tab, with hero faction and biography
+- add hero map coordinates to hero profile (issue #31)
 - ensure hero copy-paste not overwriting read-only properties
 
 

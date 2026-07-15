@@ -35,7 +35,7 @@ EXPORT_FORMATS = {"csv": "CSV spreadsheet", "html": "HTML document",
 
 ## Hero property categories for hero index and exports
 HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army",
-                            "equipment", "inventory", "spells", "biography"]
+                            "equipment", "inventory", "spells", "location", "biography"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -79,8 +79,9 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
         for hero in heroes:
             hero_data = dict(name=hero.name)
             for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
-                if category in ("faction", "biography"):
+                if category in ("faction", "location", "biography"):
                     if "faction" == category: value = hero.profile.format_faction()
+                    elif "location" == category: value = hero.profile.format_location()
                     else: value = hero.profile[category]
                     if value: hero_data.setdefault("profile", {})[category] = value
                     continue # for category
@@ -503,6 +504,9 @@ category = get("category")
 {{ __(spell) }}
     %endfor
 %endif
+%if category is None or "location" == category:
+{{ hero.profile.format_location() }}
+%endif
 %if category is None or "biography" == category:
 {{ hero.profile.biography }}
 %endif
@@ -581,6 +585,9 @@ if len(label_text) > 7: label_text = label_text[:5]
 %if not categories or categories["spells"]:
     <th align="left" valign="bottom" nowrap><a href="sort:spells"><font color="{{ conf.FgColour }}">{{ __("Spells") }}{{! sortarrow("spells") }}</font></a></th>
 %endif
+%if not categories or categories["location"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:location"><font color="{{ conf.FgColour }}">{{ __("Location") }}{{! sortarrow("location") }}</font></a></th>
+%endif
 %if not categories or categories["biography"]:
     <th align="left" valign="bottom" nowrap><a href="sort:biography"><font color="{{ conf.FgColour }}">{{ __("Biography") }}{{! sortarrow("biography") }}</font></a></th>
 %endif
@@ -655,6 +662,9 @@ if len(label_text) > 7: label_text = label_text[:5]
     %endfor
     </td>
 %endif
+%if not categories or categories["location"]:
+    <td align="left" valign="top" nowrap>{{ hero.profile.format_location() }}</td>
+%endif
 %if not categories or categories["biography"]:
     <td align="left" valign="top">{{! "<br />".join(map(escape, hero.profile.biography.splitlines())) }}</td>
 %endif
@@ -710,6 +720,8 @@ deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_AR
     %for artifact in filter(bool, hero.inventory):
 {{ __(artifact) }}
     %endfor
+%elif "location" == column:
+{{ hero.profile.format_location() }}
 %elif "biography" == column:
 {{ hero.profile.biography }}
 %endif
@@ -1053,6 +1065,9 @@ colptr = max(col_indexes) + 1
 %if not categories or categories["spells"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("spells")) }}" onclick="onSort(this)">{{ __("Spells") }}</a></th>
 %endif
+%if not categories or categories["location"]:
+    <th><a class="sort" title="{{ __("Sort by %s", __("location")) }}" onclick="onSort(this)">{{ __("Location") }}</a></th>
+%endif
 %if not categories or categories["biography"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("biography")) }}" onclick="onSort(this)">{{ __("Biography") }}</a></th>
 %endif
@@ -1119,6 +1134,9 @@ colptr = max(col_indexes) + 1
     {{ __(spell) }}<br />
     %endfor
     </td>
+%endif
+%if not categories or categories["location"]:
+    <td>{{ hero.profile.format_location() }}</td>
 %endif
 %if not categories or categories["biography"]:
     <td class="text">{{ hero.profile.biography }}</td>
