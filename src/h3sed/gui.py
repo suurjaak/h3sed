@@ -2453,6 +2453,8 @@ def build(plugin, panel):
 
             producer = prop["format"] if callable(prop.get("format")) else lambda: state.get(prop["name"])
             c2.Value = producer() or ""
+            if prop.get("tooltip"):
+                c2.ToolTip = prop["tooltip"]() if callable(prop["tooltip"]) else prop["tooltip"]
 
             sizer.Add(c1, pos=(count, 0))
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)

@@ -1136,7 +1136,7 @@ colptr = max(col_indexes) + 1
     </td>
 %endif
 %if not categories or categories["location"]:
-    <td>{{ hero.profile.format_location() }}</td>
+    <td title="{{ hero.profile.format_location(long=True) }}">{{ hero.profile.format_location() }}</td>
 %endif
 %if not categories or categories["biography"]:
     <td class="text">{{ hero.profile.biography }}</td>

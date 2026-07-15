@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  14.07.2026
+@modified  15.07.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -475,9 +475,11 @@ class Profile(SlotsDict, DataClass):
         """Returns hero player faction as text."""
         return self.make_faction_text(self.faction, self.version)
 
-    def format_location(self):
+    def format_location(self, long=False):
         """Returns hero map coordinates as text."""
-        return "" if None in (self.x, self.y, self.z) else "(%s, %s, %s)" % (self.x, self.y, self.z)
+        if None in (self.x, self.y, self.z): return ""
+        if not long: return "(%s, %s, %s)" % (self.x, self.y, self.z)
+        return "x=%s y=%s %s" % (self.x, self.y, __("underground" if self.z else "surface"))
 
     @staticmethod
     def make_faction_text(faction, version=None):

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.01.2026
-@modified  14.07.2026
+@modified  15.07.2026
 ------------------------------------------------------------------------------
 """
 import h3sed
@@ -29,6 +29,7 @@ DATAPROPS = [{
     "label":     "Location",
     "readonly":  True,
     "format":    None,  # Populated later
+    "tooltip":   None,  # Populated later
 }, {
     "name":      "biography",
     "type":      "text",
@@ -68,8 +69,10 @@ class ProfilePlugin(object):
         for prop in DATAPROPS:
             if "faction" == prop["name"] and "format" in prop:
                 prop = dict(prop, format=lambda: __(self._state.format_faction()))
-            elif "location" == prop["name"] and "format" in prop:
+            if "location" == prop["name"] and "format" in prop:
                 prop = dict(prop, format=self._state.format_location)
+            if "location" == prop["name"] and "tooltip" in prop:
+                prop = dict(prop, tooltip=lambda: self._state.format_location(long=True))
             result.append(prop)
         return result
 
