@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  24.04.2026
+@modified  15.07.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -35,7 +35,7 @@ EXPORT_FORMATS = {"csv": "CSV spreadsheet", "html": "HTML document",
 
 ## Hero property categories for hero index and exports
 HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army",
-                            "equipment", "inventory", "spells"]
+                            "equipment", "inventory", "spells", "biography"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -79,9 +79,10 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
         for hero in heroes:
             hero_data = dict(name=hero.name)
             for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
-                if "faction" == category:
-                    state = dict(hero.profile, faction=hero.profile.format_faction())
-                    hero_data["profile"] = state
+                if category in ("faction", "biography"):
+                    if "faction" == category: value = hero.profile.format_faction()
+                    else: value = hero.profile[category]
+                    if value: hero_data.setdefault("profile", {})[category] = value
                     continue # for category
                 if "devices" == category: category = "stats"
                 state = hero.properties[category]
@@ -159,7 +160,7 @@ def make_hero_yamls(hero, categories=None, as_list=False):
     Returns YAML strings for hero properties.
 
     @param   categories    hero property categories to include if not all, as {name: bool}
-    @param   as_list       whether to make full YAML as a list element, or a named dictioonary
+    @param   as_list       whether to make full YAML as a list element, or a named dictionary
     @return  {"full":      complete YAML dictionary string including name for hero current values,
               "originals": [YAML texts for saved values per property in display order],
               "currents":  [YAML texts for unsaved values per property in display order]}
@@ -487,11 +488,6 @@ category = get("category")
 {{ __(army["name"]) }}: {{ army["count"] }}
     %endfor
 %endif
-%if category is None or "spells" == category:
-    %for spell in hero.spells:
-{{ __(spell) }}
-    %endfor
-%endif
 %if category is None or "equipment" == category:
     %for artifact in filter(bool, hero.equipment.values()):
 {{ __(artifact) }}
@@ -501,6 +497,14 @@ category = get("category")
     %for artifact in filter(bool, hero.inventory):
 {{ __(artifact) }}
     %endfor
+%endif
+%if category is None or "spells" == category:
+    %for spell in hero.spells:
+{{ __(spell) }}
+    %endfor
+%endif
+%if category is None or "biography" == category:
+{{ hero.profile.biography }}
 %endif
 """
 
@@ -577,6 +581,9 @@ if len(label_text) > 7: label_text = label_text[:5]
 %if not categories or categories["spells"]:
     <th align="left" valign="bottom" nowrap><a href="sort:spells"><font color="{{ conf.FgColour }}">{{ __("Spells") }}{{! sortarrow("spells") }}</font></a></th>
 %endif
+%if not categories or categories["biography"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:biography"><font color="{{ conf.FgColour }}">{{ __("Biography") }}{{! sortarrow("biography") }}</font></a></th>
+%endif
   </tr>
 %elif count and (get("text") or "").strip():
 <br /><br />&nbsp;&nbsp;
@@ -648,6 +655,9 @@ if len(label_text) > 7: label_text = label_text[:5]
     %endfor
     </td>
 %endif
+%if not categories or categories["biography"]:
+    <td align="left" valign="top">{{! "<br />".join(map(escape, hero.profile.biography.splitlines())) }}</td>
+%endif
 %endfor
 %if heroes:
 </table>
@@ -700,6 +710,8 @@ deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_AR
     %for artifact in filter(bool, hero.inventory):
 {{ __(artifact) }}
     %endfor
+%elif "biography" == column:
+{{ hero.profile.biography }}
 %endif
 """
 
@@ -743,6 +755,7 @@ deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACT
     table#heroes td, table#heroes th { border: 1px solid #C0C0C0; padding: 5px; }
     table#heroes th { text-align: left; white-space: nowrap; }
     table#heroes td { vertical-align: top; white-space: nowrap; }
+    table#heroes td.text { max-width: 400px; white-space: pre-wrap; }
     td.index, th.index { color: gray; width: 10px; }
     td.index { color: gray; text-align: right; }
     .long { display: inline-block; max-width: 600px; white-space: pre-wrap; }
@@ -1040,6 +1053,9 @@ colptr = max(col_indexes) + 1
 %if not categories or categories["spells"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("spells")) }}" onclick="onSort(this)">{{ __("Spells") }}</a></th>
 %endif
+%if not categories or categories["biography"]:
+    <th><a class="sort" title="{{ __("Sort by %s", __("biography")) }}" onclick="onSort(this)">{{ __("Biography") }}</a></th>
+%endif
   </tr>
 
 %for i, hero in enumerate(heroes):
@@ -1103,6 +1119,9 @@ colptr = max(col_indexes) + 1
     {{ __(spell) }}<br />
     %endfor
     </td>
+%endif
+%if not categories or categories["biography"]:
+    <td class="text">{{ hero.profile.biography }}</td>
 %endif
   </tr>
 %endfor
