@@ -32,6 +32,9 @@ msgstr ""
 msgid "Spells"
 msgstr ""
 
+msgid "Profile"
+msgstr ""
+
 
 # - Hero primary attributes --------------------
 
@@ -1820,6 +1823,9 @@ msgstr ""
 msgid "base %s"
 msgstr ""
 
+msgid "biography"
+msgstr ""
+
 msgid "bottom"
 msgstr ""
 
@@ -1974,6 +1980,9 @@ msgid "Insert blank"
 msgstr ""
 
 msgid "Inventory too full"
+msgstr ""
+
+msgid "Location"
 msgstr ""
 
 msgid "Loading %s."
@@ -2138,6 +2147,9 @@ msgstr ""
 msgid "Stats"
 msgstr ""
 
+msgid "surface"
+msgstr ""
+
 msgid "swap"
 msgstr ""
 
@@ -2181,6 +2193,9 @@ msgid "Top up remaining movement points to hero total"
 msgstr ""
 
 msgid "Top up remaining spell points to hero maximum"
+msgstr ""
+
+msgid "underground"
 msgstr ""
 
 msgid "Unsaved changes"

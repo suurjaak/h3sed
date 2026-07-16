@@ -26,6 +26,9 @@ msgstr "Навыки"
 msgid "Spells"
 msgstr "Заклинания"
 
+msgid "Profile"
+msgstr "Профиль"
+
 
 # - Hero primary attributes --------------------
 
@@ -1814,6 +1817,9 @@ msgstr "собрать %s"
 msgid "base %s"
 msgstr "база %s"
 
+msgid "biography"
+msgstr "биография"
+
 msgid "bottom"
 msgstr "в конец"
 
@@ -1969,6 +1975,9 @@ msgstr "Вставить пустую"
 
 msgid "Inventory too full"
 msgstr "Недостаточно места в рюкзаке"
+
+msgid "Location"
+msgstr "Координаты"
 
 msgid "Loading %s."
 msgstr "Загрузка %s."
@@ -2135,6 +2144,9 @@ msgstr "Путь"
 msgid "Stats"
 msgstr "Статы"
 
+msgid "surface"
+msgstr "поверхность"
+
 msgid "swap"
 msgstr "обмен"
 
@@ -2179,6 +2191,9 @@ msgstr "Восстановить очки хода полностью"
 
 msgid "Top up remaining spell points to hero maximum"
 msgstr "Восстановить ману полностью"
+
+msgid "underground"
+msgstr "подземелье"
 
 msgid "Unsaved changes"
 msgstr "Несохраненные изменения"

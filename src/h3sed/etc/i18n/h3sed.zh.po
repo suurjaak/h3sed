@@ -26,6 +26,9 @@ msgstr "技能"
 msgid "Spells"
 msgstr "法术"
 
+msgid "Profile"
+msgstr "档案"
+
 
 # - Hero primary attributes --------------------
 
@@ -1757,6 +1760,9 @@ msgstr "添加"
 msgid "Army slot"
 msgstr "军队槽"
 
+msgid "Biography"
+msgstr "传记"
+
 msgid "Description"
 msgstr "描述"
 
@@ -1771,6 +1777,9 @@ msgstr "游戏版本"
 
 msgid "Inventory slot"
 msgstr "背包槽"
+
+msgid "Location"
+msgstr "位置"
 
 msgid "Map"
 msgstr "地图"
