@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  15.07.2026
+@modified  26.07.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -249,9 +249,9 @@ def serialize_property_yaml(state, indent="  "):
 
 def encode_yaml_scalar(value):
     """Returns scalar value encoded as YAML, unquoted if possible."""
-    encoded = yaml.safe_dump(value, allow_unicode=True, default_flow_style=True)
-    # Strip "MyValue\n" or "'MyValue'\n...\n" to "MyValue"
-    return encoded[:-5] if encoded.endswith("\n...\n") else encoded.rstrip()
+    # Dummy dict for properly quoted YAML, indent=6 for correct multiline start in hero structs.
+    xblock = yaml.safe_dump({"x": value}, allow_unicode=True, default_flow_style=False, indent=6)
+    return xblock[3:].rstrip() # Strip leading "x: " and trailing linefeed from "x: MyValue\n"
 
 
 
