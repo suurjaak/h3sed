@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    22.02.2026
+@modified    26.07.2026
 ------------------------------------------------------------------------------
 """
 import codecs
@@ -752,17 +752,12 @@ class csv_writer(object):
 
     def writerow(self, sequence=()):
         """Writes a CSV record from a sequence of fields."""
-        REPLS = {"\r\n": "\r\n", "\r": "\r\n", "\n": "\r\n", "\x00": "\\x00", '"': '""', "'": "''"}
-        RGX = re.compile("|".join(map(re.escape, REPLS)))
-        QRGX = re.compile("|".join(map(re.escape, '",')))
         values = []
         for v in sequence:
             if sys.version_info < (3, ):
                 v = to_unicode(v).encode("utf-8", "backslashreplace")
-            if isinstance(v, text_types) and RGX.search(v):
-                v = RGX.sub(lambda m: REPLS[m.group()], v)
-            if isinstance(v, text_types) and QRGX.search(v):
-                v = '"%s"' % v
+            if isinstance(v, text_types):
+                v = v.replace("\x00", "\\x00")
             values.append(v)
         self._writer.writerow(values)
 
