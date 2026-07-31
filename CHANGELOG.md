@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.7, 2026-07-26
+3.7, 2026-07-31
 ---------------
 - add hero profile tab, with hero faction and biography
 - add hero map coordinates to hero profile (issue #31)
