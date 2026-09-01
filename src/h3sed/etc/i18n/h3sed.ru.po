@@ -1829,6 +1829,9 @@ msgstr "%s"
 msgid "Cannot equip %s on %s, required slot taken"
 msgstr "Невозможно надеть %s на %s: слот занят"
 
+msgid "capped to %s"
+msgstr "ограничен до %s"
+
 msgid "change"
 msgstr "изменение"
 
@@ -1936,6 +1939,9 @@ msgstr "из рюкзака"
 
 msgid "Game version"
 msgstr "Версия игры"
+
+msgid "handicapped to %s"
+msgstr "ограничен как %s"
 
 msgid "hero"
 msgstr "герой"
@@ -2206,6 +2212,21 @@ msgstr "вверх"
 
 msgid "Upper %s"
 msgstr "Вверх: %s"
+
+msgid ""
+"Value shown and used in game.\n\n"
+"Values from %s display and function as %s, and from %s upwards "
+"become a handicap, keeping effective %s at %s.\n\n"
+"Gaining new points still increases the hidden value, "
+"until it overflows and wraps around to the actual minimum, "
+"after which it starts acting normally again."
+msgstr ""
+"Значение, отображаемое и используемое в игре.\n\n"
+"Значения от %s отображаются и работают как %s, а от %s и выше "
+"становятся недостатком, удерживая %s на эффективном уровне %s.\n\n"
+"Получение новых очков всё ещё увеличивает скрытое значение, "
+"пока оно не переполнится и не сбросится до фактического минимума, "
+"после чего поведение возвращается к норме."
 
 msgid "with"
 msgstr "с"

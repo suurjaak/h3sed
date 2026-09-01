@@ -1835,6 +1835,9 @@ msgstr ""
 msgid "Cannot equip %s on %s, required slot taken"
 msgstr ""
 
+msgid "capped to %s"
+msgstr ""
+
 msgid "change"
 msgstr ""
 
@@ -1941,6 +1944,9 @@ msgid "from inventory"
 msgstr ""
 
 msgid "Game version"
+msgstr ""
+
+msgid "handicapped to %s"
 msgstr ""
 
 msgid "hero"
@@ -2208,6 +2214,15 @@ msgid "up"
 msgstr ""
 
 msgid "Upper %s"
+msgstr ""
+
+msgid ""
+"Value shown and used in game.\n\n"
+"Values from %s display and function as %s, and from %s upwards "
+"become a handicap, keeping effective %s at %s.\n\n"
+"Gaining new points still increases the hidden value, "
+"until it overflows and wraps around to the actual minimum, "
+"after which it starts acting normally again."
 msgstr ""
 
 msgid "with"

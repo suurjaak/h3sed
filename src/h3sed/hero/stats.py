@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  12.07.2026
+@modified  01.09.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -339,13 +339,14 @@ class StatsPlugin(object):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         stat = wx.TextCtrl(self._panel, style=wx.TE_RIGHT)
         info = wx.StaticText(self._panel)
-        stat.ToolTip = "Value shown and used in game.\n\n" \
-                       "Values from %s display and function as %s, and from %s upwards " \
-                       "become a handicap, keeping effective %s at %s.\n\n" \
-                       "Gaining new points still increases the hidden value, " \
-                       "until it overflows and wraps around to the actual minimum, " \
-                       "after which it starts acting normally again." % \
-                       (MAXV + 1, MAXV, OVERFLOW, metadata.PRIMARY_ATTRIBUTES[prop["name"]], MINV)
+        stat.ToolTip = __("Value shown and used in game.\n\n"
+                          "Values from %s display and function as %s, and from %s upwards "
+                          "become a handicap, keeping effective %s at %s.\n\n"
+                          "Gaining new points still increases the hidden value, "
+                          "until it overflows and wraps around to the actual minimum, "
+                          "after which it starts acting normally again.",
+                          MAXV + 1, MAXV, OVERFLOW, __(metadata.PRIMARY_ATTRIBUTES[prop["name"]]),
+                          MINV)
         stat.MinSize = stat.MaxSize = (25, -1)
         stat.SetEditable(False)
         controls.ColourManager.Manage(stat, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
@@ -398,7 +399,7 @@ class StatsPlugin(object):
         captext = ""
         if self._hero.stats[prop["name"]] != self._hero.gamestats[prop["name"]]:
             action = "handicapped" if self._hero.gamestats[prop["name"]] == MINV else "capped"
-            captext = "%s to %s" % (action, self._hero.gamestats[prop["name"]])
+            captext = __("%s to %%s" % action, self._hero.gamestats[prop["name"]])
 
         if not artifacts and not captext:
             return ""
