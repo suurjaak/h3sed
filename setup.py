@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     12.04.2020
-@modified    21.04.2026
+@modified    01.09.2026
 ------------------------------------------------------------------------------
 """
 import os
@@ -68,8 +68,6 @@ setuptools.setup(
         "Topic :: Utilities",
         "Topic :: Desktop Environment",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
     ],
 
