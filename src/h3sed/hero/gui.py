@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  15.07.2026
+@modified  01.09.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -120,9 +120,9 @@ class HeroPlugin(object):
             "timer":     None,     # wx.Timer for filtering heroes index
             "ids":       {},       # {category: wx ID for toolbar toggle}
             "visible":   [],       # List of heroes visible, ordered by name
-            "sort_col":  "index",  # Field being sorted by
-            "sort_asc":  True,     # Sort ascending or descending
             "toggles":   collections.OrderedDict(),  # {category: toggled state}
+            "sort_col":  conf.Positions.get("hero_sort_col", "index"),  # Field being sorted by
+            "sort_asc":  conf.Positions.get("hero_sort_asc", True),     # Sort ascending or descending
         }
         self._dialog_export = wx.FileDialog(panel, __("Export heroes to file"),
             wildcard="|".join("{0} (*.{1})|*.{1}".format(__(label), format)
@@ -671,6 +671,8 @@ class HeroPlugin(object):
                 self._index["sort_asc"] = not self._index["sort_asc"]
             else:
                 self._index["sort_col"], self._index["sort_asc"] = col, True
+            conf.Positions.update(hero_sort_col=self._index["sort_col"],
+                                  hero_sort_asc=self._index["sort_asc"])
             self.populate_index(force=True)
 
 

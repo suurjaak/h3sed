@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "3.8.dev0"
+Version = "3.8.dev1"
 VersionDate = "01.09.2026"
 
 Frozen = getattr(sys, "frozen", False)
@@ -90,8 +90,8 @@ HeroToggles = {}
 Language = "en"
 
 """Various index and location selection states."""
-Positions = {"filefilter_index": 0, "herotab_index": 0, "charsheet_view": "normal",
-             "savepage_splitter": 36}
+Positions = {"filefilter_index": 0, "hero_sort_col": "index", "hero_sort_asc": True,
+              "herotab_index": 0, "charsheet_view": "normal", "savepage_splitter": 36}
 
 """Contents of Recent Files menu."""
 RecentFiles = []
