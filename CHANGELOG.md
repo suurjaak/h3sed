@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.8, 2026-09-01
+---------------
+- improve hero parsing speed (issue #32)
+
+
 3.7, 2026-07-31
 ---------------
 - add hero profile tab, with hero faction and biography

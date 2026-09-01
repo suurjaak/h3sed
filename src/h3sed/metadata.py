@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  13.07.2026
+@modified  01.09.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -164,7 +164,7 @@ HERO_BYTE_POSITIONS = {
 }
 
 
-"""Regulax expression for finding hero struct in savefile bytes."""
+"""Regulax expression for finding potential hero struct in savefile bytes."""
 HERO_REGEX = re.compile(b"""
     # There are at least 30 bytes more at front, but those can also include
     # hero biography, making length indeterminate.
@@ -195,12 +195,8 @@ HERO_REGEX = re.compile(b"""
     [\x00-\x01]{70}          #  70 bytes: spells in book                       242-311
     [\x00-\x01]{70}          #  70 bytes: spells available                     312-381
 
-                             # 152 bytes: 19 8-byte equipments worn            382-533
-                             # Blank spots:   FF FF FF FF XY XY XY XY
-                             # Artifacts:     XY 00 00 00 FF FF FF FF
-                             # Scrolls:       XY 00 00 00 00 00 00 00
-    (?P<equipment>(          # Catapult etc:  XY 00 00 00 XY XY 00 00
-      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
+    (?P<equipment>(          # 152 bytes: 19 8-byte equipments worn            382-533
+      (\xFF{4} .{4}) | (.\x00{3} .{4})
     ){19})
 
                              # 512 bytes: 64 8-byte artifacts in inventory     534-1045
@@ -208,6 +204,20 @@ HERO_REGEX = re.compile(b"""
 
                              # 10 bytes: slots taken by combination artifacts 1046-1055
     .[\x00-\x01]{6}[\x00-\x02][\x00-\x01][\x00-\x05]
+""", re.VERBOSE | re.DOTALL)
+
+
+"""Regular expression for validating equipment section in potential hero struct."""
+EQUIPMENT_REGEX = re.compile(b"""
+    (?!                      # Negative lookahead: reject misleading blank-like sections
+      (\x00+) | (\x00{4} \xFF{4})+ $
+    )
+                             # Blank spots:   FF FF FF FF XY XY XY XY
+                             # Artifacts:     XY 00 00 00 FF FF FF FF
+                             # Scrolls:       XY 00 00 00 00 00 00 00
+    (                        # Catapult etc:  XY 00 00 00 XY XY 00 00
+      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3} .{2} \x00{2})
+    )+ $
 """, re.VERBOSE | re.DOTALL)
 
 
@@ -1404,16 +1414,16 @@ class Savefile(object):
         heroes = []
 
         rgx_strip = re.compile(br"^(?!\xFF+\x00+$)([^\x00-\x19]+)\x00+$")
-        rgx_nulls = re.compile(br"^(\x00+)|(\x00{4}\xFF{4})+$")
-        REGEX = h3sed.version.adapt("hero_regex", HERO_REGEX, version=self.version_id)
+        rgx_equip = h3sed.version.adapt("equipment_regex", EQUIPMENT_REGEX, version=self.version_id)
+        rgx_hero  = h3sed.version.adapt("hero_regex", HERO_REGEX, version=self.version_id)
 
         # Jump over potential campaign carry-over heroes, stored in savefile with their
         # original armies+artifacts; the structs used by game come later.
         pos = 30000
-        m = re.search(REGEX, self.raw[pos:])
+        m = re.search(rgx_hero, self.raw[pos:])
         while m:
             start, end = m.span()
-            if rgx_strip.match(m.group("name")) and not rgx_nulls.match(m.group("equipment")):
+            if rgx_strip.match(m.group("name")) and rgx_equip.match(m.group("equipment")):
                 blob = bytearray(self.raw[pos + start:pos + end])
                 name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
                 hero = h3sed.hero.Hero(name, version=self.version_id)
@@ -1424,7 +1434,7 @@ class Savefile(object):
                 pos += start + 1
             # Continue in small chunks once heroes section reached:
             # regex can get pathologically slow for the entire remainder beyond heroes
-            m = re.search(REGEX, self.raw[pos:pos+5000 if heroes else None])
+            m = re.search(rgx_hero, self.raw[pos:pos+5000 if heroes else None])
 
         dupe_counts = Counter(x.name for x in heroes)
         heroes.sort()

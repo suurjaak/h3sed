@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  22.01.2026
+@modified  01.09.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -97,7 +97,7 @@ ARTIFACT_SPELLS = {
 
 
 
-"""Regulax expression for finding hero struct in savefile bytes."""
+"""Regulax expression for finding potential hero struct in savefile bytes."""
 HERO_REGEX = re.compile(b"""
     .                        #   1 byte:  player faction 0-7 or 255            000-000
     .{30}                    #  30 bytes: unknown                              001-031
@@ -122,12 +122,8 @@ HERO_REGEX = re.compile(b"""
     [\x00-\x01]{70}          #  70 bytes: spells in book                       242-311
     [\x00-\x01]{70}          #  70 bytes: spells available                     312-381
 
-                             # 144 bytes: 18 8-byte equipments worn            382-525
-                             # Blank spots:   FF FF FF FF XY XY XY XY
-                             # Artifacts:     XY 00 00 00 FF FF FF FF
-                             # Scrolls:       XY 00 00 00 00 00 00 00
-    (?P<equipment>(          # Catapult etc:  XY 00 00 00 XY XY 00 00
-      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
+    (?P<equipment>(          # 144 bytes: 18 8-byte equipments worn            382-525
+      (\xFF{4} .{4}) | (.\x00{3} .{4})
     ){18})
 
                              # 512 bytes: 64 8-byte artifacts in inventory     526-1037
@@ -135,7 +131,7 @@ HERO_REGEX = re.compile(b"""
 """, re.VERBOSE | re.DOTALL)
 
 
-"""Regulax expression for finding hero struct in newer releases like GOG Complete."""
+"""Regulax expression for finding potential hero struct in newer releases like GOG Complete."""
 HERO_REGEX_NEWFORMAT = re.compile(b"""
     .                        #   1 byte:  player faction 0-7 or 255            000-000
     .{30}                    #  30 bytes: unknown                              001-031
@@ -160,12 +156,8 @@ HERO_REGEX_NEWFORMAT = re.compile(b"""
     [\x00-\x01]{70}          #  70 bytes: spells in book                       242-311
     [\x00-\x01]{70}          #  70 bytes: spells available                     312-381
 
-                             # 144 bytes: 18 8-byte equipments worn            382-525
-                             # Blank spots:   FF FF FF FF XY XY XY XY
-                             # Artifacts:     XY 00 00 00 FF FF FF FF
-                             # Scrolls:       XY 00 00 00 00 00 00 00
-    (?P<equipment>(          # Catapult etc:  XY 00 00 00 XY XY 00 00
-      (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3}.{2}\x00{2})
+    (?P<equipment>(          # 144 bytes: 18 8-byte equipments worn            382-525
+      (\xFF{4} .{4}) | (.\x00{3} .{4})
     ){18})
     .{8}                     # 8 bytes: side5 slot unused in RoE               526-533
 
