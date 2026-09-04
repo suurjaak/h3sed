@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  12.07.2026
+@modified  04.09.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -176,9 +176,13 @@ class ArmyPlugin(object):
     def make_common_menu(self):
         """Returns wx.Menu with plugin-specific actions, like removing all army stacks."""
         menu = wx.Menu()
-        item_clear = menu.Append(wx.ID_ANY, __("Remove %s", __("all")))
-        item_reset = menu.Append(wx.ID_ANY, __("Set army counts to 1"))
+        item_upgrade   = menu.Append(wx.ID_ANY, __("Upgrade %s",   __("all")))
+        item_downgrade = menu.Append(wx.ID_ANY, __("Downgrade %s", __("all")))
+        item_clear     = menu.Append(wx.ID_ANY, __("Remove %s",    __("all")))
+        item_reset     = menu.Append(wx.ID_ANY, __("Set army counts to 1"))
         menu.AppendSubMenu(self.make_rounding_menu(), __("Round army counts to") + " ..")
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_regrade_army, down=False), item_upgrade)
+        menu.Bind(wx.EVT_MENU, functools.partial(self.on_regrade_army, down=True), item_downgrade)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_round_army, number=-1), item_reset)
         menu.Bind(wx.EVT_MENU, self.on_remove_all, item_clear)
         return menu
@@ -186,9 +190,62 @@ class ArmyPlugin(object):
 
     def make_item_menu(self, plugin, prop, rowindex):
         """Returms wx.Menu for army row options."""
+        CREATURES = metadata.Store.get("creatures", version=self.version)
+        CREATURE_LEVELS = metadata.Store.get("creature_levels", version=self.version)
+        CREATURE_TOWNS = {} # {creature: town}
+        NEUTRALS = [] # [[creature], ]
+
+        downgrade_to, upgrade_to = None, None
+        slot_creature = self._state[rowindex].name if self._state[rowindex] else None
+        slot_town = "neutral" if slot_creature else None
+        for town, all_levels in CREATURE_LEVELS.items():
+            for level_creatures in all_levels:
+                if slot_creature in level_creatures:
+                    slot_town = town
+                    level_index = level_creatures.index(slot_creature)
+                    if level_index > 0:
+                        downgrade_to = level_creatures[level_index - 1]
+                    if level_index < len(level_creatures) - 1:
+                        upgrade_to = level_creatures[level_index + 1]
+                CREATURE_TOWNS.update((c, town) for c in level_creatures)
+
+        for creature in CREATURES:
+            if creature not in CREATURE_TOWNS:
+                NEUTRALS.append([creature]) # Keep same structure as CREATURE_LEVEL values
+        NEUTRALS.sort(key=__)
+
         menu = wx.Menu()
-        menu_swap = wx.Menu()
+        menu_grade = wx.Menu()
+        menu_town  = wx.Menu()
+        menu_swap  = wx.Menu()
+        item_grade = menu.AppendSubMenu(menu_grade, __("Upgrade/downgrade to") + " ..")
+        menu.AppendSubMenu(menu_town, __("Set by town") + " ..")
         menu.AppendSubMenu(menu_swap, __("Swap %s with", __("army slot")) + " ..")
+
+        for i, creature in enumerate([upgrade_to, downgrade_to]):
+            if not creature: continue # for i, creature
+            label = __("Downgrade to %s" if i else "Upgrade to %s", __(creature))
+            item = menu_grade.Append(wx.ID_ANY, label)
+            kwargs = dict(rowindex=rowindex, name=creature)
+            menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_stack, **kwargs), item)
+
+        for town in sorted(CREATURE_LEVELS, key=__) + ["neutral"]:
+            menu_creatures = wx.Menu()
+            item_creatures = wx.MenuItem(menu_town, wx.ID_ANY, __(town), subMenu=menu_creatures)
+            if town == slot_town:
+                item_creatures.Font = item_creatures.Font.Bold()
+            menu_town.Append(item_creatures)
+            for i, level_creatures in enumerate(CREATURE_LEVELS.get(town, NEUTRALS)):
+                if i and town in CREATURE_LEVELS:
+                    menu_creatures.AppendSeparator()
+                for creature in level_creatures:
+                    item = wx.MenuItem(menu_creatures, wx.ID_ANY, __(creature))
+                    if creature == slot_creature:
+                        item.Font = item.Font.Bold()
+                    menu_creatures.Append(item)
+                    kwargs = dict(rowindex=rowindex, name=creature)
+                    menu.Bind(wx.EVT_MENU, functools.partial(self.on_change_stack, **kwargs), item)
+
         for stack_index, army_stack in enumerate(self._state):
             label = "%s: %s" % (__(army_stack.name), army_stack.count) if army_stack else __("<blank>")
             item = menu_swap.Append(wx.ID_ANY, "%s. %s" % (stack_index + 1, label))
@@ -198,7 +255,11 @@ class ArmyPlugin(object):
                 menu_swap.Enable(item.Id, False)
         item_round = menu.AppendSubMenu(self.make_rounding_menu(rowindex),
                                         __("Round army count to") + " ..")
-        if not self._state[rowindex]: menu.Enable(item_round.Id, False)
+        if not self._state[rowindex]:
+            menu.Enable(item_grade.Id, False)
+            menu.Enable(item_round.Id, False)
+        if not downgrade_to and not upgrade_to:
+            menu.Enable(item_grade.Id, False)
         return menu
 
 
@@ -216,13 +277,55 @@ class ArmyPlugin(object):
         return menu
 
 
+    def on_regrade_army(self, event, down=True):
+        """Handler for upgrading/downgrading all army creatures, carries out and propagates change."""
+        if not any(self._state):
+            h3sed.guibase.status("")
+            return
+
+        CREATURE_LEVELS = metadata.Store.get("creature_levels", version=self.version)
+        regrades = {a.name: None for a in self._state if a}
+
+        for town, all_levels in CREATURE_LEVELS.items():
+            for level_creatures in all_levels:
+                for creature in set(regrades) & set(level_creatures):
+                    level_index = level_creatures.index(creature)
+                    if down and level_index > 0:
+                        regrades[creature] = level_creatures[level_index - 1]
+                    if not down and level_index < len(level_creatures) - 1:
+                        regrades[creature] = level_creatures[level_index + 1]
+        if not any(regrades.values()):
+            h3sed.guibase.status("")
+            return
+
+        def on_do(self, regrades):
+            for army_stack in self._state:
+                if army_stack and regrades.get(army_stack.name):
+                    army_stack.name = regrades[army_stack.name]
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        # "upgrade|downgrade HERONAME army"
+        action = "downgrade" if down else "upgrade"
+        cname, cargs = "%s %s", (action, ("%s {}".format(self.name), self._hero.name))
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
+        callable = functools.partial(on_do, self, regrades)
+        self.parent.command(callable, name=(cname, cargs))
+
+
     def on_round_army(self, event, number, rowindex=None):
         """
         Handler for rounding army stacks to nearest number, carries out and propagates change.
 
         @param   rowindex  index of single army stack to round if not all
         """
-        if not any(self._state): return
+        if not any(self._state):
+            h3sed.guibase.status("")
+            return
 
         down, number = (number < 0), abs(number)
         def on_do(self, state2):
@@ -260,6 +363,30 @@ class ArmyPlugin(object):
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)
         callable = functools.partial(on_do, self, state2)
+        self.parent.command(callable, name=(cname, cargs))
+
+
+    def on_change_stack(self, event, rowindex, name):
+        """Handler for setting new creature to army position, carries out and propagates change."""
+        if self._state[rowindex] and self._state[rowindex].name == name:
+            h3sed.guibase.status("")
+            return
+
+        def on_do(self, rowindex, name):
+            self._state[rowindex].name = name
+            self.parent.patch()
+            evt = h3sed.gui.PluginEvent(self._panel.Id, action="render", name=self.name)
+            wx.PostEvent(self._panel, evt)
+            return True
+
+        # "set HERONAME army: slot SLOTNUMBER NAME"
+        actionlbl, actionargs = "%s %s", ("set", ("%s {}".format(self.name), self._hero.name))
+        cname = "%s: %s %s %s"
+        cargs = ((actionlbl, actionargs), "slot", rowindex + 1, name)
+        logger.info("Doing action: %s.", format_nested(cname, *cargs))
+        h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
+                             flash=conf.StatusShortFlashLength)
+        callable = functools.partial(on_do, self, rowindex, name)
         self.parent.command(callable, name=(cname, cargs))
 
 

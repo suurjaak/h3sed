@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  01.09.2026
+@modified  04.09.2026
 ------------------------------------------------------------------------------
 """
 import copy
@@ -172,6 +172,48 @@ CREATURES = [
     "Yeti",
     "Yeti Runemaster",
 ]
+
+
+"""Creatures and upgrades in level order, per town type."""
+CREATURE_LEVELS = {
+    "Bulwark": [
+        ["Kobold", "Kobold Foreman"],
+        ["Mountain Ram", "Argali"],
+        ["Snow Elf", "Steel Elf"],
+        ["Yeti", "Yeti Runemaster"],
+        ["Shaman", "Great Shaman"],
+        ["Mammoth", "War Mammoth"],
+        ["Jotunn", "Jotunn Warlord"],
+    ],
+    "Conflux": [
+        ["Pixie", "Sprite"],
+        ["Air Elemental", "Storm Elemental"],
+        ["Water Elemental", "Ice Elemental"],
+        ["Fire Elemental", "Energy Elemental"],
+        ["Earth Elemental", "Magma Elemental"],
+        ["Psychic Elemental", "Magic Elemental"],
+        ["Firebird", "Phoenix"],
+    ],
+    "Cove": [
+        ["Nymph", "Oceanid"],
+        ["Crew Mate", "Seaman"],
+        ["Pirate", "Corsair", "Sea Dog"],
+        ["Stormbird", "Ayssid"],
+        ["Sea Witch", "Sorceress"],
+        ["Nix", "Nix Warrior"],
+        ["Sea Serpent", "Haspid"],
+    ],
+    "Factory": [
+        ["Halfling", "Halfling Grenadier"],
+        ["Mechanic", "Engineer"],
+        ["Armadillo", "Bellwether Armadillo"],
+        ["Automaton", "Sentinel Automaton"],
+        ["Sandworm", "Olgoi-Khorkhoi"],
+        ["Gunslinger", "Bounty Hunter"],
+        ["Couatl", "Crimson Couatl"],
+        ["Dreadnought", "Juggernaut"],
+    ],
+}
 
 
 """IDs of all items in savefile."""
@@ -579,6 +621,7 @@ def init():
     metadata.Store.add("artifact_stats",        ARTIFACT_STATS,        version=NAME)
     metadata.Store.add("combination_artifacts", COMBINATION_ARTIFACTS, version=NAME)
     metadata.Store.add("creatures",             CREATURES,             version=NAME)
+    metadata.Store.add("creature_levels",       CREATURE_LEVELS,       version=NAME)
     metadata.Store.add("experience_levels",     LEVELS,                version=NAME)
     metadata.Store.add("hero_ranges",           HERO_RANGES,           version=NAME)
     metadata.Store.add("ids",                   IDS,                   version=NAME)

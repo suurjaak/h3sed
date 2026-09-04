@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  01.09.2026
+@modified  04.09.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -557,6 +557,83 @@ CREATURES = [
     "Wyvern",
     "Wyvern Monarch",
 ]
+
+
+"""Creatures and upgrades in level order, per town type."""
+CREATURE_LEVELS = {
+    "Castle": [
+        ["Pikeman", "Halberdier"],
+        ["Archer", "Marksman"],
+        ["Griffin", "Royal Griffin"],
+        ["Swordsman", "Crusader"],
+        ["Monk", "Zealot"],
+        ["Cavalier", "Champion"],
+        ["Angel", "Archangel"],
+    ],
+    "Dungeon": [
+        ["Troglodyte", "Infernal Troglodyte"],
+        ["Harpy", "Harpy Hag"],
+        ["Beholder", "Evil Eye"],
+        ["Medusa", "Medusa Queen"],
+        ["Minotaur", "Minotaur King"],
+        ["Manticore", "Scorpicore"],
+        ["Red Dragon", "Black Dragon"],
+    ],
+    "Fortress": [
+        ["Gnoll", "Gnoll Marauder"],
+        ["Lizardman", "Lizard Warrior"],
+        ["Serpent Fly", "Dragon Fly"],
+        ["Basilisk", "Greater Basilisk"],
+        ["Gorgon", "Mighty Gorgon"],
+        ["Wyvern", "Wyvern Monarch"],
+        ["Hydra", "Chaos Hydra"],
+    ],
+    "Inferno": [
+        ["Imp", "Familiar"],
+        ["Gog", "Magog"],
+        ["Hell Hound", "Cerberus"],
+        ["Demon", "Horned Demon"],
+        ["Pit Fiend", "Pit Lord"],
+        ["Efreeti", "Efreet Sultan"],
+        ["Devil", "Arch Devil"],
+    ],
+    "Necropolis": [
+        ["Skeleton", "Skeleton Warrior"],
+        ["Walking Dead", "Zombie"],
+        ["Wight", "Wraith"],
+        ["Vampire", "Vampire Lord"],
+        ["Lich", "Power Lich"],
+        ["Black Knight", "Dread Knight"],
+        ["Bone Dragon", "Ghost Dragon"],
+    ],
+    "Rampart": [
+        ["Centaur", "Centaur Captain"],
+        ["Dwarf", "Battle Dwarf"],
+        ["Wood Elf", "Grand Elf"],
+        ["Pegasus", "Silver Pegasus"],
+        ["Dendroid Guard", "Dendroid Soldier"],
+        ["Unicorn", "War Unicorn"],
+        ["Green Dragon", "Gold Dragon"],
+    ],
+    "Stronghold": [
+        ["Goblin", "Hobgoblin"],
+        ["Wolf Rider", "Wolf Raider"],
+        ["Orc", "Orc Chieftain"],
+        ["Ogre", "Ogre Mage"],
+        ["Roc", "Thunderbird"],
+        ["Cyclops", "Cyclops King"],
+        ["Behemoth", "Ancient Behemoth"],
+    ],
+    "Tower": [
+        ["Gremlin", "Master Gremlin"],
+        ["Stone Gargoyle", "Obsidian Gargoyle"],
+        ["Stone Golem", "Iron Golem"],
+        ["Mage", "Arch Mage"],
+        ["Genie", "Master Genie"],
+        ["Naga", "Naga Queen"],
+        ["Giant", "Titan"],
+    ],
+}
 
 
 """Spells for hero to cast."""
@@ -1560,6 +1637,7 @@ Store.add("artifact_slots",        ARTIFACT_SLOTS)
 Store.add("artifact_spells",       ARTIFACT_SPELLS)
 Store.add("artifact_stats",        ARTIFACT_STATS)
 Store.add("creatures",             CREATURES, sortable=True)
+Store.add("creature_levels",       CREATURE_LEVELS)
 Store.add("equipment_slots",       EQUIPMENT_SLOTS, separate=True)  # Versions without side5 e.g. RoE
 Store.add("experience_levels",     EXPERIENCE_LEVELS, separate=True) # Versions can cap level e.g. HoTA
 Store.add("player_factions",       PLAYER_FACTIONS)
