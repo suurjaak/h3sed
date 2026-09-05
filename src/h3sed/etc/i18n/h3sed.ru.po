@@ -6,6 +6,42 @@ msgstr ""
 "Language-Name: Russian\n"
 
 
+# - Town types --------------------
+
+msgid "Bulwark"
+msgstr "Кронверк"
+
+msgid "Castle"
+msgstr "Замок"
+
+msgid "Cove"
+msgstr "Причал"
+
+msgid "Conflux"
+msgstr "Сопряжение"
+
+msgid "Dungeon"
+msgstr "Темница"
+
+msgid "Factory"
+msgstr "Фабрика"
+
+msgid "Fortress"
+msgstr "Крепость"
+
+msgid "Necropolis"
+msgstr "Некрополис"
+
+msgid "Rampart"
+msgstr "Оплот"
+
+msgid "Stronghold"
+msgstr "Цитадель"
+
+msgid "Tower"
+msgstr "Башня"
+
+
 # - Hero property sections --------------------
 
 msgid "Main attributes"
@@ -1889,6 +1925,15 @@ msgstr "Выполнение: %s"
 msgid "down"
 msgstr "вниз"
 
+msgid "downgrade"
+msgstr "понизить"
+
+msgid "Downgrade %s"
+msgstr "Понизить %s"
+
+msgid "Downgrade to %s"
+msgstr "Понизить до: %s"
+
 msgid "equip %s"
 msgstr "надеть %s"
 
@@ -2111,6 +2156,9 @@ msgstr "Установить количество армий в 1"
 msgid "Set artifact by category"
 msgstr "Установить артефакт по категории"
 
+msgid "Set by town"
+msgstr "По городу"
+
 msgid "Set from experience"
 msgstr "Установить из опыта"
 
@@ -2209,6 +2257,18 @@ msgstr "Только несохраненные изменения"
 
 msgid "up"
 msgstr "вверх"
+
+msgid "upgrade"
+msgstr "улучшить"
+
+msgid "Upgrade %s"
+msgstr "Улучшить %s"
+
+msgid "Upgrade to %s"
+msgstr "Улучшить до: %s"
+
+msgid "Upgrade/downgrade to"
+msgstr "Улучшить/понизить до"
 
 msgid "Upper %s"
 msgstr "Вверх: %s"

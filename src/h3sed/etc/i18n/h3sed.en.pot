@@ -12,6 +12,42 @@ msgstr ""
 "Language-Name: English\n"
 
 
+# - Town types --------------------
+
+msgid "Bulwark"
+msgstr ""
+
+msgid "Castle"
+msgstr ""
+
+msgid "Cove"
+msgstr ""
+
+msgid "Conflux"
+msgstr ""
+
+msgid "Dungeon"
+msgstr ""
+
+msgid "Factory"
+msgstr ""
+
+msgid "Fortress"
+msgstr ""
+
+msgid "Necropolis"
+msgstr ""
+
+msgid "Rampart"
+msgstr ""
+
+msgid "Stronghold"
+msgstr ""
+
+msgid "Tower"
+msgstr ""
+
+
 # - Hero property sections --------------------
 
 msgid "Main attributes"
@@ -1895,6 +1931,15 @@ msgstr ""
 msgid "down"
 msgstr ""
 
+msgid "downgrade"
+msgstr ""
+
+msgid "Downgrade %s"
+msgstr ""
+
+msgid "Downgrade to %s"
+msgstr ""
+
 msgid "equip %s"
 msgstr ""
 
@@ -2114,6 +2159,9 @@ msgstr ""
 msgid "Set artifact by category"
 msgstr ""
 
+msgid "Set by town"
+msgstr ""
+
 msgid "Set from experience"
 msgstr ""
 
@@ -2211,6 +2259,18 @@ msgid "Unsaved changes only"
 msgstr ""
 
 msgid "up"
+msgstr ""
+
+msgid "upgrade"
+msgstr ""
+
+msgid "Upgrade %s"
+msgstr ""
+
+msgid "Upgrade to %s"
+msgstr ""
+
+msgid "Upgrade/downgrade to"
 msgstr ""
 
 msgid "Upper %s"
