@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  26.07.2026
+@modified  05.09.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -544,11 +544,14 @@ heroes_sorted = list(heroes)
 if sort_col:
     if "index" == sort_col:
         if not sort_asc: heroes_sorted.reverse()
-    elif "level" == sort_col or sort_col in list(metadata.PRIMARY_ATTRIBUTES):
-        heroes_sorted.sort(key=lambda h: h.stats[sort_col], reverse=not sort_asc)
+    elif "level" == sort_col or sort_col in metadata.PRIMARY_ATTRIBUTES:
+        heroes_sorted.sort(key=lambda h: (h.stats[sort_col], h.name, h.name_counter), reverse=not sort_asc)
     elif herotexts:
         indexlist = list(range(len(heroes)))
-        indexlist.sort(key=lambda i: herotexts[i][sort_col], reverse=not sort_asc)
+        sortkey = lambda i: (herotexts[i][sort_col], heroes[i].name, heroes[i].name_counter)
+        if "faction" == sort_col:
+            sortkey = lambda i: (("neutral" == heroes[i].profile.format_faction()), herotexts[i][sort_col], heroes[i].name, heroes[i].name_counter)
+        indexlist.sort(key=sortkey, reverse=not sort_asc)
         heroes_sorted = [heroes[i] for i in indexlist]
 def sortarrow(col):
     if col != sort_col: return ""
@@ -922,7 +925,7 @@ colptr = max(col_indexes) + 1
     var rowlist = table.getElementsByTagName("tr");
     var rows = [];
     for (var i = 1, ll = rowlist.length; i != ll; rows.push(rowlist[i++]));
-    rows.sort(sortfn.bind(this, sort_col, sort_direction));
+    rows.sort(sortfn.bind(this, sort_col, sort_direction, 1)); // Sort fallback to name column
     for (var i = 0; i < rows.length; i++) table.tBodies[0].appendChild(rows[i]);
 
     linklist[sort_col].classList.add(sort_direction ? "asc" : "desc")
@@ -993,10 +996,16 @@ colptr = max(col_indexes) + 1
 
 
   /** Returns comparison result of given children in a vs b. */
-  var sortfn = function(sort_col, sort_direction, a, b) {
-    var v1 = a.children[sort_col].innerText.toLowerCase();
-    var v2 = b.children[sort_col].innerText.toLowerCase();
+  var sortfn = function(sort_col, sort_direction, fallback_col, a, b) {
+	var [v1, v2] = [a, b].map(function(x) {
+      var v = x.children[sort_col].innerText.toLowerCase();
+	  var prefix = x.children[sort_col].dataset.sort_prefix;
+	  return prefix ? (prefix + "," + v) : v;
+	});
     var result = String(v1).localeCompare(String(v2), undefined, {numeric: true});
+	if (!result && fallback_col != null && sort_col != fallback_col) {
+      return sortfn(fallback_col, sort_direction, fallback_col, a, b);
+    };
     return sort_direction ? result : -result;
   };
 
@@ -1089,7 +1098,7 @@ colptr = max(col_indexes) + 1
 %endif
     </td>
 %if not categories or categories["faction"]:
-    <td>{{ __(hero.profile.format_faction()) }}</td>
+    <td data-sort_prefix="{{ 1 if "neutral" == hero.profile.format_faction() else 0 }}">{{ __(hero.profile.format_faction()) }}</td>
 %endif
 %if not categories or categories["stats"]:
     <td>{{ hero.stats["level"] }}</td>
