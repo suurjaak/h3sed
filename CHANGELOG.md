@@ -7,6 +7,7 @@ CHANGELOG
 - improve hero parsing speed (issue #32)
 - remember hero index sort order (issue #32)
 - retain stable order in hero index sorting
+- fix not supporting Conflux creatures in Armageddon's Blade
 
 
 3.7, 2026-07-31

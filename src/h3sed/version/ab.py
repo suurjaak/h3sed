@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  01.09.2026
+@modified  05.09.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -37,21 +37,45 @@ ARTIFACTS = [
 
 
 """Creatures for hero army slots."""
-Creatures = [
+CREATURES = [
     "Azure Dragon",
     "Boar",
     "Crystal Dragon",
     "Enchanter",
+    "Energy Elemental",
     "Faerie Dragon",
+    "Firebird",
     "Halfling",
+    "Ice Elemental",
+    "Magic Elemental",
+    "Magma Elemental",
     "Mummy",
     "Nomad",
     "Peasant",
+    "Phoenix",
+    "Pixie",
+    "Psychic Elemental",
     "Rogue",
     "Rust Dragon",
     "Sharpshooter",
+    "Sprite",
+    "Storm Elemental",
     "Troll",
 ]
+
+
+"""Creatures and upgrades in level order, per town type."""
+CREATURE_LEVELS = {
+    "Conflux": [
+        ["Pixie", "Sprite"],
+        ["Air Elemental", "Storm Elemental"],
+        ["Water Elemental", "Ice Elemental"],
+        ["Fire Elemental", "Energy Elemental"],
+        ["Earth Elemental", "Magma Elemental"],
+        ["Psychic Elemental", "Magic Elemental"],
+        ["Firebird", "Phoenix"],
+    ],
+}
 
 
 """IDs of artifacts, creatures and spells in savefile."""
@@ -65,14 +89,24 @@ IDS = {
     "Boar":                              0x8C,
     "Crystal Dragon":                    0x85,
     "Enchanter":                         0x88,
+    "Energy Elemental":                  0x81,
     "Faerie Dragon":                     0x86,
+    "Firebird":                          0x82,
     "Halfling":                          0x8A,
+    "Ice Elemental":                     0x7B,
+    "Magic Elemental":                   0x79,
+    "Magma Elemental":                   0x7D,
     "Mummy":                             0x8D,
     "Nomad":                             0x8E,
     "Peasant":                           0x8B,
+    "Phoenix":                           0x83,
+    "Pixie":                             0x76,
+    "Psychic Elemental":                 0x78,
     "Rogue":                             0x8F,
     "Rust Dragon":                       0x87,
     "Sharpshooter":                      0x89,
+    "Sprite":                            0x77,
+    "Storm Elemental":                   0x7F,
     "Troll":                             0x90,
 }
 
@@ -210,7 +244,8 @@ def init():
     metadata.Store.add("artifact_slots",  ARTIFACT_SLOTS,  version=NAME)
     metadata.Store.add("artifact_spells", ARTIFACT_SPELLS, version=NAME)
     metadata.Store.add("artifact_stats",  ARTIFACT_STATS,  version=NAME)
-    metadata.Store.add("creatures",       Creatures,       version=NAME)
+    metadata.Store.add("creatures",       CREATURES,       version=NAME)
+    metadata.Store.add("creature_levels", CREATURE_LEVELS, version=NAME)
     metadata.Store.add("equipment_slots", EQUIPMENT_SLOTS, version=NAME)
     metadata.Store.add("ids",             IDS,             version=NAME)
     for artifact, spells in ARTIFACT_SPELLS.items():
