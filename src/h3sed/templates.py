@@ -630,7 +630,7 @@ if len(label_text) > 7: label_text = label_text[:5]
     <td align="left" valign="top" nowrap>
     %for prop in deviceprops:
         %if hero.stats.get(prop["name"]):
-        {{ __(prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]]) }}<br />
+        <br />{{ __(prop["label"] if isinstance(hero.stats[prop["name"]], bool) else hero.stats[prop["name"]]) }}
         %endif
     %endfor
     </td>
@@ -638,28 +638,28 @@ if len(label_text) > 7: label_text = label_text[:5]
 %if not categories or categories["skills"]:
     <td align="left" valign="top" nowrap>
     %for skill in hero.skills:
-    <b>{{ __(skill["name"]) }}:</b> {{ __(skill["level"]) }}<br />
+    <br /><b>{{ __(skill["name"]) }}:</b> {{ __(skill["level"]) }}
     %endfor
     </td>
 %endif
 %if not categories or categories["army"]:
     <td align="left" valign="top" nowrap>
     %for army in filter(bool, hero.army):
-    {{ __(army["name"]) }}: {{ army["count"] }}<br />
+    <br />{{ __(army["name"]) }}: {{ army["count"] }}
     %endfor
     </td>
 %endif
 %if not categories or categories["equipment"]:
     <td align="left" valign="top" nowrap>
     %for artifact in filter(bool, hero.equipment.values()):
-    {{ __(artifact) }}<br />
+    <br />{{ __(artifact) }}
     %endfor
     </td>
 %endif
 %if not categories or categories["inventory"]:
     <td align="left" valign="top" nowrap>
     %for artifact in filter(bool, hero.inventory):
-    {{ __(artifact) }}<br />
+    <br />{{ __(artifact) }}
     %endfor
     </td>
   </tr>
@@ -667,7 +667,7 @@ if len(label_text) > 7: label_text = label_text[:5]
 %if not categories or categories["spells"]:
     <td align="left" valign="top" nowrap>
     %for spell in sorted(hero.spells, key=__):
-    {{ __(spell) }}<br />
+    <br />{{ __(spell) }}
     %endfor
     </td>
 %endif
