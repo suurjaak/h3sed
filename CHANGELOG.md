@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.8, 2026-09-05
+3.8, 2026-09-07
 ---------------
 - add town type and upgrade/downgrade options to army menus
 - improve hero parsing speed (issue #32)
