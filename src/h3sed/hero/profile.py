@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.01.2026
-@modified  15.07.2026
+@modified  24.09.2026
 ------------------------------------------------------------------------------
 """
 import h3sed
@@ -21,6 +21,12 @@ DATAPROPS = [{
     "name":      "faction",
     "type":      "text",
     "label":     "Faction",
+    "readonly":  True,
+    "format":    None,  # Populated later
+}, {
+    "name":      "status",
+    "type":      "text",
+    "label":     "Status",
     "readonly":  True,
     "format":    None,  # Populated later
 }, {
@@ -69,6 +75,8 @@ class ProfilePlugin(object):
         for prop in DATAPROPS:
             if "faction" == prop["name"] and "format" in prop:
                 prop = dict(prop, format=lambda: __(self._state.format_faction()))
+            if "status" == prop["name"] and "format" in prop:
+                prop = dict(prop, format=lambda: __(self._state.format_status()))
             if "location" == prop["name"] and "format" in prop:
                 prop = dict(prop, format=self._state.format_location)
             if "location" == prop["name"] and "tooltip" in prop:
@@ -119,11 +127,12 @@ def parse(hero_bytes, version, savefile=None, span=None):
         ptr -= 1
     if ptr != fixed_start: # Has bio
         profile.biography = util.to_unicode(savefile.raw[ptr:fixed_start])
+    profile.on_map = savefile.raw[ptr + BYTEPOS["on_map"]]
     if "neutral" == profile.format_faction():
         return profile
 
     location = {}
-    ptr += BYTEPOS["location"] # Shift pointer to coordinates start before unknown bytes
+    ptr += BYTEPOS["location"] # Shift pointer to coordinates start, outside the fixed span
     COORD_LENGTHS = {"x": 2, "y": 2, "z": 1}
     for coord in "xyz":
         coord_bytes = savefile.raw[ptr:ptr + COORD_LENGTHS[coord]]

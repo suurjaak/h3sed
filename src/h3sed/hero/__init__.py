@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  15.07.2026
+@modified  24.09.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -467,6 +467,7 @@ class Inventory(TypedArray, DataClass):
 class Profile(SlotsDict, DataClass):
     """Hero profile property."""
     __slots__ = {"faction": make_integer_cast("faction", nullable=True), "biography": str,
+                 "on_map": make_integer_cast("on_map", nullable=True),
                  "x": make_integer_cast("location_x", nullable=True),
                  "y": make_integer_cast("location_y", nullable=True),
                  "z": make_integer_cast("location_z", nullable=True)}
@@ -480,6 +481,15 @@ class Profile(SlotsDict, DataClass):
         if None in (self.x, self.y, self.z): return ""
         if not long: return "(%s, %s, %s)" % (self.x, self.y, self.z)
         return "x=%s y=%s %s" % (self.x, self.y, __("underground" if self.z else "surface"))
+
+    def format_status(self):
+        """Returns hero status as text, like "adventuring" or "inactive"."""
+        if self.on_map is None: return ""
+        if self.faction == metadata.BLANK[0]:
+            return "inactive"
+        if self.on_map:
+            return "adventuring"
+        return "garrison"
 
     @staticmethod
     def make_faction_text(faction, version=None):

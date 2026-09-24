@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  04.09.2026
+@modified  24.09.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -94,6 +94,7 @@ HERO_RANGES = {
     "location_x":      ( 0, 252),
     "location_y":      ( 0, 252),
     "location_z":      ( 0, 1),
+    "on_map":          ( 0, 1),
 
     "army":            ( 0, 7),
     "army.count":      ( 1, 2**32 - 1),
@@ -106,6 +107,7 @@ HERO_RANGES = {
 """Index for byte start of various attributes in hero bytearray."""
 HERO_BYTE_POSITIONS = {
     "location":         -26, # Hero XYZ map coordinates start; not fixed (potential bio after)
+    "on_map":           -20, # On the map, or garrison/inactive; not fixed (potential bio after)
     "faction":            0, # Player faction (e.g. Red player)
     "movement_total":    31, # Movement points in total
     "movement_left":     35, # Movement points remaining

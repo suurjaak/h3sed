@@ -3,6 +3,7 @@ CHANGELOG
 
 3.9, 2026-09-24
 ---------------
+- add hero map status to hero profile
 - fix parsing hero map coordinates in Restoration of Erathia
 
 

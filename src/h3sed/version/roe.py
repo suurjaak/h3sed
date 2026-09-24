@@ -30,6 +30,7 @@ VERSION_BYTE_RANGES = {
 
 HERO_BYTE_POSITIONS = {
     "location":         -20, # Hero XYZ map coordinates start; not fixed (potential bio after)
+    "on_map":           -14, # On the map, or garrison/inactive; not fixed (potential bio after)
 }
 
 
@@ -108,7 +109,7 @@ def adapt(name, value, version=None):
 
     - "hero.equipment.DATAPROPS":  dropping slot "side5"
     - "hero_byte_positions"        dropping slot "side5", shifting slot "inventory",
-                                   adjusting location
+                                   adjusting location and map positions
     - "hero_regex" :               dropping one slot from equipment to expect 18 items
     - all hero property classes:   returning version-specific data class, without slot "side5"
     """

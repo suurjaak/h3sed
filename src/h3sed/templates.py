@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  05.09.2026
+@modified  24.09.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -35,7 +35,8 @@ EXPORT_FORMATS = {"csv": "CSV spreadsheet", "html": "HTML document",
 
 ## Hero property categories for hero index and exports
 HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army",
-                            "equipment", "inventory", "spells", "location", "biography"]
+                            "equipment", "inventory", "spells", "status",
+                            "location", "biography"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -79,8 +80,9 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
         for hero in heroes:
             hero_data = dict(name=hero.name)
             for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
-                if category in ("faction", "location", "biography"):
+                if category in ("faction", "status", "location", "biography"):
                     if "faction" == category: value = hero.profile.format_faction()
+                    elif "status" == category: value = hero.profile.format_status()
                     elif "location" == category: value = hero.profile.format_location()
                     else: value = hero.profile[category]
                     if value: hero_data.setdefault("profile", {})[category] = value
@@ -168,7 +170,7 @@ def make_hero_yamls(hero, categories=None, as_list=False):
     """
     if categories is None: categories = {k: True for k in HERO_PROPERTY_CATEGORIES}
     if categories.get("devices"): categories = dict(categories, stats=True)
-    for category in ("faction", "location", "biography"):
+    for category in ("faction", "status", "location", "biography"):
         if categories.get(category): categories = dict(categories, profile=True)
     LF, INDENT = os.linesep, "  "
 
@@ -232,11 +234,13 @@ def serialize_property_yaml(state, indent="  "):
     else:
         keys = list(state.__slots__)
         if isinstance(state, h3sed.hero.Profile):
-            keys = ["faction", "location", "biography"]
+            keys = ["faction", "status", "location", "biography"]
         for key in keys:
             maxlen = max(maxlen, len(key))
             if "faction" == key and isinstance(state, h3sed.hero.Profile):
                 value = state.format_faction()
+            if "status" == key and isinstance(state, h3sed.hero.Profile):
+                value = state.format_status()
             elif "location" == key and isinstance(state, h3sed.hero.Profile):
                 value = state.format_location()
             else:
@@ -510,6 +514,9 @@ category = get("category")
 {{ __(spell) }}
     %endfor
 %endif
+%if category is None or "status" == category:
+{{ __(hero.profile.format_status()) }}
+%endif
 %if category is None or "location" == category:
 {{ hero.profile.format_location() }}
 %endif
@@ -594,6 +601,9 @@ if len(label_text) > 7: label_text = label_text[:5]
 %if not categories or categories["spells"]:
     <th align="left" valign="bottom" nowrap><a href="sort:spells"><font color="{{ conf.FgColour }}">{{ __("Spells") }}{{! sortarrow("spells") }}</font></a></th>
 %endif
+%if not categories or categories["status"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:status"><font color="{{ conf.FgColour }}">{{ __("Status") }}{{! sortarrow("status") }}</font></a></th>
+%endif
 %if not categories or categories["location"]:
     <th align="left" valign="bottom" nowrap><a href="sort:location"><font color="{{ conf.FgColour }}">{{ __("Location") }}{{! sortarrow("location") }}</font></a></th>
 %endif
@@ -671,6 +681,9 @@ if len(label_text) > 7: label_text = label_text[:5]
     %endfor
     </td>
 %endif
+%if not categories or categories["status"]:
+    <td align="left" valign="top" nowrap>{{ __(hero.profile.format_status()) }}</td>
+%endif
 %if not categories or categories["location"]:
     <td align="left" valign="top" nowrap>{{ hero.profile.format_location() }}</td>
 %endif
@@ -729,6 +742,8 @@ deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_AR
     %for artifact in filter(bool, hero.inventory):
 {{ __(artifact) }}
     %endfor
+%elif "status" == column:
+{{ __(hero.profile.format_status()) }}
 %elif "location" == column:
 {{ hero.profile.format_location() }}
 %elif "biography" == column:
@@ -1080,6 +1095,9 @@ colptr = max(col_indexes) + 1
 %if not categories or categories["spells"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("spells")) }}" onclick="onSort(this)">{{ __("Spells") }}</a></th>
 %endif
+%if not categories or categories["status"]:
+    <th><a class="sort" title="{{ __("Sort by %s", __("status")) }}" onclick="onSort(this)">{{ __("Status") }}</a></th>
+%endif
 %if not categories or categories["location"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("location")) }}" onclick="onSort(this)">{{ __("Location") }}</a></th>
 %endif
@@ -1149,6 +1167,9 @@ colptr = max(col_indexes) + 1
     {{ __(spell) }}<br />
     %endfor
     </td>
+%endif
+%if not categories or categories["status"]:
+    <td>{{ __(hero.profile.format_status()) }}</td>
 %endif
 %if not categories or categories["location"]:
     <td title="{{ hero.profile.format_location(long=True) }}">{{ hero.profile.format_location() }}</td>
