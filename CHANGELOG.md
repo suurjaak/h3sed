@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+3.9, 2026-09-24
+---------------
+- fix parsing hero map coordinates in Restoration of Erathia
+
+
 3.8, 2026-09-07
 ---------------
 - add town type and upgrade/downgrade options to army menus

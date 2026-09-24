@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  01.09.2026
+@modified  24.09.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -25,6 +25,11 @@ TITLE = "Restoration of Erathia"
 VERSION_BYTE_RANGES = {
     "version_major":  (16, 41),
     "version_minor":  ( 0,  0),
+}
+
+
+HERO_BYTE_POSITIONS = {
+    "location":         -20, # Hero XYZ map coordinates start; not fixed (potential bio after)
 }
 
 
@@ -102,7 +107,8 @@ def adapt(name, value, version=None):
     Adapts certain categories:
 
     - "hero.equipment.DATAPROPS":  dropping slot "side5"
-    - "hero_byte_positions"        dropping slot "side5", shifting slot "inventory"
+    - "hero_byte_positions"        dropping slot "side5", shifting slot "inventory",
+                                   adjusting location
     - "hero_regex" :               dropping one slot from equipment to expect 18 items
     - all hero property classes:   returning version-specific data class, without slot "side5"
     """
@@ -110,7 +116,7 @@ def adapt(name, value, version=None):
     if "hero.equipment.DATAPROPS" == name:
         result = [x for x in value if x.get("name") != "side5"]
     elif "hero_byte_positions" == name:
-        result = value.copy()
+        result = dict(value, **HERO_BYTE_POSITIONS)
         result["inventory"] = result.pop("side5")
         result.pop("reserved", None) # Combination artifacts reservations
     elif "hero_regex" == name:
