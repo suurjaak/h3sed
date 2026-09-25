@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  01.09.2026
+@modified  25.09.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -121,8 +121,8 @@ class HeroPlugin(object):
             "ids":       {},       # {category: wx ID for toolbar toggle}
             "visible":   [],       # List of heroes visible, ordered by name
             "toggles":   collections.OrderedDict(),  # {category: toggled state}
-            "sort_col":  conf.Positions.get("hero_sort_col", "index"),  # Field being sorted by
-            "sort_asc":  conf.Positions.get("hero_sort_asc", True),     # Sort ascending or descending
+            "sort_col":  conf.Settings.get("hero.sort_col", "index"),  # Field being sorted by
+            "sort_asc":  conf.Settings.get("hero.sort_asc", True),     # Sort ascending or descending
         }
         self._dialog_export = wx.FileDialog(panel, __("Export heroes to file"),
             wildcard="|".join("{0} (*.{1})|*.{1}".format(__(label), format)
@@ -169,10 +169,10 @@ class HeroPlugin(object):
             help = __("Show or hide %s column" + ("s" if "stats" == category else ""), __(category))
             b = tb_index.AddCheckTool(wx.ID_ANY, __(category.capitalize()), wx.NullBitmap,
                                       shortHelp=help)
-            tb_index.ToggleTool(b.Id, conf.HeroToggles.get(category, True))
+            tb_index.ToggleTool(b.Id, conf.Settings.get("hero.toggle_%s" % category, True))
             tb_index.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
             self._index["ids"][category] = b.Id
-            self._index["toggles"][category] = conf.HeroToggles.get(category, True)
+            self._index["toggles"][category] = conf.Settings.get("hero.toggle_%s" % category, True)
         tb_index.Realize()
 
         html = wx.html.HtmlWindow(indexpanel)
@@ -302,9 +302,9 @@ class HeroPlugin(object):
 
         self._propspanel.Sizer.Add(nb, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW, proportion=1)
 
-        if conf.Positions.get("herotab_index") \
-        and conf.Positions["herotab_index"] < len(self._plugins):
-            nb.SetSelection(conf.Positions["herotab_index"])
+        if conf.Settings.get("hero.tab_index") \
+        and conf.Settings["hero.tab_index"] < len(self._plugins):
+            nb.SetSelection(conf.Settings["hero.tab_index"])
         self._ctrls["menubutton"].Enable(self._plugins[nb.Selection]["has_menu"])
 
         nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_hero_subtab)
@@ -568,12 +568,12 @@ class HeroPlugin(object):
         if self._hero.is_changed():
             htmls["changes"] = tpl.expand(mode="changes", **tplargs)
             htmls["changesonly"] = tpl.expand(mode="changesonly", **tplargs)
-            mode = conf.Positions.get("charsheet_view")
+            mode = conf.Settings.get("hero.charsheet_view")
             if mode not in htmls: mode = "normal"
 
         dlg = None
         def on_link(mode):
-            if dlg: conf.Positions["charsheet_view"] = mode
+            if dlg: conf.Settings["hero.charsheet_view"] = mode
             return htmls.get(mode, htmls["normal"])
         links = {k: on_link for k in htmls} if self._hero.is_changed() else None
         buttons = {__("Copy data"): self.on_copy_hero}
@@ -606,7 +606,7 @@ class HeroPlugin(object):
 
     def on_change_hero_subtab(self, event):
         """Handler for changing a page in the hero properties notebook, updates UI and settings."""
-        conf.Positions.update(herotab_index=event.Selection)
+        conf.Settings.update({"hero.tab_index": event.Selection})
         self._ctrls["menubutton"].Enable(self._plugins[event.Selection]["has_menu"])
         index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
         self._subtab_focus[index] = event.Selection
@@ -671,8 +671,8 @@ class HeroPlugin(object):
                 self._index["sort_asc"] = not self._index["sort_asc"]
             else:
                 self._index["sort_col"], self._index["sort_asc"] = col, True
-            conf.Positions.update(hero_sort_col=self._index["sort_col"],
-                                  hero_sort_asc=self._index["sort_asc"])
+            conf.Settings.update({"hero.sort_col": self._index["sort_col"],
+                                  "hero.sort_asc": self._index["sort_asc"]})
             self.populate_index(force=True)
 
 
@@ -743,7 +743,8 @@ class HeroPlugin(object):
         on = not self._index["toggles"][category]
         self._index["toggles"][category] = on
         self.populate_index(force=True)
-        conf.HeroToggles.pop(category, None) if on else conf.HeroToggles.update({category: False})
+        if on: conf.Settings.pop("hero.toggle_%s" % category, None)
+        else: conf.Settings.update({"hero.toggle_%s" % category: False})
 
 
     def on_sys_colour_change(self, event):

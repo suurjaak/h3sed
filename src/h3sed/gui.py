@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    31.05.2026
+@modified    25.09.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -774,7 +774,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                     self.dir_ctrl.ReCreateTree()
                     self.dir_ctrl.ExpandPath(path)
             if index0 != self.dir_ctrl.FilterIndex:
-                conf.Positions["filefilter_index"] = self.dir_ctrl.FilterIndex
+                conf.Settings["savefile.filter_index"] = self.dir_ctrl.FilterIndex
             conf.SelectedPath = self.dir_ctrl.GetPath()
             conf.save()
         finally:
@@ -861,7 +861,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
             path = conf.SelectedPath
             if path and os.path.isfile(path): path = os.path.dirname(path)
             if path: ctrl.SetDirectory(path)
-        index = conf.Positions.get("filefilter_index")
+        index = conf.Settings.get("savefile.filter_index")
         if index and index < len(wildcards):
             ctrl.SetFilterIndex(index)
             if ctrl is self.dir_ctrl: ctrl.FilterListCtrl.Select(index)
@@ -1400,10 +1400,10 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
     def on_choose_filter(self, event):
         """Handler for choosing extension filter in file control."""
-        if event.Selection == conf.Positions["filefilter_index"]:
+        if event.Selection == conf.Settings["savefile.filter_index"]:
             return
         if event: event.Skip() # Pass event along to next handler
-        conf.Positions["filefilter_index"] = event.Selection
+        conf.Settings["savefile.filter_index"] = event.Selection
         path = self.dir_ctrl.Path
         # Workaround for DirCtrl raising error if any selection during populate
         self.dir_ctrl.UnselectAll()
@@ -1669,7 +1669,7 @@ class SavefilePage(wx.Panel):
         for c in (nctrl, vctrl, dctrl): c.SetEditable(False), c.SetMargins(0)
         dctrl.MinSize = -1, nctrl.Size.Height
         SASH_DEFAULTPOS = 2 * nctrl.Size.Height + 10
-        SASH_STARTPOS = conf.Positions.get("savepage_splitter") or SASH_DEFAULTPOS
+        SASH_STARTPOS = conf.Settings.get("savepage.splitter_pos") or SASH_DEFAULTPOS
 
         bookstyle = wx.lib.agw.fmresources.INB_LEFT
         if (wx.version().startswith("2.8") and sys.version_info.major == 2
@@ -1687,9 +1687,9 @@ class SavefilePage(wx.Panel):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy)
         self.TopLevelParent.Bind(EVT_LANGUAGE, self.on_change_language)
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda e: (splitter.SetSashPosition(SASH_DEFAULTPOS),
-                      conf.Positions.update(savepage_splitter=SASH_DEFAULTPOS)))
+                      conf.Settings.update({"savepage.splitter_pos": SASH_DEFAULTPOS})))
         splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED,
-                      lambda e: conf.Positions.update(savepage_splitter=e.SashPosition))
+                      lambda e: conf.Settings.update({"savepage.splitter_pos": e.SashPosition}))
         self.TopLevelParent.run_console("page = self.page_file_latest # Savefile tab")
 
         sizer = self.Sizer = wx.BoxSizer(wx.VERTICAL)

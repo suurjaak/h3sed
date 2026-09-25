@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "3.9.dev2"
+Version = "3.9.dev3"
 VersionDate = "25.09.2026"
 
 Frozen = getattr(sys, "frozen", False)
@@ -54,9 +54,9 @@ FileDirectives = [
 ]
 """List of user-modifiable attributes, saved if changed from default."""
 OptionalFileDirectives = [
-    "DarkTheme", "FileExtensions", "HeroToggles", "Language", "MaxConsoleHistory",
-    "MaxRecentFiles", "PopupUnexpectedErrors", "Positions", "SavegameNewFormat",
-    "StatusFlashLength", "Translations", "UpdateCheckInterval", "UserFunctions",
+    "DarkTheme", "FileExtensions", "Language", "MaxConsoleHistory", "MaxRecentFiles",
+    "PopupUnexpectedErrors", "SavegameNewFormat", "Settings", "StatusFlashLength",
+    "Translations", "UpdateCheckInterval", "UserFunctions",
 ]
 Defaults = {}
 
@@ -83,15 +83,12 @@ FileExtensions = [("Heroes3 savefiles",               (".cgm", ".gm1", ".gm2", "
 """History of commands entered in console."""
 ConsoleHistoryCommands = []
 
-"""Hero index categories toggle state, as {name: false}."""
-HeroToggles = {}
-
 """Current application language."""
 Language = "en"
 
-"""Various index and location selection states."""
-Positions = {"filefilter_index": 0, "hero_sort_col": "index", "hero_sort_asc": True,
-              "herotab_index": 0, "charsheet_view": "normal", "savepage_splitter": 36}
+"""Various UI selection states."""
+Settings = {"savefile.filter_index": 0, "savepage.splitter_pos": 36, "hero.charsheet_view": "normal",
+            "hero.sort_col": "index", "hero.sort_asc": True, "hero.tab_index": 0}
 
 """Contents of Recent Files menu."""
 RecentFiles = []
@@ -197,6 +194,15 @@ def load():
     try: VARTYPES = (basestring, bool, int, long, list, tuple, dict, type(None))         # Py2
     except Exception: VARTYPES = (bytes, str, bool, int, list, tuple, dict, type(None))  # Py3
 
+    # Added in v3.9 to migrate Positions and HeroToggles to Settings. TO BE DONE: remove next year.
+    ADAPT_SETTINGS = {"Positions": {"filefilter_index": "savefile.filter_index",
+                                    "hero_sort_col": "hero.sort_col",
+                                    "hero_sort_asc": "hero.sort_asc",
+                                    "herotab_index": "hero.tab_index",
+                                    "charsheet_view": "hero.charsheet_view",
+                                    "savepage_splitter": "savepage.splitter_pos"},
+                      "HeroToggles": {None: "hero.toggle_%s"}}
+
     def safecopy(v):
         """Tries to return a deep copy, or a shallow copy, or given value if copy fails."""
         for f in (copy.deepcopy, copy.copy, lambda x: x):
@@ -234,6 +240,14 @@ def load():
             [setattr(module, name, v) for v, s in [parse_value(name)] if s]
         for name in OptionalFileDirectives:
             [setattr(module, name, v) for v, s in [parse_value(name)] if s]
+        for name in ADAPT_SETTINGS:
+            value, ok = parse_value(name)
+            if not ok or not isinstance(value, dict): continue # for name
+            for key1, key2 in ADAPT_SETTINGS[name].items():
+                if None == key1:
+                    Settings.update({key2 % k: v for k, v in value.items()})
+                elif key1 in value:
+                    Settings[key2] = value[key1]
     except Exception:
         pass # Fail silently
 
