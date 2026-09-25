@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  12.07.2026
+@modified  25.09.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -75,7 +75,7 @@ class InventoryPlugin(object):
     def props(self):
         """Returns props for inventory-tab, as [{type: "itemlist", ..}]."""
         result = []
-        MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
+        MIN, MAX = metadata.Store.get("data_ranges", version=self.version)["inventory"]
         ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=self.version)
         for prop in DATAPROPS:
             myprop = dict(prop, item=[], min=MIN, max=MAX, menu=self.make_item_menu,
@@ -484,7 +484,7 @@ class InventoryPlugin(object):
 
 def parse(hero_bytes, version, savefile=None, span=None):
     """Returns h3sed.hero.Inventory() parsed from hero bytearray inventory section."""
-    HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
+    DATA_RANGES = metadata.Store.get("data_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)
     ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=version)
     ID_TO_NAME = {IDS[n]: n for n in ARTIFACTS}
@@ -498,7 +498,7 @@ def parse(hero_bytes, version, savefile=None, span=None):
         return integer
 
     inventory = h3sed.hero.Inventory.factory(version)
-    for i in range(HERO_RANGES["inventory"][1]):
+    for i in range(DATA_RANGES["inventory"][1]):
         artifact_id = parse_id(hero_bytes, BYTEPOS["inventory"] + i*8)
         if artifact_id and artifact_id not in ID_TO_NAME:
             logger.warning("Unknown artifact for version %r: 0x%X.", version, artifact_id)
@@ -512,7 +512,7 @@ def parse(hero_bytes, version, savefile=None, span=None):
 
 def serialize(inventory, hero_bytes, version, hero=None):
     """Returns new hero bytearray with updated inventory section."""
-    HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
+    DATA_RANGES = metadata.Store.get("data_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)
     SCROLL_ARTIFACTS = metadata.Store.get("artifacts", category="scroll", version=version)
     BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
@@ -521,7 +521,7 @@ def serialize(inventory, hero_bytes, version, hero=None):
 
     new_bytes = hero_bytes[:]
     inventory0 = [] if hero is None else hero.original.get("inventory", [])
-    for i in range(HERO_RANGES["inventory"][1]):
+    for i in range(DATA_RANGES["inventory"][1]):
         artifact_name = inventory[i]
         artifact_id = IDS.get(artifact_name)
         artifact_name0 = inventory0[i] if i < len(inventory0) else None

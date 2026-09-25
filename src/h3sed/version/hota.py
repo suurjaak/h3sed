@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  04.09.2026
+@modified  25.09.2026
 ------------------------------------------------------------------------------
 """
 import copy
@@ -40,11 +40,11 @@ PRIMARY_ATTRIBUTE_GAME_RANGES = {"attack": (0, 99, 231), "defense":   (0, 99, 23
 
 
 """Allowed (min, max) ranges and other configuration for various hero properties."""
-HERO_RANGES = {
+DATA_RANGES = {
     "level":           ( 0, 74),
     "skills":          ( 0, 29),
     "Intelligence":    (1.2, 1.35, 1.5), # Hero maximum spell points multiplier by skill level
-}
+})
 
 
 """Options for Ballista war machine."""
@@ -614,7 +614,7 @@ def init():
         metadata.Store.add("artifacts", [k for k, v in ARTIFACT_SLOTS.items() if v[0] == slot],
                            category=slot, version=NAME)
 
-    LEVELS = {k: v for k, v in metadata.EXPERIENCE_LEVELS.items() if k <= HERO_RANGES["level"][1]}
+    LEVELS = {k: v for k, v in metadata.EXPERIENCE_LEVELS.items() if k <= DATA_RANGES["level"][1]}
 
     metadata.Store.add("artifact_slots",        ARTIFACT_SLOTS,        version=NAME)
     metadata.Store.add("artifact_spells",       ARTIFACT_SPELLS,       version=NAME)
@@ -622,8 +622,8 @@ def init():
     metadata.Store.add("combination_artifacts", COMBINATION_ARTIFACTS, version=NAME)
     metadata.Store.add("creatures",             CREATURES,             version=NAME)
     metadata.Store.add("creature_levels",       CREATURE_LEVELS,       version=NAME)
+    metadata.Store.add("data_ranges",           DATA_RANGES,           version=NAME)
     metadata.Store.add("experience_levels",     LEVELS,                version=NAME)
-    metadata.Store.add("hero_ranges",           HERO_RANGES,           version=NAME)
     metadata.Store.add("ids",                   IDS,                   version=NAME)
     metadata.Store.add("primary_attribute_game_ranges",
                        PRIMARY_ATTRIBUTE_GAME_RANGES,                  version=NAME)

@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  01.09.2026
+@modified  25.09.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -178,11 +178,11 @@ class StatsPlugin(object):
         """Returns props for stats-tab, as [{type: "number", ..}]."""
         result = []
         IDS = metadata.Store.get("ids", version=self.version)
-        HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
+        DATA_RANGES = metadata.Store.get("data_ranges", version=self.version)
         for prop in DATAPROPS:
             if "value" in prop: prop = dict(prop, value=IDS[prop["label"]])
-            if "min"   in prop: prop = dict(prop, min=HERO_RANGES[prop["name"]][0])
-            if "max"   in prop: prop = dict(prop, max=HERO_RANGES[prop["name"]][1])
+            if "min"   in prop: prop = dict(prop, min=DATA_RANGES[prop["name"]][0])
+            if "max"   in prop: prop = dict(prop, max=DATA_RANGES[prop["name"]][1])
             if prop["name"] in metadata.PRIMARY_ATTRIBUTES and "extra" in prop:
                 prop = dict(prop, extra=self.make_primary_extra)
             if prop["name"] in ("exp", "level") and "extra" in prop:
@@ -315,10 +315,10 @@ class StatsPlugin(object):
 
         TARGET, VALUE = prop["name"], 10 * self._hero.gamestats["knowledge"]
         if "Intelligence" in self._hero.skills:
-            HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
+            DATA_RANGES = metadata.Store.get("data_ranges", version=self.version)
             SKILL_LEVELS = metadata.Store.get("skill_levels", version=self.version)
             current_level = self._hero.skills[self._hero.skills.index("Intelligence")].level
-            VALUE *= HERO_RANGES["Intelligence"][SKILL_LEVELS.index(current_level)]
+            VALUE *= DATA_RANGES["Intelligence"][SKILL_LEVELS.index(current_level)]
         if self._state[TARGET] >= VALUE:
             return
 

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  12.07.2026
+@modified  25.09.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -80,7 +80,7 @@ class SkillsPlugin(object):
     def props(self):
         """Returns props for skills-tab, as {type: "itemlist", ..}."""
         result = []
-        MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["skills"]
+        MIN, MAX = metadata.Store.get("data_ranges", version=self.version)["skills"]
         SKILLS = sorted(metadata.Store.get("skills", version=self.version))
         SKILL_LEVELS = metadata.Store.get("skill_levels", version=self.version)
         for prop in DATAPROPS:
@@ -112,7 +112,7 @@ class SkillsPlugin(object):
 
     def load_state(self, state):
         """Loads plugin state from given data, ignoring unknown values. Returns whether state changed."""
-        MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["skills"]
+        MIN, MAX = metadata.Store.get("data_ranges", version=self.version)["skills"]
         state0 = self._state.copy()
         self._state.clear()
         for i, skill in enumerate(state[:MAX]):

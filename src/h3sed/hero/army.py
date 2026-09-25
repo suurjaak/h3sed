@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  04.09.2026
+@modified  25.09.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -83,15 +83,15 @@ class ArmyPlugin(object):
     def props(self):
         """Returns props for army-tab, as [{type: "itemlist", ..}]."""
         result = []
-        HERO_RANGES = metadata.Store.get("hero_ranges", version=self.version)
+        DATA_RANGES = metadata.Store.get("data_ranges", version=self.version)
         CHOICES = metadata.Store.get("creatures", version=self.version)
         for prop in DATAPROPS:
-            myprop = dict(prop, item=[], min=HERO_RANGES["army"][0], max=HERO_RANGES["army"][1],
+            myprop = dict(prop, item=[], min=DATA_RANGES["army"][0], max=DATA_RANGES["army"][1],
                           menu=self.make_item_menu)
             for item in prop["item"]:
                 if "choices" in item: item = dict(item, choices=CHOICES)
-                if "min"     in item: item = dict(item, min=HERO_RANGES["army." + item["name"]][0])
-                if "max"     in item: item = dict(item, max=HERO_RANGES["army." + item["name"]][1])
+                if "min"     in item: item = dict(item, min=DATA_RANGES["army." + item["name"]][0])
+                if "max"     in item: item = dict(item, max=DATA_RANGES["army." + item["name"]][1])
                 myprop["item"].append(item)
             result.append(myprop)
         return result
@@ -336,7 +336,7 @@ class ArmyPlugin(object):
             return True
 
         state2 = self._state.copy()
-        MIN, MAX = metadata.Store.get("hero_ranges", version=self.version)["army.count"]
+        MIN, MAX = metadata.Store.get("data_ranges", version=self.version)["army.count"]
         for i, army in enumerate(state2):
             if not army or rowindex is not None and i != rowindex: continue # for i, army
             if number == 1: army.count = 1
@@ -471,7 +471,7 @@ class ArmyPlugin(object):
 
 def parse(hero_bytes, version, savefile=None, span=None):
     """Returns h3sed.hero.Army() parsed from hero bytearray army section."""
-    HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
+    DATA_RANGES = metadata.Store.get("data_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)
     ID_TO_NAME = {IDS[n]: n for n in metadata.Store.get("creatures", version=version)}
     BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
@@ -479,7 +479,7 @@ def parse(hero_bytes, version, savefile=None, span=None):
     NAMES_POS, COUNT_POS = BYTEPOS["army_types"], BYTEPOS["army_counts"]
 
     army = h3sed.hero.Army.factory(version)
-    for i in range(HERO_RANGES["army"][1]):
+    for i in range(DATA_RANGES["army"][1]):
         id_bytes, count_bytes = (hero_bytes[n + i*4:n + i*4 + 4] for n in (NAMES_POS, COUNT_POS))
         creature_id, count = util.bytoi(id_bytes), util.bytoi(count_bytes)
         if not count or all(x == ord(metadata.BLANK) for x in id_bytes): continue # for i
@@ -496,7 +496,7 @@ def parse(hero_bytes, version, savefile=None, span=None):
 
 def serialize(army, hero_bytes, version, hero=None):
     """Returns new hero bytearray with updated army section."""
-    HERO_RANGES = metadata.Store.get("hero_ranges", version=version)
+    DATA_RANGES = metadata.Store.get("data_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)
     NAME_TO_ID = {n: IDS[n] for n in metadata.Store.get("creatures", version=version)}
     BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
@@ -505,7 +505,7 @@ def serialize(army, hero_bytes, version, hero=None):
 
     new_bytes = hero_bytes[:]
     army0 = [] if hero is None else hero.original.get("army", [])
-    for i in range(HERO_RANGES["army"][1]):
+    for i in range(DATA_RANGES["army"][1]):
         name, count = None, None
         if i < len(army) and army[i]: name, count = army[i]["name"], army[i]["count"]
         if (not name or not count) and i < len(army0) and not (army0[i] and army0[i].get("name")):

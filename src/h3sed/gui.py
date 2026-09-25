@@ -2466,6 +2466,23 @@ def build(plugin, panel):
             count += 1
 
 
+        elif "link" == prop.get("type"):
+            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])),
+                               name="%s_label" % prop["name"])
+            c2 = wx.adv.HyperLinkCtrl(panel, name=prop["name"])
+
+            producer = prop["format"] if callable(prop.get("format")) else lambda: state.get(prop["name"])
+            c2.Value = producer() or ""
+            c2.Bind(wx.adv.EVT_HYPERLINK, lambda e: prop["handler"]() if prop.get("handler") else None)
+
+            sizer.Add(c1, pos=(count, 0))
+            sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
+            if not sizer.IsColGrowable(1): sizer.AddGrowableCol(1)
+            col = 2
+            build_result[prop["name"]] = c2
+            count += 1
+
+
         elif "label" == prop.get("type"):
             c = wx.StaticText(panel, label=__(prop.get("label", "")))
             ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)

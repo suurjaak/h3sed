@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  24.09.2026
+@modified  25.09.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -78,8 +78,8 @@ PLAYER_FACTIONS = {0: "Red",    1: "Blue",   2: "Tan",  3: "Green",
                    4: "Orange", 5: "Purple", 6: "Teal", 7: "Pink"}
 
 
-"""Allowed (min, max) ranges and other configuration for various hero properties."""
-HERO_RANGES = {
+"""Allowed (min, max) ranges and other configuration for various properties."""
+DATA_RANGES = {
     "attack":          PRIMARY_ATTRIBUTE_RANGE,
     "defense":         PRIMARY_ATTRIBUTE_RANGE,
     "power":           PRIMARY_ATTRIBUTE_RANGE,
@@ -101,7 +101,7 @@ HERO_RANGES = {
     "inventory":       ( 0, 64),
     "skills":          ( 0, 28),
     "Intelligence":    (1.25, 1.5, 2), # Hero maximum spell points multiplier by skill level
-}
+})
 
 
 """Index for byte start of various attributes in hero bytearray."""
@@ -221,6 +221,7 @@ EQUIPMENT_REGEX = re.compile(b"""
       (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3} .{2} \x00{2})
     )+ $
 """, re.VERBOSE | re.DOTALL)
+
 
 
 """Hero levels mapped to minimum experience points required."""
@@ -1378,6 +1379,7 @@ class Savefile(object):
         self.size       = 0
         self.usize      = 0
         self.heroes     = []
+        self.towns      = []
         self.read(parse_heroes)
 
 
@@ -1482,11 +1484,25 @@ class Savefile(object):
         if "game" in self.mapdata: self.mapdata["game"] = self.mapdata.pop("game") # Order last
 
 
+    def parse(self):
+        """Populates and parses all heroes and towns in detail."""
+        self.parse_heroes()
+        self.parse_towns()
+
+        town_locations = {(t.profile.x, t.profile.y, t.profile.z): t for t in self.towns}
+        hero_locations = {(h.profile.x, h.profile.y, h.profile.z): h for h in self.heroes}
+        for location, hero in hero_locations.items():
+            if location in town_locations:
+                hero.profile.town = town_locations[location]
+                town_slot = "visiting_hero" if hero.profile.on_map else "garrison_hero"
+                town_locations[location].profile[town_slot] = hero
+
+
     def parse_heroes(self):
         """Populates and parses all savefile heroes in detail."""
         if not self.heroes: self.populate_heroes()
         for hero in self.heroes: hero.parse(self)
-
+        
 
     def populate_heroes(self):
         """Populates raw data on savefile heroes."""
@@ -1558,6 +1574,195 @@ class Savefile(object):
             if v is None or (minv >= 0 and v < minv) or (maxv >= 0 and v > maxv):
                 return False
         return True
+
+
+    def parse_towns(self):
+        """Populates and parses all towns, preferably called after parse_heroes()."""
+        DATA_RANGES = Store.get("data_ranges", version=self.version_id)
+        BYTES_MINLEN, BYTES_MAXLEN = DATA_RANGES["town.bytelen"]
+        TOWNS_MAX, NAME_MAXLEN = DATA_RANGES["town.count"][1], DATA_RANGES["town.namelen"][1]
+        IDS = Store.get("ids", version=self.version_id)
+        ID_TO_NAME = {IDS[n]: n for n in Store.get("creatures", version=self.version_id)}
+
+        rgx_town  = h3sed.version.adapt("town_regex", TOWN_REGEX, version=self.version_id)
+        rgx_strip = re.compile(br"^(?!\xFF+\x00+$)([^\x00-\x19,^\xFF]+)")
+
+
+        pos = 30000
+        MAX_POS = len(self.raw)
+        if self.heroes:
+            # Towns section is right before heroes section: jump to a reasonable preceding spot.
+            first_hero = min(self.heroes, key=lambda h: h.index)
+            MAX_POS = first_hero.span[0]
+            first_hero_start = first_hero.span[0] - len(first_hero.profile.biography)
+            pos = first_hero_start - TOWNS_MAX * BYTES_MAXLEN - 100
+
+        del self.towns[:]
+        while True:
+            pos += 1
+            m = re.search(rgx_town, self.raw[pos:])
+            if not m: break # while True
+
+            town_start = pos + m.start()
+
+            if town_start + BYTES_MINLEN > MAX_POS: # Cease upon reaching the heroes section
+                break # while m
+
+            name_len = util.bytoi(m.group("name_len"))
+            if name_len == 0 and BYTES_MINLEN == BYTES_MAXLEN: # Fixed size structs have len=0 (RoE)
+                name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
+                name_len = len(name)
+            else:
+                name_raw = self.raw[pos + m.start("name"):pos + m.start("name") + name_len]
+                name = util.to_unicode(rgx_strip.match(name_raw).group(1))
+
+            if name_len != len(name) or name_len > NAME_MAXLEN:
+                # Name given length not matching parsed text: not a town
+                pos = town_start
+                continue # while True
+
+            is_creatures_blank = set(m.group("army_names")) <= set(BLANK)
+            is_counts_blank = set(m.group("army_counts")) <= set(NULL + BLANK)
+            if is_creatures_blank != is_counts_blank:
+                # Potential army section lacking counts for creatures or vice versa: not a town
+                pos = town_start
+                continue # while True
+
+            army = h3sed.hero.Army.factory(self.version_id)
+            do_skip = False
+            for i in range(DATA_RANGES["army"][1]):
+                name_bytes = m.group("army_names")[i*4:i*4 + 4]
+                count_bytes = m.group("army_counts")[i*4:i*4 + 4]
+                if set(name_bytes) == set(BLANK):
+                    if set(count_bytes) == set(NULL):
+                        # Valid empty army stack: nothing to parse
+                        continue # for i
+
+                    do_skip = True # Has count but no name: invalid army stack, not a town
+                    break # for i
+
+                if set(name_bytes) == set(count_bytes) == set(NULL):
+                    # Zero in name can be Pikeman, but zero count means valid empty stack
+                    continue # for i
+
+                creature_id = util.bytoi(name_bytes)
+                creature_count = util.bytoi(count_bytes)
+
+                if not creature_count or creature_id not in ID_TO_NAME:
+                    do_skip = True # Either zero count or no such creature: invalid army stack
+                    break # for i
+
+                army[i].update(name=ID_TO_NAME[creature_id], count=creature_count)
+            if do_skip:
+                pos = town_start
+                continue # while True
+
+            if self.towns:
+                # Town heuristic is very broad and can match on unknown other structures.
+                # Non-zero gap from last shows we have reached or exited the actual towns section.
+                UNCERTAINTY = BYTES_MAXLEN - BYTES_MINLEN if BYTES_MINLEN + NAME_MAXLEN < BYTES_MAXLEN else 0
+                if town_start > self.towns[-1].span[1] + 1 + UNCERTAINTY:
+                    if len(self.towns) == 1:
+                        # Large gap from the only one parsed: assume it was wrongly parsed, drop it.
+                        self.towns.pop()
+                    else: # Large gap after parsing several towns: assume end of towns section.
+                        break # while m
+
+            if len(self.towns) == 1 and town_start != self.towns[-1].span[1] + 1:
+                # Some versions like HoTA can have different town lengths over minor versions.
+                # Adjust town byte spans accordingly once we have two towns to measure from.
+                if BYTES_MINLEN + NAME_MAXLEN < BYTES_MAXLEN:
+                    prev_town = self.towns[-1]
+                    prev_span = prev_town.span[0], town_start
+                    prev_byteslen = prev_span[1] - prev_span[0]
+                    prev_bytes = self.raw[prev_span[0]:prev_span[1]]
+                    prev_town.set_file_data(prev_bytes, prev_town.index, prev_span)
+                    BYTES_MINLEN = prev_byteslen - len(prev_town.name)
+                    BYTES_MAXLEN = BYTES_MINLEN + NAME_MAXLEN
+
+            town = Town(name, version=self.version_id)
+            town.profile.update({k: util.bytoi(m.group(k)) for k in ("x", "y", "z", "faction")})
+            for i in range(len(army)):
+                town.army[i].update(army[i])
+            # Possibly preliminary length and bytes if first town, to adjust next iteration.
+            town_byteslen = BYTES_MINLEN + (0 if BYTES_MINLEN == BYTES_MAXLEN else len(name))
+            town_span = (town_start, town_start + town_byteslen)
+            town_bytes = self.raw[town_start:town_start + town_byteslen]
+            town.set_file_data(town_bytes, len(self.towns), town_span)
+            self.towns.append(town)
+            pos = town.span[1] - 1
+
+        self.towns.sort(key=lambda t: t.name.lower())
+        dupe_counts = Counter(x.name for x in self.towns)
+        for town in self.towns[::-1]:
+            if dupe_counts[town.name] > 1:
+                town.name_counter = dupe_counts[town.name]
+                dupe_counts.subtract([town.name])
+        logger.info("%s towns detected in %s as version %r.",
+                    len(self.towns) or "No ", self.filename, self.version)
+
+
+
+class Town(object):
+
+    def __init__(self, name, version=None):
+        self.name    = name
+        self.version = version
+        self.index   = None    # Town index in savefile
+        self.span    = None    # Town byte span in uncompressed savefile
+        self.bytes   = None    # Town bytearray
+        self.bytes0  = None    # Town original or saved bytearray
+        self.name_counter = 1  # 1-based index for town name, tracking duplicate names
+
+        self.army    = h3sed.common.Army.factory(version)
+        self.profile = h3sed.town.Profile.factory(version)
+
+
+    def set_file_data(self, bytes, index, span):
+        """Sets data on entity raw content and position in savefile."""
+        self.bytes  = copy.copy(bytes)
+        self.bytes0 = copy.copy(bytes)
+        self.index  = index
+        self.span   = span
+        #self.serialed = util.AttrDict((k, v.copy()) for k, v in self.properties.items())
+
+
+
+
+
+"""Index for byte start of various attributes in town bytearray."""
+TOWN_BYTE_POSITIONS = {
+    "faction":            0, # Player faction (e.g. Red player)
+    "location_x":         4, # Town X map coordinate
+    "location_y":         5, # Town X map coordinate
+    "location_z":         6, # Town X map coordinate
+    "army_types":         9, # Creature type IDs
+    "army_counts":       37, # Creature counts
+}
+
+
+"""Regulax expression for finding potential town struct in savefile bytes."""
+TOWN_REGEX = re.compile(b"""
+    # Town name length given in two bytes, but maximum length is actually 14
+
+    (?P<faction>[\x00-\x07,\xFF])  #   1 byte:  town faction 0-7 or 255              000-000
+    .{3}                           #   3 bytes: unknown                              001-003
+    (?P<x>[\x00-\xFC])             #   1 byte:  X coordinate                         004-004
+    (?P<y>[\x00-\xFC])             #   1 byte:  Y coordinate                         005-005
+    (?P<z>[\x00-\x01])             #   1 byte:  Z coordinate                         006-006
+    .{2}                           #   2 bytes: unknown                              007-008
+    (?P<army_names>(               #  28 bytes: 7 4-byte creature IDs                009-036
+      (.[\x00,\xFF]{3})
+    ){7})
+    (?P<army_counts>.{28})         #  28 bytes: 7 4-byte creature counts             037-064
+    .{4}                           #   4 bytes: unknown                              065-068
+    (?P<name_len>[^\x00]\x00)      #   2 bytes: name length                          069-070
+    (?P<name>                      #   X bytes: name; not 0-terminated               071-
+      [^\x00-\x20,^\xFF][^\x00-\x1F,^\xFF]{0,13}
+    )
+                                   #   X bytes: unknown
+""", re.VERBOSE | re.DOTALL)
+
 
 
 
@@ -1640,11 +1845,11 @@ Store.add("artifact_spells",       ARTIFACT_SPELLS)
 Store.add("artifact_stats",        ARTIFACT_STATS)
 Store.add("creatures",             CREATURES, sortable=True)
 Store.add("creature_levels",       CREATURE_LEVELS)
+Store.add("data_ranges",           DATA_RANGES)
 Store.add("equipment_slots",       EQUIPMENT_SLOTS, separate=True)  # Versions without side5 e.g. RoE
 Store.add("experience_levels",     EXPERIENCE_LEVELS, separate=True) # Versions can cap level e.g. HoTA
 Store.add("player_factions",       PLAYER_FACTIONS)
 Store.add("hero_byte_positions",   HERO_BYTE_POSITIONS)
-Store.add("hero_ranges",           HERO_RANGES)
 Store.add("ids",                   IDS)
 Store.add("primary_attribute_game_ranges", PRIMARY_ATTRIBUTE_GAME_RANGES)
 Store.add("skills",                SKILLS)

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  24.09.2026
+@modified  25.09.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -91,7 +91,7 @@ def make_integer_cast(name, version=None, nullable=False):
     minmax = []
     def inner(value=None):
         if not minmax: # First run: populate cache
-            minmax[:] = metadata.Store.get("hero_ranges", version=version)[name]
+            minmax[:] = metadata.Store.get("data_ranges", version=version)[name]
 
         if value is None: return None if nullable else minmax[0]
         return min(minmax[1], max(int(value), minmax[0]))
@@ -263,7 +263,7 @@ class Army(TypedArrayCheckerMixin, TypedArray, DataClass):
 
     def __init__(self):
         dataclass = h3sed.version.adapt("hero.%s" % ArmyStack.__name__, ArmyStack, self.version)
-        minmax = metadata.Store.get("hero_ranges", version=self.version)["army"]
+        minmax = metadata.Store.get("data_ranges", version=self.version)["army"]
         TypedArray.__init__(self, cls=dataclass, size=minmax[1], default=dataclass)
 
 
@@ -438,7 +438,7 @@ class Inventory(TypedArray, DataClass):
     """Hero inventory property."""
 
     def __init__(self):
-        minmax = metadata.Store.get("hero_ranges", version=self.version)["inventory"]
+        minmax = metadata.Store.get("data_ranges", version=self.version)["inventory"]
         TypedArray.__init__(self, cls=make_artifact_cast("inventory", self.version), size=minmax[1])
 
     def make_compact(self, order=(), reverse=False):
@@ -507,7 +507,7 @@ class Skills(TypedArrayCheckerMixin, TypedArray, DataClass):
 
     def __init__(self):
         dataclass = h3sed.version.adapt("hero.%s" % Skill.__name__, Skill, self.version)
-        minmax = metadata.Store.get("hero_ranges", version=self.version)["skills"]
+        minmax = metadata.Store.get("data_ranges", version=self.version)["skills"]
         TypedArray.__init__(self, cls=dataclass, size=minmax, default=dataclass)
 
     def realize(self, hero=None):
