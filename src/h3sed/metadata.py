@@ -78,7 +78,7 @@ PLAYER_FACTIONS = {0: "Red",    1: "Blue",   2: "Tan",  3: "Green",
                    4: "Orange", 5: "Purple", 6: "Teal", 7: "Pink"}
 
 
-"""Allowed (min, max) ranges and other configuration for various properties."""
+"""Allowed (min, max) ranges and other configuration for various hero and town properties."""
 DATA_RANGES = {
     "attack":          PRIMARY_ATTRIBUTE_RANGE,
     "defense":         PRIMARY_ATTRIBUTE_RANGE,
@@ -101,7 +101,11 @@ DATA_RANGES = {
     "inventory":       ( 0, 64),
     "skills":          ( 0, 28),
     "Intelligence":    (1.25, 1.5, 2), # Hero maximum spell points multiplier by skill level
-})
+
+    "town.namelen":   (  1, 14),
+    "town.count":     (  0, 48),
+    "town.bytelen":   (382, 396),
+}
 
 
 """Index for byte start of various attributes in hero bytearray."""
@@ -166,6 +170,17 @@ HERO_BYTE_POSITIONS = {
 }
 
 
+"""Index for byte start of various attributes in town bytearray."""
+TOWN_BYTE_POSITIONS = {
+    "faction":            0, # Player faction (e.g. Red player)
+    "location_x":         4, # Town X map coordinate
+    "location_y":         5, # Town X map coordinate
+    "location_z":         6, # Town X map coordinate
+    "army_types":         9, # Creature type IDs
+    "army_counts":       37, # Creature counts
+}
+
+
 """Regulax expression for finding potential hero struct in savefile bytes."""
 HERO_REGEX = re.compile(b"""
     # There are at least 30 bytes more at front, but those can also include
@@ -220,6 +235,29 @@ EQUIPMENT_REGEX = re.compile(b"""
     (                        # Catapult etc:  XY 00 00 00 XY XY 00 00
       (\xFF{4} .{4}) | (.\x00{3} (\x00{4} | \xFF{4})) | (.\x00{3} .{2} \x00{2})
     )+ $
+""", re.VERBOSE | re.DOTALL)
+
+
+"""Regulax expression for finding potential town struct in savefile bytes."""
+TOWN_REGEX = re.compile(b"""
+    # Town name length is given in two bytes, but maximum length is actually 14
+
+    (?P<faction>[\x00-\x07,\xFF])  #   1 byte:  town faction 0-7 or 255              000-000
+    .{3}                           #   3 bytes: unknown                              001-003
+    (?P<x>[\x00-\xFC])             #   1 byte:  X coordinate                         004-004
+    (?P<y>[\x00-\xFC])             #   1 byte:  Y coordinate                         005-005
+    (?P<z>[\x00-\x01])             #   1 byte:  Z coordinate                         006-006
+    .{2}                           #   2 bytes: unknown                              007-008
+    (?P<army_names>(               #  28 bytes: 7 4-byte creature IDs                009-036
+      (.[\x00,\xFF]{3})
+    ){7})
+    (?P<army_counts>.{28})         #  28 bytes: 7 4-byte creature counts             037-064
+    .{4}                           #   4 bytes: unknown                              065-068
+    (?P<name_len>[^\x00]\x00)      #   2 bytes: name length                          069-070
+    (?P<name>                      #   X bytes: name; not 0-terminated               071-
+      [^\x00-\x20,^\xFF][^\x00-\x1F,^\xFF]{0,13}
+    )
+                                   #   X bytes: unknown
 """, re.VERBOSE | re.DOTALL)
 
 
@@ -1368,7 +1406,7 @@ class Savefile(object):
     HEADER_TEXTS = OrderedDict([("name", 2), ("desc", 2)])  # {name in mapdata: byte length count}
 
 
-    def __init__(self, filename, parse_heroes=True):
+    def __init__(self, filename, parse=True):
         self.filename   = filename
         self.raw        = None
         self.raw0       = None
@@ -1380,7 +1418,7 @@ class Savefile(object):
         self.usize      = 0
         self.heroes     = []
         self.towns      = []
-        self.read(parse_heroes)
+        self.read(parse)
 
 
     def patch(self, bytes, span):
@@ -1397,7 +1435,7 @@ class Savefile(object):
         for hero in self.heroes: self.patch(hero.bytes, hero.span)
 
 
-    def read(self, parse_heroes=True):
+    def read(self, parse=True):
         """Reads in file raw contents and main attributes."""
         with patch_gzip_for_partial():
             with gzip.GzipFile(self.filename, "rb") as f: raw = bytearray(f.read())
@@ -1406,7 +1444,7 @@ class Savefile(object):
         self.heroes = []
         self.detect_version()
         self.parse_metadata()
-        if parse_heroes: self.parse_heroes()
+        if parse: self.parse()
         self.update_info()
         logger.info("Opened %s (%s, unzipped %s).", self.filename,
                     util.format_bytes(self.size), util.format_bytes(self.usize))
@@ -1490,13 +1528,15 @@ class Savefile(object):
         self.parse_towns()
 
         town_locations = {(t.profile.x, t.profile.y, t.profile.z): t for t in self.towns}
-        hero_locations = {(h.profile.x, h.profile.y, h.profile.z): h for h in self.heroes}
-        for location, hero in hero_locations.items():
+        for hero in self.heroes:
+            location = (hero.profile.x, hero.profile.y, hero.profile.z)
             if location in town_locations:
                 hero.profile.town = town_locations[location]
                 town_slot = "visiting_hero" if hero.profile.on_map else "garrison_hero"
                 town_locations[location].profile[town_slot] = hero
-
+                town_locations[location].mark_saved()
+                hero.mark_saved()
+                
 
     def parse_heroes(self):
         """Populates and parses all savefile heroes in detail."""
@@ -1540,40 +1580,6 @@ class Savefile(object):
         logger.info("%s heroes detected in %s as version %r.",
                     len(heroes) or "No ", self.filename, self.version)
         self.heroes = heroes
-
-
-    def find_heroes(self, *texts, **keywords):
-        """Yields heroes matching given texts and specific keywords, like skill="Luck"."""
-        for hero in self.heroes:
-            if hero.matches(*texts, **keywords): yield hero
-
-
-    def update_info(self, filename=None):
-        """Updates file modification and size information."""
-        filename = filename or self.filename
-        self.dt    = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
-        self.size  = os.path.getsize(filename)
-        self.usize = len(self.raw)
-
-
-    def is_changed(self):
-        """Returns whether loaded contents have changed."""
-        return self.raw != self.raw0
-
-
-    def match_byte_ranges(self, positions, ranges):
-        """
-        Returns whether byte values in savefile uncompressed bytes match given ranges.
-
-        @param   positions  {key: byte index in savefile uncompressed bytes}
-        @param   ranges     {key in positions: (min, max)}, with negative values skipped
-        """
-        if not positions or not ranges or not all(k in positions for k in ranges): return False
-        for k, (minv, maxv) in ranges.items():
-            v = self.raw[positions[k]] if positions[k] < len(self.raw) else None
-            if v is None or (minv >= 0 and v < minv) or (maxv >= 0 and v > maxv):
-                return False
-        return True
 
 
     def parse_towns(self):
@@ -1677,10 +1683,11 @@ class Savefile(object):
                     prev_byteslen = prev_span[1] - prev_span[0]
                     prev_bytes = self.raw[prev_span[0]:prev_span[1]]
                     prev_town.set_file_data(prev_bytes, prev_town.index, prev_span)
+                    prev_town.mark_saved()
                     BYTES_MINLEN = prev_byteslen - len(prev_town.name)
                     BYTES_MAXLEN = BYTES_MINLEN + NAME_MAXLEN
 
-            town = Town(name, version=self.version_id)
+            town = h3sed.town.Town(name, version=self.version_id)
             town.profile.update({k: util.bytoi(m.group(k)) for k in ("x", "y", "z", "faction")})
             for i in range(len(army)):
                 town.army[i].update(army[i])
@@ -1689,6 +1696,7 @@ class Savefile(object):
             town_span = (town_start, town_start + town_byteslen)
             town_bytes = self.raw[town_start:town_start + town_byteslen]
             town.set_file_data(town_bytes, len(self.towns), town_span)
+            town.mark_saved()
             self.towns.append(town)
             pos = town.span[1] - 1
 
@@ -1702,67 +1710,38 @@ class Savefile(object):
                     len(self.towns) or "No ", self.filename, self.version)
 
 
-
-class Town(object):
-
-    def __init__(self, name, version=None):
-        self.name    = name
-        self.version = version
-        self.index   = None    # Town index in savefile
-        self.span    = None    # Town byte span in uncompressed savefile
-        self.bytes   = None    # Town bytearray
-        self.bytes0  = None    # Town original or saved bytearray
-        self.name_counter = 1  # 1-based index for town name, tracking duplicate names
-
-        self.army    = h3sed.common.Army.factory(version)
-        self.profile = h3sed.town.Profile.factory(version)
+    def find_heroes(self, *texts, **keywords):
+        """Yields heroes matching given texts and specific keywords, like skill="Luck"."""
+        for hero in self.heroes:
+            if hero.matches(*texts, **keywords): yield hero
 
 
-    def set_file_data(self, bytes, index, span):
-        """Sets data on entity raw content and position in savefile."""
-        self.bytes  = copy.copy(bytes)
-        self.bytes0 = copy.copy(bytes)
-        self.index  = index
-        self.span   = span
-        #self.serialed = util.AttrDict((k, v.copy()) for k, v in self.properties.items())
+    def update_info(self, filename=None):
+        """Updates file modification and size information."""
+        filename = filename or self.filename
+        self.dt    = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
+        self.size  = os.path.getsize(filename)
+        self.usize = len(self.raw)
 
 
+    def is_changed(self):
+        """Returns whether loaded contents have changed."""
+        return self.raw != self.raw0
 
 
+    def match_byte_ranges(self, positions, ranges):
+        """
+        Returns whether byte values in savefile uncompressed bytes match given ranges.
 
-"""Index for byte start of various attributes in town bytearray."""
-TOWN_BYTE_POSITIONS = {
-    "faction":            0, # Player faction (e.g. Red player)
-    "location_x":         4, # Town X map coordinate
-    "location_y":         5, # Town X map coordinate
-    "location_z":         6, # Town X map coordinate
-    "army_types":         9, # Creature type IDs
-    "army_counts":       37, # Creature counts
-}
-
-
-"""Regulax expression for finding potential town struct in savefile bytes."""
-TOWN_REGEX = re.compile(b"""
-    # Town name length given in two bytes, but maximum length is actually 14
-
-    (?P<faction>[\x00-\x07,\xFF])  #   1 byte:  town faction 0-7 or 255              000-000
-    .{3}                           #   3 bytes: unknown                              001-003
-    (?P<x>[\x00-\xFC])             #   1 byte:  X coordinate                         004-004
-    (?P<y>[\x00-\xFC])             #   1 byte:  Y coordinate                         005-005
-    (?P<z>[\x00-\x01])             #   1 byte:  Z coordinate                         006-006
-    .{2}                           #   2 bytes: unknown                              007-008
-    (?P<army_names>(               #  28 bytes: 7 4-byte creature IDs                009-036
-      (.[\x00,\xFF]{3})
-    ){7})
-    (?P<army_counts>.{28})         #  28 bytes: 7 4-byte creature counts             037-064
-    .{4}                           #   4 bytes: unknown                              065-068
-    (?P<name_len>[^\x00]\x00)      #   2 bytes: name length                          069-070
-    (?P<name>                      #   X bytes: name; not 0-terminated               071-
-      [^\x00-\x20,^\xFF][^\x00-\x1F,^\xFF]{0,13}
-    )
-                                   #   X bytes: unknown
-""", re.VERBOSE | re.DOTALL)
-
+        @param   positions  {key: byte index in savefile uncompressed bytes}
+        @param   ranges     {key in positions: (min, max)}, with negative values skipped
+        """
+        if not positions or not ranges or not all(k in positions for k in ranges): return False
+        for k, (minv, maxv) in ranges.items():
+            v = self.raw[positions[k]] if positions[k] < len(self.raw) else None
+            if v is None or (minv >= 0 and v < minv) or (maxv >= 0 and v > maxv):
+                return False
+        return True
 
 
 
@@ -1857,6 +1836,7 @@ Store.add("skill_levels",          SKILL_LEVELS)
 Store.add("special_artifacts",     SPECIAL_ARTIFACTS)
 Store.add("spells",                SPELLS, sortable=True)
 Store.add("spell_schools",         SPELL_SCHOOLS)
+Store.add("town_byte_positions",   TOWN_BYTE_POSITIONS)
 Store.add("bannable_spells",       []) # Initialize empty array for version modules to update
 Store.add("combination_artifacts", {}) # Initialize empty dict for version modules to update
 for artifact, spells in ARTIFACT_SPELLS.items():

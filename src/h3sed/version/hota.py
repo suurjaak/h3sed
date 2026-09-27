@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  26.09.2026
+@modified  27.09.2026
 ------------------------------------------------------------------------------
 """
 import copy
@@ -40,11 +40,12 @@ PRIMARY_ATTRIBUTE_GAME_RANGES = {"attack": (0, 99, 231), "defense":   (0, 99, 23
 
 
 
-"""Allowed (min, max) ranges and other configuration for various hero properties."""
+"""Allowed (min, max) ranges and other configuration for various hero and town properties."""
 DATA_RANGES = {
     "level":           ( 0, 74),
     "skills":          ( 0, 29),
     "Intelligence":    (1.2, 1.35, 1.5), # Hero maximum spell points multiplier by skill level
+    "town.bytelen":    (546, 581),
 }
 
 

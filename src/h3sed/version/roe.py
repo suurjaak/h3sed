@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  26.09.2026
+@modified  27.09.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -26,6 +26,12 @@ TITLE = "Restoration of Erathia"
 VERSION_BYTE_RANGES = {
     "version_major":  (16, 41),
     "version_minor":  ( 0,  0),
+}
+
+
+"""Allowed (min, max) ranges and other configuration for various hero and town properties."""
+DATA_RANGES = {
+    "town.bytelen":   (393, 393),
 }
 
 
@@ -69,6 +75,29 @@ HERO_REGEX = re.compile(b"""
 """, re.VERBOSE | re.DOTALL)
 
 
+"""Regulax expression for finding potential town struct in savefile bytes."""
+TOWN_REGEX = re.compile(b"""
+    # Town name length is given in two bytes, but maximum length is actually 14
+
+    (?P<faction>[\x00-\x07,\xFF])  #   1 byte:  town faction 0-7 or 255              000-000
+    .{3}                           #   3 bytes: unknown                              001-003
+    (?P<x>[\x00-\xFC])             #   1 byte:  X coordinate                         004-004
+    (?P<y>[\x00-\xFC])             #   1 byte:  Y coordinate                         005-005
+    (?P<z>[\x00-\x01])             #   1 byte:  Z coordinate                         006-006
+    .{2}                           #   2 bytes: unknown                              007-008
+    (?P<army_names>(               #  28 bytes: 7 4-byte creature IDs                009-036
+      (.[\x00,\xFF]{3})
+    ){7})
+    (?P<army_counts>.{28})         #  28 bytes: 7 4-byte creature counts             037-064
+    .{2}                           #   2 bytes: unknown                              065-066
+    (?P<name_len>\x00\x00)         #   2 bytes: name length, always 0                067-068
+    (?P<name>                      #   X bytes: name; 0-terminated or max 14         069-
+      [^\x00-\x20,^\xFF][^\x00-\x1F,^\xFF]{0,13}
+    )
+                                   #   X bytes: unknown
+""", re.VERBOSE | re.DOTALL)
+
+
 
 class DataClass(common.DataClass):
 
@@ -102,6 +131,7 @@ def init():
     """Adds Restoration of Erathia data to metadata stores."""
     EQUIPMENT_SLOTS = {k: v for k, v in metadata.EQUIPMENT_SLOTS.items() if "side5" != k}
     metadata.Store.add("equipment_slots", EQUIPMENT_SLOTS, version=NAME)
+    metadata.Store.add("data_ranges",     DATA_RANGES,     version=NAME)
 
 
 def adapt(name, value, version=None):
@@ -112,6 +142,7 @@ def adapt(name, value, version=None):
     - "hero_byte_positions"        dropping slot "side5", shifting slot "inventory",
                                    adjusting location and map positions
     - "hero_regex" :               dropping one slot from equipment to expect 18 items
+    - "town_regex" :               town name length set to zeroes
     - all hero property classes:   returning version-specific data class, without slot "side5"
     - common property classes:     returning version-specific army data class
     """
@@ -142,6 +173,8 @@ def adapt(name, value, version=None):
         result = Skills
     elif "hero.Spells" == name:
         result = Spells
+    elif "town_regex" == name:
+        result = TOWN_REGEX
     return result
 
 

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  04.09.2026
+@modified  27.09.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -474,7 +474,7 @@ def parse(kind, entity_bytes, version, savefile=None, span=None):
     DATA_RANGES = metadata.Store.get("data_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)
     ID_TO_NAME = {IDS[n]: n for n in metadata.Store.get("creatures", version=version)}
-    BYTEPOS = metadata.HERO_BYTE_POSITIONS
+    BYTEPOS = metadata.HERO_BYTE_POSITIONS if "hero" == kind else metadata.TOWN_BYTE_POSITIONS
     BYTEPOS = h3sed.version.adapt("%s_byte_positions" % kind, BYTEPOS, version=version)
     NAMES_POS, COUNT_POS = BYTEPOS["army_types"], BYTEPOS["army_counts"]
 
@@ -506,7 +506,7 @@ def serialize(kind, army, entity_bytes, version, entity=None):
     DATA_RANGES = metadata.Store.get("data_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)
     NAME_TO_ID = {n: IDS[n] for n in metadata.Store.get("creatures", version=version)}
-    BYTEPOS = metadata.HERO_BYTE_POSITIONS
+    BYTEPOS = metadata.HERO_BYTE_POSITIONS if "hero" == kind else metadata.TOWN_BYTE_POSITIONS
     BYTEPOS = h3sed.version.adapt("%s_byte_positions" % kind, BYTEPOS, version=version)
     NAMES_POS, COUNT_POS = BYTEPOS["army_types"], BYTEPOS["army_counts"]
 

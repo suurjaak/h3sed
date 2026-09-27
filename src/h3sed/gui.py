@@ -628,7 +628,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         savefile, err = None, None
         if os.path.exists(filename):
             try:
-                savefile = metadata.Savefile(filename, parse_heroes=False)
+                savefile = metadata.Savefile(filename, parse=False)
             except Exception as e:
                 err = e
                 logger.exception("Error opening %s.", filename)
@@ -1864,7 +1864,7 @@ class SavefilePage(wx.Panel):
     def load_data(self):
         """Loads data from our file."""
         if not self.plugins:
-            self.savefile.parse_heroes()
+            self.savefile.parse()
             icon_index = self.notebook.GetImageList().Add(images.PageHero.Bitmap)
             panel = wx.Panel(self.notebook)
             self.notebook.AddPage(panel, __("Hero"), imageId=icon_index)
@@ -2452,7 +2452,7 @@ def build(plugin, panel):
             c2 = wx.TextCtrl(panel, style=ctrl_style, name=prop["name"])
 
             producer = prop["format"] if callable(prop.get("format")) else lambda: state.get(prop["name"])
-            c2.Value = producer() or ""
+            c2.Value = str(producer() or "")
             if prop.get("tooltip"):
                 c2.ToolTip = prop["tooltip"]() if callable(prop["tooltip"]) else prop["tooltip"]
 

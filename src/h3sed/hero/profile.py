@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.01.2026
-@modified  24.09.2026
+@modified  27.09.2026
 ------------------------------------------------------------------------------
 """
 import h3sed
@@ -36,6 +36,11 @@ DATAPROPS = [{
     "readonly":  True,
     "format":    None,  # Populated later
     "tooltip":   None,  # Populated later
+}, {
+    "name":      "town",
+    "type":      "text",
+    "label":     "Town",
+    "readonly":  True,
 }, {
     "name":      "biography",
     "type":      "text",

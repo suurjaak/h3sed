@@ -3,6 +3,7 @@ from . import common
 from . import conf
 from . import hero
 from . import metadata
+from . import town
 from . import version
 from . metadata import Savefile
 

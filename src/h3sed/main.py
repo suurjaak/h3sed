@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    24.04.2026
+@modified    25.09.2026
 ------------------------------------------------------------------------------
 """
 from __future__ import print_function
@@ -300,7 +300,7 @@ def run_info(filenames):
             output("\nFile not found: %s" % filename)
             continue # for filename
 
-        try: savefile = h3sed.metadata.Savefile(filename, parse_heroes=False)
+        try: savefile = h3sed.metadata.Savefile(filename, parse=False)
         except Exception as e:
             output("\nError reading %s: %s" % (filename, e))
             continue # for filename

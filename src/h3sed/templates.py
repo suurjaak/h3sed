@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  24.09.2026
+@modified  27.09.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -35,7 +35,7 @@ EXPORT_FORMATS = {"csv": "CSV spreadsheet", "html": "HTML document",
 
 ## Hero property categories for hero index and exports
 HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army", "equipment",
-                            "inventory", "spells", "status", "location", "biography"]
+                            "inventory", "spells", "status", "location", "town", "biography"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -79,11 +79,11 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
         for hero in heroes:
             hero_data = dict(name=hero.name)
             for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
-                if category in ("faction", "status", "location", "biography"):
+                if category in ("faction", "status", "location", "town", "biography"):
                     if "faction" == category: value = hero.profile.format_faction()
                     elif "status" == category: value = hero.profile.format_status()
                     elif "location" == category: value = hero.profile.format_location()
-                    else: value = hero.profile[category]
+                    else: value = str(hero.profile[category] or "")
                     if value: hero_data.setdefault("profile", {})[category] = value
                     continue # for category
                 if "devices" == category: category = "stats"
@@ -168,12 +168,10 @@ def make_entity_yamls(entity, categories=None, as_list=False):
               "currents":  [YAML texts for unsaved values per property in display order]}
     """
     PROPERTY_CATEGORIES, ENTITY_PROPERTIES = HERO_PROPERTY_CATEGORIES, h3sed.hero.PROPERTIES
-    if isinstance(entity, h3sed.town.Town):
-        PROPERTY_CATEGORIES, ENTITY_PROPERTIES = TOWN_PROPERTY_CATEGORIES, h3sed.town.PROPERTIES
 
     if categories is None: categories = {k: True for k in PROPERTY_CATEGORIES}
     if categories.get("devices"): categories = dict(categories, stats=True)
-    for category in ("faction", "location", "biography"):
+    for category in ("faction", "location", "town", "biography"):
         if categories.get(category): categories = dict(categories, profile=True)
     LF, INDENT = os.linesep, "  "
 
@@ -237,7 +235,7 @@ def serialize_property_yaml(state, indent="  "):
     else:
         keys = list(state.__slots__)
         if isinstance(state, h3sed.hero.Profile):
-            keys = ["faction", "status", "location", "biography"]
+            keys = ["faction", "status", "location", "town", "biography"]
         for key in keys:
             maxlen = max(maxlen, len(key))
             if "faction" == key and isinstance(state, h3sed.hero.Profile):
@@ -247,7 +245,7 @@ def serialize_property_yaml(state, indent="  "):
             elif "location" == key and isinstance(state, h3sed.hero.Profile):
                 value = state.format_location()
             else:
-                value = state[key]
+                value = str(state[key] or "")
             if isinstance(state, h3sed.hero.Profile) and not value:
                 continue # for key
             pairs += [("%s%s:" % (indent, key), fmt(value))]
@@ -523,6 +521,9 @@ category = get("category")
 %if category is None or "location" == category:
 {{ hero.profile.format_location() }}
 %endif
+%if category is None or "town" == category:
+{{ hero.profile.town.name if hero.profile.town else "" }}
+%endif
 %if category is None or "biography" == category:
 {{ hero.profile.biography }}
 %endif
@@ -610,6 +611,9 @@ if len(label_text) > 7: label_text = label_text[:5]
 %if not categories or categories["location"]:
     <th align="left" valign="bottom" nowrap><a href="sort:location"><font color="{{ conf.FgColour }}">{{ __("Location") }}{{! sortarrow("location") }}</font></a></th>
 %endif
+%if not categories or categories["town"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:town"><font color="{{ conf.FgColour }}">{{ __("Town") }}{{! sortarrow("location") }}</font></a></th>
+%endif
 %if not categories or categories["biography"]:
     <th align="left" valign="bottom" nowrap><a href="sort:biography"><font color="{{ conf.FgColour }}">{{ __("Biography") }}{{! sortarrow("biography") }}</font></a></th>
 %endif
@@ -690,6 +694,9 @@ if len(label_text) > 7: label_text = label_text[:5]
 %if not categories or categories["location"]:
     <td align="left" valign="top" nowrap>{{ hero.profile.format_location() }}</td>
 %endif
+%if not categories or categories["town"]:
+    <td align="left" valign="top" nowrap>{{ hero.profile.town.name if hero.profile.town else "" }}</td>
+%endif
 %if not categories or categories["biography"]:
     <td align="left" valign="top">{{! "<br />".join(map(escape, hero.profile.biography.splitlines())) }}</td>
 %endif
@@ -749,6 +756,8 @@ deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_AR
 {{ __(hero.profile.format_status()) }}
 %elif "location" == column:
 {{ hero.profile.format_location() }}
+%elif "town" == column:
+{{ hero.profile.town.name if hero.profile.town else "" }}
 %elif "biography" == column:
 {{ hero.profile.biography }}
 %endif
@@ -1104,6 +1113,9 @@ colptr = max(col_indexes) + 1
 %if not categories or categories["location"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("location")) }}" onclick="onSort(this)">{{ __("Location") }}</a></th>
 %endif
+%if not categories or categories["town"]:
+    <th><a class="sort" title="{{ __("Sort by %s", __("town")) }}" onclick="onSort(this)">{{ __("Town") }}</a></th>
+%endif
 %if not categories or categories["biography"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("biography")) }}" onclick="onSort(this)">{{ __("Biography") }}</a></th>
 %endif
@@ -1176,6 +1188,9 @@ colptr = max(col_indexes) + 1
 %endif
 %if not categories or categories["location"]:
     <td title="{{ hero.profile.format_location(long=True) }}">{{ hero.profile.format_location() }}</td>
+%endif
+%if not categories or categories["town"]:
+    <td>{{ hero.profile.town.name if hero.profile.town else "" }}</td>
 %endif
 %if not categories or categories["biography"]:
     <td class="text">{{ hero.profile.biography }}</td>
