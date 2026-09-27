@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  25.09.2026
+@modified  26.09.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -277,7 +277,7 @@ class InventoryPlugin(object):
 
     def format_artifact(self, value):
         """Returns label for display, for a single artifact or a list of artifacts."""
-        return h3sed.hero.format_artifacts(value, version=self.version)
+        return h3sed.common.format_artifacts(value, version=self.version)
 
 
     def format_stats_bonus(self, prop, rowindex):

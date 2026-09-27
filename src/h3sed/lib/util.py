@@ -7,13 +7,14 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    26.07.2026
+@modified    26.09.2026
 ------------------------------------------------------------------------------
 """
 import codecs
 import copy
 import csv
 import ctypes
+import inspect
 import locale
 import math
 import os
@@ -787,6 +788,16 @@ def bytoi(blob):
     """Converts a string of bytes or a bytearray to unsigned integer."""
     fmt = {1: "<B", 2: "<H", 4: "<L", 8: "<Q"}[len(blob)]
     return struct.unpack(fmt, blob)[0]
+
+
+def call_filtered(function, **kwargs):
+    """Invokes function with all given arguments it supports, returns function result."""
+    argspec = inspect.getfullargspec(function)
+    if argspec.varkw: fargs, fkwargs = [], kwargs
+    else:
+        fkwargs = {k: kwargs.pop(k) for k in set(kwargs) & set(argspec.args + argspec.kwonlyargs)}
+        fargs = list(kwargs.values()) if argspec.varargs else []
+    return function(*fargs, **fkwargs)
 
 
 def canonic_version(v):

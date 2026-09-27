@@ -7,11 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   13.09.2024
-@modified  04.09.2026
+@modified  26.09.2026
 ------------------------------------------------------------------------------
 """
 import re
 
+from .. import common
 from .. import hero
 from .. import metadata
 from .. hero import make_artifact_cast, make_integer_cast, make_string_cast
@@ -194,12 +195,12 @@ COMBINATION_ARTIFACTS = {
 }
 
 
-class DataClass(hero.DataClass):
+class DataClass(common.DataClass):
 
     version = property(lambda self: NAME, doc="Game version in use")
 
 
-class ArmyStack(DataClass, hero.ArmyStack):
+class ArmyStack(DataClass, common.ArmyStack):
     __slots__ = {"name":  make_string_cast("creatures", version=NAME),
                  "count": make_integer_cast("army.count", version=NAME)}
 
@@ -208,7 +209,7 @@ class Equipment(DataClass, hero.Equipment):
     __slots__ = {k: make_artifact_cast(k, version=NAME) for k in hero.Equipment.__slots__}
 
 
-class Army(DataClass, hero.Army):             pass
+class Army(DataClass, common.Army):           pass
 
 class Attributes(DataClass, hero.Attributes): pass
 
@@ -250,11 +251,12 @@ def adapt(name, value, version=None):
     - "savefile_magic_regex":       adds support for Chronicles savefiles
     - "savefile_header_regex":      adds support for Chronicles savefiles
     - "hero.PropertyName" classes:  returning version-specific data class
+    - common property classes:      returning version-specific army data class
     """
     result = value
-    if "hero.ArmyStack" == name:
+    if "common.ArmyStack" == name:
         result = ArmyStack
-    elif "hero.Army" == name:
+    elif "common.Army" == name:
         result = Army
     elif "hero.Attributes" == name:
         result = Attributes

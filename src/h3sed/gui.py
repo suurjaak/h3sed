@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    25.09.2026
+@modified    27.09.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -35,13 +35,13 @@ import wx.lib.agw.labelbook
 import wx.lib.newevent
 
 import h3sed
+from . common import gui as common_gui
 from . lib import controls
 from . lib.controls import ColourManager
 from . lib import i18n
 from . lib.i18n import translate as __
 from . lib import util
 from . lib import wx_accel
-from . hero import gui as hero_gui
 from . import conf
 from . import functions
 from . import guibase
@@ -1868,7 +1868,7 @@ class SavefilePage(wx.Panel):
             icon_index = self.notebook.GetImageList().Add(images.PageHero.Bitmap)
             panel = wx.Panel(self.notebook)
             self.notebook.AddPage(panel, __("Hero"), imageId=icon_index)
-            self.plugins.append(hero_gui.HeroPlugin(self.savefile, panel, self.undoredo))
+            self.plugins.append(common_gui.EntityPlugin("hero", self.savefile, panel, self.undoredo))
 
             if self.notebook.PageCount < 2:
                 tabarea = next((x for x in self.notebook.Children

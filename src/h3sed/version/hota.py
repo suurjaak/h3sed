@@ -7,12 +7,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  25.09.2026
+@modified  26.09.2026
 ------------------------------------------------------------------------------
 """
 import copy
 import re
 
+from .. import common
 from .. import hero
 from .. import metadata
 from .. hero import make_artifact_cast, make_integer_cast, make_string_cast
@@ -44,7 +45,7 @@ DATA_RANGES = {
     "level":           ( 0, 74),
     "skills":          ( 0, 29),
     "Intelligence":    (1.2, 1.35, 1.5), # Hero maximum spell points multiplier by skill level
-})
+}
 
 
 """Options for Ballista war machine."""
@@ -544,12 +545,12 @@ EXTRAS_BY_MINOR = {
 
 
 
-class DataClass(hero.DataClass):
+class DataClass(common.DataClass):
 
     version = property(lambda self: NAME, doc="Game version in use")
 
 
-class ArmyStack(DataClass, hero.ArmyStack):
+class ArmyStack(DataClass, common.ArmyStack):
     __slots__ = {"name":  make_string_cast("creatures", version=NAME),
                  "count": make_integer_cast("army.count", version=NAME)}
 
@@ -569,7 +570,7 @@ class Skill(DataClass, hero.Skill):
                  "level": make_string_cast("skill_levels", default=True, version=NAME)}
 
 
-class Army(DataClass, hero.Army):           pass
+class Army(DataClass, common.Army):         pass
 
 class Inventory(DataClass, hero.Inventory): pass
 
@@ -585,10 +586,10 @@ PRE_BULWARK_VERSION_ID = (NAME, VERSION_BYTERANGES["version_minor"][0])
 class PreBulwarkLegacy:
     """Overrides for versions before the Bulwark town addition.."""
 
-    class DataClass(hero.DataClass):
+    class DataClass(common.DataClass):
         version = property(lambda self: PRE_BULWARK_VERSION_ID, doc="Game version in use")
 
-    class ArmyStack(DataClass, hero.ArmyStack):
+    class ArmyStack(DataClass, common.ArmyStack):
         __slots__ = {"name":  make_string_cast("creatures", version=PRE_BULWARK_VERSION_ID),
                      "count": make_integer_cast("army.count", version=NAME)}
 
@@ -596,7 +597,7 @@ class PreBulwarkLegacy:
         __slots__ = {"name":  make_string_cast("skills", version=PRE_BULWARK_VERSION_ID),
                      "level": make_string_cast("skill_levels", default=True, version=NAME)}
 
-    class Army(DataClass, hero.Army):     pass
+    class Army(DataClass, common.Army):   pass
 
     class Skills(DataClass, hero.Skills): pass
 
@@ -657,11 +658,16 @@ def adapt(name, value, version=None):
     - "hero.PropertyName" classes:  returning version-specific data class,
                                     with support for new artifacts/creatures/skills/spells,
                                     attributes having cannon support and level capped at 74
+    - common property classes:      returning version-specific army data class
 
     @param   version   returns minor version specific classes if tuple for minor with extras
     """
     result = value
-    if "hero_byte_positions" == name:
+    if "common.ArmyStack" == name:
+        result = ArmyStack
+    elif "common.Army" == name:
+        result = Army
+    elif "hero_byte_positions" == name:
         result = dict(value, **HERO_BYTE_POSITIONS)
     elif "hero_regex" == name:
         result = HERO_REGEX
@@ -672,10 +678,6 @@ def adapt(name, value, version=None):
             if "ballista" == prop["name"]:
                 prop = dict(prop, type="combo", choices=[""] + BALLISTA_CHOICES)
             result.append(prop)
-    elif "hero.ArmyStack" == name:
-        result = ArmyStack
-    elif "hero.Army" == name:
-        result = Army
     elif "hero.Attributes" == name:
         result = Attributes
     elif "hero.Equipment" == name:

@@ -7,11 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  05.09.2026
+@modified  26.09.2026
 ------------------------------------------------------------------------------
 """
 import re
 
+from .. import common
 from .. import conf
 from .. import hero
 from .. import metadata
@@ -201,12 +202,12 @@ HERO_REGEX_NEWFORMAT = re.compile(b"""
 
 
 
-class DataClass(hero.DataClass):
+class DataClass(common.DataClass):
 
     version = property(lambda self: NAME, doc="Game version in use")
 
 
-class ArmyStack(DataClass, hero.ArmyStack):
+class ArmyStack(DataClass, common.ArmyStack):
     __slots__ = {"name":  make_string_cast("creatures", version=NAME),
                  "count": make_integer_cast("army.count", version=NAME)}
 
@@ -216,7 +217,7 @@ class Equipment(DataClass, hero.Equipment):
                  if "side5" != k}
 
 
-class Army(DataClass, hero.Army):             pass
+class Army(DataClass, common.Army):           pass
 
 class Attributes(DataClass, hero.Attributes): pass
 
@@ -261,9 +262,14 @@ def adapt(name, value, version=None):
     - "hero_regex":                 dropping one slot from artifacts
     - "hero.PropertyName" classes:  returning version-specific data class, without slot "side5",
                                     with support for new artifacts/creatures/spells
+    - common property classes:      returning version-specific army data class
     """
     result = value
-    if "hero.equipment.DATAPROPS" == name:
+    if "hero.ArmyStack" == name:
+        result = ArmyStack
+    elif "hero.Army" == name:
+        result = Army
+    elif "hero.equipment.DATAPROPS" == name:
         result = [x for x in value if x.get("name") != "side5"]
     elif "hero_byte_positions" == name:
         result = value.copy()
@@ -272,10 +278,6 @@ def adapt(name, value, version=None):
         result.pop("reserved", None)
     elif "hero_regex" == name:
         result = HERO_REGEX_NEWFORMAT if conf.SavegameNewFormat else HERO_REGEX
-    elif "hero.ArmyStack" == name:
-        result = ArmyStack
-    elif "hero.Army" == name:
-        result = Army
     elif "hero.Attributes" == name:
         result = Attributes
     elif "hero.Equipment" == name:

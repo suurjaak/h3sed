@@ -1,4 +1,5 @@
 
+from . import common
 from . import conf
 from . import hero
 from . import metadata

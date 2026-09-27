@@ -34,9 +34,8 @@ EXPORT_FORMATS = {"csv": "CSV spreadsheet", "html": "HTML document",
                   "json": "JSON document", "yaml": "YAML document"}
 
 ## Hero property categories for hero index and exports
-HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army",
-                            "equipment", "inventory", "spells", "status",
-                            "location", "biography"]
+HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army", "equipment",
+                            "inventory", "spells", "status", "location", "biography"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -66,7 +65,7 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
 
     if "html" == format:
         tpl = step.Template(HERO_EXPORT_HTML, strip=False, escape=True)
-        hero_yamls = {h: make_hero_yamls(h) for h in heroes}
+        hero_yamls = {h: make_entity_yamls(h) for h in heroes}
         tplargs = dict(heroes=heroes, categories=categories, savefile=savefile, yamls=hero_yamls,
                        count=len(savefile.heroes) if savefile else len(heroes))
         with open(filename, "wb") as f:
@@ -101,7 +100,7 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
         return
 
     if "yaml" == format:
-        hero_yamls = [make_hero_yamls(h, categories, as_list=True)["full"] for h in heroes]
+        hero_yamls = [make_entity_yamls(h, categories, as_list=True)["full"] for h in heroes]
         with open(filename, "wb") as f: # Binary to avoid linefeed auto-conversion issues
             fdata = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, line_break=os.linesep)
             f.write(fdata.encode("utf-8"))
@@ -158,32 +157,36 @@ def make_category_diff(v1, v2):
     return diff
 
 
-def make_hero_yamls(hero, categories=None, as_list=False):
+def make_entity_yamls(entity, categories=None, as_list=False):
     """
-    Returns YAML strings for hero properties.
+    Returns YAML strings for entity properties.
 
-    @param   categories    hero property categories to include if not all, as {name: bool}
+    @param   categories    entity property categories to include if not all, as {name: bool}
     @param   as_list       whether to make full YAML as a list element, or a named dictionary
-    @return  {"full":      complete YAML dictionary string including name for hero current values,
+    @return  {"full":      complete YAML dictionary string including name for entity current values,
               "originals": [YAML texts for saved values per property in display order],
               "currents":  [YAML texts for unsaved values per property in display order]}
     """
-    if categories is None: categories = {k: True for k in HERO_PROPERTY_CATEGORIES}
+    PROPERTY_CATEGORIES, ENTITY_PROPERTIES = HERO_PROPERTY_CATEGORIES, h3sed.hero.PROPERTIES
+    if isinstance(entity, h3sed.town.Town):
+        PROPERTY_CATEGORIES, ENTITY_PROPERTIES = TOWN_PROPERTY_CATEGORIES, h3sed.town.PROPERTIES
+
+    if categories is None: categories = {k: True for k in PROPERTY_CATEGORIES}
     if categories.get("devices"): categories = dict(categories, stats=True)
-    for category in ("faction", "status", "location", "biography"):
+    for category in ("faction", "location", "biography"):
         if categories.get(category): categories = dict(categories, profile=True)
     LF, INDENT = os.linesep, "  "
 
     result = {}
-    for original in [True, False, None] if hero.is_changed() else [True, None]:
+    for original in [True, False, None] if entity.is_changed() else [True, None]:
         states, maxlen = [], 0  # [[(prefix, value), ]], max key length
         categories_present = []
-        for category in filter(categories.get, h3sed.hero.PROPERTIES):
+        for category in filter(categories.get, ENTITY_PROPERTIES):
             if not categories.get(category):
                 continue # for category
             if "profile" == category and original is not None: # Skip profile for diff texts
                 continue # for category
-            prop = (hero.properties if not original else hero.original)[category]
+            prop = (entity.properties if not original else entity.original)[category]
             pairs, prefixlen = serialize_property_yaml(prop, INDENT)
             states.append(pairs)
             maxlen = max(maxlen, prefixlen)
@@ -196,7 +199,7 @@ def make_hero_yamls(hero, categories=None, as_list=False):
         result["originals" if original else "full" if original is None else "currents"] = formatteds
     if "currents" not in result: result["currents"] = result["originals"]
 
-    header = "- name:".ljust(maxlen) + INDENT + encode_yaml_scalar(hero.name) + LF if as_list else ""
+    header = "- name:".ljust(maxlen) + INDENT + encode_yaml_scalar(entity.name) + LF if as_list else ""
     result["full"] = header + "".join(result["full"])
     return result
 
@@ -314,13 +317,13 @@ Licensing for bundled software:
 
 
 """
-HTML text shown for hero full character sheet, toggleable between unsaved changes view.
+HTML text shown for entity full character sheet, toggleable between unsaved changes view.
 
-@param   name     hero name
+@param   name     entity name
 @param   texts    {mode: content} e.g. {"normal": "..", ?"changes": [..], ?"changesonly": [..]}
 @param  ?mode     view mode, "normal" or "changes" or "changesonly" (defaults to "normal")
 """
-HERO_CHARSHEET_HTML = """<%
+ENTITY_MANIFEST_HTML = """<%
 import step
 from h3sed import conf, templates
 from h3sed.lib.i18n import translate as __
@@ -337,7 +340,7 @@ mode = get("mode") or "normal"
 </tr></table>
 <font size="2">
 %if "normal" != mode:
-{{! step.Template(templates.HERO_DIFF_HTML, escape=True).expand(mode=mode, changes=list(zip(texts["originals"], texts["currents"]))) }}
+{{! step.Template(templates.ENTITY_DIFF_HTML, escape=True).expand(mode=mode, changes=list(zip(texts["originals"], texts["currents"]))) }}
 %else:
 <table cellpadding="0" cellspacing="0">
     %for line in texts["normal"].rstrip().splitlines():
@@ -351,13 +354,13 @@ mode = get("mode") or "normal"
 
 
 """
-HTML text shown for hero unsaved changes diff.
+HTML text shown for entity unsaved changes diff.
 
-@param  ?name     hero name, if any
+@param  ?name     entity name, if any
 @param   changes  [(category content1, category content2), ]
 @param  ?mode     view mode, "changes" or "changesonly" (default)
 """
-HERO_DIFF_HTML = """<%
+ENTITY_DIFF_HTML = """<%
 from h3sed import conf, templates
 mode = get("mode") or "changesonly"
 %>
@@ -403,12 +406,12 @@ entries = [[escape(l).replace(" ", "&nbsp;") for l in ll] for ll in entries]
 
 
 """
-Text shown for hero unsaved changes diff for logging.
+Text shown for entity unsaved changes diff for logging.
 
-@param  ?name     hero name, if any
+@param  ?name     entity name, if any
 @param   changes  [(category content1, category content2), ]
 """
-HERO_DIFF_TEXT = """<%
+ENTITY_DIFF_TEXT = """<%
 import re
 from h3sed import conf, templates
 %>

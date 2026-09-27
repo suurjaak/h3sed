@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  25.09.2026
+@modified  26.09.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -444,7 +444,7 @@ def parse(hero_bytes, version, savefile=None, span=None):
     return attributes
 
 
-def serialize(attributes, hero_bytes, version, hero=None):
+def serialize(stats, hero_bytes, version, hero=None):
     """Returns new hero bytearray with updated attribute sections."""
     IDS = metadata.Store.get("ids", version=version)
     BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
@@ -454,7 +454,7 @@ def serialize(attributes, hero_bytes, version, hero=None):
     for prop in h3sed.version.adapt("hero.stats.DATAPROPS", DATAPROPS, version=version):
         if prop.get("readonly"):
             continue # for prop
-        value, pos = attributes[prop["name"]], BYTEPOS[prop["name"]]
+        value, pos = stats[prop["name"]], BYTEPOS[prop["name"]]
         if "check" == prop["type"]:
             binary = (util.itoby(IDS[prop["label"]], 4) if value else metadata.BLANK * 4)
             binary = binary[:4] + new_bytes[pos + 4:pos + 8]

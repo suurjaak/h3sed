@@ -7,11 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  24.09.2026
+@modified  26.09.2026
 ------------------------------------------------------------------------------
 """
 import re
 
+from .. import common
 from .. import hero
 from .. import metadata
 from .. hero import make_artifact_cast
@@ -69,7 +70,7 @@ HERO_REGEX = re.compile(b"""
 
 
 
-class DataClass(hero.DataClass):
+class DataClass(common.DataClass):
 
     version = property(lambda self: NAME, doc="Game version in use")
 
@@ -79,9 +80,9 @@ class Equipment(DataClass, hero.Equipment):
                  if "side5" != k}
 
 
-class ArmyStack(DataClass, hero.ArmyStack):   pass
+class ArmyStack(DataClass, common.ArmyStack): pass
 
-class Army(DataClass, hero.Army):             pass
+class Army(DataClass, common.Army):           pass
 
 class Attributes(DataClass, hero.Attributes): pass
 
@@ -112,9 +113,14 @@ def adapt(name, value, version=None):
                                    adjusting location and map positions
     - "hero_regex" :               dropping one slot from equipment to expect 18 items
     - all hero property classes:   returning version-specific data class, without slot "side5"
+    - common property classes:     returning version-specific army data class
     """
     result = value
-    if "hero.equipment.DATAPROPS" == name:
+    if "common.ArmyStack" == name:
+        result = ArmyStack
+    elif "common.Army" == name:
+        result = Army
+    elif "hero.equipment.DATAPROPS" == name:
         result = [x for x in value if x.get("name") != "side5"]
     elif "hero_byte_positions" == name:
         result = dict(value, **HERO_BYTE_POSITIONS)
@@ -122,10 +128,6 @@ def adapt(name, value, version=None):
         result.pop("reserved", None) # Combination artifacts reservations
     elif "hero_regex" == name:
         result = HERO_REGEX
-    elif "hero.ArmyStack" == name:
-        result = ArmyStack
-    elif "hero.Army" == name:
-        result = Army
     elif "hero.Attributes" == name:
         result = Attributes
     elif "hero.Equipment" == name:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-UI plugin for managing heroes in a savefile.
+UI plugin for managing named entities like heroes in a savefile.
 
 
 Subplugin modules are expected to have the following API (all methods either mandatory or missing):
@@ -16,7 +16,7 @@ Subplugin modules are expected to have the following API (all methods either man
         '''
         Returns new plugin instance.
 
-        @param   parent   parent plugin (hero-plugin)
+        @param   parent   parent plugin (entity-plugin instance)
         @param   panel    wx.Panel for plugin render
         @param   version  game version
         '''
@@ -30,8 +30,8 @@ Subplugin instances are expected to have the following API:
     def state(self):
         '''Mandatory. Returns subplugin state for gui.build().'''
 
-    def load(self, hero):
-        '''Mandatory. Loads hero to subplugin state.'''
+    def load(self, entity):
+        '''Mandatory. Loads entity to subplugin state.'''
 
     def render(self):
         '''
@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  25.09.2026
+@modified  26.09.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -88,50 +88,50 @@ from .. import templates
 logger = logging.getLogger(__package__)
 
 
-class HeroPlugin(object):
-    """Provides UI functionality for viewing and updating hero data in savegame."""
+class EntityPlugin(object):
+    """Provides UI functionality for viewing and updating entity data in savegame."""
 
     """Milliseconds to wait after edit before applying search filter"""
     SEARCH_INTERVAL = 300
 
 
-    def __init__(self, savefile, panel, commandprocessor):
-        self.name        = "hero"
-        self.savefile    = savefile
-        self._panel      = panel   # wxPanel container for plugin components
-        self._undoredo   = commandprocessor # wx.CommandProcessor
-        self._plugins    = []      # [{name, label, instance, panel}, ]
-        self._heroes     = []      # [h3sed.hero.Hero] ordered by name
-        self._ctrls      = {}      # {name: wx.Control, }
-        self._pages      = {}      # {wx.Window from self._ctrls["tabs"]: hero index in self._heroes}
-        self._indexpanel = None    # Heroes index panel
-        self._heropanel  = None    # Container for all components of selected hero
-        self._propspanel = None    # Container for hero property components
-        self._hero       = None    # Currently selected Hero instance
-        self._hero_yamls = {}      # {hero: {full, originals, currents}}
-        self._pages_visited = []   # Visited tabs, as [hero index in self._heroes or None if index page]
-        self._subtab_focus = {}    # {hero index in self._heroes: focused subtab index}
+    def __init__(self, kind, savefile, panel, commandprocessor):
+        self.name         = kind
+        self.savefile     = savefile
+        self._panel       = panel  # wxPanel container for plugin components
+        self._undoredo    = commandprocessor # wx.CommandProcessor
+        self._plugins     = []     # [{name, label, instance, panel}, ]
+        self._entities    = []     # Entities ordered by name
+        self._ctrls       = {}     # {name: wx.Control, }
+        self._pages       = {}     # {wx.Window from self._ctrls["tabs"]: index in self._entities}
+        self._indexpanel  = None   # Entities index panel
+        self._entitypanel = None   # Container for all components of selected entity
+        self._propspanel  = None   # Container for entity property components
+        self._entity      = None   # Currently selected entity instance
+        self._entity_yamls  = {}   # {entity: {full, originals, currents}}
+        self._pages_visited = []   # Visited tabs, as [index in self._entities or None if index page]
+        self._subtab_focus = {}    # {entity index in self._entities: focused subtab index}
         self._ignore_events = False  # For ignoring change events from programmatic selections et al
         self._index = {
-            "herotexts": [],       # [hero contents to search in, as [{category: plaintext}] ]
-            "html":      "",       # Current hero search results HTML
-            "text":      "",       # Current search text
-            "stale":     True,     # Whether should repopulate index before display
-            "timer":     None,     # wx.Timer for filtering heroes index
-            "ids":       {},       # {category: wx ID for toolbar toggle}
-            "visible":   [],       # List of heroes visible, ordered by name
-            "toggles":   collections.OrderedDict(),  # {category: toggled state}
-            "sort_col":  conf.Settings.get("hero.sort_col", "index"),  # Field being sorted by
-            "sort_asc":  conf.Settings.get("hero.sort_asc", True),     # Sort ascending or descending
+            "entitytexts": [],     # [entity contents to search in, as [{category: plaintext}] ]
+            "html":       "",      # Current entity search results HTML
+            "text":       "",      # Current search text
+            "stale":      True,    # Whether should repopulate index before display
+            "timer":      None,    # wx.Timer for filtering entities index
+            "ids":        {},      # {category: wx ID for toolbar toggle}
+            "visible":    [],      # List of entities visible, ordered by name
+            "toggles":    collections.OrderedDict(),  # {category: toggled state}
+            "sort_col":   conf.Settings.get("%s.sort_col" % kind, "index"),  # Field being sorted by
+            "sort_asc":   conf.Settings.get("%s.sort_asc" % kind, True),     # Sort ascending or descending
         }
-        self._dialog_export = wx.FileDialog(panel, __("Export heroes to file"),
+        self._dialog_export = wx.FileDialog(panel, __("Export %s to file" % util.plural(kind)),
             wildcard="|".join("{0} (*.{1})|*.{1}".format(__(label), format)
                               for format, label in sorted(templates.EXPORT_FORMATS.items())),
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT | wx.FD_CHANGE_DIR | wx.RESIZE_BORDER
         )
         self._dialog_export.FilterIndex = 1
 
-        self._heroes = self.savefile.heroes[:]
+        self._entities = self.savefile.heroes[:]
         self.prebuild()
         panel.Bind(wx.EVT_CHAR_HOOK, self.on_key)
         panel.Bind(h3sed.gui.EVT_PLUGIN, self.on_plugin_event)
@@ -143,8 +143,9 @@ class HeroPlugin(object):
         self._panel.Freeze()
         self._panel.DestroyChildren()
         self._panel.Sizer and self._panel.Sizer.Clear()
-        label  = wx.StaticText(self._panel, name="selectherolabel", label=__("&Select hero") + ":")
-        combo  = wx.ComboBox(self._panel, name="selecthero", style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        label  = wx.StaticText(self._panel, name="selectentitylabel",
+                               label=__("&Select %s" % self.name) + ":")
+        combo  = wx.ComboBox(self._panel, name="selectentity", style=wx.CB_DROPDOWN | wx.CB_READONLY)
         search = wx.SearchCtrl(self._panel)
         tabs = wx.lib.agw.flatnotebook.FlatNotebook(self._panel,
             agwStyle=wx.lib.agw.flatnotebook.FNB_DROPDOWN_TABS_LIST |
@@ -162,27 +163,30 @@ class HeroPlugin(object):
         export = wx.Button(indexpanel, label=__("Expo&rt"))
         export.SetBitmap(bmpx)
         export.SetBitmapMargins(0, 0)
-        export.ToolTip = __("Export heroes to HTML or data file")
-        export.Bind(wx.EVT_BUTTON, self.on_export_heroes)
+        export.ToolTip = __("Export %s to HTML or data file" % util.plural(self.name))
+        if "hero" != self.name: export.Hide()
+        export.Bind(wx.EVT_BUTTON, self.on_export_entities)
 
-        for category in templates.HERO_PROPERTY_CATEGORIES:
+        PROPERTY_CATEGORIES = templates.HERO_PROPERTY_CATEGORIES
+        for category in PROPERTY_CATEGORIES:
+            togglename = "%s.toggle_%s" % (self.name, category)
             help = __("Show or hide %s column" + ("s" if "stats" == category else ""), __(category))
             b = tb_index.AddCheckTool(wx.ID_ANY, __(category.capitalize()), wx.NullBitmap,
                                       shortHelp=help)
-            tb_index.ToggleTool(b.Id, conf.Settings.get("hero.toggle_%s" % category, True))
+            tb_index.ToggleTool(b.Id, conf.Settings.get(togglename, True))
             tb_index.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
             self._index["ids"][category] = b.Id
-            self._index["toggles"][category] = conf.Settings.get("hero.toggle_%s" % category, True)
+            self._index["toggles"][category] = conf.Settings.get(togglename, True)
         tb_index.Realize()
 
         html = wx.html.HtmlWindow(indexpanel)
         tabs.AddPage(wx.Window(tabs), " %s " % __("INDEX"))
 
         CTRL = "Cmd" if "darwin" == sys.platform else "Ctrl"
-        search.SetDescriptiveText(__("Search heroes"))
+        search.SetDescriptiveText(__("Search %s" % util.plural(self.name)))
         search.ShowSearchButton(True)
         search.ShowCancelButton(True)
-        search.ToolTip = __("Filter hero index on any matching text") + " (%s-F)" % CTRL
+        search.ToolTip = __("Filter %s index on any matching text" % self.name) + " (%s-F)" % CTRL
         search.Bind(wx.EVT_CHAR, self.on_search)
         search.Bind(wx.EVT_TEXT, self.on_search)
         search.Bind(wx.EVT_SEARCH, self.on_search) if hasattr(wx, "EVT_SEARCH") else None
@@ -192,34 +196,34 @@ class HeroPlugin(object):
         html.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.on_index_link)
         html.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_sys_colour_change)
 
-        heropanel = self._heropanel = wx.Panel(self._panel)
-        heropanel.Sizer = wx.BoxSizer(wx.VERTICAL)
+        entitypanel = self._entitypanel = wx.Panel(self._panel)
+        entitypanel.Sizer = wx.BoxSizer(wx.VERTICAL)
 
-        tb = wx.ToolBar(heropanel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
+        tb = wx.ToolBar(entitypanel, style=wx.TB_FLAT | wx.TB_NODIVIDER)
 
-        combo.Bind(wx.EVT_COMBOBOX, self.on_select_hero)
+        combo.Bind(wx.EVT_COMBOBOX, self.on_select_entity)
         combo.Bind(wx.EVT_KEY_DOWN, self.on_key_select)
 
         bmp1 = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR, (20, 20))
         bmp2 = wx.ArtProvider.GetBitmap(wx.ART_COPY,        wx.ART_TOOLBAR, (20, 20))
         bmp3 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,       wx.ART_TOOLBAR, (20, 20))
         bmp4 = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE,   wx.ART_TOOLBAR, (16, 16))
-        tb.AddTool(wx.ID_INFO,  "", bmp1, shortHelp=__("Show hero full character sheet") + "\t%s-I" % CTRL)
+        tb.AddTool(wx.ID_INFO,  "", bmp1, shortHelp=__("Show %s full character sheet" % self.name) + "\t%s-I" % CTRL)
         tb.AddSeparator()
-        tb.AddTool(wx.ID_COPY,  "", bmp2, shortHelp=__("Copy current hero data to clipboard"))
-        tb.AddTool(wx.ID_PASTE, "", bmp3, shortHelp=__("Paste data from clipboard to current hero"))
+        tb.AddTool(wx.ID_COPY,  "", bmp2, shortHelp=__("Copy current %s data to clipboard" % self.name))
+        tb.AddTool(wx.ID_PASTE, "", bmp3, shortHelp=__("Paste data from clipboard to current %s" % self.name))
         tb.AddSeparator()
-        tb.AddTool(wx.ID_SAVE,  "", bmp4, shortHelp=__("Save current hero to file"))
-        tb.Bind(wx.EVT_TOOL, self.on_charsheet,  id=wx.ID_INFO)
-        tb.Bind(wx.EVT_TOOL, self.on_copy_hero,  id=wx.ID_COPY)
-        tb.Bind(wx.EVT_TOOL, self.on_paste_hero, id=wx.ID_PASTE)
-        tb.Bind(wx.EVT_TOOL, self.on_save_hero,  id=wx.ID_SAVE)
+        tb.AddTool(wx.ID_SAVE,  "", bmp4, shortHelp=__("Save current %s to file" % self.name))
+        tb.Bind(wx.EVT_TOOL, self.on_charsheet,    id=wx.ID_INFO)
+        tb.Bind(wx.EVT_TOOL, self.on_copy_entity,  id=wx.ID_COPY)
+        tb.Bind(wx.EVT_TOOL, self.on_paste_entity, id=wx.ID_PASTE)
+        tb.Bind(wx.EVT_TOOL, self.on_save_entity,  id=wx.ID_SAVE)
         self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
         tb.Realize()
 
-        menubutton = wx.Button(heropanel, label=__("Change %s", __("all")) + " ..")
+        menubutton = wx.Button(entitypanel, label=__("Change %s", __("all")) + " ..")
         menubutton.ToolTip = __("Change multiple properties on page")
-        menubutton.Bind(wx.EVT_BUTTON, self.on_hero_subtab_button)
+        menubutton.Bind(wx.EVT_BUTTON, self.on_entity_subtab_button)
 
         tabs.MinSize = -1, tabs.GetTabArea().MinSize[1]
         tabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_page, tabs)
@@ -240,7 +244,7 @@ class HeroPlugin(object):
         indexpanel.Sizer.Add(html, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW, proportion=1)
         indexpanel.Sizer.Add(sizer_opts, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
 
-        propspanel = self._propspanel = wx.Panel(heropanel)
+        propspanel = self._propspanel = wx.Panel(entitypanel)
         propspanel.Sizer = wx.BoxSizer(wx.VERTICAL)
 
         sizer = self._panel.Sizer = wx.BoxSizer(wx.VERTICAL)
@@ -257,18 +261,18 @@ class HeroPlugin(object):
         sizer.Add(sizer_top,    border=10, flag=wx.LEFT | wx.GROW)
         sizer.Add(tabs,         border=5,  flag=wx.BOTTOM | wx.GROW)
         sizer.Add(indexpanel,   border=5,  flag=wx.GROW, proportion=1)
-        heropanel.Sizer.Add(sizer_tabtop, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
-        heropanel.Sizer.Add(propspanel, border=5, flag=wx.TOP | wx.GROW, proportion=1)
-        sizer.Add(heropanel, flag=wx.TOP | wx.GROW, proportion=1)
-        heropanel.Disable()
-        heropanel.Hide()
+        entitypanel.Sizer.Add(sizer_tabtop, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
+        entitypanel.Sizer.Add(propspanel, border=5, flag=wx.TOP | wx.GROW, proportion=1)
+        sizer.Add(entitypanel, flag=wx.TOP | wx.GROW, proportion=1)
+        entitypanel.Disable()
+        entitypanel.Hide()
 
         wx_accel.accelerate(self._panel, accelerators=[(wx.ACCEL_CMD, ord("I"), wx.ID_INFO)])
         self._panel.Layout()
         self._panel.Thaw()
 
         self._ctrls["tabs"] = tabs
-        self._ctrls["hero"] = combo
+        self._ctrls["entity"] = combo
         self._ctrls["search"] = search
         self._ctrls["count"] = info
         self._ctrls["html"] = html
@@ -278,19 +282,20 @@ class HeroPlugin(object):
 
 
     def build(self):
-        """Builds hero UI components."""
+        """Builds entity UI components."""
         self._panel.Freeze()
-        self._heropanel.Enable()
-        self._heropanel.Show()
+        self._entitypanel.Enable()
+        self._entitypanel.Show()
         self._propspanel.DestroyChildren()
         self._propspanel.Sizer.Clear()
         del self._plugins[:]
-        self._ctrls["hero"].SetItems([str(x) for x in self._heroes])
+        self._ctrls["entity"].SetItems([str(x) for x in self._entities])
 
         nb = wx.Notebook(self._propspanel)
-        self._plugins = [dict(m.props(), module=m) for m in h3sed.hero.PROPERTIES.values()
+        PROPERTIES = h3sed.hero.PROPERTIES
+        self._plugins = [dict(m.props(), module=m) for m in PROPERTIES.values()
                          if callable(getattr(m, "props", None))]
-        for i, props in enumerate(self._plugins):
+        for props in self._plugins:
             subpanel = props["panel"] = wx.ScrolledWindow(nb)
             title = props.get("label", props["name"])
             nb.AddPage(subpanel, __(title))
@@ -302,18 +307,18 @@ class HeroPlugin(object):
 
         self._propspanel.Sizer.Add(nb, border=10, flag=wx.ALL ^ wx.TOP | wx.GROW, proportion=1)
 
-        if conf.Settings.get("hero.tab_index") \
-        and conf.Settings["hero.tab_index"] < len(self._plugins):
-            nb.SetSelection(conf.Settings["hero.tab_index"])
+        if conf.Settings.get("%s.tab_index" % self.name) \
+        and conf.Settings["%s.tab_index" % self.name] < len(self._plugins):
+            nb.SetSelection(conf.Settings["%s.tab_index" % self.name])
         self._ctrls["menubutton"].Enable(self._plugins[nb.Selection]["has_menu"])
 
-        nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_hero_subtab)
+        nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_entity_subtab)
 
-        self._heropanel.Disable()
-        self._heropanel.Hide()
+        self._entitypanel.Disable()
+        self._entitypanel.Hide()
         self._panel.Thaw()
         self._ctrls["properties"] = nb
-        with controls.BusyPanel(self._panel, __("Loading heroes.")):
+        with controls.BusyPanel(self._panel, __("Loading %s." % util.plural(self.name))):
             self.populate_index()
 
 
@@ -325,27 +330,28 @@ class HeroPlugin(object):
 
         indexes_open = [self._pages[p] for i in range(self._ctrls["tabs"].GetPageCount())
                         for p in [self._ctrls["tabs"].GetPage(i)] if p in self._pages]
-        hero0 = self._hero if self._ctrls["tabs"].GetSelection() else None
+        entity0 = self._entity if self._ctrls["tabs"].GetSelection() else None
         self.prebuild()
 
-        self._hero = None
+        self._entity = None
         self._pages.clear()
         for k, v in list(self._index.items()):
             if isinstance(v, (str, list)): self._index[k] = type(v)()
-        self._hero_yamls.clear()
+        self._entity_yamls.clear()
 
         self._panel.Freeze()
         self._ignore_events = True
         try:
             self.build()
             for index in indexes_open:
-                hero = self._heroes[index]
+                entity = self._entities[index]
                 page = wx.Window(self._ctrls["tabs"])
                 self._pages[page] = index
-                self._ctrls["tabs"].AddPage(page, str(hero), select=hero is self._hero)
+                self._ctrls["tabs"].AddPage(page, str(entity), select=entity is self._entity)
 
-            index = next(i for i, x in enumerate(self._heroes) if x is hero0) if hero0 else None
-            self.select_index() if index is None else self.select_hero(index, status=False)
+            index = None
+            if entity0:  index = next(i for i, x in enumerate(self._entities) if x is entity0)
+            self.select_index() if index is None else self.select_entity(index, status=False)
             self._panel.Layout()
         finally:
             self._ignore_events = False
@@ -361,10 +367,10 @@ class HeroPlugin(object):
 
     def render(self, reparse=False, reload=False, rebuild=False, log=True):
         """
-        Renders hero selection and editing subtabs into our panel.
+        Renders entity selection and editing subtabs into our panel.
 
         @param   reparse  whether plugins should re-parse state from savefile
-        @param   reload   whether plugins should reload state from hero
+        @param   reload   whether plugins should reload state from entity
         @param   rebuild  whether all UI should be rebuilt
         @param   log      whether plugin should log actions
         """
@@ -374,88 +380,88 @@ class HeroPlugin(object):
             self.rebuild()
         elif reparse:
             self.refresh_file()
-        elif self._hero and self._propspanel.Children:
+        elif self._entity and self._propspanel.Children:
             for p in self._plugins:
                 self.render_plugin(p["name"], reload=reload, log=log)
         else: self.build()
 
 
     def action(self, **kwargs):
-        """Handler for action (load=hero name|index) or (save=True, ?rename=True, ?spans=[..])."""
+        """Handler for action (load=entity name|index) or (save=True, ?rename=True, ?spans=[..])."""
         if kwargs.get("load") is not None:
             value = kwargs["load"]
-            if isinstance(value, int): # Hero absolute index
-                index = max(0, min(value, len(self._heroes) - 1))
-            elif isinstance(value, (list, tuple)): # (hero name, name counter if duplicate)
-                hero_name, name_counter = value[:2] if len(value) > 1 else (value[0], 1)
-                candidates = [i for i, x in enumerate(self._heroes) if x.name == hero_name]
+            if isinstance(value, int): # Entity absolute index
+                index = max(0, min(value, len(self._entities) - 1))
+            elif isinstance(value, (list, tuple)): # (entity name, name counter if duplicate)
+                entity_name, name_counter = value[:2] if len(value) > 1 else (value[0], 1)
+                candidates = [i for i, x in enumerate(self._entities) if x.name == entity_name]
                 index = candidates[min(name_counter, len(candidates)) - 1] if candidates else -1
-            else: index = next((i for i, x in enumerate(self._heroes) if x.name == value), -1)
-            if index >= 0 and self._heroes:
-                self.select_hero(index)
+            else: index = next((i for i, x in enumerate(self._entities) if x.name == value), -1)
+            if index >= 0 and self._entities:
+                self.select_entity(index)
 
         if kwargs.get("save"):
             tabs = self._ctrls["tabs"]
-            heroes_open = []
-            for index, hero in enumerate(self._heroes):
+            entities_open = []
+            for index, entity in enumerate(self._entities):
                 if kwargs.get("spans") \
-                and not any(a <= hero.span[0] and hero.span[1] <= b for a, b in kwargs["spans"]):
-                    continue  # for index, hero
+                and not any(a <= entity.span[0] and entity.span[1] <= b for a, b in kwargs["spans"]):
+                    continue  # for index, entity
 
-                hero.mark_saved()
-                self._hero_yamls[hero] = templates.make_hero_yamls(hero)
+                entity.mark_saved()
+                self._entity_yamls[entity] = templates.make_entity_yamls(entity)
                 page = next((p for p, i in self._pages.items() if i == index), None)
                 if page is not None:
-                    heroes_open.append(hero)
-                    tabs.SetPageText(tabs.GetPageIndex(page), str(hero))
-            if kwargs.get("rename") and heroes_open:
+                    entities_open.append(entity)
+                    tabs.SetPageText(tabs.GetPageIndex(page), str(entity))
+            if kwargs.get("rename") and entities_open:
                 evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
                 evt.SetClientData(dict(plugin=self.name,
-                                       load=[x.get_name_ident() for x in heroes_open]))
+                                       load=[x.get_name_ident() for x in entities_open]))
                 wx.PostEvent(self._panel, evt)  # Propagate to parent
 
 
     def refresh_file(self):
-        """Reloads heroes and refreshes UI."""
+        """Reloads entities and refreshes UI."""
         tabs = self._ctrls["tabs"]
-        hero0 = self._hero if self._pages_visited[-1:] not in ([], [None]) else None
+        entity0 = self._entity if self._pages_visited[-1:] not in ([], [None]) else None
         pages0 = [self._pages[p] for i in range(tabs.GetPageCount())
-                  for p in [tabs.GetPage(i)] if p in self._pages]  # [hero index, ]
-        heroes0  = self._heroes[:]
+                  for p in [tabs.GetPage(i)] if p in self._pages]  # [entity index, ]
+        entities0  = self._entities[:]
         visited0 = self._pages_visited[:]
-        self._hero = None
+        self._entity = None
         self._pages.clear()
         del self._pages_visited[:]
         for k, v in list(self._index.items()):
             if isinstance(v, (str, list)): self._index[k] = type(v)()
 
-        self._heroes = self.savefile.heroes[:]
-        self._hero_yamls.clear()
+        self._entities = self.savefile.heroes[:]
+        self._entity_yamls.clear()
         self._panel.Freeze()
         self._ignore_events = True
         try:
             while tabs.GetPageCount() > 1: tabs.DeletePage(1)
             self.build()
-            hero = None
+            entity = None
             for index in pages0:
-                hero1 = heroes0[index]
-                hero2 = index < len(self._heroes) and self._heroes[index]
-                if hero1 != hero2:
-                    hero2 = next((x for x in self._heroes if x == hero1), None)  # Match name+index
-                    hero2 = hero2 or next((x for x in self._heroes if x.name == hero1.name), None)
-                if not hero2:
+                entity1 = entities0[index]
+                entity2 = index < len(self._entities) and self._entities[index]
+                if entity1 != entity2:
+                    entity2 = next((x for x in self._entities if x == entity1), None)  # Match name+index
+                    entity2 = entity2 or next((x for x in self._entities if x.name == entity1.name), None)
+                if not entity2:
                     visited0 = [i for i in visited0 if i != index]
                     continue  # for index
                 page = wx.Window(tabs)
                 self._pages[page] = index
-                if not hero and hero0 and hero2.name == hero0.name: hero = hero2
-                tabs.AddPage(page, str(hero2), select=hero2 is hero)
+                if not entity and entity0 and entity2.name == entity0.name: entity = entity2
+                tabs.AddPage(page, str(entity2), select=entity2 is entity)
 
             visited0 = [v for i, v in enumerate(visited0) if not i or v != visited0[i - 1]]
             self._pages_visited[:] = visited0
-            if not hero and visited0[-1:] not in ([], [None]): hero = self._heroes[visited0[-1]]
-            index = next(i for i, x in enumerate(self._heroes) if x is hero) if hero else None
-            self.select_index() if index is None else self.select_hero(index, status=False)
+            if not entity and visited0[-1:] not in ([], [None]): entity = self._entities[visited0[-1]]
+            index = next(i for i, x in enumerate(self._entities) if x is entity) if entity else None
+            self.select_index() if index is None else self.select_entity(index, status=False)
             self._panel.Layout()
         finally:
             self._ignore_events = False
@@ -463,45 +469,47 @@ class HeroPlugin(object):
 
 
     def populate_index(self, focus=False, force=False):
-        """Populates heroes index page, filtered by current search if any."""
+        """Populates entities index page, filtered by current search if any."""
         if not self._panel: return
         html, searchtext = self._ctrls["html"], self._ctrls["search"].Value.strip()
         if not self._index["stale"] and not force \
-        and self._index["text"] == searchtext and self._index["herotexts"]:
+        and self._index["text"] == searchtext and self._index["entitytexts"]:
             return
 
-        heroes, links = self._heroes[:], list(range(len(self._heroes)))
-        tpl = step.Template(templates.HERO_SEARCH_TEXT)
+        TPL, PROPERTY_CATEGORIES = templates.HERO_SEARCH_TEXT, templates.HERO_PROPERTY_CATEGORIES
+
+        entities, links = self._entities[:], list(range(len(self._entities)))
+        tpl = step.Template(TPL)
         tplargs = dict(sort_col=self._index["sort_col"], sort_asc=self._index["sort_asc"],
                        categories=self._index["toggles"])
-        maketexts = lambda h: {c: tpl.expand(hero=h, category=c, **tplargs).lower()
-                               for c in (["name"] + templates.HERO_PROPERTY_CATEGORIES)}
-        if not self._index["herotexts"]:
-            for hero in heroes:
-                self._hero_yamls[hero] = templates.make_hero_yamls(hero)
-            self._index["herotexts"] = [maketexts(h) for h in heroes]
-        elif self._hero:
-            index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
-            self._index["herotexts"][index] = maketexts(self._hero)
-        herotexts = self._index["herotexts"]
+        maketexts = lambda x: {c: tpl.expand(**{self.name: x, "category": c}, **tplargs).lower()
+                               for c in (["name"] + PROPERTY_CATEGORIES)}
+        if not self._index["entitytexts"]:
+            for entity in entities:
+                self._entity_yamls[entity] = templates.make_entity_yamls(entity)
+            self._index["entitytexts"] = [maketexts(h) for h in entities]
+        elif self._entity:
+            index = next(i for i, h in enumerate(self._entities) if h == self._entity)
+            self._index["entitytexts"][index] = maketexts(self._entity)
+        entitytexts = self._index["entitytexts"]
 
         if searchtext:
-            words, herotexts = searchtext.strip().lower().split(), self._index["herotexts"]
+            words, entitytexts = searchtext.strip().lower().split(), self._index["entitytexts"]
             texts = ["\n".join(t for c, t in tt.items() if "name" == c or self._index["toggles"][c])
-                     for tt in herotexts]
-            matches = [(i, h) for i, (h, t) in enumerate(zip(heroes, texts))
+                     for tt in entitytexts]
+            matches = [(i, h) for i, (h, t) in enumerate(zip(entities, texts))
                        if all(w in t for w in words)]
-            links, heroes = zip(*matches) if matches else ([], [])
-            herotexts = [self._index["herotexts"][i] for i in links]
+            links, entities = zip(*matches) if matches else ([], [])
+            entitytexts = [self._index["entitytexts"][i] for i in links]
         self._index["text"] = searchtext
-        self._index["visible"] = heroes
-        tplargs.update(heroes=heroes, count=len(self._heroes), links=links, text=searchtext,
-                       herotexts=herotexts, savefile=self.savefile)
+        self._index["visible"] = entities
+        tplargs.update(count=len(self._entities), links=links, text=searchtext, savefile=self.savefile)
+        tplargs.update({util.plural(self.name): entities, "%stexts" % self.name: entitytexts})
         page = step.Template(templates.HERO_INDEX_HTML, escape=True).expand(**tplargs)
         if page != self._index["html"]:
-            info = "%s %s" % (len(heroes), __(util.plural("hero", heroes, numbers=False)))
-            if len(heroes) != len(self._heroes):
-                info = __("%s visible (%s total)", info, len(self._heroes))
+            info = "%s %s" % (len(entities), __(util.plural("entity", entities, numbers=False)))
+            if len(entities) != len(self._entities):
+                info = __("%s visible (%s total)", info, len(self._entities))
             self._ctrls["count"].Label = info
             self._index["html"] = page
             html.SetPage(page)
@@ -513,71 +521,72 @@ class HeroPlugin(object):
             self.select_index()
 
 
-    def on_copy_hero(self, event=None):
-        """Handler for copying a hero, adds hero data to clipboard."""
-        if self._hero and wx.TheClipboard.Open():
-            content = "%s:%s" % (templates.encode_yaml_scalar(self._hero.name), os.linesep)
-            content += self._hero_yamls[self._hero]["full"]
+    def on_copy_entity(self, event=None):
+        """Handler for copying an entity, adds entity data to clipboard."""
+        if self._entity and wx.TheClipboard.Open():
+            content = "%s:%s" % (templates.encode_yaml_scalar(self._entity.name), os.linesep)
+            content += self._entity_yamls[self._entity]["full"]
             d = wx.TextDataObject(content)
             wx.TheClipboard.SetData(d), wx.TheClipboard.Close()
-            guibase.status("Copied hero %s data to clipboard.", self._hero,
+            guibase.status("Copied %s %%s data to clipboard." % self.name, self._entity,
                            flash=conf.StatusShortFlashLength, log=True, translate=True)
 
 
-    def on_paste_hero(self, event=None):
-        """Handler for pasting a hero, sets data from clipboard to hero."""
+    def on_paste_entity(self, event=None):
+        """Handler for pasting an entity, sets data from clipboard to entity."""
         value = None
-        if self._hero and wx.TheClipboard.Open():
+        if self._entity and wx.TheClipboard.Open():
             if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_TEXT)):
                 o = wx.TextDataObject()
                 wx.TheClipboard.GetData(o)
                 value = o.Text
             wx.TheClipboard.Close()
         if value:
-            guibase.status("Pasting data to hero %s from clipboard.", self._hero,
+            guibase.status("Pasting data to %s %%s from clipboard." % self.name, self._entity,
                            flash=conf.StatusShortFlashLength, log=True, translate=True)
-            self.parse_hero_yaml(value)
+            self.parse_entity_yaml(value)
 
 
-    def on_save_hero(self, event=None):
-        """Handler for saving a hero, sends event to save current hero span."""
+    def on_save_entity(self, event=None):
+        """Handler for saving an entity, sends event to save current entity span."""
         changes = ""
-        if self._hero.is_changed():
-            yamls = self._hero_yamls[self._hero]
+        if self._entity.is_changed():
+            yamls = self._entity_yamls[self._entity]
             pairs = [(v1, v2) for v1, v2 in zip(yamls["originals"], yamls["currents"]) if v1 != v2]
-            tpl = step.Template(templates.HERO_DIFF_TEXT)
-            changes = tpl.expand(name=self._hero.name, changes=pairs)
-        logger.info("Saving hero %s to file.", self._hero)
+            tpl = step.Template(templates.ENTITY_DIFF_TEXT)
+            changes = tpl.expand(name=self._entity.name, changes=pairs)
+        logger.info("Saving %s %s to file.", self.name, self._entity)
         evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
-        evt.SetClientData(dict(save=True, spans=[self._hero.span], changes=changes))
+        evt.SetClientData(dict(save=True, spans=[self._entity.span], changes=changes))
         wx.PostEvent(self._panel, evt)
 
 
     def on_charsheet(self, event=None):
-        """Opens popup with full hero profile."""
-        if not self._heropanel.Shown: return
+        """Opens popup with full entity profile."""
+        if not self._entitypanel.Shown: return
 
-        tpl = step.Template(templates.HERO_CHARSHEET_HTML, escape=True)
+        tpl = step.Template(templates.ENTITY_MANIFEST_HTML, escape=True)
         mode = "normal"
-        texts, htmls = {"normal": self._hero_yamls[self._hero]["full"]}, {}
-        if self._hero.is_changed():
+        texts, htmls = {"normal": self._entity_yamls[self._entity]["full"]}, {}
+        if self._entity.is_changed():
             for k in ("currents", "originals"):
-                texts[k] = self._hero_yamls[self._hero][k]
-        tplargs = dict(name=str(self._hero), texts=texts)
+                texts[k] = self._entity_yamls[self._entity][k]
+        tplargs = dict(name=str(self._entity), texts=texts)
         htmls["normal"] = tpl.expand(**tplargs)
-        if self._hero.is_changed():
+        if self._entity.is_changed():
             htmls["changes"] = tpl.expand(mode="changes", **tplargs)
             htmls["changesonly"] = tpl.expand(mode="changesonly", **tplargs)
-            mode = conf.Settings.get("hero.charsheet_view")
+            mode = conf.Settings.get("%s.manifest_view" % self.name)
             if mode not in htmls: mode = "normal"
 
         dlg = None
         def on_link(mode):
-            if dlg: conf.Settings["hero.charsheet_view"] = mode
+            if dlg: conf.Settings["%s.manifest_view" % self.name] = mode
             return htmls.get(mode, htmls["normal"])
-        links = {k: on_link for k in htmls} if self._hero.is_changed() else None
-        buttons = {__("Copy data"): self.on_copy_hero}
-        dlg = controls.HtmlDialog(self._panel.TopLevelParent, __("Hero character sheet"), htmls[mode],
+        links = {k: on_link for k in htmls} if self._entity.is_changed() else None
+        buttons = {__("Copy data"): self.on_copy_entity}
+        title = "Hero character sheet"
+        dlg = controls.HtmlDialog(self._panel.TopLevelParent, __(title), htmls[mode],
                                   links, buttons, autowidth_links=True, style=wx.RESIZE_BORDER)
         def after(dlg):
             if not self._panel: return
@@ -597,22 +606,22 @@ class HeroPlugin(object):
 
 
     def on_change_page(self, event):
-        """Handler for changing a page in the heroes notebook, loads hero data."""
+        """Handler for changing a page in the entities notebook, loads entity data."""
         if self._ignore_events or event.GetOldSelection() < 0: return
         page = self._ctrls["tabs"].GetCurrentPage()
         if page not in self._pages: self.select_index()
-        else: self.select_hero(self._pages[page], status=False)
+        else: self.select_entity(self._pages[page], status=False)
 
 
-    def on_change_hero_subtab(self, event):
-        """Handler for changing a page in the hero properties notebook, updates UI and settings."""
-        conf.Settings.update({"hero.tab_index": event.Selection})
+    def on_change_entity_subtab(self, event):
+        """Handler for changing a page in the entity properties notebook, updates UI and settings."""
+        conf.Settings.update({"%s.tab_index" % self.name: event.Selection})
         self._ctrls["menubutton"].Enable(self._plugins[event.Selection]["has_menu"])
-        index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
+        index = next(i for i, h in enumerate(self._entities) if h == self._entity)
         self._subtab_focus[index] = event.Selection
 
 
-    def on_hero_subtab_button(self, event):
+    def on_entity_subtab_button(self, event):
         """Handler for clicking plugin top menu button, opens plugin menu."""
         plugin = self._plugins[self._ctrls["properties"].Selection]["instance"]
         menu = hasattr(plugin, "make_common_menu") and plugin.make_common_menu()
@@ -621,7 +630,7 @@ class HeroPlugin(object):
 
 
     def on_close_page(self, event):
-        """Handler for closing a hero page, selects a previous hero page, if any."""
+        """Handler for closing an entity page, selects a previous entity page, if any."""
         if self._ignore_events: return
         tabs = self._ctrls["tabs"]
         page = tabs.GetPage(event.GetSelection())
@@ -634,11 +643,11 @@ class HeroPlugin(object):
         visited = [x for x in self._pages_visited if x != index]
         self._pages_visited = [v for i, v in enumerate(visited) if not i or v != visited[i - 1]]
         if page0 is page:  # Closed the active page
-            self._hero = None
+            self._entity = None
             if self._pages_visited[-1:] in ([], [None]): self.select_index()
-            else: self.select_hero(self._pages_visited[-1], status=False)
-        elif self._hero == self._heroes[index]:  # Closed last active page from index
-            self._hero = None
+            else: self.select_entity(self._pages_visited[-1], status=False)
+        elif self._entity == self._entities[index]:  # Closed last active page from index
+            self._entity = None
 
 
     def on_dragdrop_page(self, event=None):
@@ -662,17 +671,17 @@ class HeroPlugin(object):
 
 
     def on_index_link(self, event):
-        """Handler for clicking a link in index page, opens hero or sorts index."""
+        """Handler for clicking a link in index page, opens entity or sorts index."""
         href = event.GetLinkInfo().Href
-        if href.isnumeric(): self.select_hero(int(href))
+        if href.isnumeric(): self.select_entity(int(href))
         elif href.startswith("sort:"):
             col = href[len("sort:"):]
             if self._index["sort_col"] == col:
                 self._index["sort_asc"] = not self._index["sort_asc"]
             else:
                 self._index["sort_col"], self._index["sort_asc"] = col, True
-            conf.Settings.update({"hero.sort_col": self._index["sort_col"],
-                                  "hero.sort_asc": self._index["sort_asc"]})
+            conf.Settings.update({"%s.sort_col" % self.name: self._index["sort_col"],
+                                  "%s.sort_asc" % self.name: self._index["sort_asc"]})
             self.populate_index(force=True)
 
 
@@ -684,7 +693,7 @@ class HeroPlugin(object):
 
 
     def on_search(self, event):
-        """Handler for changing search text, filters heroes index after a delay."""
+        """Handler for changing search text, filters entities index after a delay."""
         event.Skip()
         self._index["timer"], _ = None, self._index["timer"] and self._index["timer"].Stop()
         if getattr(event, "KeyCode", None) == wx.WXK_ESCAPE:
@@ -692,38 +701,38 @@ class HeroPlugin(object):
         self._index["timer"] = wx.CallLater(self.SEARCH_INTERVAL, self.populate_index, focus=True)
 
 
-    def on_select_hero(self, event):
-        """Handler for selecting a hero in combobox, populates tabs with hero data."""
+    def on_select_entity(self, event):
+        """Handler for selecting an entity in combobox, populates tabs with entity data."""
         if self._ignore_events: return
         index = event.EventObject.Selection
-        hero2 = self._heroes[index] if index < len(self._heroes) else None
-        if not hero2:
-            wx.MessageBox(__("Hero '%s' not found.", event.EventObject.Value),
+        entity2 = self._entities[index] if index < len(self._entities) else None
+        if not entity2:
+            wx.MessageBox(__("%s '%%s' not found." % self.name.title(), event.EventObject.Value),
                           conf.Title, wx.OK | wx.ICON_ERROR)
             return
         focusctrl = self._panel.FindFocus()
-        self.select_hero(index, status=index not in self._pages.values())
-        if focusctrl is self._ctrls["hero"] and not self._ctrls["hero"].HasFocus():
-            self._ctrls["hero"].SetFocus()
+        self.select_entity(index, status=index not in self._pages.values())
+        if focusctrl is self._ctrls["entity"] and not self._ctrls["entity"].HasFocus():
+            self._ctrls["entity"].SetFocus()
 
 
     def on_key_select(self, event):
-        """Handler for keypress in hero combobox, queues restoring selection if Escape pressed."""
-        if event.CmdDown(): # Avoid combobox selecting hero on keyboard shortcuts like Ctrl-F
+        """Handler for keypress in entity combobox, queues restoring selection if Escape pressed."""
+        if event.CmdDown(): # Avoid combobox selecting entity on keyboard shortcuts like Ctrl-F
             return
         event.Skip()
         if event.KeyCode == wx.WXK_ESCAPE: # Workaround for Escape selecting keyboard-focused item
-            prev_index = self._ctrls["hero"].Selection
+            prev_index = self._ctrls["entity"].Selection
             self._ignore_events = True
-            wx.CallAfter(self._ctrls["hero"].Select, prev_index)
+            wx.CallAfter(self._ctrls["entity"].Select, prev_index)
             wx.CallAfter(setattr, self, "_ignore_events", False)
 
 
-    def on_export_heroes(self, event):
-        """Handler for exporting heroes to file, opens file dialog and exports data."""
+    def on_export_entities(self, event):
+        """Handler for exporting entities to file, opens file dialog and exports data."""
         if not self._index["visible"]: return
         basename = os.path.splitext(os.path.basename(self.savefile.filename))[0]
-        self._dialog_export.Filename = __("Heroes from %s", basename)
+        self._dialog_export.Filename = __("%s from %%s" % util.plural(self.name).title(), basename)
         if wx.ID_OK != self._dialog_export.ShowModal(): return
 
         wx.YieldIfNeeded() # Allow dialog to disappear
@@ -738,39 +747,39 @@ class HeroPlugin(object):
 
 
     def on_toggle_category(self, event):
-        """Handler for toggling a category in index toolbar, refreshes heroes index."""
+        """Handler for toggling a category in index toolbar, refreshes entities index."""
         category = next(k for k, v in self._index["ids"].items() if v == event.Id)
         on = not self._index["toggles"][category]
         self._index["toggles"][category] = on
         self.populate_index(force=True)
-        if on: conf.Settings.pop("hero.toggle_%s" % category, None)
-        else: conf.Settings.update({"hero.toggle_%s" % category: False})
+        if on: conf.Settings.pop("%s.toggle_%s" % (self.name, category), None)
+        else: conf.Settings.update({"%s.toggle_%s" % (self.name, category): False})
 
 
     def on_sys_colour_change(self, event):
-        """Handler for system colour change, refreshes hero index HTML."""
+        """Handler for system colour change, refreshes entity index HTML."""
         event.Skip()
         wx.CallAfter(lambda: self._panel and self.populate_index(force=True))
         wx.CallLater(100, lambda: self._panel and self._panel.Layout())
 
 
-    def select_hero(self, index, status=True):
+    def select_entity(self, index, status=True):
         """
-        Populates panel with hero data and ensures hero tab focus.
+        Populates panel with entity data and ensures entity tab focus.
 
-        @param   index     hero index in local structure
+        @param   index     entity index in local structure
         @param   status    whether to show status messages
         """
         if not self._panel: return
-        hero2 = self._heroes[index] if index < len(self._heroes) else None
-        if not hero2: return
-        if hero2 is self._hero and index in self._pages.values():
-            self.select_hero_tab(index)
+        entity2 = self._entities[index] if index < len(self._entities) else None
+        if not entity2: return
+        if entity2 is self._entity and index in self._pages.values():
+            self.select_entity_tab(index)
             return
 
-        combo, tabs = self._ctrls["hero"], self._ctrls["tabs"]
-        busy = controls.BusyPanel(self._panel, __("Loading %s.", hero2)) if status else None
-        if status: guibase.status(__("Loading %s.", hero2), flash=True)
+        combo, tabs = self._ctrls["entity"], self._ctrls["tabs"]
+        busy = controls.BusyPanel(self._panel, __("Loading %s.", entity2)) if status else None
+        if status: guibase.status(__("Loading %s.", entity2), flash=True)
 
         self._ignore_events = True
         self._panel.Freeze()
@@ -779,22 +788,22 @@ class HeroPlugin(object):
         if not page_existed:
             page = wx.Window(tabs)
             self._pages[page] = index
-            title = "%s%s" % (hero2, "*" if hero2.is_changed() else "")
+            title = "%s%s" % (entity2, "*" if entity2.is_changed() else "")
             tabs.InsertPage(1, page, title, select=True)
             style = tabs.GetAGWWindowStyleFlag() | wx.lib.agw.flatnotebook.FNB_X_ON_TAB
             if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
         else:
-            self.select_hero_tab(index)
+            self.select_entity_tab(index)
 
         self._indexpanel.Hide()
-        self._heropanel.Enable()
-        self._heropanel.Show()
+        self._entitypanel.Enable()
+        self._entitypanel.Show()
         try:
-            if self._hero: self.patch()
+            if self._entity: self.patch()
             if not page_existed and status:
-                logger.info("Loading hero %s (bytes %s-%s in savefile).",
-                            hero2, hero2.span[0], hero2.span[1] - 1)
-            self._hero = hero2
+                logger.info("Loading %s %s (bytes %s-%s in savefile).",
+                            self.name, entity2, entity2.span[0], entity2.span[1] - 1)
+            self._entity = entity2
             for p in self._plugins:
                 self.render_plugin(p["name"], reload=True, log=not page_existed and status)
 
@@ -810,13 +819,13 @@ class HeroPlugin(object):
             self._ignore_events = False
             if status: busy.Close(), wx.CallLater(500, guibase.status, "")
             evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
-            evt.SetClientData(dict(plugin=self.name, load=hero2.get_name_ident()))
+            evt.SetClientData(dict(plugin=self.name, load=entity2.get_name_ident()))
             wx.PostEvent(self._panel, evt)
 
 
-    def select_hero_tab(self, index):
-        """Ensures hero tab is selected and hero panel shown."""
-        combo, tabs = self._ctrls["hero"], self._ctrls["tabs"]
+    def select_entity_tab(self, index):
+        """Ensures entity tab is selected and entity panel shown."""
+        combo, tabs = self._ctrls["entity"], self._ctrls["tabs"]
         page = next(p for p, i in self._pages.items() if i == index)
         idx  = next(i for i in range(tabs.GetPageCount()) if page is tabs.GetPage(i))
         if tabs.GetSelection() != idx:
@@ -824,10 +833,10 @@ class HeroPlugin(object):
         style = tabs.GetAGWWindowStyleFlag() | wx.lib.agw.flatnotebook.FNB_X_ON_TAB
         if tabs.GetAGWWindowStyleFlag() != style:
             tabs.SetAGWWindowStyleFlag(style)
-        if not self._heropanel.Shown:
+        if not self._entitypanel.Shown:
             self._indexpanel.Hide()
-            self._heropanel.Enable()
-            self._heropanel.Show()
+            self._entitypanel.Enable()
+            self._entitypanel.Show()
             self._panel.Layout()
         if combo.Selection != index:
             combo.SetSelection(index)
@@ -835,7 +844,7 @@ class HeroPlugin(object):
 
     def select_index(self):
         """Switches to index page if not already there."""
-        combo, tabs, search = (self._ctrls[k] for k in ("hero", "tabs", "search"))
+        combo, tabs, search = (self._ctrls[k] for k in ("entity", "tabs", "search"))
         searchsel = search.GetSelection()
         focusctrl = self._panel.FindFocus()
         self.populate_index()
@@ -843,8 +852,8 @@ class HeroPlugin(object):
         style = tabs.GetAGWWindowStyleFlag() & (~wx.lib.agw.flatnotebook.FNB_X_ON_TAB)
         if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
         if not self._indexpanel.Shown:
-            self._heropanel.Hide()
-            self._heropanel.Disable()
+            self._entitypanel.Hide()
+            self._entitypanel.Disable()
             self._indexpanel.Show()
             self._panel.Layout()
         if combo.Selection >= 0: combo.SetSelection(-1)
@@ -854,25 +863,26 @@ class HeroPlugin(object):
             search.SetSelection(*searchsel)
 
 
-    def parse_hero_yaml(self, value):
-        """Populates current hero with value parsed as YAML."""
+    def parse_entity_yaml(self, value):
+        """Populates current entity with value parsed as YAML."""
         try:
             states = next(iter(yaml.safe_load(value).values()))
             assert isinstance(states, dict)
         except Exception as e:
-            logger.warning("Error loading hero data from clipboard: %s", e)
-            guibase.status(__("No valid hero data in clipboard."),
+            logger.warning("Error loading %s data from clipboard: %s", self.name, e)
+            guibase.status(__("No valid %s data in clipboard." % self.name),
                            flash=conf.StatusShortFlashLength)
             return
 
         new_states = {}  # {property name: state}
         pluginmap = {p["name"]: p["instance"] for p in self._plugins}
         states = util.recurse_convert(states, {str: i18n.translate_back})
+        PROPERTIES = h3sed.hero.PROPERTIES
         for category, state in states.items():
             plugin = pluginmap.get(category)
             if not plugin:
-                if category not in h3sed.hero.PROPERTIES:
-                    logger.warning("Unknown category in hero data: %r", category)
+                if category not in PROPERTIES:
+                    logger.warning("Unknown category in %s data: %r", self.name, category)
                 continue  # for
 
             state0 = plugin.state()
@@ -882,8 +892,8 @@ class HeroPlugin(object):
 
             if not isinstance(state0, type(state)) \
             and not all(isinstance(x, (list, set)) for x in (state0, state)):
-                logger.warning("Invalid data type in hero data %r for %s: %s",
-                               category, type(state0).__name__, state)
+                logger.warning("Invalid data type in %s data %r for %s: %s",
+                               self.name, category, type(state0).__name__, state)
                 continue # for category, state
 
             if isinstance(state, dict):
@@ -902,8 +912,8 @@ class HeroPlugin(object):
             for category, state in states.items():
                 if pluginmap[category].load_state(state):
                     changeds.append(category)
-            self._hero.realize()
-            self._hero_yamls[self._hero] = templates.make_hero_yamls(self._hero)
+            self._entity.realize()
+            self._entity_yamls[self._entity] = templates.make_entity_yamls(self._entity)
             if "equipment" in changeds and "stats" not in changeds:
                 changeds.append("stats") # Artifact bonus texts may need refreshing
             if changeds:
@@ -911,42 +921,42 @@ class HeroPlugin(object):
                 for name in changeds:
                     self.render_plugin(name)
             return bool(changeds)
-        self.command(functools.partial(on_do, new_states), "paste hero data from clipboard")
+        self.command(functools.partial(on_do, new_states), "paste %s data from clipboard" % self.name)
 
 
     def get_data(self):
-        """Returns copy of current hero object."""
-        return self._hero.copy() if self._hero else None
+        """Returns copy of current entity object."""
+        return self._entity.copy() if self._entity else None
 
 
-    def set_data(self, hero):
-        """Sets current hero object."""
-        combo, tabs = self._ctrls["hero"], self._ctrls["tabs"]
-        index = next(i for i, h in enumerate(self._heroes) if h == hero)
+    def set_data(self, entity):
+        """Sets current entity object."""
+        combo, tabs = self._ctrls["entity"], self._ctrls["tabs"]
+        index = next(i for i, h in enumerate(self._entities) if h == entity)
         if index in self._pages.values():
-            self.select_hero_tab(index)
+            self.select_entity_tab(index)
         else:
             page = wx.Window(tabs)
             self._pages[page] = index
-            tabs.InsertPage(1, page, str(hero), select=True)
+            tabs.InsertPage(1, page, str(entity), select=True)
             self._indexpanel.Hide()
-            self._heropanel.Show()
-        if self._hero != hero:
-            self._hero = self._heroes[index]
-        self._hero.update(hero)
-        self._hero_yamls[self._hero] = templates.make_hero_yamls(self._hero)
+            self._entitypanel.Show()
+        if self._entity != entity:
+            self._entity = self._entities[index]
+        self._entity.update(entity)
+        self._entity_yamls[self._entity] = templates.make_entity_yamls(self._entity)
         combo.SetSelection(index)
 
 
     def get_changes(self, html=True):
-        """Returns changes to current heroes, as HTML diff content or plain text brief."""
-        TEMPLATE = templates.HERO_DIFF_HTML if html else templates.HERO_DIFF_TEXT
+        """Returns changes to current entities, as HTML diff content or plain text brief."""
+        TEMPLATE = templates.ENTITY_DIFF_HTML if html else templates.ENTITY_DIFF_TEXT
         changes, tpl = [], step.Template(TEMPLATE, escape=html, strip=html)
-        for hero in self._heroes:
-            if not hero.is_changed(): continue # for hero
-            yamls = self._hero_yamls[hero]
+        for entity in self._entities:
+            if not entity.is_changed(): continue # for entity
+            yamls = self._entity_yamls[entity]
             pairs = [(v1, v2) for v1, v2 in zip(yamls["originals"], yamls["currents"]) if v1 != v2]
-            changes.append(tpl.expand(name=str(hero), changes=pairs))
+            changes.append(tpl.expand(name=str(entity), changes=pairs))
         return "\n".join(changes)
 
 
@@ -954,22 +964,24 @@ class HeroPlugin(object):
         """
         Returns a dictionary of keyword arguments with current state for user functions.
         
-        @return  {"hero": current hero, "heroes": visible heroes, "heroes_open": all open heroes}
+        @return  {"hero": current entity, "heroes": visible entities,
+                  "heroes_open": all open entities}
         """
-        result = {"hero": self._hero, "heroes": self._index["visible"][:],
-                  "heroes_open": [self._heroes[index] for index in self._pages.values()]}
+        plural = util.plural(self.name)
+        result = {self.name: self._entity, plural: self._index["visible"][:],
+                  "%s_open" % plural: [self._entities[index] for index in self._pages.values()]}
         return result
 
 
     def patch(self):
-        """Serializes current plugin state to hero bytes, patches savefile binary."""
-        self._hero.serialize()
-        self.savefile.patch(self._hero.bytes, self._hero.span)
+        """Serializes current plugin state to entity bytes, patches savefile binary."""
+        self._entity.serialize()
+        self.savefile.patch(self._entity.bytes, self._entity.span)
 
-        self._hero_yamls[self._hero] = templates.make_hero_yamls(self._hero)
+        self._entity_yamls[self._entity] = templates.make_entity_yamls(self._entity)
 
-        title = "%s%s" % (self._hero, "*" if self._hero.is_changed() else "")
-        index = next(i for i, h in enumerate(self._heroes) if h == self._hero)
+        title = "%s%s" % (self._entity, "*" if self._entity.is_changed() else "")
+        index = next(i for i, h in enumerate(self._entities) if h == self._entity)
         page = next(p for p, i in self._pages.items() if i == index)
         self._ctrls["tabs"].SetPageText(self._ctrls["tabs"].GetPageIndex(page), title)
         wx.PostEvent(self._panel, h3sed.gui.SavefilePageEvent(self._panel.Id))
@@ -979,7 +991,7 @@ class HeroPlugin(object):
         """
         Renders or re-renders panel for the specified plugin.
 
-        @param   reload  whether plugins should re-parse state from hero bytes
+        @param   reload  whether plugins should re-parse state from entity bytes
         @param   log     whether should log actions
         """
         p = next((x for x in self._plugins if x["name"] == name), None)
@@ -998,8 +1010,9 @@ class HeroPlugin(object):
 
         plugin, item0 = p["instance"], p["instance"].item()
         if reload or item0 is None:
-            plugin.load(self._hero)
-            if log: logger.info("Loaded hero %s %s %s.", self._hero, p["name"], fmt(plugin.state()))
+            plugin.load(self._entity)
+            if log: logger.info("Loaded %s %s %s %s.",
+                                self.name, self._entity, p["name"], fmt(plugin.state()))
         p["panel"].Freeze()
         try:
             do_accelerate = False

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Army subplugin for hero-plugin, shows hero army creatures and counts.
+Army subplugin for entities like heroes and towns, shows army creatures and counts.
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  25.09.2026
+@modified  04.09.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -65,7 +65,7 @@ def factory(parent, panel, version):
 
 
 class ArmyPlugin(object):
-    """Provides UI functionality for listing and changing hero army stacks."""
+    """Provides UI functionality for listing and changing entity army stacks."""
 
 
     def __init__(self, parent, panel, version):
@@ -73,8 +73,8 @@ class ArmyPlugin(object):
         self.parent  = parent
         self.version = version
         self._panel  = panel  # Plugin contents panel
-        self._state  = h3sed.hero.Army.factory(version)
-        self._hero   = None
+        self._state  = h3sed.common.Army.factory(version)
+        self._entity = None
         self._ctrls  = []  # [{"name": wx.ComboBox, "count": wx.SpinCtrlDouble}, ]
 
         panel.Bind(wx.EVT_SYS_COLOUR_CHANGED, self.on_colour_change)
@@ -103,14 +103,14 @@ class ArmyPlugin(object):
 
 
     def item(self):
-        """Returns current hero."""
-        return self._hero
+        """Returns current entity."""
+        return self._entity
 
 
-    def load(self, hero):
-        """Loads hero to plugin."""
-        self._hero = hero
-        self._state = hero.army
+    def load(self, entity):
+        """Loads entity to plugin."""
+        self._entity = entity
+        self._state = entity.army
 
 
     def load_state(self, state):
@@ -307,9 +307,9 @@ class ArmyPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # "upgrade|downgrade HERONAME army"
+        # "upgrade|downgrade NAME army"
         action = "downgrade" if down else "upgrade"
-        cname, cargs = "%s %s", (action, ("%s {}".format(self.name), self._hero.name))
+        cname, cargs = "%s %s", (action, ("%s {}".format(self.name), self._entity.name))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)
@@ -347,11 +347,11 @@ class ArmyPlugin(object):
             h3sed.guibase.status("")
             return
 
-        # "set HERONAME army: count 1"
-        # "round HERONAME army: up|down NUMBER"
-        # "round HERONAME army: slot #%s up|down NUMBER"
+        # "set NAME army: count 1"
+        # "round NAME army: up|down NUMBER"
+        # "round NAME army: slot #%s up|down NUMBER"
         action = "set" if number == 1 else "round"
-        actionlbl, actionargs = "%s %s", (action, ("%s {}".format(self.name), self._hero.name))
+        actionlbl, actionargs = "%s %s", (action, ("%s {}".format(self.name), self._entity.name))
         if "set" == action: afterlbl, afterargs = "%s %s", ("count", number)
         else:
             afterargs = ("down" if down else "up", number)
@@ -379,8 +379,8 @@ class ArmyPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # "set HERONAME army: slot SLOTNUMBER NAME"
-        actionlbl, actionargs = "%s %s", ("set", ("%s {}".format(self.name), self._hero.name))
+        # "set NAME army: slot SLOTNUMBER NAME"
+        actionlbl, actionargs = "%s %s", ("set", ("%s {}".format(self.name), self._entity.name))
         cname = "%s: %s %s %s"
         cargs = ((actionlbl, actionargs), "slot", rowindex + 1, name)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
@@ -403,8 +403,8 @@ class ArmyPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # "swap HERONAME army: slot SLOTNUMBER and SLOTNUMBER"
-        actionlbl, actionargs = "%s %s", ("swap", ("%s {}".format(self.name), self._hero.name))
+        # "swap NAME army: slot SLOTNUMBER and SLOTNUMBER"
+        actionlbl, actionargs = "%s %s", ("swap", ("%s {}".format(self.name), self._entity.name))
         cname = "%s: %s %s %s %s"
         cargs = ((actionlbl, actionargs), "slot", index1 + 1, "and", index2 + 1)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
@@ -415,7 +415,7 @@ class ArmyPlugin(object):
 
 
     def on_remove_all(self, event):
-        """Handler for removing all hero army stacks, carries out and propagates change."""
+        """Handler for removing all entity army stacks, carries out and propagates change."""
         if not any(self._state):
             h3sed.guibase.status("")
             return
@@ -427,8 +427,8 @@ class ArmyPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # "remove HERONAME army"
-        cname, cargs = "%s %s", ("remove", ("%s {}".format(self.name), self._hero.name))
+        # "remove NAME army"
+        cname, cargs = "%s %s", ("remove", ("%s {}".format(self.name), self._entity.name))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)
@@ -469,18 +469,18 @@ class ArmyPlugin(object):
         wx.CallLater(100, after)  # Hidden SpinCtrl arrows can become visible on colour change
 
 
-def parse(hero_bytes, version, savefile=None, span=None):
-    """Returns h3sed.hero.Army() parsed from hero bytearray army section."""
+def parse(kind, entity_bytes, version, savefile=None, span=None):
+    """Returns h3sed.common.Army() parsed from entity bytearray army section."""
     DATA_RANGES = metadata.Store.get("data_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)
     ID_TO_NAME = {IDS[n]: n for n in metadata.Store.get("creatures", version=version)}
-    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
-                                  version=version)
+    BYTEPOS = metadata.HERO_BYTE_POSITIONS
+    BYTEPOS = h3sed.version.adapt("%s_byte_positions" % kind, BYTEPOS, version=version)
     NAMES_POS, COUNT_POS = BYTEPOS["army_types"], BYTEPOS["army_counts"]
 
-    army = h3sed.hero.Army.factory(version)
+    army = h3sed.common.Army.factory(version)
     for i in range(DATA_RANGES["army"][1]):
-        id_bytes, count_bytes = (hero_bytes[n + i*4:n + i*4 + 4] for n in (NAMES_POS, COUNT_POS))
+        id_bytes, count_bytes = (entity_bytes[n + i*4:n + i*4 + 4] for n in (NAMES_POS, COUNT_POS))
         creature_id, count = util.bytoi(id_bytes), util.bytoi(count_bytes)
         if not count or all(x == ord(metadata.BLANK) for x in id_bytes): continue # for i
 
@@ -494,24 +494,31 @@ def parse(hero_bytes, version, savefile=None, span=None):
     return army
 
 
-def serialize(army, hero_bytes, version, hero=None):
-    """Returns new hero bytearray with updated army section."""
+def serialize(kind, army, entity_bytes, version, entity=None):
+    """
+    Returns new entity bytearray with updated army section.
+
+    @param   kind          entity category like "hero" or "town"
+    @param   kind          Army instance to serialize
+    @param   entity_bytes  entity bytearray
+    @param   entity        entity instance like Hero or Town to check original values from
+    """
     DATA_RANGES = metadata.Store.get("data_ranges", version=version)
     IDS = metadata.Store.get("ids", version=version)
     NAME_TO_ID = {n: IDS[n] for n in metadata.Store.get("creatures", version=version)}
-    BYTEPOS = h3sed.version.adapt("hero_byte_positions", metadata.HERO_BYTE_POSITIONS,
-                                  version=version)
+    BYTEPOS = metadata.HERO_BYTE_POSITIONS
+    BYTEPOS = h3sed.version.adapt("%s_byte_positions" % kind, BYTEPOS, version=version)
     NAMES_POS, COUNT_POS = BYTEPOS["army_types"], BYTEPOS["army_counts"]
 
-    new_bytes = hero_bytes[:]
-    army0 = [] if hero is None else hero.original.get("army", [])
+    new_bytes = entity_bytes[:]
+    army0 = [] if entity is None else entity.original.get("army", [])
     for i in range(DATA_RANGES["army"][1]):
         name, count = None, None
         if i < len(army) and army[i]: name, count = army[i]["name"], army[i]["count"]
         if (not name or not count) and i < len(army0) and not (army0[i] and army0[i].get("name")):
             # Retain original bytes unchanged, as game uses both 0x00 and 0xFF
-            word1 = hero.bytes0[NAMES_POS + i*4:NAMES_POS + i*4 + 4]
-            word2 = hero.bytes0[COUNT_POS + i*4:COUNT_POS + i*4 + 4]
+            word1 = entity.bytes0[NAMES_POS + i*4:NAMES_POS + i*4 + 4]
+            word2 = entity.bytes0[COUNT_POS + i*4:COUNT_POS + i*4 + 4]
         elif count and name in NAME_TO_ID:
             word1 = util.itoby(NAME_TO_ID[name], 4)
             word2 = util.itoby(count,  4)
