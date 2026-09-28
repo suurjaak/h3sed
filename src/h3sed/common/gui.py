@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-UI plugin for managing named entities like heroes in a savefile.
+UI plugin for managing named entities like heroes and towns in a savefile.
 
 
 Subplugin modules are expected to have the following API (all methods either mandatory or missing):
@@ -59,7 +59,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  26.09.2026
+@modified  28.09.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -131,7 +131,7 @@ class EntityPlugin(object):
         )
         self._dialog_export.FilterIndex = 1
 
-        self._entities = self.savefile.heroes[:]
+        self._entities = (self.savefile.heroes if "hero" == kind else self.savefile.towns)[:]
         self.prebuild()
         panel.Bind(wx.EVT_CHAR_HOOK, self.on_key)
         panel.Bind(h3sed.gui.EVT_PLUGIN, self.on_plugin_event)
@@ -168,6 +168,7 @@ class EntityPlugin(object):
         export.Bind(wx.EVT_BUTTON, self.on_export_entities)
 
         PROPERTY_CATEGORIES = templates.HERO_PROPERTY_CATEGORIES
+        if "town" == self.name: PROPERTY_CATEGORIES = templates.TOWN_PROPERTY_CATEGORIES
         for category in PROPERTY_CATEGORIES:
             togglename = "%s.toggle_%s" % (self.name, category)
             help = __("Show or hide %s column" + ("s" if "stats" == category else ""), __(category))
@@ -214,11 +215,11 @@ class EntityPlugin(object):
         tb.AddTool(wx.ID_PASTE, "", bmp3, shortHelp=__("Paste data from clipboard to current %s" % self.name))
         tb.AddSeparator()
         tb.AddTool(wx.ID_SAVE,  "", bmp4, shortHelp=__("Save current %s to file" % self.name))
-        tb.Bind(wx.EVT_TOOL, self.on_charsheet,    id=wx.ID_INFO)
+        tb.Bind(wx.EVT_TOOL, self.on_manifest,     id=wx.ID_INFO)
         tb.Bind(wx.EVT_TOOL, self.on_copy_entity,  id=wx.ID_COPY)
         tb.Bind(wx.EVT_TOOL, self.on_paste_entity, id=wx.ID_PASTE)
         tb.Bind(wx.EVT_TOOL, self.on_save_entity,  id=wx.ID_SAVE)
-        self._panel.Bind(wx.EVT_MENU, self.on_charsheet, id=wx.ID_INFO)
+        self._panel.Bind(wx.EVT_MENU, self.on_manifest, id=wx.ID_INFO)
         tb.Realize()
 
         menubutton = wx.Button(entitypanel, label=__("Change %s", __("all")) + " ..")
@@ -292,7 +293,7 @@ class EntityPlugin(object):
         self._ctrls["entity"].SetItems([str(x) for x in self._entities])
 
         nb = wx.Notebook(self._propspanel)
-        PROPERTIES = h3sed.hero.PROPERTIES
+        PROPERTIES = h3sed.hero.PROPERTIES if "hero" == self.name else h3sed.town.PROPERTIES
         self._plugins = [dict(m.props(), module=m) for m in PROPERTIES.values()
                          if callable(getattr(m, "props", None))]
         for props in self._plugins:
@@ -435,7 +436,7 @@ class EntityPlugin(object):
         for k, v in list(self._index.items()):
             if isinstance(v, (str, list)): self._index[k] = type(v)()
 
-        self._entities = self.savefile.heroes[:]
+        self._entities = (self.savefile.heroes if "hero" == self.name else self.savefile.towns)[:]
         self._entity_yamls.clear()
         self._panel.Freeze()
         self._ignore_events = True
@@ -477,6 +478,8 @@ class EntityPlugin(object):
             return
 
         TPL, PROPERTY_CATEGORIES = templates.HERO_SEARCH_TEXT, templates.HERO_PROPERTY_CATEGORIES
+        if "town" == self.name:
+            TPL, PROPERTY_CATEGORIES = templates.TOWN_SEARCH_TEXT, templates.TOWN_PROPERTY_CATEGORIES
 
         entities, links = self._entities[:], list(range(len(self._entities)))
         tpl = step.Template(TPL)
@@ -505,7 +508,8 @@ class EntityPlugin(object):
         self._index["visible"] = entities
         tplargs.update(count=len(self._entities), links=links, text=searchtext, savefile=self.savefile)
         tplargs.update({util.plural(self.name): entities, "%stexts" % self.name: entitytexts})
-        page = step.Template(templates.HERO_INDEX_HTML, escape=True).expand(**tplargs)
+        INDEX_TPL = templates.HERO_INDEX_HTML if "hero" == self.name else templates.TOWN_INDEX_HTML
+        page = step.Template(INDEX_TPL, escape=True).expand(**tplargs)
         if page != self._index["html"]:
             info = "%s %s" % (len(entities), __(util.plural("entity", entities, numbers=False)))
             if len(entities) != len(self._entities):
@@ -561,7 +565,7 @@ class EntityPlugin(object):
         wx.PostEvent(self._panel, evt)
 
 
-    def on_charsheet(self, event=None):
+    def on_manifest(self, event=None):
         """Opens popup with full entity profile."""
         if not self._entitypanel.Shown: return
 
@@ -585,7 +589,7 @@ class EntityPlugin(object):
             return htmls.get(mode, htmls["normal"])
         links = {k: on_link for k in htmls} if self._entity.is_changed() else None
         buttons = {__("Copy data"): self.on_copy_entity}
-        title = "Hero character sheet"
+        title = "Hero character sheet" if "hero" == self.name else "Town manifest"
         dlg = controls.HtmlDialog(self._panel.TopLevelParent, __(title), htmls[mode],
                                   links, buttons, autowidth_links=True, style=wx.RESIZE_BORDER)
         def after(dlg):
@@ -603,6 +607,8 @@ class EntityPlugin(object):
         if "render" == action and getattr(event, "name", None):
             event.Skip()
             self.render_plugin(event.name)
+        if "open" == action:
+            event.Skip()
 
 
     def on_change_page(self, event):
@@ -877,7 +883,7 @@ class EntityPlugin(object):
         new_states = {}  # {property name: state}
         pluginmap = {p["name"]: p["instance"] for p in self._plugins}
         states = util.recurse_convert(states, {str: i18n.translate_back})
-        PROPERTIES = h3sed.hero.PROPERTIES
+        PROPERTIES = h3sed.hero.PROPERTIES if "hero" == self.name else h3sed.town.PROPERTIES
         for category, state in states.items():
             plugin = pluginmap.get(category)
             if not plugin:
@@ -964,8 +970,8 @@ class EntityPlugin(object):
         """
         Returns a dictionary of keyword arguments with current state for user functions.
         
-        @return  {"hero": current entity, "heroes": visible entities,
-                  "heroes_open": all open entities}
+        @return  {"hero" or "town": current entity, "heroes" or "towns": visible entities,
+                  "heroes_open" or "towns_open": all open entities}
         """
         plural = util.plural(self.name)
         result = {self.name: self._entity, plural: self._index["visible"][:],

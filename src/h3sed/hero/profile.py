@@ -7,9 +7,12 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.01.2026
-@modified  27.09.2026
+@modified  28.09.2026
 ------------------------------------------------------------------------------
 """
+try: import wx
+except ImportError: wx = None
+
 import h3sed
 from .. lib import util
 from .. lib.i18n import translate as __
@@ -38,9 +41,12 @@ DATAPROPS = [{
     "tooltip":   None,  # Populated later
 }, {
     "name":      "town",
-    "type":      "text",
+    "type":      "link",
     "label":     "Town",
     "readonly":  True,
+    "format":    None,  # Populated later
+    "handler":   None,  # Populated later
+    "tooltip":   None,  # Populated later
 }, {
     "name":      "biography",
     "type":      "text",
@@ -86,6 +92,12 @@ class ProfilePlugin(object):
                 prop = dict(prop, format=self._state.format_location)
             if "location" == prop["name"] and "tooltip" in prop:
                 prop = dict(prop, tooltip=lambda: self._state.format_location(long=True))
+            if "town" == prop["name"] and "format" in prop:
+                prop = dict(prop, format=lambda: str(self._state.town or ""))
+            if "town" == prop["name"] and "handler" in prop:
+                prop = dict(prop, handler=lambda: self.on_click_town(self._state.town))
+            if "town" == prop["name"] and "tooltip" in prop:
+                prop = dict(prop, tooltip=lambda: self.make_town_tooltip(self._state.town))
             result.append(prop)
         return result
 
@@ -114,6 +126,19 @@ class ProfilePlugin(object):
             if attribute in self._state:
                 self._state[attribute] = value
         return state0 != self._state
+
+
+    def make_town_tooltip(self, town):
+        """Returns tooltip string for town name link."""
+        return __("Open town page for %s", town) if town else ""
+
+
+    def on_click_town(self, town):
+        """Handler for clicking hero town, propagates event to open town page."""
+        evt_args = {"action": "open", "kind": "town", "name": town.get_name_ident()}
+        wx.PostEvent(self._panel, h3sed.gui.PluginEvent(self._panel.Id, **evt_args))
+
+
 
 
 def parse(hero_bytes, version, savefile=None, span=None):

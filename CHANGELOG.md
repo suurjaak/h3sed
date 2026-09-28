@@ -1,8 +1,9 @@
 CHANGELOG
 =========
 
-3.9, 2026-09-27
+3.9, 2026-09-28
 ---------------
+- added towns section
 - add hero map status and current town to hero profile
 - fix parsing hero map coordinates in Restoration of Erathia
 

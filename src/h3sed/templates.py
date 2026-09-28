@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.09.2026
+@modified  28.09.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -36,6 +36,9 @@ EXPORT_FORMATS = {"csv": "CSV spreadsheet", "html": "HTML document",
 ## Hero property categories for hero index and exports
 HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army", "equipment",
                             "inventory", "spells", "status", "location", "town", "biography"]
+
+## Town property categories for town index and exports
+TOWN_PROPERTY_CATEGORIES = ["faction", "location", "visiting_hero", "garrison_hero", "army"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -168,6 +171,8 @@ def make_entity_yamls(entity, categories=None, as_list=False):
               "currents":  [YAML texts for unsaved values per property in display order]}
     """
     PROPERTY_CATEGORIES, ENTITY_PROPERTIES = HERO_PROPERTY_CATEGORIES, h3sed.hero.PROPERTIES
+    if isinstance(entity, h3sed.town.Town):
+        PROPERTY_CATEGORIES, ENTITY_PROPERTIES = TOWN_PROPERTY_CATEGORIES, h3sed.town.PROPERTIES
 
     if categories is None: categories = {k: True for k in PROPERTY_CATEGORIES}
     if categories.get("devices"): categories = dict(categories, stats=True)
@@ -236,17 +241,22 @@ def serialize_property_yaml(state, indent="  "):
         keys = list(state.__slots__)
         if isinstance(state, h3sed.hero.Profile):
             keys = ["faction", "status", "location", "town", "biography"]
+        elif isinstance(state, h3sed.town.Profile):
+            keys = ["faction", "location", "garrison_hero", "visiting_hero"]
+        is_profile = isinstance(state, (h3sed.hero.Profile, h3sed.town.Profile))
         for key in keys:
             maxlen = max(maxlen, len(key))
-            if "faction" == key and isinstance(state, h3sed.hero.Profile):
+            if "faction" == key and is_profile:
                 value = state.format_faction()
-            if "status" == key and isinstance(state, h3sed.hero.Profile):
+            elif "status" == key and is_profile:
                 value = state.format_status()
-            elif "location" == key and isinstance(state, h3sed.hero.Profile):
+            elif "location" == key and is_profile:
                 value = state.format_location()
+            elif isinstance(state[key], h3sed.common.NamedEntity):
+                value = str(state[key])
             else:
-                value = str(state[key] or "")
-            if isinstance(state, h3sed.hero.Profile) and not value:
+                value = state[key]
+            if is_profile and not value:
                 continue # for key
             pairs += [("%s%s:" % (indent, key), fmt(value))]
     return pairs, maxlen
@@ -531,6 +541,41 @@ category = get("category")
 
 
 """
+Text to search for filtering towns index.
+
+@param   hero       Town instance
+@param  ?category   category to produce if not all
+"""
+TOWN_SEARCH_TEXT = """<%
+import h3sed
+from h3sed import conf, metadata
+from h3sed.lib.i18n import translate as __
+category = get("category")
+%>
+%if category is None or "name" == category:
+{{ town.name }}
+%endif
+%if category is None or "faction" == category:
+{{ __(town.profile.format_faction()) }}
+%endif
+%if category is None or "location" == category:
+{{ town.profile.format_location() }}
+%endif
+%if category is None or "visiting_hero" == category:
+{{ town.profile.visiting_hero.name if town.profile.visiting_hero else "" }}
+%endif
+%if category is None or "garrison_hero" == category:
+{{ town.profile.garrison_hero.name if town.profile.garrison_hero else "" }}
+%endif
+%if category is None or "army" == category:
+    %for army in filter(bool, town.army):
+{{ __(army["name"]) }}: {{ army["count"] }}
+    %endfor
+%endif
+"""
+
+
+"""
 HTML text shown in heroes index.
 
 @param   heroes      [Hero instance, ]
@@ -702,6 +747,105 @@ if len(label_text) > 7: label_text = label_text[:5]
 %endif
 %endfor
 %if heroes:
+</table>
+%endif
+</font>
+"""
+
+
+"""
+HTML text shown in towns index.
+
+@param   towns       [Town instance, ]
+@param   links       [link for town, ]
+@param   count       total number of towns
+@param   savefile    metadata.Savefile instance
+@param  ?categories  {category: whether to show category columns} if not showing all
+@param  ?towntexts   [{category: text for town, }] for sorting
+@param  ?sort_col    field to sort towns by
+@param  ?sort_asc    whether sort is ascending or descending
+@param  ?text        current search text if any
+"""
+TOWN_INDEX_HTML = """<%
+import h3sed
+from h3sed import conf, metadata
+from h3sed.lib.i18n import translate as __
+categories = get("categories")
+categories, towntexts, sort_col, sort_asc = (get(k) for k in ("categories", "towntexts", "sort_col", "sort_asc"))
+towns_sorted = list(towns)
+if sort_col:
+    if "index" == sort_col:
+        if not sort_asc: towns_sorted.reverse()
+    elif towntexts:
+        indexlist = list(range(len(towns)))
+        sortkey = lambda i: (towntexts[i][sort_col], towns[i].name, towns[i].name_counter)
+        if "faction" == sort_col:
+            sortkey = lambda i: (("neutral" == towns[i].profile.format_faction()), towntexts[i][sort_col], towns[i].name, towns[i].name_counter)
+        indexlist.sort(key=sortkey, reverse=not sort_asc)
+        towns_sorted = [towns[i] for i in indexlist]
+def sortarrow(col):
+    if col != sort_col: return ""
+    return '<font size="1">&nbsp;%s</font>' % ("↓" if sort_asc else "↑")
+%>
+<font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
+%if towns_sorted:
+<table>
+  <tr>
+    <th align="right" valign="bottom" nowrap><a href="sort:index"><font color="{{ conf.FgColour }}">#</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:name"><font color="{{ conf.FgColour }}">{{ __("Name") }}{{! sortarrow("name") }}</font></a></th>
+%if not categories or categories["faction"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:faction"><font color="{{ conf.FgColour }}">{{ __("Faction") }}{{! sortarrow("faction") }}</font></a></th>
+%endif
+%if not categories or categories["location"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:location"><font color="{{ conf.FgColour }}">{{ __("Location") }}{{! sortarrow("location") }}</font></a></th>
+%endif
+%if not categories or categories["visiting_hero"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:visiting_hero"><font color="{{ conf.FgColour }}">{{ __("Visiting hero") }}{{! sortarrow("visiting_hero") }}</font></a></th>
+%endif
+%if not categories or categories["garrison_hero"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:garrison_hero"><font color="{{ conf.FgColour }}">{{ __("Garrison hero") }}{{! sortarrow("garrison_hero") }}</font></a></th>
+%endif
+%if not categories or categories["army"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:army"><font color="{{ conf.FgColour }}">{{ __("Army") }}{{! sortarrow("army") }}</font></a></th>
+%endif
+  </tr>
+%elif count and (get("text") or "").strip():
+<br /><br />&nbsp;&nbsp;
+   <i>No towns to display for "{{ text }}"</i>
+%else:
+<br /><br />&nbsp;&nbsp;
+   <i>No towns to display.</i>
+%endif
+%for town in towns_sorted:
+  <tr>
+    <td align="right" valign="top" nowrap>{{ towns.index(town) + 1 }}</td>
+    <td align="left" valign="top" nowrap>
+      <a href="{{ links[towns.index(town)] }}"><font color="{{ conf.LinkColour }}">{{ town.name }}</font></a>
+%if town.name_counter > 1:
+ ({{ town.name_counter }})
+%endif
+    </td>
+%if not categories or categories["faction"]:
+    <td align="left" valign="top" nowrap>{{ __(town.profile.format_faction()) }}</td>
+%endif
+%if not categories or categories["location"]:
+    <td align="left" valign="top" nowrap>{{ town.profile.format_location() }}</td>
+%endif
+%if not categories or categories["visiting_hero"]:
+    <td align="left" valign="top" nowrap>{{ town.profile.visiting_hero.name if town.profile.visiting_hero else "" }}</td>
+%endif
+%if not categories or categories["garrison_hero"]:
+    <td align="left" valign="top" nowrap>{{ town.profile.garrison_hero.name if town.profile.garrison_hero else "" }}</td>
+%endif
+%if not categories or categories["army"]:
+    <td align="left" valign="top" nowrap>
+    %for army in filter(bool, town.army):
+    <br />{{ __(army["name"]) }}: {{ army["count"] }}
+    %endfor
+    </td>
+%endif
+%endfor
+%if towns:
 </table>
 %endif
 </font>

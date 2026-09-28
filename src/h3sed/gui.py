@@ -31,6 +31,7 @@ import wx
 import wx.adv
 import wx.html
 import wx.lib.agw.flatnotebook
+import wx.lib.agw.hyperlink
 import wx.lib.agw.labelbook
 import wx.lib.newevent
 
@@ -1645,6 +1646,7 @@ class SavefilePage(wx.Panel):
 
         self.savefile = savefile
         self.filename = savefile.filename
+        self.flags = {} # {name: various flags for UI flow}
         self.plugins = [] # Instantiated plugins
         self.edit_name = None
         self.edit_desc = None
@@ -1684,8 +1686,10 @@ class SavefilePage(wx.Panel):
 
         self.TopLevelParent.page_file_latest = self
         self.Bind(EVT_SAVEFILE_PAGE, self.on_page_event)
+        self.Bind(EVT_PLUGIN, self.on_plugin_event)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy)
         self.TopLevelParent.Bind(EVT_LANGUAGE, self.on_change_language)
+        notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_page)
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda e: (splitter.SetSashPosition(SASH_DEFAULTPOS),
                       conf.Settings.update({"savepage.splitter_pos": SASH_DEFAULTPOS})))
         splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED,
@@ -1863,17 +1867,23 @@ class SavefilePage(wx.Panel):
 
     def load_data(self):
         """Loads data from our file."""
+        PLUGINS = [("hero", images.PageHero.Bitmap), ("town", images.PageTown.Bitmap)]
         if not self.plugins:
             self.savefile.parse()
-            icon_index = self.notebook.GetImageList().Add(images.PageHero.Bitmap)
-            panel = wx.Panel(self.notebook)
-            self.notebook.AddPage(panel, __("Hero"), imageId=icon_index)
-            self.plugins.append(common_gui.EntityPlugin("hero", self.savefile, panel, self.undoredo))
+            self.flags["ignore_paging"] = True
+            for kind, bitmap in PLUGINS:
+                icon_index = self.notebook.GetImageList().Add(bitmap)
+                panel = wx.Panel(self.notebook)
+                self.notebook.AddPage(panel, __(kind.title()), imageId=icon_index)
+                self.plugins.append(common_gui.EntityPlugin(kind, self.savefile, panel, self.undoredo))
 
             if self.notebook.PageCount < 2:
                 tabarea = next((x for x in self.notebook.Children
                                 if isinstance(x, wx.lib.agw.labelbook.ImageContainer)), None)
                 tabarea and (tabarea.Hide(), self.notebook.Layout())
+            if conf.Settings["savepage.page_index"] < self.notebook.GetPageCount():
+                self.notebook.SetSelection(conf.Settings["savepage.page_index"])
+            self.flags.pop("ignore_paging", None)
             self.update_metadata()
             self.Refresh()
             for p in self.plugins: p.render()
@@ -1896,7 +1906,9 @@ class SavefilePage(wx.Panel):
     def plugin_action(self, name, **kwargs):
         """Sends action to plugin specified by name."""
         plugin = next((p for p in self.plugins if p.name == name), None)
-        if plugin: plugin.action(**kwargs)
+        if plugin:
+            self.notebook.SetSelection(self.plugins.index(plugin))
+            plugin.action(**kwargs)
 
 
     def show_changes(self):
@@ -1923,6 +1935,13 @@ class SavefilePage(wx.Panel):
                 wx.EndBusyCursor()
 
 
+    def on_change_page(self, event):
+        """Handler for changing page in the main notebook, remembers setting for next file."""
+        event.Skip()
+        if self.flags.get("ignore_paging"): return
+        conf.Settings["savepage.page_index"] = event.GetSelection()
+
+
     def on_destroy(self, event):
         """Handler for page destruction, unbinds events from parent."""
         if event.EventObject is self and self.TopLevelParent:
@@ -1941,6 +1960,12 @@ class SavefilePage(wx.Panel):
         changed = self.savefile.is_changed()
         evt = SavefilePageEvent(self.Id, **dict(args, source=self, modified=changed))
         wx.PostEvent(self.Parent, evt)
+
+
+    def on_plugin_event(self, event):
+        """Handler for plugin event like opening a town page."""
+        action, kind, name = (getattr(event, n, None) for n in ("action", "kind", "name"))
+        if "open" == action: self.plugin_action(kind, load=name)
 
 
 
@@ -2467,13 +2492,23 @@ def build(plugin, panel):
 
 
         elif "link" == prop.get("type"):
-            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])),
-                               name="%s_label" % prop["name"])
-            c2 = wx.adv.HyperLinkCtrl(panel, name=prop["name"])
+            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])))
+            c2 = wx.lib.agw.hyperlink.HyperLinkCtrl(panel)
+            c2.SetUnderlines(link=False, visited=False, rollover=True)
+            colour = wx.Colour(conf.LinkColour)
+            c2.SetColours(link=colour, visited=colour, rollover=colour)
+            c2.AutoBrowse(False)
+            c2.EnableRollover(True)
+            if prop.get("tooltip"):
+                c2.ToolTip = prop["tooltip"]() if callable(prop["tooltip"]) else prop["tooltip"]
+            wx.CallAfter(c2.UpdateLink) # Workaround style not refreshing before mouseover
 
             producer = prop["format"] if callable(prop.get("format")) else lambda: state.get(prop["name"])
-            c2.Value = producer() or ""
-            c2.Bind(wx.adv.EVT_HYPERLINK, lambda e: prop["handler"]() if prop.get("handler") else None)
+            c2.Label = producer() or ""
+            c2.UpdateLink()
+            if prop.get("handler"):
+                c2.Bind(wx.lib.agw.hyperlink.EVT_HYPERLINK_LEFT,
+                        functools.partial((lambda handler, e: handler()), prop["handler"]))
 
             sizer.Add(c1, pos=(count, 0))
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)

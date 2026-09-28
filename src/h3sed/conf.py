@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  27.09.2026
+@modified  28.09.2026
 ------------------------------------------------------------------------------
 """
 try: from ConfigParser import RawConfigParser                 # Py2
@@ -26,8 +26,8 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "3.9.dev5"
-VersionDate = "27.09.2026"
+Version = "3.9.dev6"
+VersionDate = "28.09.2026"
 
 Frozen = getattr(sys, "frozen", False)
 if Frozen:
@@ -87,8 +87,10 @@ ConsoleHistoryCommands = []
 Language = "en"
 
 """Various UI selection states."""
-Settings = {"savefile.filter_index": 0, "savepage.splitter_pos": 36, "hero.charsheet_view": "normal",
-            "hero.sort_col": "index", "hero.sort_asc": True, "hero.tab_index": 0}
+Settings = {"savefile.filter_index": 0, "savepage.page_index": 0, "savepage.splitter_pos": 36,
+            "hero.manifest_view": "normal", "town.manifest_view": "normal",
+            "hero.sort_col": "index", "hero.sort_asc": True, "hero.tab_index": 0,
+            "hero.sort_col": "index", "hero.sort_asc": True, "town.tab_index": 0}
 
 """Contents of Recent Files menu."""
 RecentFiles = []

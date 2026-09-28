@@ -6,7 +6,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     21.03.2020
-@modified    11.06.2024
+@modified    28.09.2026
 ------------------------------------------------------------------------------
 """
 try:
@@ -563,6 +563,38 @@ PageHero = PyEmbeddedImage(
     "XYKkBAuFu90oQkhD9jyEorfdT5k4nuTE8bQ5HWzdXMzosYms2VwHQDBg8LVMGZeC4fdSWlHD"
     "pZYBTB6p82WZBKkGZ4CQBWx6Kw6Hs5nuTkHr9Vs+YA7oeNVwzv3Zfce94KMVNwQcGng7FI7a"
     "jJC8Rtzlq0SqIAK3DQHxn7NH4UawMfL+f/n60Y8HD/8CJkMWqBywNrcAAAAASUVORK5CYII="
+)
+
+
+"""Icon for the Town page in a savefile tab."""
+PageTown = PyEmbeddedImage(
+    "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"
 )
 
 
