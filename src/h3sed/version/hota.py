@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  27.09.2026
+@modified  28.09.2026
 ------------------------------------------------------------------------------
 """
 import copy
@@ -469,8 +469,8 @@ HERO_REGEX = re.compile(b"""
 
     .{63}                    #  63 bytes: unknown                              050-112
 
-    .{28}                    #  28 bytes: 7 4-byte creature IDs                113-150
-    .{28}                    #  28 bytes: 7 4-byte creature counts             151-168
+    .{28}                    #  28 bytes: 7 4-byte creature IDs                113-140
+    .{28}                    #  28 bytes: 7 4-byte creature counts             141-168
 
                              #  13 bytes: hero name, null-padded               169-181
     (?P<name>[^\x00-\x20].{11}\x00)
