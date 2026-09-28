@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  27.09.2026
+@modified  28.09.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -169,6 +169,13 @@ class ArmyPlugin(object):
                         if "window" == prop.get("type"): ctrl.Size = ctrl.MinSize = size
                         ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
                     size = ctrl.Size
+            label = wx.StaticText(self._panel, label=__("Town army is with garrisoned hero."))
+            h3sed.lib.controls.ColourManager.Manage(label, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
+            self._panel.Sizer.Add(label, border=10, flag=wx.TOP | wx.LEFT, proportion=1)
+            self._ctrls.append({"hint": label})
+        
+        self._panel.Enable(not self.is_readonly())
+        self._ctrls[-1]["hint"].Show(self.is_readonly())
         self._panel.Layout()
         return result
 
@@ -185,6 +192,9 @@ class ArmyPlugin(object):
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_regrade_army, down=True), item_downgrade)
         menu.Bind(wx.EVT_MENU, functools.partial(self.on_round_army, number=-1), item_reset)
         menu.Bind(wx.EVT_MENU, self.on_remove_all, item_clear)
+        if self.is_readonly():
+            for item in menu.MenuItems:
+                menu.Enable(item.Id, False)
         return menu
 
 
@@ -275,6 +285,13 @@ class ArmyPlugin(object):
             kwargs = dict(number=number, rowindex=rowindex)
             menu.Bind(wx.EVT_MENU, functools.partial(self.on_round_army, **kwargs), item)
         return menu
+
+
+    def is_readonly(self):
+        """Returns whether current army cannot be modified (e.g. town has garrisoned hero)."""
+        if isinstance(self._entity, h3sed.town.Town) and self._entity.profile.garrison_hero:
+            return True
+        return False
 
 
     def on_regrade_army(self, event, down=True):

@@ -42,6 +42,9 @@ Subplugin instances are expected to have the following API:
     def make_common_menu(self):
         '''Optional. Returns wx.Menu with plugin-specific actions.'''
 
+    def is_readonly(self):
+        '''Optional. Returns whether plugin data is currently read-only.'''
+
     def on_add(self, prop, value):
         '''
         Optional. Handler for adding something in subplugin
@@ -890,6 +893,8 @@ class EntityPlugin(object):
                 if category not in PROPERTIES:
                     logger.warning("Unknown category in %s data: %r", self.name, category)
                 continue  # for
+            if callable(getattr(plugin, "is_readonly", None)) and plugin.is_readonly():
+                continue # for
 
             state0 = plugin.state()
             if state is None:
