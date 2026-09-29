@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    29.09.2026
+@modified    30.09.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -2001,7 +2001,7 @@ class PluginCommand(wx.Command):
     Name = property(GetName)
 
     def GetNameRaw(self):
-        """Returns command name in priginal language."""
+        """Returns command name in original language."""
         return i18n.format_nested(self._name, *self._name_args, do_translate=False)
     NameRaw = property(GetNameRaw)
 
