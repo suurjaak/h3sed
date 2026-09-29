@@ -1285,11 +1285,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
             page = next(iter(self.files.values()))["page"]
-        if isinstance(page, SavefilePage) and page.undoredo.CanUndo():
-            guibase.status("Undoing %s", page.undoredo.CurrentCommand.Name,
-                           flash=conf.StatusShortFlashLength)
-            logger.info("Undoing %s", page.undoredo.CurrentCommand.NameRaw)
-            page.undoredo.Undo()
+        if isinstance(page, SavefilePage):
+            page.use_undoredo(redo=False)
 
 
     def on_redo_savefile(self, event=None):
@@ -1297,13 +1294,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         page = self.notebook.GetCurrentPage()
         if not isinstance(page, SavefilePage) and len(self.files) == 1:
             page = next(iter(self.files.values()))["page"]
-        if isinstance(page, SavefilePage) and page.undoredo.CanRedo():
-            cmdpos = 0 if not page.undoredo.CurrentCommand else \
-                     page.undoredo.Commands.index(page.undoredo.CurrentCommand) + 1
-            guibase.status("Redoing %s", page.undoredo.Commands[cmdpos].Name,
-                           flash=conf.StatusShortFlashLength)
-            logger.info("Redoing %s", page.undoredo.Commands[cmdpos].NameRaw)
-            page.undoredo.Redo()
+        if isinstance(page, SavefilePage):
+            page.use_undoredo(redo=True)
 
 
     def on_menu_darkmode(self, event):
@@ -1921,6 +1913,24 @@ class SavefilePage(wx.Panel):
             dlg.ShowModal()
 
 
+    def use_undoredo(self, redo=False):
+        """Performs undo or redo if available."""
+        cmd = None
+        if redo and self.undoredo.CanRedo():
+            cmdpos = 0 if not self.undoredo.CurrentCommand else \
+                     self.undoredo.Commands.index(self.undoredo.CurrentCommand) + 1
+            cmd = self.undoredo.Commands[cmdpos]
+        elif not redo and self.undoredo.CanUndo():
+            cmd = self.undoredo.CurrentCommand
+        if cmd is None: return
+
+        action = "Redoing %s" if redo else "Undoing %s"
+        guibase.status(action, cmd.Name, flash=conf.StatusShortFlashLength)
+        logger.info(action, cmd.NameRaw)
+        self.notebook.SetSelection(self.plugins.index(cmd.Plugin))
+        self.undoredo.Redo() if redo else self.undoredo.Undo()
+
+
     def on_change_language(self, event):
         """Handler for changing application interface language, re-renders child plugins."""
         with controls.BusyPanel(self, __("Changing language.")):
@@ -2021,6 +2031,11 @@ class PluginCommand(wx.Command):
         self._plugin.render(reload=True, log=False)
         self._plugin.patch()
         return True
+
+    @property
+    def Plugin(self):
+        """Returns plugin instance."""
+        return self._plugin
 
     @property
     def Timestamp(self):
