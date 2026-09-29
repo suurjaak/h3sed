@@ -1925,7 +1925,7 @@ class SavefilePage(wx.Panel):
         if cmd is None: return
 
         action = "Redoing %s" if redo else "Undoing %s"
-        guibase.status(action, cmd.Name, flash=conf.StatusShortFlashLength)
+        guibase.status(__(action, cmd.Name), flash=conf.StatusShortFlashLength)
         logger.info(action, cmd.NameRaw)
         self.notebook.SetSelection(self.plugins.index(cmd.Plugin))
         self.undoredo.Redo() if redo else self.undoredo.Undo()
