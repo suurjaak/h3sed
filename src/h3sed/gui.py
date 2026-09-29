@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    27.09.2026
+@modified    29.09.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -534,7 +534,7 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
 
         def on_call(entry, *_):
             """Handler for invoking a user function with current value, sets result as new value."""
-            function_title = wx.Control.RemoveMnemonics(entry["title"])
+            function_title = wx.Control.RemoveMnemonics(entry.get("title", "<unnamed>"))
             logger.info("Invoking function %r.", function_title)
             kwargs = make_function_arguments()
             try: value = functions.execute_function(entry["target"], **kwargs)
@@ -554,6 +554,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
                        (conf.HtmlFontName, conf.FgColour, text.rstrip())
             buttons = {__("&Copy"): functools.partial(on_copy, value)}
             with controls.HtmlDialog(self, function_title, text, buttons=buttons) as dlg:
+                dlg.Size = (min(dlg.Size.Width, int(1.5 * self.Size.Width)), -1)
+                dlg.CenterOnParent()
                 dlg.ShowModal()
 
         def on_change(event):
