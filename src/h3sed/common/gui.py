@@ -62,7 +62,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  28.09.2026
+@modified  29.09.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -174,8 +174,9 @@ class EntityPlugin(object):
         if "town" == self.name: PROPERTY_CATEGORIES = templates.TOWN_PROPERTY_CATEGORIES
         for category in PROPERTY_CATEGORIES:
             togglename = "%s.toggle_%s" % (self.name, category)
-            help = __("Show or hide %s column" + ("s" if "stats" == category else ""), __(category))
-            b = tb_index.AddCheckTool(wx.ID_ANY, __(category.capitalize()), wx.NullBitmap,
+            display = category.replace("_", " ")
+            help = __("Show or hide %s column" + ("s" if "stats" == category else ""), __(display))
+            b = tb_index.AddCheckTool(wx.ID_ANY, __(display.capitalize()), wx.NullBitmap,
                                       shortHelp=help)
             tb_index.ToggleTool(b.Id, conf.Settings.get(togglename, True))
             tb_index.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
