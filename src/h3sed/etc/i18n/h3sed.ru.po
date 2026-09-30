@@ -2090,6 +2090,18 @@ msgstr "нужно %s свободных"
 msgid "No change from: %s"
 msgstr "Нет изменений от действия: %s"
 
+msgid "No heroes to display."
+msgstr "Нет героев для показа."
+
+msgid "No heroes to display for \"%s\""
+msgstr "Нет героев для показа по поиску \"%s\"."
+
+msgid "No towns to display."
+msgstr "Нет городов для показа."
+
+msgid "No towns to display for \"%s\""
+msgstr "Нет городов для показа по поиску \"%s\"."
+
 msgid "No valid hero data in clipboard."
 msgstr "В буфере обмена нет корректных данных героя."
 

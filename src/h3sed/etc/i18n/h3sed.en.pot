@@ -2090,6 +2090,18 @@ msgstr ""
 msgid "No change from: %s"
 msgstr ""
 
+msgid "No heroes to display."
+msgstr ""
+
+msgid "No heroes to display for \"%s\""
+msgstr ""
+
+msgid "No towns to display."
+msgstr ""
+
+msgid "No towns to display for \"%s\""
+msgstr ""
+
 msgid "No valid hero data in clipboard."
 msgstr ""
 

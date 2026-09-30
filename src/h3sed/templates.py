@@ -665,10 +665,10 @@ if len(label_text) > 7: label_text = label_text[:5]
   </tr>
 %elif count and (get("text") or "").strip():
 <br /><br />&nbsp;&nbsp;
-   <i>No heroes to display for "{{ text }}"</i>
+   <i>{{ __('No heroes to display for "%s"', text) }}</i>
 %else:
 <br /><br />&nbsp;&nbsp;
-   <i>No heroes to display.</i>
+   <i>{{ __("No heroes to display.") }}</i>
 %endif
 %for hero in heroes_sorted:
   <tr>
@@ -811,10 +811,10 @@ def sortarrow(col):
   </tr>
 %elif count and (get("text") or "").strip():
 <br /><br />&nbsp;&nbsp;
-   <i>No towns to display for "{{ text }}"</i>
+   <i>{{ __('No towns to display for "%s"', text) }}</i>
 %else:
 <br /><br />&nbsp;&nbsp;
-   <i>No towns to display.</i>
+   <i>{{ __("No towns to display.") }}</i>
 %endif
 %for town in towns_sorted:
   <tr>
