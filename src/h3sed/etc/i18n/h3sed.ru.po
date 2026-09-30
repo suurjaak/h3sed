@@ -1788,13 +1788,13 @@ msgid "Spell Scroll: Weakness"
 msgstr "Свиток заклинания: Слабость"
 
 
-# - Hero UI texts --------------------
+# - Hero/town UI texts --------------------
 
 msgid "%s already matching %s %s"
 msgstr "%s уже является %s %s"
 
 msgid "%s army"
-msgstr "армии героя %s"
+msgstr "армии %s"
 
 msgid "%s equipment"
 msgstr "снаряжения героя %s"
@@ -1834,6 +1834,9 @@ msgstr "Добавить"
 
 msgid "add %s"
 msgstr "добавить %s"
+
+msgid "adventuring"
+msgstr "в походе"
 
 msgid "all"
 msgstr "всё"
@@ -1901,8 +1904,14 @@ msgstr "Уплотнить %s"
 msgid "Copied hero %s data to clipboard."
 msgstr "Данные героя %s скопированы в буфер обмена."
 
+msgid "Copied town %s data to clipboard."
+msgstr "Данные города %s скопированы в буфер обмена."
+
 msgid "Copy current hero data to clipboard"
 msgstr "Скопировать данные текущего героя в буфер обмена"
+
+msgid "Copy current town data to clipboard"
+msgstr "Скопировать данные текущего города в буфер обмена"
 
 msgid "Copy data"
 msgstr "Скопировать данные"
@@ -1970,20 +1979,23 @@ msgstr "Экспорт %s"
 msgid "Faction"
 msgstr "Фракция"
 
-msgid "Filter hero index on any matching text"
-msgstr "Фильтровать индекс героев по любому тексту"
+msgid "Filter %s on any matching text"
+msgstr "Фильтровать %s по любому тексту"
 
 msgid "Filter heroes"
 msgstr "Фильтровать героев"
-
-msgid "Filter heroes on any matching text"
-msgstr "Фильтровать героев по любому тексту"
 
 msgid "from inventory"
 msgstr "из рюкзака"
 
 msgid "Game version"
 msgstr "Версия игры"
+
+msgid "garrison hero"
+msgstr "герой-гарнизон"
+
+msgid "garrisoned"
+msgstr "в гарнизоне"
 
 msgid "handicapped to %s"
 msgstr "ограничен как %s"
@@ -2003,6 +2015,9 @@ msgstr "Лист персонажа героя"
 msgid "Hero has no spellbook."
 msgstr "У героя нет книги магии."
 
+msgid "hero index"
+msgstr "индекс героев"
+
 msgid "Heroes from %s"
 msgstr "Герои из %s"
 
@@ -2018,6 +2033,9 @@ msgstr "В &обратном порядке"
 msgid "In &slot and name order"
 msgstr "В порядке &слотов и имен"
 
+msgid "inactive"
+msgstr "неактивный"
+
 msgid "INDEX"
 msgstr "ИНДЕКС"
 
@@ -2032,9 +2050,6 @@ msgstr "Координаты"
 
 msgid "Loading %s."
 msgstr "Загрузка %s."
-
-msgid "Loading heroes."
-msgstr "Загрузка героев."
 
 msgid "Lower %s"
 msgstr "Вниз: %s"
@@ -2078,17 +2093,32 @@ msgstr "Нет изменений от действия: %s"
 msgid "No valid hero data in clipboard."
 msgstr "В буфере обмена нет корректных данных героя."
 
+msgid "No valid town data in clipboard."
+msgstr "В буфере обмена нет корректных данных города."
+
 msgid "Normal view"
 msgstr "Обычный вид"
+
+msgid "Open hero page for %s"
+msgstr "Открыть страницу героя %s"
 
 msgid "Open options menu"
 msgstr "Меню параметров"
 
+msgid "Open town page for %s"
+msgstr "Открыть страницу города %s"
+
 msgid "Paste data from clipboard to current hero"
 msgstr "Вставить данные из буфера обмена в текущего героя"
 
+msgid "Paste data from clipboard to current town"
+msgstr "Вставить данные из буфера обмена в текущего города"
+
 msgid "Pasting data to hero %s from clipboard."
 msgstr "Вставка данных героя %s из буфера обмена."
+
+msgid "Pasting data to town %s from clipboard."
+msgstr "Вставка данных города %s из буфера обмена."
 
 msgid "Power"
 msgstr "Сила"
@@ -2126,14 +2156,23 @@ msgstr "Округлить количество армий до"
 msgid "Save current hero to file"
 msgstr "Сохранить текущего героя в файл"
 
+msgid "Save current town to file"
+msgstr "Сохранить текущего города в файл"
+
 msgid "scroll"
 msgstr "свиток"
 
 msgid "Search heroes"
 msgstr "Поиск героев"
 
+msgid "Search towns"
+msgstr "Поиск городов"
+
 msgid "&Select hero"
 msgstr "&Выбор героя"
+
+msgid "&Select town"
+msgstr "&Выбор города"
 
 msgid "send"
 msgstr "отправление"
@@ -2180,6 +2219,9 @@ msgstr "Показать или скрывать столбец %s"
 msgid "Show or hide %s columns"
 msgstr "Показать или скрывать столбцы %s"
 
+msgid "Show town full manifest"
+msgstr "Показать полный список города"
+
 msgid "Size"
 msgstr "Размер"
 
@@ -2197,6 +2239,9 @@ msgstr "Путь"
 
 msgid "Stats"
 msgstr "Статы"
+
+msgid "status"
+msgstr "статус"
 
 msgid "surface"
 msgstr "поверхность"
@@ -2225,6 +2270,9 @@ msgstr "Поменять с рюкзака"
 msgid "tent"
 msgstr "палатка"
 
+msgid "to inventory"
+msgstr "в рюкзак"
+
 msgid "Toggle %s"
 msgstr "Выбрать %s"
 
@@ -2234,9 +2282,6 @@ msgstr "выбрать все по %s"
 msgid "Toggle full description"
 msgstr "Переключить полное описание"
 
-msgid "to inventory"
-msgstr "в рюкзак"
-
 msgid "top"
 msgstr "в начало"
 
@@ -2245,6 +2290,24 @@ msgstr "Восстановить очки хода полностью"
 
 msgid "Top up remaining spell points to hero maximum"
 msgstr "Восстановить ману полностью"
+
+msgid "town"
+msgstr "город"
+
+msgid "towns"
+msgstr "городов"
+
+msgid "Town army is with garrisoned hero."
+msgstr "Армия города\nвместе с гарнизонным героем."
+
+msgid "Town '%s' not found."
+msgstr "Город '%s' не найден."
+
+msgid "town index"
+msgstr "индекс городов"
+
+msgid "Town manifest"
+msgstr "Список города"
 
 msgid "underground"
 msgstr "подземелье"
@@ -2287,6 +2350,12 @@ msgstr ""
 "Получение новых очков всё ещё увеличивает скрытое значение, "
 "пока оно не переполнится и не сбросится до фактического минимума, "
 "после чего поведение возвращается к норме."
+
+msgid "visiting"
+msgstr "посетитель"
+
+msgid "visiting hero"
+msgstr "герой-гость"
 
 msgid "with"
 msgstr "с"

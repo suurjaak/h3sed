@@ -278,7 +278,7 @@ class Profile(SlotsDict, DataClass):
         if self.on_map:
             if self.town: return "visiting"
             return "adventuring"
-        return "garrison"
+        return "garrisoned"
 
     @staticmethod
     def make_faction_text(faction, version=None):

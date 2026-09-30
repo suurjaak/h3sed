@@ -1941,7 +1941,9 @@ class SavefilePage(wx.Panel):
                 self.label_vers.Label = __("Game version") + ":"
                 self.label_desc.Label = __("Description") + ":"
                 self.label_name.ContainingSizer.Layout()
-                for p in self.plugins: p.render(rebuild=True)
+                for i, plugin in enumerate(self.plugins):
+                    self.notebook.SetPageText(i, __(plugin.name.title()))
+                    plugin.render(rebuild=True)
             finally:
                 self.Thaw()
                 wx.EndBusyCursor()

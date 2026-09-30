@@ -62,7 +62,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  29.09.2026
+@modified  30.09.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -191,7 +191,7 @@ class EntityPlugin(object):
         search.SetDescriptiveText(__("Search %s" % util.plural(self.name)))
         search.ShowSearchButton(True)
         search.ShowCancelButton(True)
-        search.ToolTip = __("Filter %s index on any matching text" % self.name) + " (%s-F)" % CTRL
+        search.ToolTip = __("Filter %s on any matching text", __("%s index" % self.name)) + " (%s-F)" % CTRL
         search.Bind(wx.EVT_CHAR, self.on_search)
         search.Bind(wx.EVT_TEXT, self.on_search)
         search.Bind(wx.EVT_SEARCH, self.on_search) if hasattr(wx, "EVT_SEARCH") else None
@@ -213,7 +213,8 @@ class EntityPlugin(object):
         bmp2 = wx.ArtProvider.GetBitmap(wx.ART_COPY,        wx.ART_TOOLBAR, (20, 20))
         bmp3 = wx.ArtProvider.GetBitmap(wx.ART_PASTE,       wx.ART_TOOLBAR, (20, 20))
         bmp4 = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE,   wx.ART_TOOLBAR, (16, 16))
-        tb.AddTool(wx.ID_INFO,  "", bmp1, shortHelp=__("Show %s full character sheet" % self.name) + "\t%s-I" % CTRL)
+        manifest = "character sheet" if "hero" == self.name else "manifest"
+        tb.AddTool(wx.ID_INFO,  "", bmp1, shortHelp=__("Show %s full %s" % (self.name, manifest)) + "\t%s-I" % CTRL)
         tb.AddSeparator()
         tb.AddTool(wx.ID_COPY,  "", bmp2, shortHelp=__("Copy current %s data to clipboard" % self.name))
         tb.AddTool(wx.ID_PASTE, "", bmp3, shortHelp=__("Paste data from clipboard to current %s" % self.name))
@@ -323,7 +324,7 @@ class EntityPlugin(object):
         self._entitypanel.Hide()
         self._panel.Thaw()
         self._ctrls["properties"] = nb
-        with controls.BusyPanel(self._panel, __("Loading %s." % util.plural(self.name))):
+        with controls.BusyPanel(self._panel, __("Loading %s.", __(util.plural(self.name)))):
             self.populate_index()
 
 
@@ -515,7 +516,7 @@ class EntityPlugin(object):
         INDEX_TPL = templates.HERO_INDEX_HTML if "hero" == self.name else templates.TOWN_INDEX_HTML
         page = step.Template(INDEX_TPL, escape=True).expand(**tplargs)
         if page != self._index["html"]:
-            info = "%s %s" % (len(entities), __(util.plural("entity", entities, numbers=False)))
+            info = "%s %s" % (len(entities), __(util.plural(self.name, entities, numbers=False)))
             if len(entities) != len(self._entities):
                 info = __("%s visible (%s total)", info, len(self._entities))
             self._ctrls["count"].Label = info

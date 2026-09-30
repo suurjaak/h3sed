@@ -1794,7 +1794,7 @@ msgid "Spell Scroll: Weakness"
 msgstr ""
 
 
-# - Hero UI texts --------------------
+# - Hero/town UI texts --------------------
 
 msgid "%s already matching %s %s"
 msgstr ""
@@ -1839,6 +1839,9 @@ msgid "Add"
 msgstr ""
 
 msgid "add %s"
+msgstr ""
+
+msgid "adventuring"
 msgstr ""
 
 msgid "all"
@@ -1907,7 +1910,13 @@ msgstr ""
 msgid "Copied hero %s data to clipboard."
 msgstr ""
 
+msgid "Copied town %s data to clipboard."
+msgstr ""
+
 msgid "Copy current hero data to clipboard"
+msgstr ""
+
+msgid "Copy current town data to clipboard"
 msgstr ""
 
 msgid "Copy data"
@@ -1976,19 +1985,19 @@ msgstr ""
 msgid "Faction"
 msgstr ""
 
-msgid "Filter hero index on any matching text"
-msgstr ""
-
-msgid "Filter heroes"
-msgstr ""
-
-msgid "Filter heroes on any matching text"
+msgid "Filter %s on any matching text"
 msgstr ""
 
 msgid "from inventory"
 msgstr ""
 
 msgid "Game version"
+msgstr ""
+
+msgid "garrison hero"
+msgstr ""
+
+msgid "garrisoned"
 msgstr ""
 
 msgid "handicapped to %s"
@@ -2009,6 +2018,9 @@ msgstr ""
 msgid "Hero has no spellbook."
 msgstr ""
 
+msgid "hero index"
+msgstr ""
+
 msgid "Heroes from %s"
 msgstr ""
 
@@ -2024,6 +2036,9 @@ msgstr ""
 msgid "In &slot and name order"
 msgstr ""
 
+msgid "inactive"
+msgstr ""
+
 msgid "INDEX"
 msgstr ""
 
@@ -2037,9 +2052,6 @@ msgid "Location"
 msgstr ""
 
 msgid "Loading %s."
-msgstr ""
-
-msgid "Loading heroes."
 msgstr ""
 
 msgid "Lower %s"
@@ -2081,16 +2093,31 @@ msgstr ""
 msgid "No valid hero data in clipboard."
 msgstr ""
 
+msgid "No valid town data in clipboard."
+msgstr ""
+
 msgid "Normal view"
+msgstr ""
+
+msgid "Open hero page for %s"
 msgstr ""
 
 msgid "Open options menu"
 msgstr ""
 
+msgid "Open town page for %s"
+msgstr ""
+
 msgid "Paste data from clipboard to current hero"
 msgstr ""
 
+msgid "Paste data from clipboard to current town"
+msgstr ""
+
 msgid "Pasting data to hero %s from clipboard."
+msgstr ""
+
+msgid "Pasting data to town %s from clipboard."
 msgstr ""
 
 msgid "Power"
@@ -2129,13 +2156,22 @@ msgstr ""
 msgid "Save current hero to file"
 msgstr ""
 
+msgid "Save current town to file"
+msgstr ""
+
 msgid "scroll"
 msgstr ""
 
 msgid "Search heroes"
 msgstr ""
 
+msgid "Search towns"
+msgstr ""
+
 msgid "&Select hero"
+msgstr ""
+
+msgid "&Select town"
 msgstr ""
 
 msgid "send"
@@ -2183,6 +2219,9 @@ msgstr ""
 msgid "Show or hide %s columns"
 msgstr ""
 
+msgid "Show town full manifest"
+msgstr ""
+
 msgid "Size"
 msgstr ""
 
@@ -2199,6 +2238,9 @@ msgid "Source"
 msgstr ""
 
 msgid "Stats"
+msgstr ""
+
+msgid "status"
 msgstr ""
 
 msgid "surface"
@@ -2228,6 +2270,9 @@ msgstr ""
 msgid "tent"
 msgstr ""
 
+msgid "to inventory"
+msgstr ""
+
 msgid "Toggle %s"
 msgstr ""
 
@@ -2237,9 +2282,6 @@ msgstr ""
 msgid "Toggle full description"
 msgstr ""
 
-msgid "to inventory"
-msgstr ""
-
 msgid "top"
 msgstr ""
 
@@ -2247,6 +2289,24 @@ msgid "Top up remaining movement points to hero total"
 msgstr ""
 
 msgid "Top up remaining spell points to hero maximum"
+msgstr ""
+
+msgid "town"
+msgstr "город"
+
+msgid "towns"
+msgstr ""
+
+msgid "Town army is with garrisoned hero."
+msgstr ""
+
+msgid "Town '%s' not found."
+msgstr ""
+
+msgid "town index"
+msgstr ""
+
+msgid "Town manifest"
 msgstr ""
 
 msgid "underground"
@@ -2283,6 +2343,12 @@ msgid ""
 "Gaining new points still increases the hidden value, "
 "until it overflows and wraps around to the actual minimum, "
 "after which it starts acting normally again."
+msgstr ""
+
+msgid "visiting"
+msgstr ""
+
+msgid "visiting hero"
 msgstr ""
 
 msgid "with"

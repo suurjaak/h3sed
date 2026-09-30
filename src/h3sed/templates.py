@@ -1218,7 +1218,7 @@ colptr = max(col_indexes) + 1
     <label for="toggle-{{ category }}" title="{{ __("Show or hide %s column" + ("s" if "stats" == category else ""), __(category)) }}"><input type="checkbox" id="toggle-{{ category }}" onclick="onToggleCategory('{{ category }}', this)" checked />{{ __(category).capitalize() }}</label>
 %endfor
   </div>
-  <input type="search" placeholder="{{ __("Filter heroes") }}" title="{{ __("Filter heroes on any matching text") }}" onkeyup="onSearch(event)" onsearch="onSearch(event)">
+  <input type="search" placeholder="{{ __("Filter heroes") }}" title="{{ __("Filter %s on any matching text", __("heroes")) }}" onkeyup="onSearch(event)" onsearch="onSearch(event)">
 </div>
 <table id="heroes">
   <tr>
