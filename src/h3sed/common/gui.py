@@ -192,6 +192,7 @@ class EntityPlugin(object):
         search.ShowSearchButton(True)
         search.ShowCancelButton(True)
         search.ToolTip = __("Filter %s on any matching text", __("%s index" % self.name)) + " (%s-F)" % CTRL
+        search.Value = self._index["text"]
         search.Bind(wx.EVT_CHAR, self.on_search)
         search.Bind(wx.EVT_TEXT, self.on_search)
         search.Bind(wx.EVT_SEARCH, self.on_search) if hasattr(wx, "EVT_SEARCH") else None
@@ -341,8 +342,7 @@ class EntityPlugin(object):
 
         self._entity = None
         self._pages.clear()
-        for k, v in list(self._index.items()):
-            if isinstance(v, (str, list)): self._index[k] = type(v)()
+        self._index["entitytexts"].clear()
         self._entity_yamls.clear()
 
         self._panel.Freeze()
