@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  28.09.2026
+@modified  30.09.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -396,15 +396,15 @@ entries = [[escape(l).replace(" ", "&nbsp;") for l in ll] for ll in entries]
         %if not i:
     <tr><td colspan="2"><code>{{! l1 }}</code></td></tr>
         %elif l1 == l2:
-    <tr><td width="50%"><code>{{! l1 }}</code></td><td width="50%"><code>{{! l2 }}</code></td></tr>
+    <tr><td width="50%" valign="top"><code>{{! l1 }}</code></td><td width="50%" valign="top"><code>{{! l2 }}</code></td></tr>
         %elif l1 != l2 and ":" not in l1 + l2:
-    <tr><td bgcolor="{{ conf.DiffOldColour }}" width="50%"><font color="black"><code>{{! l1 }}</font></code></td>
-        <td width="50%"><code></code></td></tr>
+    <tr><td bgcolor="{{ conf.DiffOldColour }}" width="50%" valign="top"><font color="black"><code>{{! l1 }}</font></code></td>
+        <td width="50%" valign="top"><code></code></td></tr>
     <tr><td><code></code></td>
-        <td bgcolor="{{ conf.DiffNewColour }}" width="50%"><font color="black"><code>{{! l2 }}</font></code></td></tr>
+        <td bgcolor="{{ conf.DiffNewColour }}" width="50%" valign="top"><font color="black"><code>{{! l2 }}</font></code></td></tr>
         %else:
-    <tr><td bgcolor="{{ conf.DiffOldColour if l1 else "" }}" width="50%"><font color="black"><code>{{! l1 }}</font></code></td>
-        <td bgcolor="{{ conf.DiffNewColour if l2 else "" }}" width="50%"><font color="black"><code>{{! l2 }}</font></code></td></tr>
+    <tr><td bgcolor="{{ conf.DiffOldColour if l1 else "" }}" width="50%" valign="top"><font color="black"><code>{{! l1 }}</font></code></td>
+        <td bgcolor="{{ conf.DiffNewColour if l2 else "" }}" width="50%" valign="top"><font color="black"><code>{{! l2 }}</font></code></td></tr>
         %endif
     %endfor
 %endfor
