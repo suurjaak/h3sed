@@ -62,9 +62,10 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  30.09.2026
+@modified  01.10.2026
 ------------------------------------------------------------------------------
 """
+import ast
 import collections
 import functools
 import logging
@@ -694,7 +695,19 @@ class EntityPlugin(object):
             conf.Settings.update({"%s.sort_col" % self.name: self._index["sort_col"],
                                   "%s.sort_asc" % self.name: self._index["sort_asc"]})
             self.populate_index(force=True)
-
+        else:
+            try:
+                kind, ident = href.split(":", 1)
+                name_ident = ast.literal_eval(ident) # name or (name, counter)
+                if kind == self.name:
+                    self.action(load=name_ident)
+                else:
+                    evt_args = {"action": "open", "kind": kind, "name": name_ident}
+                    wx.PostEvent(self._panel, h3sed.gui.PluginEvent(self._panel.Id, **evt_args))
+            except Exception:
+                logger.exception("Failed to parse link %r.", href)
+            
+            
 
     def on_key(self, event):
         """Handler for pressing a key, focuses filter on Ctrl-F."""
