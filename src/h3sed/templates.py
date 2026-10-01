@@ -748,7 +748,11 @@ if len(label_text) > 7: label_text = label_text[:5]
 %endif
 %if not categories or categories["town"]:
     %if hero.profile.town:
-    <td align="left" valign="top" nowrap><a href="town:{{ repr(hero.profile.town.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ hero.profile.town.name }}</font></a></td>
+    <td align="left" valign="top" nowrap><a href="town:{{ repr(hero.profile.town.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ hero.profile.town.name }}</font></a>
+    %if hero.profile.town.name_counter > 1:
+ ({{ hero.profile.town.name_counter }})
+    %endif
+    </td>
     %else:
     <td></td>
     %endif
@@ -850,14 +854,22 @@ def sortarrow(col):
 %endif
 %if not categories or categories["visiting_hero"]:
     %if town.profile.visiting_hero:
-    <td align="left" valign="top" nowrap><a href="hero:{{ repr(town.profile.visiting_hero.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ town.profile.visiting_hero.name }}</font></a></td>
+    <td align="left" valign="top" nowrap><a href="hero:{{ repr(town.profile.visiting_hero.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ town.profile.visiting_hero.name }}</font></a>
+    %if town.profile.visiting_hero.name_counter > 1:
+ ({{ town.profile.visiting_hero.name_counter }})
+    %endif
+    </td>
     %else:
     <td></td>
     %endif
 %endif
 %if not categories or categories["garrison_hero"]:
     %if town.profile.garrison_hero:
-    <td align="left" valign="top" nowrap><a href="hero:{{ repr(town.profile.garrison_hero.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ town.profile.garrison_hero.name }}</font></a></td>
+    <td align="left" valign="top" nowrap><a href="hero:{{ repr(town.profile.garrison_hero.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ town.profile.garrison_hero.name }}</font></a>
+    %if town.profile.garrison_hero.name_counter > 1:
+ ({{ town.profile.garrison_hero.name_counter }})
+    %endif
+    </td>
     %else:
     <td></td>
     %endif
