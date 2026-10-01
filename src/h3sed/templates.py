@@ -612,6 +612,8 @@ if sort_col:
         sortkey = lambda i: (herotexts[i][sort_col], heroes[i].name, heroes[i].name_counter)
         if "faction" == sort_col:
             sortkey = lambda i: (("neutral" == heroes[i].profile.format_faction()), herotexts[i][sort_col], heroes[i].name, heroes[i].name_counter)
+        elif "status" == sort_col:
+            sortkey = lambda i: (("inactive" == heroes[i].profile.format_status()), herotexts[i][sort_col], heroes[i].name, heroes[i].name_counter)
         indexlist.sort(key=sortkey, reverse=not sort_asc)
         heroes_sorted = [heroes[i] for i in indexlist]
 def sortarrow(col):
@@ -1339,7 +1341,7 @@ colptr = max(col_indexes) + 1
     </td>
 %endif
 %if not categories or categories["status"]:
-    <td>{{ __(hero.profile.format_status()) }}</td>
+    <td data-sort_prefix="{{ 1 if "inactive" == hero.profile.format_status() else 0 }}">{{ __(hero.profile.format_status()) }}</td>
 %endif
 %if not categories or categories["location"]:
     <td title="{{ hero.profile.format_location(long=True) }}">{{ hero.profile.format_location() }}</td>
