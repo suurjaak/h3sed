@@ -114,7 +114,7 @@ msgid "First Aid Tent"
 msgstr "Палатка первой помощи"
 
 
-# - Hero factions --------------------
+# - Player factions --------------------
 
 msgid "Blue Player"
 msgstr "Синяя"
@@ -2320,6 +2320,9 @@ msgstr "индекс городов"
 
 msgid "Town manifest"
 msgstr "Список города"
+
+msgid "type"
+msgstr "тип"
 
 msgid "underground"
 msgstr "подземелье"

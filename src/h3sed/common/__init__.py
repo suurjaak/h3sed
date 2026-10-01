@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   15.09.2026
-@modified  25.09.2026
+@modified  01.10.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -145,7 +145,7 @@ def format_faction(faction, version=None):
         return "%s Player" % FACTIONS[faction]
     if faction == metadata.BLANK[0]:
         return "neutral"
-    return "0x%X" % faction if isinstance(faction, int) else "unknown"
+    return "0x%02X" % faction if isinstance(faction, int) else "unknown"
 
 
 def format_location(x, y, z, long=False):
@@ -153,6 +153,14 @@ def format_location(x, y, z, long=False):
     if None in (x, y, z): return ""
     if not long: return "(%s, %s, %s)" % (x, y, z)
     return "x=%s y=%s %s" % (x, y, __("underground" if z else "surface"))
+
+
+def format_town_type(town_type, version=None):
+    """Returns town type as text."""
+    TYPES = metadata.Store.get("town_types", version=version)
+    if town_type in TYPES:
+        return TYPES[town_type]
+    return "0x%02X" % town_type if isinstance(town_type, int) else "unknown"
 
 
 

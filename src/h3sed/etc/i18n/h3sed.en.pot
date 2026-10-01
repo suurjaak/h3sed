@@ -120,7 +120,7 @@ msgid "First Aid Tent"
 msgstr ""
 
 
-# - Hero factions --------------------
+# - Player factions --------------------
 
 msgid "Blue Player"
 msgstr ""
@@ -2319,6 +2319,9 @@ msgid "town index"
 msgstr ""
 
 msgid "Town manifest"
+msgstr ""
+
+msgid "type"
 msgstr ""
 
 msgid "underground"

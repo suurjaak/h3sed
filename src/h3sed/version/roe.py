@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  28.09.2026
+@modified  01.10.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -15,6 +15,7 @@ import re
 from .. import common
 from .. import hero
 from .. import metadata
+from .. import town
 from .. hero import make_artifact_cast
 
 
@@ -29,8 +30,14 @@ VERSION_BYTE_RANGES = {
 }
 
 
+"""Town types, as {byte value: label}."""
+TOWN_TYPES = {0: "Castle",  1: "Rampart",    2: "Tower",    3: "Inferno", 4: "Necropolis",
+              5: "Dungeon", 6: "Stronghold", 7: "Fortress"}
+
+
 """Allowed (min, max) ranges and other configuration for various hero and town properties."""
 DATA_RANGES = {
+    "town.type":      (  0,  7),
     "town.bytelen":   (393, 393),
 }
 
@@ -80,7 +87,8 @@ TOWN_REGEX = re.compile(b"""
     # Town name length is given in two bytes, but maximum length is actually 14
 
     (?P<faction>[\x00-\x07,\xFF])  #   1 byte:  town faction 0-7 or 255              000-000
-    .{3}                           #   3 bytes: unknown                              001-003
+    .{2}                           #   3 bytes: unknown                              001-002
+    (?P<type>[\x00-\x07])          #   1 byte:  town type                            003-003
     (?P<x>[\x00-\xFC])             #   1 byte:  X coordinate                         004-004
     (?P<y>[\x00-\xFC])             #   1 byte:  Y coordinate                         005-005
     (?P<z>[\x00-\x01])             #   1 byte:  Z coordinate                         006-006
@@ -117,13 +125,17 @@ class Attributes(DataClass, hero.Attributes): pass
 
 class Inventory(DataClass, hero.Inventory):   pass
 
-class Profile(DataClass, hero.Profile):       pass
+class HeroProfile(DataClass, hero.Profile):   pass
 
 class Skill(DataClass, hero.Skill):           pass
 
 class Skills(DataClass, hero.Skills):         pass
 
 class Spells(DataClass, hero.Spells):         pass
+
+class TownProfile(DataClass, town.Profile):
+    __slots__ = dict(town.Profile.__slots__, 
+                     type=common.make_integer_cast("town.type", version=NAME, nullable=True))
 
 
 
@@ -132,6 +144,7 @@ def init():
     EQUIPMENT_SLOTS = {k: v for k, v in metadata.EQUIPMENT_SLOTS.items() if "side5" != k}
     metadata.Store.add("equipment_slots", EQUIPMENT_SLOTS, version=NAME)
     metadata.Store.add("data_ranges",     DATA_RANGES,     version=NAME)
+    metadata.Store.add("town_types",      TOWN_TYPES,      version=NAME)
 
 
 def adapt(name, value, version=None):
@@ -166,13 +179,15 @@ def adapt(name, value, version=None):
     elif "hero.Inventory" == name:
         result = Inventory
     elif "hero.Profile" == name:
-        result = Profile
+        result = HeroProfile
     elif "hero.Skill" == name:
         result = Skill
     elif "hero.Skills" == name:
         result = Skills
     elif "hero.Spells" == name:
         result = Spells
+    elif "town.Profile" == name:
+        result = TownProfile
     elif "town_regex" == name:
         result = TOWN_REGEX
     return result

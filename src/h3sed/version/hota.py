@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  28.09.2026
+@modified  01.10.2026
 ------------------------------------------------------------------------------
 """
 import copy
@@ -16,6 +16,7 @@ import re
 from .. import common
 from .. import hero
 from .. import metadata
+from .. import town
 from .. hero import make_artifact_cast, make_integer_cast, make_string_cast
 
 
@@ -39,12 +40,18 @@ PRIMARY_ATTRIBUTE_GAME_RANGES = {"attack": (0, 99, 231), "defense":   (0, 99, 23
                                  "power":  (1, 99, 231), "knowledge": (1, 99, 231)}
 
 
+"""Town types, as {byte value: label}."""
+TOWN_TYPES = { 0: "Castle",   1: "Rampart",    2: "Tower",    3: "Inferno", 4: "Necropolis",
+               5: "Dungeon",  6: "Stronghold", 7: "Fortress", 8: "Conflux", 9: "Cove",
+              10: "Factory", 11: "Bulwark"}
+
 
 """Allowed (min, max) ranges and other configuration for various hero and town properties."""
 DATA_RANGES = {
     "level":           ( 0, 74),
     "skills":          ( 0, 29),
     "Intelligence":    (1.2, 1.35, 1.5), # Hero maximum spell points multiplier by skill level
+    "town.type":       (  0, 11),
     "town.bytelen":    (546, 581),
 }
 
@@ -497,6 +504,30 @@ HERO_REGEX = re.compile(b"""
 """, re.VERBOSE | re.DOTALL)
 
 
+"""Regulax expression for finding potential town struct in savefile bytes."""
+TOWN_REGEX = re.compile(b"""
+    # Town name length is given in two bytes, but maximum length is actually 14
+
+    (?P<faction>[\x00-\x07,\xFF])  #   1 byte:  town faction 0-7 or 255              000-000
+    .{2}                           #   3 bytes: unknown                              001-002
+    (?P<type>[\x00-\x0B])          #   1 byte:  town type                            003-003
+    (?P<x>[\x00-\xFC])             #   1 byte:  X coordinate                         004-004
+    (?P<y>[\x00-\xFC])             #   1 byte:  Y coordinate                         005-005
+    (?P<z>[\x00-\x01])             #   1 byte:  Z coordinate                         006-006
+    .{2}                           #   2 bytes: unknown                              007-008
+    (?P<army_names>(               #  28 bytes: 7 4-byte creature IDs                009-036
+      (.[\x00,\xFF]{3})
+    ){7})
+    (?P<army_counts>.{28})         #  28 bytes: 7 4-byte creature counts             037-064
+    .{4}                           #   4 bytes: unknown                              065-068
+    (?P<name_len>[^\x00]\x00)      #   2 bytes: name length                          069-070
+    (?P<name>                      #   X bytes: name; not 0-terminated               071-
+      [^\x00-\x20,^\xFF][^\x00-\x1F,^\xFF]{0,13}
+    )
+                                   #   X bytes: unknown
+""", re.VERBOSE | re.DOTALL)
+
+
 """Game minor version for HotA v1.80, from December 2025, adding Bulwark town and Runes skill."""
 BULWARK_MINOR = 0x0A
 
@@ -575,11 +606,15 @@ class Army(DataClass, common.Army):         pass
 
 class Inventory(DataClass, hero.Inventory): pass
 
-class Profile(DataClass, hero.Profile):     pass
+class HeroProfile(DataClass, hero.Profile): pass
 
 class Skills(DataClass, hero.Skills):       pass
 
 class Spells(DataClass, hero.Spells):       pass
+
+class TownProfile(DataClass, town.Profile):
+    __slots__ = dict(town.Profile.__slots__, 
+                     type=common.make_integer_cast("town.type", version=NAME, nullable=True))
 
 
 PRE_BULWARK_VERSION_ID = (NAME, VERSION_BYTERANGES["version_minor"][0])
@@ -631,6 +666,7 @@ def init():
                        PRIMARY_ATTRIBUTE_GAME_RANGES,                  version=NAME)
     metadata.Store.add("skills",                SKILLS,                version=NAME)
     metadata.Store.add("special_artifacts",     SPECIAL_ARTIFACTS,     version=NAME)
+    metadata.Store.add("town_types",            TOWN_TYPES,            version=NAME)
     metadata.Store.add("bannable_spells",       BANNABLE_SPELLS,       version=NAME)
     for artifact, spells in ARTIFACT_SPELLS.items():
         metadata.Store.add("spells", spells, category=artifact, version=NAME)
@@ -653,12 +689,13 @@ def adapt(name, value, version=None):
     """
     Adapts certain categories:
 
-    - "hero_regex":           adding support for new skills
-    - "hero_byte_positions":  adding support for new skills
-    - "hero.stats.DATAPROPS": adding cannon support
+    - "hero_regex":                 adding support for new skills
+    - "hero_byte_positions":        adding support for new skills
+    - "hero.stats.DATAPROPS":       adding cannon support
     - "hero.PropertyName" classes:  returning version-specific data class,
                                     with support for new artifacts/creatures/skills/spells,
                                     attributes having cannon support and level capped at 74
+    - "town_regex":                 adding support for new town types
     - common property classes:      returning version-specific army data class
 
     @param   version   returns minor version specific classes if tuple for minor with extras
@@ -686,13 +723,17 @@ def adapt(name, value, version=None):
     elif "hero.Inventory" == name:
         result = Inventory
     elif "hero.Profile" == name:
-        result = Profile
+        result = HeroProfile
     elif "hero.Skill" == name:
         result = Skill
     elif "hero.Skills" == name:
         result = Skills
     elif "hero.Spells" == name:
         result = Spells
+    elif "town.Profile" == name:
+        result = TownProfile
+    elif "town_regex" == name:
+        result = TOWN_REGEX
 
     if isinstance(version, tuple) and len(version) > 1 and name.startswith("hero"):
         version_minor = version[1]

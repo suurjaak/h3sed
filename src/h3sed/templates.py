@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  30.09.2026
+@modified  01.10.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -38,7 +38,7 @@ HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army", "eq
                             "inventory", "spells", "status", "location", "town", "biography"]
 
 ## Town property categories for town index and exports
-TOWN_PROPERTY_CATEGORIES = ["faction", "location", "visiting_hero", "garrison_hero", "army"]
+TOWN_PROPERTY_CATEGORIES = ["faction", "type", "location", "visiting_hero", "garrison_hero", "army"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -176,7 +176,7 @@ def make_entity_yamls(entity, categories=None, as_list=False):
 
     if categories is None: categories = {k: True for k in PROPERTY_CATEGORIES}
     if categories.get("devices"): categories = dict(categories, stats=True)
-    for category in ("faction", "location", "town", "biography"):
+    for category in ("faction", "location", "town", "type", "biography"):
         if categories.get(category): categories = dict(categories, profile=True)
     LF, INDENT = os.linesep, "  "
 
@@ -242,7 +242,7 @@ def serialize_property_yaml(state, indent="  "):
         if isinstance(state, h3sed.hero.Profile):
             keys = ["faction", "status", "location", "town", "biography"]
         elif isinstance(state, h3sed.town.Profile):
-            keys = ["faction", "location", "garrison_hero", "visiting_hero"]
+            keys = ["faction", "type", "location", "garrison_hero", "visiting_hero"]
         is_profile = isinstance(state, (h3sed.hero.Profile, h3sed.town.Profile))
         for key in keys:
             maxlen = max(maxlen, len(key))
@@ -252,6 +252,8 @@ def serialize_property_yaml(state, indent="  "):
                 value = state.format_status()
             elif "location" == key and is_profile:
                 value = state.format_location()
+            elif "type" == key and is_profile:
+                value = state.format_type()
             elif isinstance(state[key], h3sed.common.NamedEntity):
                 value = str(state[key])
             else:
@@ -558,6 +560,9 @@ category = get("category")
 %if category is None or "faction" == category:
 {{ __(town.profile.format_faction()) }}
 %endif
+%if category is None or "type" == category:
+{{ __(town.profile.format_type()) }}
+%endif
 %if category is None or "location" == category:
 {{ town.profile.format_location() }}
 %endif
@@ -796,6 +801,9 @@ def sortarrow(col):
 %if not categories or categories["faction"]:
     <th align="left" valign="bottom" nowrap><a href="sort:faction"><font color="{{ conf.FgColour }}">{{ __("Faction") }}{{! sortarrow("faction") }}</font></a></th>
 %endif
+%if not categories or categories["type"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:type"><font color="{{ conf.FgColour }}">{{ __("Type") }}{{! sortarrow("type") }}</font></a></th>
+%endif
 %if not categories or categories["location"]:
     <th align="left" valign="bottom" nowrap><a href="sort:location"><font color="{{ conf.FgColour }}">{{ __("Location") }}{{! sortarrow("location") }}</font></a></th>
 %endif
@@ -827,6 +835,9 @@ def sortarrow(col):
     </td>
 %if not categories or categories["faction"]:
     <td align="left" valign="top" nowrap>{{ __(town.profile.format_faction()) }}</td>
+%endif
+%if not categories or categories["type"]:
+    <td align="left" valign="top" nowrap>{{ __(town.profile.format_type()) }}</td>
 %endif
 %if not categories or categories["location"]:
     <td align="left" valign="top" nowrap>{{ town.profile.format_location() }}</td>

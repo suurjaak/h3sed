@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  28.09.2026
+@modified  01.10.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -78,6 +78,11 @@ PLAYER_FACTIONS = {0: "Red",    1: "Blue",   2: "Tan",  3: "Green",
                    4: "Orange", 5: "Purple", 6: "Teal", 7: "Pink"}
 
 
+"""Town types, as {byte value: label}."""
+TOWN_TYPES = {0: "Castle",  1: "Rampart",    2: "Tower",    3: "Inferno", 4: "Necropolis",
+              5: "Dungeon", 6: "Stronghold", 7: "Fortress", 8: "Conflux"}
+
+
 """Allowed (min, max) ranges and other configuration for various hero and town properties."""
 DATA_RANGES = {
     "attack":          PRIMARY_ATTRIBUTE_RANGE,
@@ -104,6 +109,7 @@ DATA_RANGES = {
 
     "town.namelen":   (  1, 14),
     "town.count":     (  0, 48),
+    "town.type":      (  0,  8),
     "town.bytelen":   (382, 396),
 }
 
@@ -243,7 +249,8 @@ TOWN_REGEX = re.compile(b"""
     # Town name length is given in two bytes, but maximum length is actually 14
 
     (?P<faction>[\x00-\x07,\xFF])  #   1 byte:  town faction 0-7 or 255              000-000
-    .{3}                           #   3 bytes: unknown                              001-003
+    .{2}                           #   3 bytes: unknown                              001-002
+    (?P<type>[\x00-\x08])          #   1 byte:  town type                            003-003
     (?P<x>[\x00-\xFC])             #   1 byte:  X coordinate                         004-004
     (?P<y>[\x00-\xFC])             #   1 byte:  Y coordinate                         005-005
     (?P<z>[\x00-\x01])             #   1 byte:  Z coordinate                         006-006
@@ -1688,7 +1695,7 @@ class Savefile(object):
                     BYTES_MAXLEN = BYTES_MINLEN + NAME_MAXLEN
 
             town = h3sed.town.Town(name, version=self.version_id)
-            town.profile.update({k: util.bytoi(m.group(k)) for k in ("x", "y", "z", "faction")})
+            town.profile.update({k: util.bytoi(m.group(k)) for k in ("x", "y", "z", "faction", "type")})
             for i in range(len(army)):
                 town.army[i].update(army[i])
             # Possibly preliminary length and bytes if first town, to adjust next iteration.
@@ -1837,6 +1844,7 @@ Store.add("special_artifacts",     SPECIAL_ARTIFACTS)
 Store.add("spells",                SPELLS, sortable=True)
 Store.add("spell_schools",         SPELL_SCHOOLS)
 Store.add("town_byte_positions",   TOWN_BYTE_POSITIONS)
+Store.add("town_types",            TOWN_TYPES, separate=True)
 Store.add("bannable_spells",       []) # Initialize empty array for version modules to update
 Store.add("combination_artifacts", {}) # Initialize empty dict for version modules to update
 for artifact, spells in ARTIFACT_SPELLS.items():

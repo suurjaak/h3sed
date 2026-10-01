@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.09.2026
-@modified  28.09.2026
+@modified  01.10.2026
 ------------------------------------------------------------------------------
 """
 try: import wx
@@ -22,6 +22,12 @@ DATAPROPS = [{
     "name":      "faction",
     "type":      "text",
     "label":     "Faction",
+    "readonly":  True,
+    "format":    None,  # Populated later
+}, {
+    "name":      "type",
+    "type":      "text",
+    "label":     "Type",
     "readonly":  True,
     "format":    None,  # Populated later
 }, {
@@ -80,6 +86,8 @@ class ProfilePlugin(object):
         for prop in DATAPROPS:
             if "faction" == prop["name"] and "format" in prop:
                 prop = dict(prop, format=lambda: __(self._state.format_faction()))
+            if "type" == prop["name"] and "type" in prop:
+                prop = dict(prop, format=lambda: __(self._state.format_type()))
             if "location" == prop["name"] and "format" in prop:
                 prop = dict(prop, format=self._state.format_location)
             if "location" == prop["name"] and "tooltip" in prop:
