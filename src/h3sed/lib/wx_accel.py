@@ -29,7 +29,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     19.11.2011
-@modified    03.04.2026
+@modified    02.10.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -286,9 +286,11 @@ def accelerate(window, use_heuristics=True, skipclicklabels=None, accelerators=N
         """
         if DEBUG:
             print("Handling target %s" %
-                  [(type(t), t.Id, t.Label) for t in targets])
+                  [(type(t), t.Id, t.Label) for t in filter(bool, targets)])
         event, target = None, None
         for target in targets:
+            if not target or target.IsBeingDeleted():
+                continue # for target
             if (isinstance(target, wx.Control) # has not been destroyed
             and target.IsShownOnScreen()       # visible on current panel
             and target.Enabled):
@@ -345,7 +347,7 @@ def accelerate(window, use_heuristics=True, skipclicklabels=None, accelerators=N
         # Remove previously created menu, if any
         for menu_item in window.__ampersand_shortcut_menu.MenuItems:
             if DEBUG: print("Removing dummy menu item '%s'" % menu_item.GetItemLabel())
-            window.Unbind(wx.EVT_MENU, menu_item)
+            window.Unbind(wx.EVT_MENU, id=menu_item.Id)
         del window.__ampersand_shortcut_menu
     accelerators = list(accelerators or [])
     shortcuts = collect_shortcuts(window, use_heuristics)
@@ -363,7 +365,7 @@ def accelerate(window, use_heuristics=True, skipclicklabels=None, accelerators=N
             if DEBUG: print("Binding %s to targets %s." %
                             (key, [type(t) for t in ctrls]))
             menu_item = dummy_menu.Append(wx.ID_ANY, "&%s" % key)
-            window.Bind(wx.EVT_MENU, functools.partial(eventhandler, ctrls, key), menu_item)
+            window.Bind(wx.EVT_MENU, functools.partial(eventhandler, ctrls, key), id=menu_item.Id)
             accelerators.append((wx.ACCEL_ALT, ord(key), menu_item.Id))
         window.SetAcceleratorTable(wx.AcceleratorTable(accelerators))
         window.__ampersand_shortcut_menu = dummy_menu
