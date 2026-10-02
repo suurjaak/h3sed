@@ -62,7 +62,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  01.10.2026
+@modified  02.10.2026
 ------------------------------------------------------------------------------
 """
 import ast
@@ -144,6 +144,9 @@ class EntityPlugin(object):
 
     def prebuild(self):
         """Builds general UI components."""
+        PROPERTY_CATEGORIES = templates.HERO_PROPERTY_CATEGORIES
+        if "town" == self.name: PROPERTY_CATEGORIES = templates.TOWN_PROPERTY_CATEGORIES
+
         self._panel.Freeze()
         self._panel.DestroyChildren()
         self._panel.Sizer and self._panel.Sizer.Clear()
@@ -163,6 +166,8 @@ class EntityPlugin(object):
 
         bmpx = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE_AS, wx.ART_TOOLBAR, (16, 16))
         tb_index = wx.ToolBar(indexpanel, style=wx.TB_FLAT | wx.TB_NODIVIDER | wx.TB_NOICONS | wx.TB_TEXT)
+        tb_index2 = wx.ToolBar(indexpanel, style=wx.TB_FLAT | wx.TB_NODIVIDER | wx.TB_NOICONS | wx.TB_TEXT) \
+            if len(PROPERTY_CATEGORIES) > 7 else None
         info = wx.StaticText(indexpanel)
         export = wx.Button(indexpanel, label=__("Expo&rt"))
         export.SetBitmap(bmpx)
@@ -171,19 +176,18 @@ class EntityPlugin(object):
         if "hero" != self.name: export.Hide()
         export.Bind(wx.EVT_BUTTON, self.on_export_entities)
 
-        PROPERTY_CATEGORIES = templates.HERO_PROPERTY_CATEGORIES
-        if "town" == self.name: PROPERTY_CATEGORIES = templates.TOWN_PROPERTY_CATEGORIES
-        for category in PROPERTY_CATEGORIES:
+        for i, category in enumerate(PROPERTY_CATEGORIES):
+            mytb = tb_index2 if tb_index2 and i > 7 else tb_index
             togglename = "%s.toggle_%s" % (self.name, category)
             display = category.replace("_", " ")
             help = __("Show or hide %s column" + ("s" if "stats" == category else ""), __(display))
-            b = tb_index.AddCheckTool(wx.ID_ANY, __(display.capitalize()), wx.NullBitmap,
-                                      shortHelp=help)
-            tb_index.ToggleTool(b.Id, conf.Settings.get(togglename, True))
-            tb_index.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
+            b = mytb.AddCheckTool(wx.ID_ANY, __(display.capitalize()), wx.NullBitmap, shortHelp=help)
+            mytb.ToggleTool(b.Id, conf.Settings.get(togglename, True))
+            mytb.Bind(wx.EVT_TOOL, self.on_toggle_category, id=b.Id)
             self._index["ids"][category] = b.Id
             self._index["toggles"][category] = conf.Settings.get(togglename, True)
         tb_index.Realize()
+        tb_index2.Realize() if tb_index2 else None
 
         html = wx.html.HtmlWindow(indexpanel)
         tabs.AddPage(wx.Window(tabs), " %s " % __("INDEX"))
@@ -248,6 +252,7 @@ class EntityPlugin(object):
         sizer_footer.AddStretchSpacer()
         sizer_footer.Add(export)
         sizer_opts.Add(tb_index)
+        sizer_opts.Add(tb_index2) if tb_index2 else None
         sizer_opts.Add(sizer_footer, flag=wx.GROW)
         indexpanel.Sizer.Add(html, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW, proportion=1)
         indexpanel.Sizer.Add(sizer_opts, border=10, flag=wx.LEFT | wx.RIGHT | wx.GROW)
