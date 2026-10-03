@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-3.9, 2026-09-28
+4.0, 2026-10-03
 ---------------
 - added towns section
 - add hero map status and current town to hero profile
