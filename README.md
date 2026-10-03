@@ -4,7 +4,7 @@ h3sed
 h3sed is a Heroes3 Savegame Editor, written in Python.
 
 It opens savegame files from Heroes of Might and Magic III,
-allowing to see an overview of all heroes, and edit any and all hero attributes:
+allowing to see an overview of all heroes and towns, and edit any and all hero attributes:
 
 - primary skills, like Attack
 - other primary attributes, like level, experience points, spell points etc
@@ -14,7 +14,9 @@ allowing to see an overview of all heroes, and edit any and all hero attributes:
 - spells, like Slow
 - army creatures, like Golden Dragons
 
-Attributes can be copied from one hero and pasted to another.
+Additionally, it allows changing armies garrisoned in town.
+
+Attributes can be copied from one hero or town and pasted to another.
 
 Hero data can be exported as HTML or spreadsheet or JSON/YAML data.
 
@@ -32,11 +34,11 @@ Graphical Usage
 Navigate the file view to Heroes3 games-folder and open a savegame file to edit,
 or drag and drop a savegame file onto the program window.
 
-Choose a hero to modify, change attributes to your liking, and save the file.
+Choose a hero or town to modify, change attributes to your liking, and save the file.
 Changes will be available in Heroes3 after loading the changed savegame.
 
-Attributes from one hero can be copied to clipboard as text,
-and pasted onto another hero, overwriting their data.
+Attributes from one hero or town can be copied to clipboard as text,
+and pasted onto another, overwriting their editable data.
 
 A timestamped daily backup copy is automatically created of the savegame file, one per day.
 
