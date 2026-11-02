@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-API for hero properties.
+API for town properties.
 
 ------------------------------------------------------------------------------
 This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.09.2026
-@modified  01.10.2026
+@modified  02.11.2026
 ------------------------------------------------------------------------------
 """
 import collections
-import re
-import sys
 
 import h3sed
 from .. lib.util import AttrDict, OrderedSet, SlotsDict, TypedArray, tuplefy
