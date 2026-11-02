@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  01.10.2026
+@modified  02.11.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -87,7 +87,7 @@ TOWN_REGEX = re.compile(b"""
     # Town name length is given in two bytes, but maximum length is actually 14
 
     (?P<faction>[\x00-\x07,\xFF])  #   1 byte:  town faction 0-7 or 255              000-000
-    .{2}                           #   3 bytes: unknown                              001-002
+    .{2}                           #   2 bytes: unknown                              001-002
     (?P<type>[\x00-\x07])          #   1 byte:  town type                            003-003
     (?P<x>[\x00-\xFC])             #   1 byte:  X coordinate                         004-004
     (?P<y>[\x00-\xFC])             #   1 byte:  Y coordinate                         005-005
