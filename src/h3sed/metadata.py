@@ -249,7 +249,7 @@ TOWN_REGEX = re.compile(b"""
     # Town name length is given in two bytes, but maximum length is actually 14
 
     (?P<faction>[\x00-\x07,\xFF])  #   1 byte:  town faction 0-7 or 255              000-000
-    .{2}                           #   2 bytes: unknown                              001-002
+    .{2}                           #   3 bytes: unknown                              001-002
     (?P<type>[\x00-\x08])          #   1 byte:  town type                            003-003
     (?P<x>[\x00-\xFC])             #   1 byte:  X coordinate                         004-004
     (?P<y>[\x00-\xFC])             #   1 byte:  Y coordinate                         005-005
@@ -1621,15 +1621,16 @@ class Savefile(object):
             if town_start + BYTES_MINLEN > MAX_POS: # Cease upon reaching the heroes section
                 break # while m
 
-            name_len = util.bytoi(m.group("name_len"))
-            if name_len == 0 and BYTES_MINLEN == BYTES_MAXLEN: # Fixed size structs have len=0 (RoE)
-                name = util.to_unicode(rgx_strip.match(m.group("name")).group(1))
-                name_len = len(name)
+            name_rawlen = util.bytoi(m.group("name_len"))
+            if name_rawlen == 0 and BYTES_MINLEN == BYTES_MAXLEN: # Fixed size structs have len=0 (RoE)
+                name_raw = rgx_strip.match(m.group("name")).group(1)
+                name_rawlen = len(name_raw)
+                name = util.to_unicode(name_raw)
             else:
-                name_raw = self.raw[pos + m.start("name"):pos + m.start("name") + name_len]
+                name_raw = self.raw[pos + m.start("name"):pos + m.start("name") + name_rawlen]
                 name = util.to_unicode(rgx_strip.match(name_raw).group(1))
 
-            if name_len != len(name) or name_len > NAME_MAXLEN:
+            if name_rawlen != len(name_raw) or name_rawlen > NAME_MAXLEN:
                 # Name given length not matching parsed text: not a town
                 pos = town_start
                 continue # while True
@@ -1699,7 +1700,7 @@ class Savefile(object):
             for i in range(len(army)):
                 town.army[i].update(army[i])
             # Possibly preliminary length and bytes if first town, to adjust next iteration.
-            town_byteslen = BYTES_MINLEN + (0 if BYTES_MINLEN == BYTES_MAXLEN else len(name))
+            town_byteslen = BYTES_MINLEN + (0 if BYTES_MINLEN == BYTES_MAXLEN else name_rawlen)
             town_span = (town_start, town_start + town_byteslen)
             town_bytes = self.raw[town_start:town_start + town_byteslen]
             town.set_file_data(town_bytes, len(self.towns), town_span)

@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+4.1, 2026-11-02
+---------------
+- fix parsing towns with names in multi-byte encoding (issue #33)
+
+
 4.0, 2026-10-03
 ---------------
 - added towns section
