@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   15.09.2026
-@modified  01.10.2026
+@modified  03.11.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -286,7 +286,7 @@ class NamedEntity(object):
         self.bytes0   = None    # Entity original or saved bytearray
         self.index    = None    # Entity index in savefile
         self.span     = None    # Entity byte span in uncompressed savefile
-        self.name_counter = 1  # 1-based index for entity name, tracking duplicate names
+        self.name_counter = 1   # 1-based index for entity name, tracking duplicate names
 
         ## All properties in one structure
         self.properties = AttrDict((k, getattr(self, k)) for k in list(modules))
@@ -332,6 +332,23 @@ class NamedEntity(object):
         self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 
+    def parse(self, savefile):
+        """Parses entity bytes to properties."""
+        for section, module in self.modules.items():
+            if not callable(getattr(module, "parse", None)): continue # for section
+            prop = getattr(self, section)
+            kwargs = {"kind": self.kind, "entity_bytes": self.bytes, "%s_bytes" % self.kind: self.bytes,
+                      "version": self.version, "savefile": savefile, "span": self.span}
+            state = call_filtered(module.parse, **kwargs)
+            if isinstance(prop, list): prop[:] = state
+            else:
+                prop.clear()
+                prop.update(state)
+        self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
+        self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
+        self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
+
+
     def serialize(self):
         """Updates entity bytes with current properties state."""
         self.realize()
@@ -350,7 +367,8 @@ class NamedEntity(object):
 
         errors = [] # [error message, ]
         for section, prop in self.properties.items():
-            if prop == self.realized[section]: continue # for section
+            if prop == self.realized[section] or not hasattr(prop, "realize"):
+                continue # for section
             try: prop.realize(self)
             except Exception as e:
                 logger.exception("Invalid data in %s %s %s.",

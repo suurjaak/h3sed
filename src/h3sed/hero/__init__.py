@@ -389,19 +389,8 @@ class Hero(common.NamedEntity):
 
     def parse(self, savefile):
         """Parses hero bytes to properties."""
-        for section, module in PROPERTIES.items():
-            prop = getattr(self, section)
-            kwargs = {"kind": self.kind, "entity_bytes": self.bytes, "%s_bytes" % self.kind: self.bytes,
-                      "version": self.version, "savefile": savefile, "span": self.span}
-            state = call_filtered(module.parse, **kwargs)
-            if isinstance(prop, list): prop[:] = state
-            else:
-                prop.clear()
-                prop.update(state)
+        super(Hero, self).parse(savefile)
         self.ensure_primary_stats(force=True)
-        self.original = AttrDict((k, v.copy()) for k, v in self.properties.items())
-        self.realized = AttrDict((k, v.copy()) for k, v in self.properties.items())
-        self.serialed = AttrDict((k, v.copy()) for k, v in self.properties.items())
 
 
     def realize(self):
