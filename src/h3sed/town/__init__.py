@@ -51,6 +51,7 @@ class Profile(common.SlotsDict, common.DataClass):
 
 
 class Town(common.NamedEntity):
+    """Town data container."""
 
     def __init__(self, name, version=None):
         self.army    = h3sed.common.Army.factory(version)

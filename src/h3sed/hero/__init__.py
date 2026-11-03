@@ -325,6 +325,7 @@ class Spells(OrderedSet, DataClass):
 
 
 class Hero(common.NamedEntity):
+    """Hero data container."""
 
     def __init__(self, name, version=None):
         self.profile   = Profile    .factory(version)
