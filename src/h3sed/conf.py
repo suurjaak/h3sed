@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "4.2.dev2"
+Version = "4.2.dev3"
 VersionDate = "03.11.2026"
 
 Frozen = getattr(sys, "frozen", False)
@@ -89,8 +89,10 @@ Language = "en"
 """Various UI selection states."""
 Settings = {"savefile.filter_index": 0, "savepage.page_index": 0, "savepage.splitter_pos": 36,
             "hero.manifest_view": "normal", "town.manifest_view": "normal",
+            "faction.manifest_view": "normal",
             "hero.sort_col": "index", "hero.sort_asc": True, "hero.tab_index": 0,
-            "hero.sort_col": "index", "hero.sort_asc": True, "town.tab_index": 0}
+            "hero.sort_col": "index", "hero.sort_asc": True, "town.tab_index": 0,
+            "faction.sort_col": "index", "faction.sort_asc": True, "faction.tab_index": 0}
 
 """Contents of Recent Files menu."""
 RecentFiles = []

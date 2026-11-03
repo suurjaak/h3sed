@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     21.03.2020
-@modified    27.09.2026
+@modified    02.11.2026
 ------------------------------------------------------------------------------
 """
 import base64
@@ -27,6 +27,8 @@ APPICONS = [("Icon_{0}x{0}_{1}bit.png".format(s, b),
 IMAGES = {
     "ExportBg.png":
         "Background pattern image for export HTML.",
+    "PageFaction.png":
+        "Icon for the Faction page in a savefile tab.",
     "PageHero.png":
         "Icon for the Hero page in a savefile tab.",
     "PageTown.png":

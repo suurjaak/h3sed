@@ -33,6 +33,9 @@ Subplugin instances are expected to have the following API:
     def load(self, entity):
         '''Mandatory. Loads entity to subplugin state.'''
 
+    def load_state(self, state):
+        '''Mandatory. Loads plugin state from given data, returns whether state changed.'''
+
     def render(self):
         '''
         Optional. Renders subplugin into panel given in factory(),
@@ -62,7 +65,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  02.10.2026
+@modified  03.11.2026
 ------------------------------------------------------------------------------
 """
 import ast
@@ -135,7 +138,7 @@ class EntityPlugin(object):
         )
         self._dialog_export.FilterIndex = 1
 
-        self._entities = (self.savefile.heroes if "hero" == kind else self.savefile.towns)[:]
+        self._entities = getattr(self.savefile, util.plural(kind))[:]
         self.prebuild()
         panel.Bind(wx.EVT_CHAR_HOOK, self.on_key)
         panel.Bind(h3sed.gui.EVT_PLUGIN, self.on_plugin_event)
@@ -146,6 +149,7 @@ class EntityPlugin(object):
         """Builds general UI components."""
         PROPERTY_CATEGORIES = templates.HERO_PROPERTY_CATEGORIES
         if "town" == self.name: PROPERTY_CATEGORIES = templates.TOWN_PROPERTY_CATEGORIES
+        elif "faction" == self.name: PROPERTY_CATEGORIES = templates.FACTION_PROPERTY_CATEGORIES
 
         self._panel.Freeze()
         self._panel.DestroyChildren()
@@ -305,7 +309,8 @@ class EntityPlugin(object):
         self._ctrls["entity"].SetItems([str(x) for x in self._entities])
 
         nb = wx.Notebook(self._propspanel)
-        PROPERTIES = h3sed.hero.PROPERTIES if "hero" == self.name else h3sed.town.PROPERTIES
+        PROPERTIES = h3sed.hero.PROPERTIES if "hero" == self.name else \
+                     h3sed.town.PROPERTIES if "town" == self.name else h3sed.faction.PROPERTIES
         self._plugins = [dict(m.props(), module=m) for m in PROPERTIES.values()
                          if callable(getattr(m, "props", None))]
         for props in self._plugins:
@@ -447,7 +452,7 @@ class EntityPlugin(object):
         for k, v in list(self._index.items()):
             if isinstance(v, (str, list)): self._index[k] = type(v)()
 
-        self._entities = (self.savefile.heroes if "hero" == self.name else self.savefile.towns)[:]
+        self._entities = getattr(self.savefile, util.plural(self.name))[:]
         self._entity_yamls.clear()
         self._panel.Freeze()
         self._ignore_events = True
@@ -491,6 +496,8 @@ class EntityPlugin(object):
         TPL, PROPERTY_CATEGORIES = templates.HERO_SEARCH_TEXT, templates.HERO_PROPERTY_CATEGORIES
         if "town" == self.name:
             TPL, PROPERTY_CATEGORIES = templates.TOWN_SEARCH_TEXT, templates.TOWN_PROPERTY_CATEGORIES
+        elif "faction" == self.name:
+            TPL, PROPERTY_CATEGORIES = templates.FACTION_SEARCH_TEXT, templates.FACTION_PROPERTY_CATEGORIES
 
         entities, links = self._entities[:], list(range(len(self._entities)))
         tpl = step.Template(TPL)
@@ -519,7 +526,8 @@ class EntityPlugin(object):
         self._index["visible"] = entities
         tplargs.update(count=len(self._entities), links=links, text=searchtext, savefile=self.savefile)
         tplargs.update({util.plural(self.name): entities, "%stexts" % self.name: entitytexts})
-        INDEX_TPL = templates.HERO_INDEX_HTML if "hero" == self.name else templates.TOWN_INDEX_HTML
+        INDEX_TPL = templates.HERO_INDEX_HTML if "hero" == self.name else \
+                    templates.TOWN_INDEX_HTML if "town" == self.name else templates.FACTION_INDEX_HTML
         page = step.Template(INDEX_TPL, escape=True).expand(**tplargs)
         if page != self._index["html"]:
             info = "%s %s" % (len(entities), __(util.plural(self.name, entities, numbers=False)))
@@ -600,7 +608,7 @@ class EntityPlugin(object):
             return htmls.get(mode, htmls["normal"])
         links = {k: on_link for k in htmls} if self._entity.is_changed() else None
         buttons = {__("Copy data"): self.on_copy_entity}
-        title = "Hero character sheet" if "hero" == self.name else "Town manifest"
+        title = "Hero character sheet" if "hero" == self.name else "%s manifest" % self.name.capitalize()
         dlg = controls.HtmlDialog(self._panel.TopLevelParent, __(title), htmls[mode],
                                   links, buttons, autowidth_links=True, style=wx.RESIZE_BORDER)
         def after(dlg):
@@ -906,7 +914,8 @@ class EntityPlugin(object):
         new_states = {}  # {property name: state}
         pluginmap = {p["name"]: p["instance"] for p in self._plugins}
         states = util.recurse_convert(states, {str: i18n.translate_back})
-        PROPERTIES = h3sed.hero.PROPERTIES if "hero" == self.name else h3sed.town.PROPERTIES
+        PROPERTIES = h3sed.hero.PROPERTIES if "hero" == self.name else \
+                     h3sed.town.PROPERTIES if "town" == self.name else h3sed.faction.PROPERTIES
         for category, state in states.items():
             plugin = pluginmap.get(category)
             if not plugin:
@@ -995,8 +1004,9 @@ class EntityPlugin(object):
         """
         Returns a dictionary of keyword arguments with current state for user functions.
         
-        @return  {"hero" or "town": current entity, "heroes" or "towns": visible entities,
-                  "heroes_open" or "towns_open": all open entities}
+        @return  {"hero" or "town" or "faction": current entity,
+                  "heroes" or "towns" or "factions": visible entities,
+                  "heroes_open" or "towns_open" or "factions_open": all open entities}
         """
         plural = util.plural(self.name)
         result = {self.name: self._entity, plural: self._index["visible"][:],
@@ -1042,6 +1052,18 @@ class EntityPlugin(object):
         plugin, item0 = p["instance"], p["instance"].item()
         if reload or item0 is None:
             plugin.load(self._entity)
+
+            def fmt(state):
+                if isinstance(state, list)\
+                and any(isinstance(x, h3sed.common.NamedEntity) for x in state):
+                    state = [str(x) for x in state]
+                if isinstance(state, set):  return list(state)
+                if isinstance(state, dict): return {k: v for k, v in state.items() if v is not None}
+                if isinstance(state, list) and state[-2:] == [None, None]: # Collapse trailing blanks
+                    count = next((i for i, x in enumerate(state[::-1]) if x is not None), len(state))
+                    return (("%s + " % state[:len(state) - count]) if count < len(state) else "") + \
+                           "%s * %s" % ([None], count)
+                return state
             if log: logger.info("Loaded %s %s %s %s.",
                                 self.name, self._entity, p["name"], fmt(plugin.state()))
         p["panel"].Freeze()

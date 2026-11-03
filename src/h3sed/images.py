@@ -6,7 +6,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     21.03.2020
-@modified    28.09.2026
+@modified    02.11.2026
 ------------------------------------------------------------------------------
 """
 try:
@@ -535,6 +535,27 @@ ExportBg = PyEmbeddedImage(
     "ed8a7MoJzOLuFFGaFrL1bi9EQS9cBcEppiKKJA8Mi6VWQXdN29OTEIfEvENXgauCwD0iRwew"
     "mMypAGQzyv9BpziIC3nPRMoaVSECf2KvbeKtNAzscspl09VVH2i4xjRr9E5NmrDMjWUot8i+"
     "N56gsTvt/wMHTAvqq/dmVgAAAABJRU5ErkJggg=="
+)
+
+
+"""Icon for the Faction page in a savefile tab."""
+PageFaction = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADAElEQVRYw+2WX0hTURzHv9Md"
+    "oX+CIKkQ1vwTqBWoPfjQNHpwycgmPTiGJvMPuhf/zRcjR8KtKV0ielAhMEGQyh6K0KB8ECWI"
+    "W/5rmJhjmvbPSZGphd7k19OVNXfnNqcQ+IMD957LPZ/v+d5zvucCe7VXbiUIAu3EuKayYio1"
+    "Fm09Ns/zJAgCcRwXFCHmygoyV1bQ6MgwMca2HpMxRjzPk91uJ57nAxZRU11FNdVVZLPZqOfx"
+    "I1m40r1DFEVFfX09AYBOpwMAqqurU/gKLjUWEVOGIi/vIgDANjoEx4eP/s+AMUYcxwXkhKms"
+    "mLo6O6ittYU4jvNqvVLugSiKisbGRgIAvV7vlxN/ZnoxN/4AztOFWFz6vb1F5K8TZk0C2R+q"
+    "yaCOoJMpSb4tPH9EtLW2kFd43xkqP3tsAxwUAb6I8AQPermKcM0JsyaB7G8ydxYulxO7Cnd3"
+    "wmazEc/zuwv3Z3do08JJmxYefGHSVnN1wv3sYIzR3OA+6ry6P7giJLhkO2OMLJYGEgSBLJaG"
+    "TSKcI4cpPyPS/ySUBigqMMD5zQlx5QeSlQswlcTgZssc2l9+giiKCgCwWpsIALKzNVhdXaPm"
+    "5mYFY4x6rhBGX695xSi9wSfeDmFy8j2mpx0Y670FU0niJrgU21ZrE81//YzCy0bMzjgoigZw"
+    "/Bzh3u0YhLJZWQEKOXilqQQA8G58DOErU7hem+QR7v5esfEyUlPTcT75GgZfLON+rxI9wz9l"
+    "z5AQuZlrL+igUsUhdv3LBjwqs1DWLek68vsAtCfMOJrlRAH3a8s15fETJJ1K/+d+aX0RC4p4"
+    "ZCXGe4Q7nhHichi11x5AZtY0JvqAMRwBAKgOAdo0kJwLIZ6OYdcGAMkaMwAgVpXgcRb9/WGY"
+    "6otAVDzQfjcF2hsK5LF5dKlXkHtJi4NhYQh4KzLGqKuzg3Jzc2TTTtqOUnPtN6gj6PmdcjKo"
+    "IzzmQYgvIqKjozfckft5cXdN6u9+tYzup0+gz9EEHrnbzXnGGOVnRO5MLO/Vf19/AQf10wfp"
+    "Uqb1AAAAAElFTkSuQmCC"
 )
 
 

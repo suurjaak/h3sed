@@ -1860,7 +1860,8 @@ class SavefilePage(wx.Panel):
 
     def load_data(self):
         """Loads data from our file."""
-        PLUGINS = [("hero", images.PageHero.Bitmap), ("town", images.PageTown.Bitmap)]
+        PLUGINS = [("hero", images.PageHero.Bitmap), ("town", images.PageTown.Bitmap),
+                   ("faction", images.PageFaction.Bitmap)]
         if not self.plugins:
             self.savefile.parse()
             self.flags["ignore_paging"] = True
@@ -2269,6 +2270,8 @@ def build(plugin, panel):
     SPIN_WPLUS = 80 if "GTK" in wx.Port else 0
     for prop in props if isinstance(props, (list, tuple)) else [props]:
         if "itemlist" == prop.get("type"):
+            if callable(prop.get("header")) and prop["header"](sizer):
+                count += 1
             values_present = []
             resultitems = []
             for i, row in enumerate(state):
@@ -2281,7 +2284,8 @@ def build(plugin, panel):
                     if "label" == itemprop.get("type"):
                         values_present.append(v)
                         v = __(itemprop["label"]) if itemprop.get("label") else formatter(v)
-                        if prop.get("orderable"): v = "%s. %s" % (i + 1, v)
+                        if prop.get("orderable") or prop.get("numbered"):
+                            v = "%s. %s" % (i + 1, v)
                         c0 = wx.StaticText(panel, label=v, name="%s_%s_label" % (plugin.name, i))
                         sizer.Add(c0, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
                     elif "combo" == itemprop.get("type"):
@@ -2317,6 +2321,14 @@ def build(plugin, panel):
                     elif "window" == itemprop.get("type"):
                         c = wx.StaticText(panel)
                         bsizer.Add(c)
+                    elif "link" == itemprop.get("type"):
+                        label, handler = formatter(v) or "", None
+                        if itemprop.get("handler"):
+                            handler = functools.partial((lambda handler, index: handler(index)), itemprop["handler"], i)
+                        c = controls.make_hyperlink(panel, label, (80, -1), conf.LinkColour, handler)
+                        if itemprop.get("tooltip"):
+                            c.ToolTip = itemprop["tooltip"](i) if callable(itemprop["tooltip"]) else itemprop["tooltip"]
+                        bsizer.Add(c, flag=wx.ALIGN_CENTER_VERTICAL)
 
                     if c:
                         if isinstance(row, dict) and "name" in itemprop:

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  01.10.2026
+@modified  03.11.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -37,8 +37,11 @@ EXPORT_FORMATS = {"csv": "CSV spreadsheet", "html": "HTML document",
 HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army", "equipment",
                             "inventory", "spells", "status", "location", "town", "biography"]
 
-## Town property categories for town index and exports
+## Town property categories for town index
 TOWN_PROPERTY_CATEGORIES = ["faction", "type", "location", "visiting_hero", "garrison_hero", "army"]
+
+## Faction property categories for faction index
+FACTION_PROPERTY_CATEGORIES = ["resources", "heroes", "towns"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -173,9 +176,12 @@ def make_entity_yamls(entity, categories=None, as_list=False):
     PROPERTY_CATEGORIES, ENTITY_PROPERTIES = HERO_PROPERTY_CATEGORIES, h3sed.hero.PROPERTIES
     if isinstance(entity, h3sed.town.Town):
         PROPERTY_CATEGORIES, ENTITY_PROPERTIES = TOWN_PROPERTY_CATEGORIES, h3sed.town.PROPERTIES
+    elif isinstance(entity, h3sed.faction.Faction):
+        PROPERTY_CATEGORIES, ENTITY_PROPERTIES = FACTION_PROPERTY_CATEGORIES, h3sed.faction.PROPERTIES
 
     if categories is None: categories = {k: True for k in PROPERTY_CATEGORIES}
     if categories.get("devices"): categories = dict(categories, stats=True)
+    if categories.get("heroes"): categories = dict(categories, hero_order=True)
     for category in ("faction", "location", "town", "type", "biography"):
         if categories.get(category): categories = dict(categories, profile=True)
     LF, INDENT = os.linesep, "  "
@@ -185,11 +191,16 @@ def make_entity_yamls(entity, categories=None, as_list=False):
         states, maxlen = [], 0  # [[(prefix, value), ]], max key length
         categories_present = []
         for category in filter(categories.get, ENTITY_PROPERTIES):
-            if not categories.get(category):
-                continue # for category
             if "profile" == category and original is not None: # Skip profile for diff texts
                 continue # for category
+            if "towns" == category and original is not None: # Skip towns for diff texts
+                continue # for category
             prop = (entity.properties if not original else entity.original)[category]
+            if "hero_order" == category:
+                category = "heroes"
+                prop = list(prop)
+                for hero in entity.heroes:
+                    if hero not in prop: prop.append(hero)
             pairs, prefixlen = serialize_property_yaml(prop, INDENT)
             states.append(pairs)
             maxlen = max(maxlen, prefixlen)
@@ -267,6 +278,7 @@ def serialize_property_yaml(state, indent="  "):
 def encode_yaml_scalar(value):
     """Returns scalar value encoded as YAML, unquoted if possible."""
     # Dummy dict for properly quoted YAML, indent=6 for correct multiline start in hero structs.
+    if not isinstance(value, (str, float, int, bool, list, dict)): value = str(value)
     xblock = yaml.safe_dump({"x": value}, allow_unicode=True, default_flow_style=False, indent=6)
     return xblock[3:].rstrip() # Strip leading "x: " and trailing linefeed from "x: MyValue\n"
 
@@ -545,7 +557,7 @@ category = get("category")
 """
 Text to search for filtering towns index.
 
-@param   hero       Town instance
+@param   town       Town instance
 @param  ?category   category to produce if not all
 """
 TOWN_SEARCH_TEXT = """<%
@@ -576,6 +588,35 @@ category = get("category")
     %for army in filter(bool, town.army):
 {{ __(army["name"]) }}: {{ army["count"] }}
     %endfor
+%endif
+"""
+
+
+"""
+Text to search for filtering towns index.
+
+@param   faction    Faction instance
+@param  ?category   category to produce if not all
+"""
+FACTION_SEARCH_TEXT = """<%
+import h3sed
+from h3sed import conf, metadata
+from h3sed.lib.i18n import translate as __
+category = get("category")
+%>
+%if category is None or "name" == category:
+{{ faction.name }}
+%endif
+%if category is None or "resources" == category:
+    %for resource in metadata.RESOURCES:
+{{ faction.resources[resource] }}
+    %endfor
+%endif
+%if category is None or "heroes" == category:
+{{ " ".join(x.name for x in faction.heroes) }}
+%endif
+%if category is None or "towns" == category:
+{{ " ".join(x.name for x in faction.towns) }}
 %endif
 """
 
@@ -883,6 +924,106 @@ def sortarrow(col):
 %endif
 %endfor
 %if towns:
+</table>
+%endif
+</font>
+"""
+
+
+"""
+HTML text shown in factions index.
+
+@param   factions     [Faction instance, ]
+@param   links        [link for faction, ]
+@param   count        total number of factions
+@param   savefile     metadata.Savefile instance
+@param  ?categories   {category: whether to show category columns} if not showing all
+@param  ?factionexts  [{category: text for town, }] for sorting
+@param  ?sort_col     field to sort towns by
+@param  ?sort_asc     whether sort is ascending or descending
+@param  ?text         current search text if any
+"""
+FACTION_INDEX_HTML = """<%
+import h3sed
+from h3sed import conf, metadata
+from h3sed.lib.i18n import translate as __
+categories = get("categories")
+categories, factiontexts, sort_col, sort_asc = (get(k) for k in ("categories", "factiontexts", "sort_col", "sort_asc"))
+factions_sorted = list(factions)
+if sort_col:
+    if "index" == sort_col:
+        if not sort_asc: factions_sorted.reverse()
+    elif sort_col in metadata.RESOURCES:
+        factions_sorted.sort(key=lambda x: (x.resources[sort_col], __(str(x))), reverse=not sort_asc)
+    elif sort_col in ("heroes", "towns"):
+        factions_sorted.sort(key=lambda x: (len(getattr(x, sort_col)), getattr(x, sort_col), __(str(x))), reverse=not sort_asc)
+    elif factiontexts:
+        indexlist = list(range(len(factions)))
+        sortkey = lambda i: (factiontexts[i][sort_col], __(str(factions[i])))
+        indexlist.sort(key=sortkey, reverse=not sort_asc)
+        factions_sorted = [factions[i] for i in indexlist]
+def sortarrow(col):
+    if col != sort_col: return ""
+    return '<font size="1">&nbsp;%s</font>' % ("↓" if sort_asc else "↑")
+%>
+<font face="{{ conf.HtmlFontName }}" color="{{ conf.FgColour }}">
+%if factions_sorted:
+<table>
+  <tr>
+    <th align="right" valign="bottom" nowrap><a href="sort:index"><font color="{{ conf.FgColour }}">#</font></a></th>
+    <th align="left" valign="bottom" nowrap><a href="sort:name"><font color="{{ conf.FgColour }}">{{ __("Name") }}{{! sortarrow("name") }}</font></a></th>
+%if not categories or categories["resources"]:
+    %for resource in metadata.RESOURCES:
+    <th align="left" valign="bottom" nowrap><a href="sort:{{ resource }}"><font color="{{ conf.FgColour }}">{{ __(resource.capitalize()) }}{{! sortarrow(resource) }}</font></a></th>
+    %endfor
+%endif
+%if not categories or categories["heroes"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:heroes"><font color="{{ conf.FgColour }}">{{ __("Heroes") }}{{! sortarrow("heroes") }}</font></a></th>
+%endif
+%if not categories or categories["towns"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:towns"><font color="{{ conf.FgColour }}">{{ __("Towns") }}{{! sortarrow("towns") }}</font></a></th>
+%endif
+  </tr>
+%elif count and (get("text") or "").strip():
+<br /><br />&nbsp;&nbsp;
+   <i>{{ __('No factions to display for "%s"', text) }}</i>
+%else:
+<br /><br />&nbsp;&nbsp;
+   <i>{{ __("No factions to display.") }}</i>
+%endif
+%for faction in factions_sorted:
+  <tr>
+    <td align="right" valign="top" nowrap>{{ factions.index(faction) + 1 }}</td>
+    <td align="left" valign="top" nowrap>
+      <a href="{{ links[factions.index(faction)] }}"><font color="{{ conf.LinkColour }}">{{ __(str(faction)) }}</font></a>
+    </td>
+%if not categories or categories["resources"]:
+    %for resource in metadata.RESOURCES:
+    <td align="left" valign="top" nowrap>{{ faction.resources[resource] }}</td>
+    %endfor
+%endif
+%if not categories or categories["heroes"]:
+    <td align="left" valign="top" nowrap>
+    %for hero in faction.heroes:
+    <br /><a href="hero:{{ repr(hero.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ hero.name }}</font></a>
+        %if hero.name_counter > 1:
+    ({{ hero.name_counter }})
+        %endif
+    %endfor
+    </td>
+%endif
+%if not categories or categories["towns"]:
+    <td align="left" valign="top" nowrap>
+    %for town in faction.towns:
+    <br /><a href="town:{{ repr(town.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ town.name }}</font></a>
+        %if town.name_counter > 1:
+    ({{ town.name_counter }})
+        %endif
+    %endfor
+    </td>
+%endif
+%endfor
+%if factions:
 </table>
 %endif
 </font>
