@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  02.11.2026
+@modified  03.11.2026
 ------------------------------------------------------------------------------
 """
 import copy
@@ -51,6 +51,7 @@ DATA_RANGES = {
     "level":           ( 0, 74),
     "skills":          ( 0, 29),
     "Intelligence":    (1.2, 1.35, 1.5), # Hero maximum spell points multiplier by skill level
+    "faction.bytelen": (149, 149),
     "town.type":       (  0, 11),
     "town.bytelen":    (546, 581),
 }
@@ -528,6 +529,23 @@ TOWN_REGEX = re.compile(b"""
 """, re.VERBOSE | re.DOTALL)
 
 
+FACTION_REGEX = re.compile(b"""
+    .                              #   1 byte:  unknown                              000-000
+    (?P<hero_order>.{8})           #   8 bytes: hero order by index                  001-008
+    .{87}                          #  87 bytes: unknown                              009-095
+
+    (?P<wood>.{3}\x00)             #   4 bytes: wood                                 096-099
+    (?P<mercury>.{3}\x00)          #   4 bytes: mercury                              100-103
+    (?P<ore>.{3}\x00)              #   4 bytes: ore                                  104-107
+    (?P<sulfur>.{3}\x00)           #   4 bytes: sulfur                               108-111
+    (?P<crystal>.{3}\x00)          #   4 bytes: crystal                              112-115
+    (?P<gems>.{3}\x00)             #   4 bytes: gems                                 116-119
+    (?P<gold>.{4})                 #   4 bytes: gold                                 120-123
+
+    .{25}                          #  25 bytes: unknown                              124-148
+""", re.VERBOSE | re.DOTALL)
+
+
 """Game minor version for HotA v1.80, from December 2025, adding Bulwark town and Runes skill."""
 BULWARK_MINOR = 0x0A
 
@@ -689,6 +707,7 @@ def adapt(name, value, version=None):
     """
     Adapts certain categories:
 
+    - "faction_regex":              longer span, no computer-player flag
     - "hero_regex":                 adding support for new skills
     - "hero_byte_positions":        adding support for new skills
     - "hero.stats.DATAPROPS":       adding cannon support
@@ -705,6 +724,8 @@ def adapt(name, value, version=None):
         result = ArmyStack
     elif "common.Army" == name:
         result = Army
+    elif "faction_regex" == name:
+        result = FACTION_REGEX
     elif "hero_byte_positions" == name:
         result = dict(value, **HERO_BYTE_POSITIONS)
     elif "hero_regex" == name:

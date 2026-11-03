@@ -1,6 +1,7 @@
 
 from . import common
 from . import conf
+from . import faction
 from . import hero
 from . import metadata
 from . import town

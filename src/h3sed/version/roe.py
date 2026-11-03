@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  02.11.2026
+@modified  03.11.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -37,8 +37,9 @@ TOWN_TYPES = {0: "Castle",  1: "Rampart",    2: "Tower",    3: "Inferno", 4: "Ne
 
 """Allowed (min, max) ranges and other configuration for various hero and town properties."""
 DATA_RANGES = {
-    "town.type":      (  0,  7),
-    "town.bytelen":   (393, 393),
+    "faction.bytelen": (143, 143),
+    "town.type":       (  0,  7),
+    "town.bytelen":    (393, 393),
 }
 
 
@@ -106,6 +107,23 @@ TOWN_REGEX = re.compile(b"""
 """, re.VERBOSE | re.DOTALL)
 
 
+FACTION_REGEX = re.compile(b"""
+    .                              #   1 byte:  unknown                              000-000
+    (?P<hero_order>.{8})           #   8 bytes: hero order by index                  001-008
+    .{87}                          #  87 bytes: unknown                              009-095
+
+    (?P<wood>.{3}\x00)             #   4 bytes: wood                                 096-099
+    (?P<mercury>.{3}\x00)          #   4 bytes: mercury                              100-103
+    (?P<ore>.{3}\x00)              #   4 bytes: ore                                  104-107
+    (?P<sulfur>.{3}\x00)           #   4 bytes: sulfur                               108-111
+    (?P<crystal>.{3}\x00)          #   4 bytes: crystal                              112-115
+    (?P<gems>.{3}\x00)             #   4 bytes: gems                                 116-119
+    (?P<gold>.{4})                 #   4 bytes: gold                                 120-123
+
+    .{19}                          #  19 bytes: unknown                              124-142
+""", re.VERBOSE | re.DOTALL)
+
+
 
 class DataClass(common.DataClass):
 
@@ -151,6 +169,7 @@ def adapt(name, value, version=None):
     """
     Adapts certain categories:
 
+    - "faction_regex":             shorter span, no computer-player flag
     - "hero.equipment.DATAPROPS":  dropping slot "side5"
     - "hero_byte_positions"        dropping slot "side5", shifting slot "inventory",
                                    adjusting location and map positions
@@ -164,6 +183,8 @@ def adapt(name, value, version=None):
         result = ArmyStack
     elif "common.Army" == name:
         result = Army
+    elif "faction_regex" == name:
+        result = FACTION_REGEX
     elif "hero.equipment.DATAPROPS" == name:
         result = [x for x in value if x.get("name") != "side5"]
     elif "hero_byte_positions" == name:

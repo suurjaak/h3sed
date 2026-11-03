@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  02.11.2026
+@modified  03.11.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -83,34 +83,48 @@ TOWN_TYPES = {0: "Castle",  1: "Rampart",    2: "Tower",    3: "Inferno", 4: "Ne
               5: "Dungeon", 6: "Stronghold", 7: "Fortress", 8: "Conflux"}
 
 
+"""Faction resources, in game order."""
+RESOURCES = ["wood", "mercury", "ore", "sulfur", "crystal", "gems", "gold"]
+
+
 """Allowed (min, max) ranges and other configuration for various hero and town properties."""
 DATA_RANGES = {
-    "attack":          PRIMARY_ATTRIBUTE_RANGE,
-    "defense":         PRIMARY_ATTRIBUTE_RANGE,
-    "power":           PRIMARY_ATTRIBUTE_RANGE,
-    "knowledge":       PRIMARY_ATTRIBUTE_RANGE,
+    "attack":           PRIMARY_ATTRIBUTE_RANGE,
+    "defense":          PRIMARY_ATTRIBUTE_RANGE,
+    "power":            PRIMARY_ATTRIBUTE_RANGE,
+    "knowledge":        PRIMARY_ATTRIBUTE_RANGE,
 
-    "exp":             ( 0, 2**32 - 1),
-    "level":           ( 0, 75),
-    "mana_left":       ( 0, 2**16 - 1),
-    "movement_left":   ( 0, 2**32 - 1),
-    "movement_total":  ( 0, 2**32 - 1),
-    "faction":         ( 0, 2**8 - 1),
-    "location_x":      ( 0, 252),
-    "location_y":      ( 0, 252),
-    "location_z":      ( 0, 1),
-    "on_map":          ( 0, 1),
+    "exp":              ( 0, 2**32 - 1),
+    "level":            ( 0, 75),
+    "mana_left":        ( 0, 2**16 - 1),
+    "movement_left":    ( 0, 2**32 - 1),
+    "movement_total":   ( 0, 2**32 - 1),
+    "faction":          ( 0, 2**8 - 1),
+    "location_x":       ( 0, 252),
+    "location_y":       ( 0, 252),
+    "location_z":       ( 0, 1),
+    "on_map":           ( 0, 1),
 
-    "army":            ( 0, 7),
-    "army.count":      ( 1, 2**32 - 1),
-    "inventory":       ( 0, 64),
-    "skills":          ( 0, 28),
-    "Intelligence":    (1.25, 1.5, 2), # Hero maximum spell points multiplier by skill level
+    "army":             ( 0, 7),
+    "army.count":       ( 1, 2**32 - 1),
+    "inventory":        ( 0, 64),
+    "skills":           ( 0, 28),
+    "Intelligence":     (1.25, 1.5, 2), # Hero maximum spell points multiplier by skill level
 
-    "town.namelen":   (  1, 14),
-    "town.count":     (  0, 48),
-    "town.type":      (  0,  8),
-    "town.bytelen":   (382, 396),
+    "faction.bytelen":  (145, 145),
+    "faction.heroes":   (  0, 8),
+    "resource.wood":    (  0, 2**24 - 1),
+    "resource.mercury": (  0, 2**24 - 1),
+    "resource.ore":     (  0, 2**24 - 1),
+    "resource.sulfur":  (  0, 2**24 - 1),
+    "resource.crystal": (  0, 2**24 - 1),
+    "resource.gems":    (  0, 2**24 - 1),
+    "resource.gold":    (  0, 2**32 - 1),
+
+    "town.namelen":     (  1, 14),
+    "town.count":       (  0, 48),
+    "town.type":        (  0,  8),
+    "town.bytelen":     (382, 396),
 }
 
 
@@ -184,6 +198,19 @@ TOWN_BYTE_POSITIONS = {
     "location_z":         6, # Town X map coordinate
     "army_types":         9, # Creature type IDs
     "army_counts":       37, # Creature counts
+}
+
+
+"""Index for byte start of various attributes in faction bytearray."""
+FACTION_BYTE_POSITIONS = {
+    "hero_order":         1,
+    "resource.wood":     96,
+    "resource.mercury": 100,
+    "resource.ore":     104,
+    "resource.sulfur":  108,
+    "resource.crystal": 112,
+    "resource.gems":    116,
+    "resource.gold":    120,
 }
 
 
@@ -267,6 +294,24 @@ TOWN_REGEX = re.compile(b"""
                                    #   X bytes: unknown
 """, re.VERBOSE | re.DOTALL)
 
+
+FACTION_REGEX = re.compile(b"""
+    .                              #   1 byte:  unknown                              000-000
+    (?P<hero_order>.{8})           #   8 bytes: hero order by index                  001-008
+    .{87}                          #  87 bytes: unknown                              009-095
+
+    (?P<wood>.{3}\x00)             #   4 bytes: wood                                 096-099
+    (?P<mercury>.{3}\x00)          #   4 bytes: mercury                              100-103
+    (?P<ore>.{3}\x00)              #   4 bytes: ore                                  104-107
+    (?P<sulfur>.{3}\x00)           #   4 bytes: sulfur                               108-111
+    (?P<crystal>.{3}\x00)          #   4 bytes: crystal                              112-115
+    (?P<gems>.{3}\x00)             #   4 bytes: gems                                 116-119
+    (?P<gold>.{4})                 #   4 bytes: gold                                 120-123
+
+    .{16}                          #  16 bytes: unknown                              124-139
+    (?P<computer>[\x00,\x01])      #   1 byte:  computer player flag                 140-140
+    .{4}                           #   4 bytes: unknown                              141-144
+""", re.VERBOSE | re.DOTALL)
 
 
 """Hero levels mapped to minimum experience points required."""
@@ -1423,6 +1468,7 @@ class Savefile(object):
         self.mapdata    = {}
         self.size       = 0
         self.usize      = 0
+        self.factions   = []
         self.heroes     = []
         self.towns      = []
         self.read(parse)
@@ -1533,6 +1579,7 @@ class Savefile(object):
         """Populates and parses all heroes and towns in detail."""
         self.parse_heroes()
         self.parse_towns()
+        self.parse_factions()
 
         town_locations = {(t.profile.x, t.profile.y, t.profile.z): t for t in self.towns}
         for hero in self.heroes:
@@ -1619,7 +1666,7 @@ class Savefile(object):
             town_start = pos + m.start()
 
             if town_start + BYTES_MINLEN > MAX_POS: # Cease upon reaching the heroes section
-                break # while m
+                break # while True
 
             name_rawlen = util.bytoi(m.group("name_len"))
             if name_rawlen == 0 and BYTES_MINLEN == BYTES_MAXLEN: # Fixed size structs have len=0 (RoE)
@@ -1680,7 +1727,7 @@ class Savefile(object):
                         # Large gap from the only one parsed: assume it was wrongly parsed, drop it.
                         self.towns.pop()
                     else: # Large gap after parsing several towns: assume end of towns section.
-                        break # while m
+                        break # while True
 
             if len(self.towns) == 1 and town_start != self.towns[-1].span[1] + 1:
                 # Some versions like HoTA can have different town lengths over minor versions.
@@ -1716,6 +1763,56 @@ class Savefile(object):
                 dupe_counts.subtract([town.name])
         logger.info("%s towns detected in %s as version %r.",
                     len(self.towns) or "No ", self.filename, self.version)
+
+
+    def parse_factions(self):
+        """Populates and parses all factions, preferably called after parse_towns()."""
+        if not self.heroes and not self.towns: return
+
+        DATA_RANGES = Store.get("data_ranges", version=self.version_id)
+        BYTELEN = DATA_RANGES["faction.bytelen"][1]
+
+        rgx_faction = h3sed.version.adapt("faction_regex", FACTION_REGEX, version=self.version_id)
+        rgx_strip   = re.compile(br"^(?!\xFF+\x00+$)([^\x00-\x19,^\xFF]+)")
+
+        if self.towns:
+            first_town = min(self.towns, key=lambda t: t.index)
+            pos = first_town.span[0] - len(PLAYER_FACTIONS) * BYTELEN - 1
+        else:
+            first_hero = min(self.heroes, key=lambda h: h.index)
+            first_hero_start = first_hero.span[0] - len(first_hero.profile.biography)
+            pos = first_hero_start - len(PLAYER_FACTIONS) * BYTELEN - 1
+
+        faction_towns, faction_heroes = defaultdict(list), defaultdict(list)
+        for hero in self.heroes: faction_heroes[hero.profile.faction].append(hero)
+        for town in self.towns:  faction_towns [town.profile.faction].append(town)
+
+        del self.factions[:]
+        for faction_index in range(len(PLAYER_FACTIONS)):
+            pos += 1
+            m = re.search(rgx_faction, self.raw[pos:])
+            if not m: break # for faction_index
+
+            if faction_index not in faction_towns and faction_index not in faction_heroes:
+                # Savefile lists all factions, but only those with heroes or towns are in play
+                pos += BYTELEN - 1
+                continue # for faction_index
+
+            faction_start = pos + m.start()
+
+            faction = h3sed.faction.Faction(faction_index, version=self.version_id)
+            faction.heroes[:] = faction_heroes[faction_index]
+            faction.towns[:] = faction_towns[faction_index]
+            faction_span = (faction_start, faction_start + BYTELEN)
+            faction_bytes = self.raw[faction_start:faction_start + BYTELEN]
+            faction.set_file_data(faction_bytes, faction_index, faction_span)
+            faction.parse(self)
+            faction.mark_saved()
+            self.factions.append(faction)
+            pos += BYTELEN - 1
+
+        logger.info("%s factions detected in %s as version %r.",
+                    len(self.factions) or "No ", self.filename, self.version)
 
 
     def find_heroes(self, *texts, **keywords):
@@ -1827,26 +1924,27 @@ Store.add("artifacts", SCROLL_ARTIFACTS, category="scroll")
 for slot in set(sum(ARTIFACT_SLOTS.values(), [])):
     Store.add("artifacts", [k for k, v in ARTIFACT_SLOTS.items() if v[0] == slot], category=slot)
 
-Store.add("artifact_slots",        ARTIFACT_SLOTS)
-Store.add("artifact_spells",       ARTIFACT_SPELLS)
-Store.add("artifact_stats",        ARTIFACT_STATS)
-Store.add("creatures",             CREATURES, sortable=True)
-Store.add("creature_levels",       CREATURE_LEVELS)
-Store.add("data_ranges",           DATA_RANGES)
-Store.add("equipment_slots",       EQUIPMENT_SLOTS, separate=True)  # Versions without side5 e.g. RoE
-Store.add("experience_levels",     EXPERIENCE_LEVELS, separate=True) # Versions can cap level e.g. HoTA
-Store.add("player_factions",       PLAYER_FACTIONS)
-Store.add("hero_byte_positions",   HERO_BYTE_POSITIONS)
-Store.add("ids",                   IDS)
+Store.add("artifact_slots",         ARTIFACT_SLOTS)
+Store.add("artifact_spells",        ARTIFACT_SPELLS)
+Store.add("artifact_stats",         ARTIFACT_STATS)
+Store.add("creatures",              CREATURES, sortable=True)
+Store.add("creature_levels",        CREATURE_LEVELS)
+Store.add("data_ranges",            DATA_RANGES)
+Store.add("equipment_slots",        EQUIPMENT_SLOTS, separate=True)  # Versions without side5 e.g. RoE
+Store.add("experience_levels",      EXPERIENCE_LEVELS, separate=True) # Versions can cap level e.g. HoTA
+Store.add("faction_byte_positions", FACTION_BYTE_POSITIONS)
+Store.add("player_factions",        PLAYER_FACTIONS)
+Store.add("hero_byte_positions",    HERO_BYTE_POSITIONS)
+Store.add("ids",                    IDS)
 Store.add("primary_attribute_game_ranges", PRIMARY_ATTRIBUTE_GAME_RANGES)
-Store.add("skills",                SKILLS)
-Store.add("skill_levels",          SKILL_LEVELS)
-Store.add("special_artifacts",     SPECIAL_ARTIFACTS)
-Store.add("spells",                SPELLS, sortable=True)
-Store.add("spell_schools",         SPELL_SCHOOLS)
-Store.add("town_byte_positions",   TOWN_BYTE_POSITIONS)
-Store.add("town_types",            TOWN_TYPES, separate=True)
-Store.add("bannable_spells",       []) # Initialize empty array for version modules to update
-Store.add("combination_artifacts", {}) # Initialize empty dict for version modules to update
+Store.add("skills",                 SKILLS)
+Store.add("skill_levels",           SKILL_LEVELS)
+Store.add("special_artifacts",      SPECIAL_ARTIFACTS)
+Store.add("spells",                 SPELLS, sortable=True)
+Store.add("spell_schools",          SPELL_SCHOOLS)
+Store.add("town_byte_positions",    TOWN_BYTE_POSITIONS)
+Store.add("town_types",             TOWN_TYPES, separate=True)
+Store.add("bannable_spells",        []) # Initialize empty array for version modules to update
+Store.add("combination_artifacts",  {}) # Initialize empty dict for version modules to update
 for artifact, spells in ARTIFACT_SPELLS.items():
     Store.add("spells", spells, category=artifact)

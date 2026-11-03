@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+4.2, 2026-11-03
+---------------
+- add factions section
+
+
 4.1, 2026-11-02
 ---------------
 - fix parsing towns with names in multi-byte encoding (issue #33)
