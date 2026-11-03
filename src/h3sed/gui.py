@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    30.09.2026
+@modified    03.11.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -31,7 +31,6 @@ import wx
 import wx.adv
 import wx.html
 import wx.lib.agw.flatnotebook
-import wx.lib.agw.hyperlink
 import wx.lib.agw.labelbook
 import wx.lib.newevent
 
@@ -2512,22 +2511,12 @@ def build(plugin, panel):
 
         elif "link" == prop.get("type"):
             c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])))
-            c2 = wx.lib.agw.hyperlink.HyperLinkCtrl(panel)
-            c2.SetUnderlines(link=False, visited=False, rollover=True)
-            colour = wx.Colour(conf.LinkColour)
-            c2.SetColours(link=colour, visited=colour, rollover=colour)
-            c2.AutoBrowse(False)
-            c2.EnableRollover(True)
-            if prop.get("tooltip"):
-                c2.ToolTip = prop["tooltip"]() if callable(prop["tooltip"]) else prop["tooltip"]
-            wx.CallAfter(c2.UpdateLink) # Workaround style not refreshing before mouseover
 
             producer = prop["format"] if callable(prop.get("format")) else lambda: state.get(prop["name"])
-            c2.Label = producer() or ""
-            c2.UpdateLink()
-            if prop.get("handler"):
-                c2.Bind(wx.lib.agw.hyperlink.EVT_HYPERLINK_LEFT,
-                        functools.partial((lambda handler, e: handler()), prop["handler"]))
+            label = producer() or ""
+            c2 = controls.make_hyperlink(panel, label, (-1, -1), conf.LinkColour, prop.get("handler"))
+            if prop.get("tooltip"):
+                c2.ToolTip = prop["tooltip"]() if callable(prop["tooltip"]) else prop["tooltip"]
 
             sizer.Add(c1, pos=(count, 0))
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)

@@ -28,7 +28,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    20.04.2026
+@modified    03.11.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -44,6 +44,7 @@ import webbrowser
 
 import wx
 import wx.html
+import wx.lib.agw.hyperlink
 import wx.lib.agw.labelbook
 import wx.lib.gizmos
 import wx.lib.newevent
@@ -1561,6 +1562,22 @@ def get_dialog_path(dialog):
         if ext: result += ext
 
     return result
+
+
+def make_hyperlink(parent, label, size=wx.DefaultSize, colour=None, handler=None):
+    """Creates and returns a HyperLinkCtrl."""
+    link = wx.lib.agw.hyperlink.HyperLinkCtrl(parent, label=label, size=size)
+    link.AutoBrowse(False)
+    link.EnableRollover(True)
+    link.SetUnderlines(link=False, visited=False, rollover=True)
+    if colour:
+        if not isinstance(colour, wx.Colour): colour = wx.Colour(colour)
+        link.SetColours(link=colour, visited=colour, rollover=colour)
+    if handler:
+        link.Bind(wx.lib.agw.hyperlink.EVT_HYPERLINK_LEFT, lambda e: handler())
+    link.UpdateLink()
+    wx.CallAfter(link.UpdateLink) # Workaround style not refreshing before mouseover
+    return link
 
 
 def resize_img(img, size, aspect_ratio=True, bg=(-1, -1, -1)):
