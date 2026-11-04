@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  26.09.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -253,10 +253,8 @@ class EquipmentPlugin(object):
                 choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
 
                 ctrl = self._ctrls[name]
-                if list(labels) != ctrl.GetItems():
-                    ctrl.SetItems(labels)
-                    for j, x in enumerate(choices): ctrl.SetClientData(j, x)
-                ctrl.Value = self.format_artifact(value) or ""
+                label = self.format_artifact(value) or ""
+                h3sed.lib.controls.set_combo_choices(ctrl, labels, choices, label)
                 infoctrl = self._ctrls["%s-info" % name]
                 infoctrl.Label = self.format_stats_bonus(prop)
                 infoctrl.ToolTip = infoctrl.Label
@@ -397,17 +395,14 @@ class EquipmentPlugin(object):
                 if not ctrl.Enabled:
                     labels = self.format_artifact(choices)
                     choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
-                    if list(labels) != ctrl.GetItems():
-                        ctrl.SetItems(labels)
-                        for j, x in enumerate(choices): ctrl.SetClientData(j, x)
-                    ctrl.Value = self.format_artifact(artifact) or ""
+                    label = self.format_artifact(artifact) or ""
+                    h3sed.lib.controls.set_combo_choices(ctrl, labels, choices, label)
                     ctrl.Enable()
 
                 if not artifact and location in reserved_locations:
                     combo_artifact = self._state[reserved_locations[location]]
                     label = __("<taken by %s>", __(combo_artifact))
-                    ctrl.SetItems([label])
-                    ctrl.Value = label
+                    h3sed.lib.controls.set_combo_choices(ctrl, [label], value=label)
                     ctrl.Disable()
         finally: self._panel.Thaw()
 

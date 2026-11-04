@@ -28,7 +28,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    03.11.2026
+@modified    04.11.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -1578,6 +1578,68 @@ def make_hyperlink(parent, label, size=wx.DefaultSize, colour=None, handler=None
     link.UpdateLink()
     wx.CallAfter(link.UpdateLink) # Workaround style not refreshing before mouseover
     return link
+
+
+def populate_combo(combo):
+    """Populates combobox fully, with items deferred in set_combo_choices()."""
+    if getattr(combo, "_is_populated", True): return
+
+    value0 = combo.Value
+    combo.SetItems(combo._items)
+    for i, data in enumerate(combo._datas):
+        combo.SetClientData(i, data)
+    if value0 in combo._items:
+        combo.Value = value0
+    combo._is_populated = True
+
+
+def set_combo_choices(combo, items, datas=(), value=None):
+    """
+    Registers items to populate combobox with, actual populating deferred until user interaction.
+
+    @param   items  sequence of strings for combobox contents
+    @param   datas  sequence of client data to associate with items, equal in length if any
+    @param   value  text for current combobox value, if any
+    """
+    items0, datas0 = getattr(combo, "_items", []), getattr(combo, "_datas", [])
+    if (items, datas) != (items0, datas0):
+        combo._items = list(items)
+        combo._datas = list(datas or [])
+        combo._is_populated = False
+        combo.SetItems([])
+        set_combo_width(combo, combo._items)
+    if not getattr(combo, "_is_handlered", False):
+        handler = lambda e: (e.Skip(), populate_combo(e.EventObject))
+        for evt_type in (wx.EVT_COMBOBOX_DROPDOWN, wx.EVT_SET_FOCUS): combo.Bind(evt_type, handler)
+        combo._is_handlered = True
+    if value is not None:
+        set_combo_value(combo, value)
+
+
+def set_combo_value(combo, value):
+    """Sets value to combobox, handling any deferred populating from set_combo_choices()."""
+    if combo.Value == value: return
+
+    if not getattr(combo, "_is_populated", True):
+        combo.SetItems([value])
+    combo.Value = value
+
+
+def set_combo_width(combo, items):
+    """Sets combobox minimum width to widest content item."""
+    if not items: return
+
+    if not isinstance(items, tuple): items = tuple(items)
+    cache = getattr(set_combo_width, "_width_cache", {})
+    if items in cache:
+        max_len = cache[items]
+    else:
+        longest_items = sorted(items, key=len)[-10:]
+        max_len = max(combo.GetTextExtent(t).Width for t in longest_items)
+        cache[items] = max_len
+        set_combo_width._width_cache = cache
+    BARW, PAD = wx.SystemSettings.GetMetric(wx.SYS_VSCROLL_X), 10
+    combo.MinSize = (max_len + BARW + PAD, combo.MinSize.Height)
 
 
 def resize_img(img, size, aspect_ratio=True, bg=(-1, -1, -1)):

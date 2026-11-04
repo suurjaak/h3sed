@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  26.09.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -124,13 +124,10 @@ class InventoryPlugin(object):
             ARTIFACTS = metadata.Store.get("artifacts", category="inventory", version=self.version)
             choices, labels = [""] + ARTIFACTS, [""] + self.format_artifact(ARTIFACTS)
             choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
-            do_reset = False if list(labels) == self._ctrls[0].GetItems() else True
 
             for i, value in enumerate(self._state):
-                if do_reset:
-                    self._ctrls[i].SetItems(labels)
-                    for j, x in enumerate(choices): self._ctrls[i].SetClientData(j, x)
-                self._ctrls[i].Value = self.format_artifact(value) or ""
+                label = self.format_artifact(value) or ""
+                h3sed.lib.controls.set_combo_choices(self._ctrls[i], labels, choices, label)
                 sibling = self._ctrls[i].GetNextSibling()
                 while sibling and not isinstance(sibling, wx.StaticText):
                     sibling = sibling.GetNextSibling()

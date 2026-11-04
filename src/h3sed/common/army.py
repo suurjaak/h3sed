@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  28.09.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -147,13 +147,11 @@ class ArmyPlugin(object):
                         labels = [__(x) for x in choices]
                         choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
 
-                        if list(labels) != ctrl.GetItems():
-                            ctrl.SetItems(labels)
-                            for j, x in enumerate(choices): ctrl.SetClientData(j, x)
-                        else: ctrl.Value = ""
+                        h3sed.lib.controls.set_combo_choices(ctrl, labels, choices, __(value))
                         creature = value
-                    else: ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
-                    if value is not None and hasattr(ctrl, "Value"): ctrl.Value = __(value)
+                    else:
+                        ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
+                        if value is not None and hasattr(ctrl, "Value"): ctrl.Value = value
         else:
             self._ctrls, result = h3sed.gui.build(self, self._panel)[0], True
             # Hide count controls where no creature type selected

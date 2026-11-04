@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    03.11.2026
+@modified    04.11.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -2300,10 +2300,8 @@ def build(plugin, panel):
 
                         c = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY,
                                         name="%s_%s" % (plugin.name, i))
-                        c.SetItems(labels)
-                        for j, x in enumerate(choices): c.SetClientData(j, x)
-                        if v is not None: c.Value = formatter(v)
-                        elif "" in choices: c.Value = ""
+                        value = formatter(v) if v is not None else "" if "" in choices else None
+                        controls.set_combo_choices(c, labels, choices, value)
                         c.Bind(wx.EVT_COMBOBOX, make_value_handler(c, itemprop, rowindex=i))
                         bsizer.Add(c, flag=wx.GROW)
                     elif "number" == itemprop.get("type"):
@@ -2377,8 +2375,7 @@ def build(plugin, panel):
                 labels = [__(x) for x in choices]
                 if not prop.get("sequence"):
                     choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
-                c1.SetItems(labels)
-                for j, x in enumerate(choices): c1.SetClientData(j, x)
+                controls.set_combo_choices(c1, labels, choices)
                 c2.Bind(wx.EVT_BUTTON, make_add_handler(c1, prop))
 
                 sizer.Add(c1, pos=(count, 0))
@@ -2450,9 +2447,7 @@ def build(plugin, panel):
             if not prop.get("sequence"):
                 choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
 
-            c2.SetItems(labels)
-            for j, x in enumerate(choices): c2.SetClientData(j, x)
-            if v is not None: c2.Value = formatter(v)
+            controls.set_combo_choices(c2, labels, choices, formatter(v) if v is not None else None)
             if prop.get("readonly"): c2.Enable(False)
             c2.Bind(wx.EVT_COMBOBOX, make_value_handler(c2, prop))
 
