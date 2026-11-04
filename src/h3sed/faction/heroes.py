@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   02.11.2026
-@modified  03.11.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -28,7 +28,7 @@ from .. import metadata
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "heroes", "label": "Heroes", "index": 1}
+PROPS = {"name": "heroes", "label": "Heroes"}
 DATAPROPS = [{
     "type":          "label",
     "label":         "Adventuring",

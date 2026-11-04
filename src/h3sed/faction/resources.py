@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   02.11.2026
-@modified  03.11.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -20,7 +20,7 @@ from .. import metadata
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "resources", "label": "Resources", "index": 0}
+PROPS = {"name": "resources", "label": "Resources"}
 DATAPROPS = [{
     "name":   "wood",
     "label":  "Wood",

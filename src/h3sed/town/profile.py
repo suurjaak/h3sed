@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.09.2026
-@modified  01.10.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 try: import wx
@@ -17,7 +17,7 @@ import h3sed
 from .. lib.i18n import translate as __
 
 
-PROPS = {"name": "profile", "label": "Profile", "index": 6}
+PROPS = {"name": "profile", "label": "Profile"}
 DATAPROPS = [{
     "name":      "faction",
     "type":      "text",

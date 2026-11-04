@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   03.11.2026
-@modified  03.11.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -24,7 +24,7 @@ from .. lib.i18n import translate as __
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "towns", "label": "Towns", "index": 2}
+PROPS = {"name": "towns", "label": "Towns"}
 DATAPROPS = [{
     "type":          "itemlist",
     "header":        None, # Populated later

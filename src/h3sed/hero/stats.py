@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  26.09.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -28,7 +28,7 @@ from .. import metadata
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "stats", "label": "Main attributes", "index": 0}
+PROPS = {"name": "stats", "label": "Main attributes"}
 ## Normal values for primary stats range from 0..99 for might and 1..99 for magic attributes.
 ## Values from 100 get capped to 99, and from 128 upwards become a handicap (from 231 in HoTA),
 ## with game showing and using minimum, but still increasing the value upon gaining points

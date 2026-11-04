@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  12.07.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -26,7 +26,7 @@ from .. import metadata
 logger = logging.getLogger(__name__)
 
 
-PROPS = {"name": "spells", "label": "Spells", "index": 5}
+PROPS = {"name": "spells", "label": "Spells"}
 DATAPROPS = [{
     "type":       "checklist",
     "choices":    None, # Populated later

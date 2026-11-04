@@ -26,7 +26,7 @@ from .. import metadata
 logger = logging.getLogger(__package__)
 
 
-PROPS = {"name": "inventory", "label": "Inventory", "index": 4}
+PROPS = {"name": "inventory", "label": "Inventory"}
 DATAPROPS = [{
     "type":        "itemlist",
     "orderable":   True,
