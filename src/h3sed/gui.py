@@ -1682,7 +1682,7 @@ class SavefilePage(wx.Panel):
         self.Bind(EVT_PLUGIN, self.on_plugin_event)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.on_destroy)
         self.TopLevelParent.Bind(EVT_LANGUAGE, self.on_change_language)
-        notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_page)
+        notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_change_page, notebook)
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda e: (splitter.SetSashPosition(SASH_DEFAULTPOS),
                       conf.Settings.update({"savepage.splitter_pos": SASH_DEFAULTPOS})))
         splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED,
