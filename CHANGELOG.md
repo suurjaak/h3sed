@@ -1,9 +1,10 @@
 CHANGELOG
 =========
 
-4.2, 2026-11-03
+4.2, 2026-11-04
 ---------------
 - add factions section
+- improve hero loading speed
 
 
 4.1, 2026-11-02

@@ -65,7 +65,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  03.11.2026
+@modified  04.11.2026
 ------------------------------------------------------------------------------
 """
 import ast
@@ -107,7 +107,7 @@ class EntityPlugin(object):
         self.savefile     = savefile
         self._panel       = panel  # wxPanel container for plugin components
         self._undoredo    = commandprocessor # wx.CommandProcessor
-        self._plugins     = []     # [{name, label, instance, panel}, ]
+        self._plugins     = []     # [{name, label, instance, panel, module, is_rendered, has_menu}]
         self._entities    = []     # Entities ordered by name
         self._ctrls       = {}     # {name: wx.Control, }
         self._pages       = {}     # {wx.Window from self._ctrls["tabs"]: index in self._entities}
@@ -311,7 +311,7 @@ class EntityPlugin(object):
         nb = wx.Notebook(self._propspanel)
         PROPERTIES = h3sed.hero.PROPERTIES if "hero" == self.name else \
                      h3sed.town.PROPERTIES if "town" == self.name else h3sed.faction.PROPERTIES
-        self._plugins = [dict(m.props(), module=m) for m in PROPERTIES.values()
+        self._plugins = [dict(m.props(), module=m, is_rendered=False) for m in PROPERTIES.values()
                          if callable(getattr(m, "props", None))]
         for props in self._plugins:
             subpanel = props["panel"] = wx.ScrolledWindow(nb)
@@ -382,14 +382,13 @@ class EntityPlugin(object):
         self._undoredo.Submit(h3sed.gui.PluginCommand(self, callable, name))
 
 
-    def render(self, reparse=False, reload=False, rebuild=False, log=True):
+    def render(self, reparse=False, reload=False, rebuild=False):
         """
         Renders entity selection and editing subtabs into our panel.
 
         @param   reparse  whether plugins should re-parse state from savefile
         @param   reload   whether plugins should reload state from entity
         @param   rebuild  whether all UI should be rebuilt
-        @param   log      whether plugin should log actions
         """
         if reparse or reload or rebuild: self._index["stale"] = True
 
@@ -399,7 +398,7 @@ class EntityPlugin(object):
             self.refresh_file()
         elif self._entity and self._propspanel.Children:
             for p in self._plugins:
-                self.render_plugin(p["name"], reload=reload, log=log)
+                self.render_plugin(p["name"], reload=reload)
         else: self.build()
 
 
@@ -625,7 +624,7 @@ class EntityPlugin(object):
             self.patch()
         if "render" == action and getattr(event, "name", None):
             event.Skip()
-            self.render_plugin(event.name)
+            self.render_plugin(event.name, reload=True)
         if "open" == action:
             event.Skip()
 
@@ -641,9 +640,11 @@ class EntityPlugin(object):
     def on_change_entity_subtab(self, event):
         """Handler for changing a page in the entity properties notebook, updates UI and settings."""
         conf.Settings.update({"%s.tab_index" % self.name: event.Selection})
-        self._ctrls["menubutton"].Enable(self._plugins[event.Selection]["has_menu"])
-        index = next(i for i, h in enumerate(self._entities) if h == self._entity)
-        self._subtab_focus[index] = event.Selection
+        entity_index = next(i for i, h in enumerate(self._entities) if h == self._entity)
+        self._subtab_focus[entity_index] = event.Selection
+        p = self._plugins[event.Selection]
+        self._ctrls["menubutton"].Enable(p["has_menu"])
+        if not p["is_rendered"]: self.render_plugin(p["name"], force=True)
 
 
     def on_entity_subtab_button(self, event):
@@ -1028,26 +1029,21 @@ class EntityPlugin(object):
         wx.PostEvent(self._panel, h3sed.gui.SavefilePageEvent(self._panel.Id))
 
 
-    def render_plugin(self, name, reload=False, log=True):
+    def render_plugin(self, name, reload=False, log=False, force=None):
         """
         Renders or re-renders panel for the specified plugin.
 
-        @param   reload  whether plugins should re-parse state from entity bytes
-        @param   log     whether should log actions
+        @param   reload  whether plugin should reload state from entity
+        @param   log     whether to log loading action
+        @param   force   True/False to force visual render or defer for later,
+                         None will force render if plugin tab is currently selected
         """
         p = next((x for x in self._plugins if x["name"] == name), None)
         if not p:
             logger.warning("Call to render unknown plugin %s.", name)
             return
-
-        def fmt(state):
-            if isinstance(state, set):  return list(state)
-            if isinstance(state, dict): return {k: v for k, v in state.items() if v is not None}
-            if isinstance(state, list) and state[-2:] == [None, None]: # Collapse trailing blanks
-                count = next((i for i, x in enumerate(state[::-1]) if x is not None), len(state))
-                return (("%s + " % state[:len(state) - count]) if count < len(state) else "") + \
-                       "%s * %s" % ([None], count)
-            return state
+        if force is None:
+            force = (self._plugins.index(p) == self._ctrls["properties"].Selection)
 
         plugin, item0 = p["instance"], p["instance"].item()
         if reload or item0 is None:
@@ -1066,6 +1062,10 @@ class EntityPlugin(object):
                 return state
             if log: logger.info("Loaded %s %s %s %s.",
                                 self.name, self._entity, p["name"], fmt(plugin.state()))
+
+        p["is_rendered"] = False
+        if not force: return
+
         p["panel"].Freeze()
         try:
             do_accelerate = False
@@ -1078,4 +1078,5 @@ class EntityPlugin(object):
                 wx_accel.accelerate(p["panel"])
         finally:
             controls.ColourManager.Patch(p["panel"])
+            p["is_rendered"] = True
             p["panel"] and p["panel"].Thaw()

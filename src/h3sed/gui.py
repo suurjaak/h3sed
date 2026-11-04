@@ -2020,7 +2020,7 @@ class PluginCommand(wx.Command):
     def Do(self):
         if self._done:
             self._plugin.set_data(self._data2)
-            self._plugin.render(reload=True, log=False)
+            self._plugin.render(reload=True)
             self._plugin.patch()
         else:
             self._data1 = self._plugin.get_data()
@@ -2030,7 +2030,7 @@ class PluginCommand(wx.Command):
 
     def Undo(self):
         self._plugin.set_data(self._data1)
-        self._plugin.render(reload=True, log=False)
+        self._plugin.render(reload=True)
         self._plugin.patch()
         return True
 
