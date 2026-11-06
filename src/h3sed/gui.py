@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    04.11.2026
+@modified    06.11.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -2524,6 +2524,24 @@ def build(plugin, panel):
             c2 = controls.make_hyperlink(panel, label, (-1, -1), conf.LinkColour, prop.get("handler"))
             if prop.get("tooltip"):
                 c2.ToolTip = prop["tooltip"]() if callable(prop["tooltip"]) else prop["tooltip"]
+
+            sizer.Add(c1, pos=(count, 0))
+            sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
+            if not sizer.IsColGrowable(1): sizer.AddGrowableCol(1)
+            col = 2
+            build_result[prop["name"]] = c2
+            count += 1
+
+
+        elif callable(prop.get("type")):
+            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])))
+            c2 = prop["type"]()
+
+            #producer = prop["format"] if callable(prop.get("format")) else lambda: state.get(prop["name"])
+            #label = producer() or ""
+            #c2 = controls.make_hyperlink(panel, label, (-1, -1), conf.LinkColour, prop.get("handler"))
+            #if prop.get("tooltip"):
+            #    c2.ToolTip = prop["tooltip"]() if callable(prop["tooltip"]) else prop["tooltip"]
 
             sizer.Add(c1, pos=(count, 0))
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
