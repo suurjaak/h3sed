@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.05.2024
-@modified  03.11.2026
+@modified  06.11.2026
 ------------------------------------------------------------------------------
 """
 import re
@@ -110,7 +110,8 @@ TOWN_REGEX = re.compile(b"""
 FACTION_REGEX = re.compile(b"""
     .                              #   1 byte:  unknown                              000-000
     (?P<hero_order>.{8})           #   8 bytes: hero order by index                  001-008
-    .{87}                          #  87 bytes: unknown                              009-095
+    .{2}                           #   2 bytes: tavern heroes                        009-010
+    .{85}                          #  85 bytes: unknown                              011-095
 
     (?P<wood>.{3}\x00)             #   4 bytes: wood                                 096-099
     (?P<mercury>.{3}\x00)          #   4 bytes: mercury                              100-103

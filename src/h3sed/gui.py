@@ -2250,19 +2250,21 @@ def build(plugin, panel):
         sizer.Add(c, **sizerargs)
         if prop.get("name"): build_result["%s-info" % prop["name"]] = c
 
-    def make_extra(prop, sizer, pos):
+    def make_extra(prop, sizer, pos=None, rowindex=None):
         opts, c = prop["extra"], None
         if callable(opts):
             c = opts(prop)
         elif "button" == opts["type"]:
             c = wx.Button(panel, label=__(opts["label"]))
-            c.Bind(wx.EVT_BUTTON, functools.partial(opts["handler"], prop))
+            funcargs = [prop] + ([rowindex] if rowindex is not None else [])
+            c.Bind(wx.EVT_BUTTON, functools.partial(opts["handler"], *funcargs))
         if c:
             if isinstance(opts, dict) and opts.get("tooltip") and hasattr(c, "ToolTip"):
                 c.ToolTip = __(opts["tooltip"])
             sizerargs = dict(flag=wx.ALIGN_CENTER_VERTICAL) if isinstance(c, wx.Sizer) else {}
-            sizer.Add(c, pos=pos, **sizerargs)
-            build_result["%s-extra" % prop["name"]] = c
+            if pos: sizerargs.update(pos=pos)
+            sizer.Add(c, **sizerargs)
+            if isinstance(build_result, dict): build_result["%s-extra" % prop["name"]] = c
 
 
     count = 0
@@ -2334,7 +2336,7 @@ def build(plugin, panel):
                         else: resultitem = c
                 if resultitem: resultitems.append(resultitem)
 
-                if any(prop.get(k) for k in ("menu", "orderable", "removable", "nullable", "info")):
+                if any(prop.get(k) for k in ("menu", "orderable", "removable", "nullable", "extra", "info")):
                     bsizer.AddSpacer(10)
                 if prop.get("menu"):
                     c = wx.Button(panel, label="..", size=(20 + BTN_WPLUS, -1), name="options")
@@ -2359,6 +2361,8 @@ def build(plugin, panel):
                     c.ToolTip = __("Clear item")
                     c.Bind(wx.EVT_BUTTON, make_clear_handler(c, prop, rowindex=i))
                     bsizer.Add(c)
+                if prop.get("extra"):
+                    make_extra(prop, bsizer, rowindex=i)
                 if prop.get("info"):
                     make_info(prop, bsizer, rowindex=i)
                 if bsizer.Children: sizer.Add(bsizer, pos=(count, 1))

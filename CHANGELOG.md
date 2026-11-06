@@ -1,9 +1,9 @@
 CHANGELOG
 =========
 
-4.2, 2026-11-04
+4.2, 2026-11-06
 ---------------
-- add factions section
+- add factions section, with resources, hero order, and tavern heroes management
 - improve hero loading speed
 
 

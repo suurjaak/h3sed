@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  03.11.2026
+@modified  06.11.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -41,7 +41,7 @@ HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army", "eq
 TOWN_PROPERTY_CATEGORIES = ["faction", "type", "location", "visiting_hero", "garrison_hero", "army"]
 
 ## Faction property categories for faction index
-FACTION_PROPERTY_CATEGORIES = ["resources", "heroes", "towns"]
+FACTION_PROPERTY_CATEGORIES = ["resources", "heroes", "towns", "tavern_heroes"]
 
 
 def export_heroes(filename, format, heroes, savefile=None, categories=None):
@@ -618,6 +618,9 @@ category = get("category")
 %if category is None or "towns" == category:
 {{ " ".join(x.name for x in faction.towns) }}
 %endif
+%if category is None or "tavern_heroes" == category:
+{{ " ".join(x.name for x in faction.tavern_heroes if x) }}
+%endif
 """
 
 
@@ -983,6 +986,9 @@ def sortarrow(col):
 %if not categories or categories["towns"]:
     <th align="left" valign="bottom" nowrap><a href="sort:towns"><font color="{{ conf.FgColour }}">{{ __("Towns") }}{{! sortarrow("towns") }}</font></a></th>
 %endif
+%if not categories or categories["tavern_heroes"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:tavern_heroes"><font color="{{ conf.FgColour }}">{{ __("Tavern heroes") }}{{! sortarrow("tavern_heroes") }}</font></a></th>
+%endif
   </tr>
 %elif count and (get("text") or "").strip():
 <br /><br />&nbsp;&nbsp;
@@ -1018,6 +1024,16 @@ def sortarrow(col):
     <br /><a href="town:{{ repr(town.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ town.name }}</font></a>
         %if town.name_counter > 1:
     ({{ town.name_counter }})
+        %endif
+    %endfor
+    </td>
+%endif
+%if not categories or categories["tavern_heroes"]:
+    <td align="left" valign="top" nowrap>
+    %for hero in filter(bool, faction.tavern_heroes):
+    <br /><a href="hero:{{ repr(hero.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ hero.name }}</font></a>
+        %if hero.name_counter > 1:
+    ({{ hero.name_counter }})
         %endif
     %endfor
     </td>

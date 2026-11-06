@@ -14,7 +14,8 @@ allowing to see an overview of all heroes and towns and factions, and edit any a
 - spells, like Slow
 - army creatures, like Golden Dragons
 
-Additionally, it allows changing player resources, and player hero order.
+Additionally, it allows changing player resources, and player hero order,
+and heroes available for hire in player tavern.
 
 Additionally, it allows changing armies garrisoned in town.
 

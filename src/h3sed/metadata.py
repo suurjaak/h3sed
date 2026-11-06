@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.03.2020
-@modified  03.11.2026
+@modified  06.11.2026
 ------------------------------------------------------------------------------
 """
 from collections import Counter, defaultdict, OrderedDict
@@ -89,42 +89,43 @@ RESOURCES = ["wood", "mercury", "ore", "sulfur", "crystal", "gems", "gold"]
 
 """Allowed (min, max) ranges and other configuration for various hero and town properties."""
 DATA_RANGES = {
-    "attack":           PRIMARY_ATTRIBUTE_RANGE,
-    "defense":          PRIMARY_ATTRIBUTE_RANGE,
-    "power":            PRIMARY_ATTRIBUTE_RANGE,
-    "knowledge":        PRIMARY_ATTRIBUTE_RANGE,
+    "attack":                  PRIMARY_ATTRIBUTE_RANGE,
+    "defense":                 PRIMARY_ATTRIBUTE_RANGE,
+    "power":                   PRIMARY_ATTRIBUTE_RANGE,
+    "knowledge":               PRIMARY_ATTRIBUTE_RANGE,
 
-    "exp":              ( 0, 2**32 - 1),
-    "level":            ( 0, 75),
-    "mana_left":        ( 0, 2**16 - 1),
-    "movement_left":    ( 0, 2**32 - 1),
-    "movement_total":   ( 0, 2**32 - 1),
-    "faction":          ( 0, 2**8 - 1),
-    "location_x":       ( 0, 252),
-    "location_y":       ( 0, 252),
-    "location_z":       ( 0, 1),
-    "on_map":           ( 0, 1),
+    "exp":                     ( 0, 2**32 - 1),
+    "level":                   ( 0, 75),
+    "mana_left":               ( 0, 2**16 - 1),
+    "movement_left":           ( 0, 2**32 - 1),
+    "movement_total":          ( 0, 2**32 - 1),
+    "faction":                 ( 0, 2**8 - 1),
+    "location_x":              ( 0, 252),
+    "location_y":              ( 0, 252),
+    "location_z":              ( 0, 1),
+    "on_map":                  ( 0, 1),
 
-    "army":             ( 0, 7),
-    "army.count":       ( 1, 2**32 - 1),
-    "inventory":        ( 0, 64),
-    "skills":           ( 0, 28),
-    "Intelligence":     (1.25, 1.5, 2), # Hero maximum spell points multiplier by skill level
+    "army":                    ( 0, 7),
+    "army.count":              ( 1, 2**32 - 1),
+    "inventory":               ( 0, 64),
+    "skills":                  ( 0, 28),
+    "Intelligence":            (1.25, 1.5, 2), # Hero maximum spell points multiplier by skill level
 
-    "faction.bytelen":  (145, 145),
-    "faction.heroes":   (  0, 8),
-    "resource.wood":    (  0, 2**24 - 1),
-    "resource.mercury": (  0, 2**24 - 1),
-    "resource.ore":     (  0, 2**24 - 1),
-    "resource.sulfur":  (  0, 2**24 - 1),
-    "resource.crystal": (  0, 2**24 - 1),
-    "resource.gems":    (  0, 2**24 - 1),
-    "resource.gold":    (  0, 2**32 - 1),
+    "faction.bytelen":         (145, 145),
+    "faction.heroes":          (  0, 8),
+    "faction.tavern_heroes":   (  0, 2),
+    "resource.wood":           (  0, 2**24 - 1),
+    "resource.mercury":        (  0, 2**24 - 1),
+    "resource.ore":            (  0, 2**24 - 1),
+    "resource.sulfur":         (  0, 2**24 - 1),
+    "resource.crystal":        (  0, 2**24 - 1),
+    "resource.gems":           (  0, 2**24 - 1),
+    "resource.gold":           (  0, 2**32 - 1),
 
-    "town.namelen":     (  1, 14),
-    "town.count":       (  0, 48),
-    "town.type":        (  0,  8),
-    "town.bytelen":     (382, 396),
+    "town.namelen":            (  1, 14),
+    "town.count":              (  0, 48),
+    "town.type":               (  0,  8),
+    "town.bytelen":            (382, 396),
 }
 
 
@@ -204,6 +205,7 @@ TOWN_BYTE_POSITIONS = {
 """Index for byte start of various attributes in faction bytearray."""
 FACTION_BYTE_POSITIONS = {
     "hero_order":         1,
+    "tavern_heroes":      9,
     "resource.wood":     96,
     "resource.mercury": 100,
     "resource.ore":     104,
@@ -298,7 +300,8 @@ TOWN_REGEX = re.compile(b"""
 FACTION_REGEX = re.compile(b"""
     .                              #   1 byte:  unknown                              000-000
     (?P<hero_order>.{8})           #   8 bytes: hero order by index                  001-008
-    .{87}                          #  87 bytes: unknown                              009-095
+    .{2}                           #   2 bytes: tavern heroes                        009-010
+    .{85}                          #  85 bytes: unknown                              011-095
 
     (?P<wood>.{3}\x00)             #   4 bytes: wood                                 096-099
     (?P<mercury>.{3}\x00)          #   4 bytes: mercury                              100-103

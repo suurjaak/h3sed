@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   02.11.2026
-@modified  03.11.2026
+@modified  06.11.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -18,14 +18,16 @@ from .. import common
 from .. import metadata
 from . import heroes
 from . import resources
+from . import tavern
 from . import towns
 
 
 ## Modules for faction properties in order of showing
 PROPERTIES = collections.OrderedDict([
-    ("resources",  resources),
-    ("hero_order", heroes),
-    ("towns",      towns),
+    ("resources",     resources),
+    ("hero_order",    heroes),
+    ("towns",         towns),
+    ("tavern_heroes", tavern),
 ])
 
 
@@ -41,11 +43,12 @@ class Faction(common.NamedEntity):
 
     def __init__(self, faction, version=None):
         self.faction = faction
-        self.heroes = []
-        self.towns = []
+        self.heroes  = []
+        self.towns   = []
 
-        self.hero_order = []
-        self.resources = Resources.factory(version)
+        self.resources     = Resources.factory(version)
+        self.hero_order    = []
+        self.tavern_heroes = []
         name = metadata.PLAYER_FACTIONS[faction]
         super(Faction, self).__init__("faction", name, PROPERTIES, version)
 
