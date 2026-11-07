@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    06.11.2026
+@modified    07.11.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -2296,7 +2296,7 @@ def build(plugin, panel):
                         if prop.get("nullable") and "" not in choices: choices = [""] + choices
                         if v and v not in choices: choices = [v] + choices
                         labels = formatter(choices)
-                        if not itemprop.get("sequence"):
+                        if not itemprop.get("sequence") and choices:
                             choices, labels = zip(*sorted(zip(choices, labels),
                                                           key=lambda x: x[1].lower()))
 
@@ -2377,7 +2377,7 @@ def build(plugin, panel):
                 c1 = wx.ComboBox(panel, style=wx.CB_DROPDOWN | wx.CB_READONLY)
                 c2 = wx.Button(panel, label=__("Add"), name="add")
                 labels = [__(x) for x in choices]
-                if not prop.get("sequence"):
+                if not prop.get("sequence") and choices:
                     choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
                 controls.set_combo_choices(c1, labels, choices)
                 c2.Bind(wx.EVT_BUTTON, make_add_handler(c1, prop))
@@ -2394,7 +2394,7 @@ def build(plugin, panel):
             maxrows, maxcols = math.ceil(len(prop["choices"]) / prop["columns"]), prop["columns"]
             row, column = row0, col0 = count, 0
             choices, labels = prop["choices"], [__(x) for x in prop["choices"]]
-            if not prop.get("sequence"):
+            if not prop.get("sequence") and choices:
                 choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
 
             for value, label in zip(choices, labels):
@@ -2448,7 +2448,7 @@ def build(plugin, panel):
             if prop.get("nullable") and "" not in choices: choices = [""] + choices
             if v and v not in choices: choices = [v] + choices
             labels = formatter(choices)
-            if not prop.get("sequence"):
+            if not prop.get("sequence") and choices:
                 choices, labels = zip(*sorted(zip(choices, labels), key=lambda x: x[1].lower()))
 
             controls.set_combo_choices(c2, labels, choices, formatter(v) if v is not None else None)
