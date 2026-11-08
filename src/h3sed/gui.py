@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    07.11.2026
+@modified    08.11.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -35,7 +35,7 @@ import wx.lib.agw.labelbook
 import wx.lib.newevent
 
 import h3sed
-from . common import gui as common_gui
+from . common import NamedEntity, gui as common_gui
 from . lib import controls
 from . lib.controls import ColourManager
 from . lib import i18n
@@ -2009,7 +2009,9 @@ class PluginCommand(wx.Command):
 
     def GetName(self):
         """Returns command name, translated in current application language."""
-        return i18n.format_nested(self._name, *self._name_args, do_translate=True)
+        format_entities = lambda x: [format_entities(y) if isinstance(y, (list, tuple)) else
+                                     y.format() if isinstance(y, NamedEntity) else y for y in x]
+        return i18n.format_nested(self._name, *format_entities(self._name_args), do_translate=True)
     Name = property(GetName)
 
     def GetNameRaw(self):

@@ -7,12 +7,13 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   02.11.2026
-@modified  06.11.2026
+@modified  08.11.2026
 ------------------------------------------------------------------------------
 """
 import collections
 
 import h3sed
+from .. lib.i18n import translate as __
 from .. lib.util import AttrDict, call_filtered
 from .. import common
 from .. import metadata
@@ -60,6 +61,11 @@ class Faction(common.NamedEntity):
         entity.original = AttrDict((k, v.copy()) for k, v in self.original.items())
         entity.set_file_data(self.bytes, self.index, self.span)
         return entity
+
+
+    def format(self):
+        """Returns entity name for display."""
+        return __(str(self))
 
 
     def __str__(self):

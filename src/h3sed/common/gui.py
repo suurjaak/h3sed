@@ -65,7 +65,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  04.11.2026
+@modified  08.11.2026
 ------------------------------------------------------------------------------
 """
 import ast
@@ -306,7 +306,7 @@ class EntityPlugin(object):
         self._propspanel.DestroyChildren()
         self._propspanel.Sizer.Clear()
         del self._plugins[:]
-        self._ctrls["entity"].SetItems([str(x) for x in self._entities])
+        self._ctrls["entity"].SetItems([x.format() for x in self._entities])
 
         nb = wx.Notebook(self._propspanel)
         PROPERTIES = h3sed.hero.PROPERTIES if "hero" == self.name else \
@@ -364,7 +364,7 @@ class EntityPlugin(object):
                 entity = self._entities[index]
                 page = wx.Window(self._ctrls["tabs"])
                 self._pages[page] = index
-                self._ctrls["tabs"].AddPage(page, str(entity), select=entity is self._entity)
+                self._ctrls["tabs"].AddPage(page, entity.format(), select=entity is self._entity)
 
             index = None
             if entity0:  index = next(i for i, x in enumerate(self._entities) if x is entity0)
@@ -429,7 +429,7 @@ class EntityPlugin(object):
                 page = next((p for p, i in self._pages.items() if i == index), None)
                 if page is not None:
                     entities_open.append(entity)
-                    tabs.SetPageText(tabs.GetPageIndex(page), str(entity))
+                    tabs.SetPageText(tabs.GetPageIndex(page), entity.format())
             if kwargs.get("rename") and entities_open:
                 evt = h3sed.gui.SavefilePageEvent(self._panel.Id)
                 evt.SetClientData(dict(plugin=self.name,
@@ -471,7 +471,7 @@ class EntityPlugin(object):
                 page = wx.Window(tabs)
                 self._pages[page] = index
                 if not entity and entity0 and entity2.name == entity0.name: entity = entity2
-                tabs.AddPage(page, str(entity2), select=entity2 is entity)
+                tabs.AddPage(page, entity2.format(), select=entity2 is entity)
 
             visited0 = [v for i, v in enumerate(visited0) if not i or v != visited0[i - 1]]
             self._pages_visited[:] = visited0
@@ -550,7 +550,7 @@ class EntityPlugin(object):
             content += self._entity_yamls[self._entity]["full"]
             d = wx.TextDataObject(content)
             wx.TheClipboard.SetData(d), wx.TheClipboard.Close()
-            guibase.status("Copied %s %%s data to clipboard." % self.name, self._entity,
+            guibase.status("Copied %s %%s data to clipboard." % self.name, self._entity.format(),
                            flash=conf.StatusShortFlashLength, log=True, translate=True)
 
 
@@ -564,7 +564,8 @@ class EntityPlugin(object):
                 value = o.Text
             wx.TheClipboard.Close()
         if value:
-            guibase.status("Pasting data to %s %%s from clipboard." % self.name, self._entity,
+            guibase.status("Pasting data to %s %%s from clipboard." % self.name,
+                           self._entity.format(),
                            flash=conf.StatusShortFlashLength, log=True, translate=True)
             self.parse_entity_yaml(value)
 
@@ -593,7 +594,7 @@ class EntityPlugin(object):
         if self._entity.is_changed():
             for k in ("currents", "originals"):
                 texts[k] = self._entity_yamls[self._entity][k]
-        tplargs = dict(name=str(self._entity), texts=texts)
+        tplargs = dict(name=self._entity.format(), texts=texts)
         htmls["normal"] = tpl.expand(**tplargs)
         if self._entity.is_changed():
             htmls["changes"] = tpl.expand(mode="changes", **tplargs)
@@ -826,7 +827,7 @@ class EntityPlugin(object):
         if not page_existed:
             page = wx.Window(tabs)
             self._pages[page] = index
-            title = "%s%s" % (entity2, "*" if entity2.is_changed() else "")
+            title = "%s%s" % (entity2.format(), "*" if entity2.is_changed() else "")
             tabs.InsertPage(1, page, title, select=True)
             style = tabs.GetAGWWindowStyleFlag() | wx.lib.agw.flatnotebook.FNB_X_ON_TAB
             if tabs.GetAGWWindowStyleFlag() != style: tabs.SetAGWWindowStyleFlag(style)
@@ -979,7 +980,7 @@ class EntityPlugin(object):
         else:
             page = wx.Window(tabs)
             self._pages[page] = index
-            tabs.InsertPage(1, page, str(entity), select=True)
+            tabs.InsertPage(1, page, entity.format(), select=True)
             self._indexpanel.Hide()
             self._entitypanel.Show()
         if self._entity != entity:
@@ -997,7 +998,7 @@ class EntityPlugin(object):
             if not entity.is_changed(): continue # for entity
             yamls = self._entity_yamls[entity]
             pairs = [(v1, v2) for v1, v2 in zip(yamls["originals"], yamls["currents"]) if v1 != v2]
-            changes.append(tpl.expand(name=str(entity), changes=pairs))
+            changes.append(tpl.expand(name=entity.format(), changes=pairs))
         return "\n".join(changes)
 
 
@@ -1022,7 +1023,7 @@ class EntityPlugin(object):
 
         self._entity_yamls[self._entity] = templates.make_entity_yamls(self._entity)
 
-        title = "%s%s" % (self._entity, "*" if self._entity.is_changed() else "")
+        title = "%s%s" % (self._entity.format(), "*" if self._entity.is_changed() else "")
         index = next(i for i, h in enumerate(self._entities) if h == self._entity)
         page = next(p for p, i in self._pages.items() if i == index)
         self._ctrls["tabs"].SetPageText(self._ctrls["tabs"].GetPageIndex(page), title)

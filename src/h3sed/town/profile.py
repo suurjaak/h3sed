@@ -150,7 +150,7 @@ class ProfilePlugin(object):
     def make_entity_tooltip(self, value, kind):
         """Returns tooltip string for hero or faction name link."""
         if not value: return ""
-        return __("Open %s page for %%s" % kind, value)
+        return __("Open %s page for %%s" % kind, value.format())
 
 
     def on_click_entity(self, value, kind):

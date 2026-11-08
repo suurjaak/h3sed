@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   15.09.2026
-@modified  03.11.2026
+@modified  08.11.2026
 ------------------------------------------------------------------------------
 """
 import collections
@@ -442,6 +442,11 @@ class NamedEntity(object):
         process_keywords(collection)
         return all(r in matches for r in text_regexes) and \
                all((k, r) in matches for k, rr in kw_regexes.items() for r in rr)
+
+
+    def format(self):
+        """Returns entity name for display."""
+        return str(self)
 
 
     def __eq__(self, other):
