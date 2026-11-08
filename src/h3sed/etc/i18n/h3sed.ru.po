@@ -144,6 +144,30 @@ msgid "neutral"
 msgstr "нейтральная"
 
 
+# - Resources --------------------
+
+msgid "wood"
+msgstr "дерево"
+
+msgid "mercury"
+msgstr "ртуть"
+
+msgid "ore"
+msgstr "руда"
+
+msgid "sulfur"
+msgstr "сера"
+
+msgid "crystal"
+msgstr "кристаллы"
+
+msgid "gems"
+msgstr "самоцветы"
+
+msgid "gold"
+msgstr "золото"
+
+
 # - Hero equipment slots --------------------
 
 msgid "armor"
@@ -1788,7 +1812,7 @@ msgid "Spell Scroll: Weakness"
 msgstr "Свиток заклинания: Слабость"
 
 
-# - Hero/town UI texts --------------------
+# - Hero/town/faction UI texts --------------------
 
 msgid "%s already matching %s %s"
 msgstr "%s уже является %s %s"
@@ -1802,11 +1826,17 @@ msgstr "снаряжения героя %s"
 msgid "%s exported (%s total)"
 msgstr "%s экспортировано (всего %s)"
 
+msgid "%s factions"
+msgstr "%s фракций"
+
 msgid "%s heroes"
 msgstr "%s героев"
 
 msgid "%s inventory"
 msgstr "рюкзака героя %s"
+
+msgid "%s resources"
+msgstr "ресурсы фракции %s"
 
 msgid "%s skills"
 msgstr "навыков героя %s"
@@ -1816,6 +1846,9 @@ msgstr "заклинаний героя %s"
 
 msgid "%s stats"
 msgstr "основного героя %s"
+
+msgid "%s tavern"
+msgstr "таверну фракции %s"
 
 msgid "%s towns"
 msgstr "%s городов"
@@ -1913,6 +1946,9 @@ msgstr "Данные героя %s скопированы в буфер обме
 msgid "Copied town %s data to clipboard."
 msgstr "Данные города %s скопированы в буфер обмена."
 
+msgid "Copy current faction data to clipboard"
+msgstr "Скопировать данные текущей фракции в буфер обмена"
+
 msgid "Copy current hero data to clipboard"
 msgstr "Скопировать данные текущего героя в буфер обмена"
 
@@ -1984,6 +2020,12 @@ msgstr "Экспорт %s"
 
 msgid "Faction"
 msgstr "Фракция"
+
+msgid "factions"
+msgstr "фракции"
+
+msgid "Faction manifest"
+msgstr "Список фракции"
 
 msgid "Filter %s on any matching text"
 msgstr "Фильтровать %s по любому тексту"
@@ -2096,6 +2138,12 @@ msgstr "нужно %s свободных"
 msgid "No change from: %s"
 msgstr "Нет изменений от действия: %s"
 
+msgid "No factions to display."
+msgstr "Нет фракций для показа."
+
+msgid "No factions to display for \"%s\""
+msgstr "Нет фракций для показа по поиску \"%s\""
+
 msgid "No heroes to display."
 msgstr "Нет героев для показа."
 
@@ -2117,6 +2165,9 @@ msgstr "В буфере обмена нет корректных данных г
 msgid "Normal view"
 msgstr "Обычный вид"
 
+msgid "Open faction page for %s"
+msgstr "Открыть страницу фракции %s"
+
 msgid "Open hero page for %s"
 msgstr "Открыть страницу героя %s"
 
@@ -2125,6 +2176,9 @@ msgstr "Меню параметров"
 
 msgid "Open town page for %s"
 msgstr "Открыть страницу города %s"
+
+msgid "Paste data from clipboard to current faction"
+msgstr "Вставить данные из буфера обмена в текущую фракцию"
 
 msgid "Paste data from clipboard to current hero"
 msgstr "Вставить данные из буфера обмена в текущего героя"
@@ -2162,6 +2216,9 @@ msgstr "Удалить элемент"
 msgid "Remove row"
 msgstr "Удалить строку"
 
+msgid "Resources"
+msgstr "Ресурсы"
+
 msgid "round"
 msgstr "округление"
 
@@ -2170,6 +2227,9 @@ msgstr "Округлить количество армий до"
 
 msgid "Round army counts to"
 msgstr "Округлить количество армий до"
+
+msgid "Save current faction to file"
+msgstr "Сохранить текущую фракцию в файл"
 
 msgid "Save current hero to file"
 msgstr "Сохранить текущего героя в файл"
@@ -2180,11 +2240,17 @@ msgstr "Сохранить текущего города в файл"
 msgid "scroll"
 msgstr "свиток"
 
+msgid "Search factions"
+msgstr "Поиск фракций"
+
 msgid "Search heroes"
 msgstr "Поиск героев"
 
 msgid "Search towns"
 msgstr "Поиск городов"
+
+msgid "&Select faction"
+msgstr "&Выбор фракции"
 
 msgid "&Select hero"
 msgstr "&Выбор героя"
@@ -2227,6 +2293,9 @@ msgstr "Установить уровни навыков на"
 
 msgid "Show %s character sheet"
 msgstr "Показать лист персонажа %s"
+
+msgid "Show faction full manifest"
+msgstr "Показать полный список фракции"
 
 msgid "Show hero full character sheet"
 msgstr "Показать полный лист персонажа героя"
@@ -2284,6 +2353,9 @@ msgstr "Поменять снаряжение в слоте"
 
 msgid "Swap with inventory"
 msgstr "Поменять с рюкзака"
+
+msgid "Tavern heroes"
+msgstr "Герои таверны"
 
 msgid "tent"
 msgstr "палатка"
@@ -2377,6 +2449,13 @@ msgstr "посетитель"
 
 msgid "visiting hero"
 msgstr "герой-гость"
+
+msgid ""
+"Warning: a neutral hero may currently be in prison.\n"
+"Assigning and hiring them can result in invalid game state."
+msgstr ""
+"Предупреждение: нейтральный герой может находиться в темнице.\n"
+"Назначение и найм могут вызвать ошибку в состоянии игры."
 
 msgid "with"
 msgstr "с"

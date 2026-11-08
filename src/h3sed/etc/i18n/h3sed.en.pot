@@ -150,6 +150,30 @@ msgid "neutral"
 msgstr ""
 
 
+# - Resources --------------------
+
+msgid "wood"
+msgstr ""
+
+msgid "mercury"
+msgstr ""
+
+msgid "ore"
+msgstr ""
+
+msgid "sulfur"
+msgstr ""
+
+msgid "crystal"
+msgstr ""
+
+msgid "gems"
+msgstr ""
+
+msgid "gold"
+msgstr ""
+
+
 # - Hero equipment slots --------------------
 
 msgid "armor"
@@ -1794,7 +1818,7 @@ msgid "Spell Scroll: Weakness"
 msgstr ""
 
 
-# - Hero/town UI texts --------------------
+# - Hero/town/faction UI texts --------------------
 
 msgid "%s already matching %s %s"
 msgstr ""
@@ -1808,10 +1832,16 @@ msgstr ""
 msgid "%s exported (%s total)"
 msgstr ""
 
+msgid "%s factions"
+msgstr ""
+
 msgid "%s heroes"
 msgstr ""
 
 msgid "%s inventory"
+msgstr ""
+
+msgid "%s resources"
 msgstr ""
 
 msgid "%s skills"
@@ -1821,6 +1851,9 @@ msgid "%s spells"
 msgstr ""
 
 msgid "%s stats"
+msgstr ""
+
+msgid "%s tavern"
 msgstr ""
 
 msgid "%s towns"
@@ -1919,6 +1952,9 @@ msgstr ""
 msgid "Copied town %s data to clipboard."
 msgstr ""
 
+msgid "Copy current faction data to clipboard"
+msgstr ""
+
 msgid "Copy current hero data to clipboard"
 msgstr ""
 
@@ -1989,6 +2025,12 @@ msgid "Exporting %s"
 msgstr ""
 
 msgid "Faction"
+msgstr ""
+
+msgid "factions"
+msgstr ""
+
+msgid "Faction manifest"
 msgstr ""
 
 msgid "Filter %s on any matching text"
@@ -2096,6 +2138,12 @@ msgstr ""
 msgid "No change from: %s"
 msgstr ""
 
+msgid "No factions to display."
+msgstr ""
+
+msgid "No factions to display for \"%s\""
+msgstr ""
+
 msgid "No heroes to display."
 msgstr ""
 
@@ -2117,6 +2165,9 @@ msgstr ""
 msgid "Normal view"
 msgstr ""
 
+msgid "Open faction page for %s"
+msgstr ""
+
 msgid "Open hero page for %s"
 msgstr ""
 
@@ -2124,6 +2175,9 @@ msgid "Open options menu"
 msgstr ""
 
 msgid "Open town page for %s"
+msgstr ""
+
+msgid "Paste data from clipboard to current faction"
 msgstr ""
 
 msgid "Paste data from clipboard to current hero"
@@ -2162,6 +2216,9 @@ msgstr ""
 msgid "Remove row"
 msgstr ""
 
+msgid "Resources"
+msgstr ""
+
 msgid "round"
 msgstr ""
 
@@ -2169,6 +2226,9 @@ msgid "Round army count to"
 msgstr ""
 
 msgid "Round army counts to"
+msgstr ""
+
+msgid "Save current faction to file"
 msgstr ""
 
 msgid "Save current hero to file"
@@ -2180,10 +2240,16 @@ msgstr ""
 msgid "scroll"
 msgstr ""
 
+msgid "Search factions"
+msgstr ""
+
 msgid "Search heroes"
 msgstr ""
 
 msgid "Search towns"
+msgstr ""
+
+msgid "&Select faction"
 msgstr ""
 
 msgid "&Select hero"
@@ -2223,6 +2289,9 @@ msgid "Set from level"
 msgstr ""
 
 msgid "Set skill levels to"
+msgstr ""
+
+msgid "Show faction full manifest"
 msgstr ""
 
 msgid "Show hero full character sheet"
@@ -2283,6 +2352,9 @@ msgid "Swap with equipment slot"
 msgstr ""
 
 msgid "Swap with inventory"
+msgstr ""
+
+msgid "Tavern heroes"
 msgstr ""
 
 msgid "tent"
@@ -2370,6 +2442,11 @@ msgid "visiting"
 msgstr ""
 
 msgid "visiting hero"
+msgstr ""
+
+msgid ""
+"Warning: a neutral hero may currently be in prison.\n"
+"Assigning and hiring them can result in invalid game state."
 msgstr ""
 
 msgid "with"
