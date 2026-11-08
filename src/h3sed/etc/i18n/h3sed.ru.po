@@ -2727,6 +2727,9 @@ msgstr "&Обновить список"
 
 # - File list actions --------------------
 
+msgid "%s files"
+msgstr "%s файлов"
+
 msgid "Delete this %s from disk?"
 msgstr "Удалить этот %s с диска?"
 

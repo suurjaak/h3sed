@@ -2722,6 +2722,9 @@ msgstr ""
 
 # - File list actions --------------------
 
+msgid "%s files"
+msgstr ""
+
 msgid "Delete this %s from disk?"
 msgstr ""
 

@@ -883,7 +883,8 @@ class MainWindow(guibase.TemplateFrameMixIn, wx.Frame):
         else:
             files_blocking = [f for f in conf.FilesOpen if f.startswith(path + os.sep)]
         if files_blocking:
-            info = __("currently") if "file" == category else util.plural("file", files_blocking)
+            info = __("currently") if "file" == category else \
+                   "1 %s" % __("file") if len(files_blocking) == 1 else __("%s files", len(files_blocking))
             wx.MessageBox(__("Cannot delete %s, %s open.", path, info), conf.Title, wx.ICON_ERROR)
             return
 
