@@ -1808,6 +1808,9 @@ msgstr ""
 msgid "%s exported (%s total)"
 msgstr ""
 
+msgid "%s heroes"
+msgstr ""
+
 msgid "%s inventory"
 msgstr ""
 
@@ -1818,6 +1821,9 @@ msgid "%s spells"
 msgstr ""
 
 msgid "%s stats"
+msgstr ""
+
+msgid "%s towns"
 msgstr ""
 
 msgid "%s visible (%s total)"
@@ -2772,9 +2778,6 @@ msgstr ""
 
 
 # - Savefile actions --------------------
-
-msgid "Loading \"%s\"."
-msgstr ""
 
 msgid "Opened %s."
 msgstr ""

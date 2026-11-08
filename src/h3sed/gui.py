@@ -1648,7 +1648,6 @@ class SavefilePage(wx.Panel):
         self.undoredo.MarkAsSaved()
 
         parent_notebook.InsertPage(1, self, title)
-        busy = controls.BusyPanel(self, __('Loading "%s".', self.filename))
         ColourManager.Manage(self, "BackgroundColour", "WidgetColour")
 
         splitter = wx.SplitterWindow(self, style=wx.BORDER_NONE)
@@ -1710,11 +1709,8 @@ class SavefilePage(wx.Panel):
         self.Layout()
 
         wx_accel.accelerate(self)
-        try:
-            self.load_data()
-            guibase.status(__("Opened %s.", self.filename), flash=True)
-        finally:
-            busy.Close()
+        self.load_data()
+        guibase.status(__("Opened %s.", self.filename), flash=True)
 
 
     def get_unsaved(self):

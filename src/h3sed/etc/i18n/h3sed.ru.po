@@ -1802,6 +1802,9 @@ msgstr "снаряжения героя %s"
 msgid "%s exported (%s total)"
 msgstr "%s экспортировано (всего %s)"
 
+msgid "%s heroes"
+msgstr "%s героев"
+
 msgid "%s inventory"
 msgstr "рюкзака героя %s"
 
@@ -1813,6 +1816,9 @@ msgstr "заклинаний героя %s"
 
 msgid "%s stats"
 msgstr "основного героя %s"
+
+msgid "%s towns"
+msgstr "%s городов"
 
 msgid "%s visible (%s total)"
 msgstr "%s видно (всего %s)"
@@ -2004,7 +2010,7 @@ msgid "hero"
 msgstr "герой"
 
 msgid "heroes"
-msgstr "героев"
+msgstr "герои"
 
 msgid "Hero '%s' not found."
 msgstr "Герой '%s' не найден."
@@ -2307,7 +2313,7 @@ msgid "town"
 msgstr "город"
 
 msgid "towns"
-msgstr "городов"
+msgstr "города"
 
 msgid "Town army is with garrisoned hero."
 msgstr "Армия города\nвместе с гарнизонным героем."
@@ -2777,9 +2783,6 @@ msgstr "Не удалось соединиться с сервером."
 
 
 # - Savefile actions --------------------
-
-msgid "Loading \"%s\"."
-msgstr "Загрузка \"%s\"."
 
 msgid "Opened %s."
 msgstr "%s открыт."

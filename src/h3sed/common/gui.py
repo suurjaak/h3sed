@@ -336,8 +336,7 @@ class EntityPlugin(object):
         self._entitypanel.Hide()
         self._panel.Thaw()
         self._ctrls["properties"] = nb
-        with controls.BusyPanel(self._panel, __("Loading %s.", __(util.plural(self.name)))):
-            self.populate_index()
+        self.populate_index()
 
 
     def rebuild(self):
@@ -529,7 +528,8 @@ class EntityPlugin(object):
                     templates.TOWN_INDEX_HTML if "town" == self.name else templates.FACTION_INDEX_HTML
         page = step.Template(INDEX_TPL, escape=True).expand(**tplargs)
         if page != self._index["html"]:
-            info = "%s %s" % (len(entities), __(util.plural(self.name, entities, numbers=False)))
+            if len(entities) == 1: info = "1 %s" % __(self.name)
+            else: info = __("%%s %s" % __(util.plural(self.name)), len(entities))
             if len(entities) != len(self._entities):
                 info = __("%s visible (%s total)", info, len(self._entities))
             self._ctrls["count"].Label = info
