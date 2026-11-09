@@ -2189,11 +2189,23 @@ msgstr "Вставить данные из буфера обмена в теку
 msgid "Paste data from clipboard to current town"
 msgstr "Вставить данные из буфера обмена в текущего города"
 
+msgid "paste faction data from clipboard"
+msgstr "вставка данных фракции из буфера обмена"
+
+msgid "paste hero data from clipboard"
+msgstr "вставка данных героя из буфера обмена"
+
+msgid "paste town data from clipboard"
+msgstr "вставка данных города из буфера обмена"
+
+msgid "Pasting data to faction %s from clipboard."
+msgstr "Вставка данных для фракции %s из буфера обмена."
+
 msgid "Pasting data to hero %s from clipboard."
-msgstr "Вставка данных героя %s из буфера обмена."
+msgstr "Вставка данных для героя %s из буфера обмена."
 
 msgid "Pasting data to town %s from clipboard."
-msgstr "Вставка данных города %s из буфера обмена."
+msgstr "Вставка данных для города %s из буфера обмена."
 
 msgid "Power"
 msgstr "Сила"

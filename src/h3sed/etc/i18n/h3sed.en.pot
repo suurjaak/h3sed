@@ -2192,6 +2192,18 @@ msgstr ""
 msgid "Paste data from clipboard to current town"
 msgstr ""
 
+msgid "paste faction data from clipboard"
+msgstr ""
+
+msgid "paste hero data from clipboard"
+msgstr ""
+
+msgid "paste town data from clipboard"
+msgstr ""
+
+msgid "Pasting data to faction %s from clipboard."
+msgstr ""
+
 msgid "Pasting data to hero %s from clipboard."
 msgstr ""
 
