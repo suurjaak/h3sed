@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  04.11.2026
+@modified  09.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -456,11 +456,12 @@ class EquipmentPlugin(object):
                                  flash=conf.StatusShortFlashLength)
             return
 
-        # "change HERO equipment: swap all with inventory"
-        # "change HERO equipment: remove all"
-        # "change HERO equipment: equip all from inventory"
-        # "change HERO equipment: send all to inventory"
-        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        # "change hero NAME equipment: swap all with inventory"
+        # "change hero NAME equipment: remove all"
+        # "change hero NAME equipment: equip all from inventory"
+        # "change hero NAME equipment: send all to inventory"
+        actionlbl = "%s %s"
+        actionargs = ("change", ("{} %s {}".format(self.parent.name, self.name), self._hero))
         cname, cargs = "%s: %s", ((actionlbl, actionargs), (afterlbl, afterargs))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
@@ -507,8 +508,9 @@ class EquipmentPlugin(object):
             eq2.update({l: None for l in locations})
             eq2[primary_location] = combo_artifact
 
-        # "change HERONAME equipment: assemble|disassemble ARTIFACT"
-        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        # "change hero NAME equipment: assemble|disassemble ARTIFACT"
+        actionlbl = "%s %s"
+        actionargs = ("change", ("{} %s {}".format(self.parent.name, self.name), self._hero))
         cname, cargs = "%s: %s", ((actionlbl, actionargs), ("{} %s".format(action), combo_artifact))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
@@ -529,10 +531,11 @@ class EquipmentPlugin(object):
         artifact_name1 = self._state[location]
         artifact_name2 = None if inventory_index is None else self._hero.inventory[inventory_index]
 
-        # "change HERO equipment: send ARTIFACT to inventory"
-        # "change HERO equipment: swap ARTIFACT with ARTIFACT from inventory"
-        # "change HERO equipment: set LOCATION ARTIFACT from inventory"
-        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        # "change hero NAME equipment: send ARTIFACT to inventory"
+        # "change hero NAME equipment: swap ARTIFACT with ARTIFACT from inventory"
+        # "change hero NAME equipment: set LOCATION ARTIFACT from inventory"
+        actionlbl = "%s %s"
+        actionargs = ("change", ("{} %s {}".format(self.parent.name, self.name), self._hero))
         if inventory_index is None:
             afterargs = ("send", artifact_name1, "to inventory")
         elif artifact_name1 is not None:
@@ -555,8 +558,9 @@ class EquipmentPlugin(object):
         eq2 = self._state.copy()
         eq2.update({location: eq2[location2], location2: eq2[location]})
 
-        # "swap HERONAME equipment: LOCATION and LOCATION"
-        actionlbl, actionargs = "%s %s", ("swap", ("%s {}".format(self.name), self._hero.name))
+        # "swap hero NAME equipment: LOCATION and LOCATION"
+        actionlbl = "%s %s"
+        actionargs = ("swap", ("{} %s {}".format(self.parent.name, self.name), self._hero))
         cname, cargs = "%s: %s %s %s", ((actionlbl, actionargs), location, "and", location2)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),

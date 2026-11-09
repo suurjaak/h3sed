@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  04.11.2026
+@modified  09.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -213,10 +213,11 @@ class SkillsPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # set HERONAME skills: slot SLOTNUMBER name SKILLNAME
-        # swap HERONAME skills: slot SLOTNUMBER and SLOTNUMBER
+        # set hero NAME skills: slot SLOTNUMBER name SKILLNAME
+        # swap hero NAME skills: slot SLOTNUMBER and SLOTNUMBER
         action = "set" if rowindex2 is None else "swap"
-        actionlbl, actionargs = "%s %s", (action, ("%s {}".format(self.name), self._hero.name))
+        actionlbl = "%s %s"
+        actionargs = (action, ("{} %s {}".format(self.parent.name, self.name), self._hero))
         afterargs = ("slot", rowindex + 1)
         afterargs += ("name", skill_name2) if rowindex2 is None else ("and", rowindex2 + 1)
         afterlbl = " ".join(["%s"] * len(afterargs))
@@ -241,8 +242,9 @@ class SkillsPlugin(object):
         if not self._state:
             return
 
-        # "remove HERONAME skills"
-        cname, cargs = "%s %s", ("remove", ("%s {}".format(self.name), self._hero.name))
+        # "remove hero NAME skills"
+        cname = "%s %s"
+        cargs = ("remove", ("{} %s {}".format(self.parent.name, self.name), self._hero))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)
@@ -262,9 +264,10 @@ class SkillsPlugin(object):
         if not self._state or all(x.level == level_name for x in self._state):
             return
 
-        # "set HERONAME skills: level LEVELNAME"
+        # "set hero NAME skills: level LEVELNAME"
         cname = "%s %s: %s %s"
-        cargs = ("set", ("%s {}".format(self.name), self._hero.name), "level", level_name)
+        cargs = ("set", ("{} %s {}".format(self.parent.name, self.name), self._hero),
+                 "level", level_name)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)

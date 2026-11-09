@@ -1817,12 +1817,6 @@ msgstr "Свиток заклинания: Слабость"
 msgid "%s already matching %s %s"
 msgstr "%s уже является %s %s"
 
-msgid "%s army"
-msgstr "армии %s"
-
-msgid "%s equipment"
-msgstr "снаряжения героя %s"
-
 msgid "%s exported (%s total)"
 msgstr "%s экспортировано (всего %s)"
 
@@ -1831,24 +1825,6 @@ msgstr "%s фракций"
 
 msgid "%s heroes"
 msgstr "%s героев"
-
-msgid "%s inventory"
-msgstr "рюкзака героя %s"
-
-msgid "%s resources"
-msgstr "ресурсы фракции %s"
-
-msgid "%s skills"
-msgstr "навыков героя %s"
-
-msgid "%s spells"
-msgstr "заклинаний героя %s"
-
-msgid "%s stats"
-msgstr "основного героя %s"
-
-msgid "%s tavern"
-msgstr "таверну фракции %s"
 
 msgid "%s towns"
 msgstr "%s городов"
@@ -2021,11 +1997,20 @@ msgstr "Экспорт %s"
 msgid "Faction"
 msgstr "Фракция"
 
-msgid "factions"
-msgstr "фракции"
+msgid "faction %s heroes"
+msgstr "героев фракции %s"
+
+msgid "faction %s resources"
+msgstr "ресурсы фракции %s"
+
+msgid "faction %s tavern"
+msgstr "героев таверны фракции %s"
 
 msgid "Faction manifest"
 msgstr "Список фракции"
+
+msgid "factions"
+msgstr "фракции"
 
 msgid "Filter %s on any matching text"
 msgstr "Фильтровать %s по любому тексту"
@@ -2056,6 +2041,24 @@ msgstr "герои"
 
 msgid "Hero '%s' not found."
 msgstr "Герой '%s' не найден."
+
+msgid "hero %s army"
+msgstr "армии героя %s"
+
+msgid "hero %s equipment"
+msgstr "снаряжения героя %s"
+
+msgid "hero %s inventory"
+msgstr "рюкзака героя %s"
+
+msgid "hero %s skills"
+msgstr "навыков героя %s"
+
+msgid "hero %s spells"
+msgstr "заклинаний героя %s"
+
+msgid "hero %s stats"
+msgstr "основного героя %s"
 
 msgid "Hero character sheet"
 msgstr "Лист персонажа героя"
@@ -2384,20 +2387,23 @@ msgstr "Восстановить ману полностью"
 msgid "town"
 msgstr "город"
 
-msgid "towns"
-msgstr "города"
-
-msgid "Town army is with garrisoned hero."
-msgstr "Армия города\nвместе с гарнизонным героем."
+msgid "town %s army"
+msgstr "армии города %s"
 
 msgid "Town '%s' not found."
 msgstr "Город '%s' не найден."
+
+msgid "Town army is with garrisoned hero."
+msgstr "Армия города\nвместе с гарнизонным героем."
 
 msgid "town index"
 msgstr "индекс городов"
 
 msgid "Town manifest"
 msgstr "Список города"
+
+msgid "towns"
+msgstr "города"
 
 msgid "type"
 msgstr "тип"

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  04.11.2026
+@modified  09.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -321,7 +321,9 @@ class InventoryPlugin(object):
             self.render()
             return True
 
-        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        # change hero NAME equipment: compact in (name|slot|name and slot|current|reverse) order
+        actionlbl = "%s %s"
+        actionargs = ("change", ("{} %s {}".format(self.parent.name, self.name), self._hero))
         cname, cargs = "%s: %s", ((actionlbl, actionargs), (afterlbl, afterargs))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
@@ -366,8 +368,9 @@ class InventoryPlugin(object):
                                  flash=conf.StatusShortFlashLength)
             return
 
-        # "change HERONAME inventory: swap|remove|equip all"
-        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        # "change hero NAME inventory: swap|remove|equip all"
+        actionlbl = "%s %s"
+        actionargs = ("change", ("{} %s {}".format(self.parent.name, self.name), self._hero))
         cname, cargs = "%s: %s", ((actionlbl, actionargs), action)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
@@ -426,13 +429,14 @@ class InventoryPlugin(object):
         if inv2 == self._state and eq2 in (None, self._hero.equipment):
             return
 
-        # "change HERONAME inventory: swap slot SLOTNUMBER and equipment LOCATION"
-        # "change HERONAME inventory: swap slot SLOTNUMBER and slot SLOTNUMBER"
-        # "change HERONAME inventory: move slot SLOTNUMBER to top|bottom"
-        # "change HERONAME inventory: delete slot SLOTNUMBER"
-        # "set HERONAME inventory: slot SLOTNUMBER ARTIFACT"
-        # "change HERONAME inventory: slot SLOTNUMBER insert <blank>"
-        actionlbl, actionargs = "%s %s", (action, ("%s {}".format(self.name), self._hero.name))
+        # "change hero NAME inventory: swap slot SLOTNUMBER and equipment LOCATION"
+        # "change hero NAME inventory: swap slot SLOTNUMBER and slot SLOTNUMBER"
+        # "change hero NAME inventory: move slot SLOTNUMBER to top|bottom"
+        # "change hero NAME inventory: delete slot SLOTNUMBER"
+        # "set hero NAME inventory: slot SLOTNUMBER ARTIFACT"
+        # "change hero NAME inventory: slot SLOTNUMBER insert <blank>"
+        actionlbl = "%s %s"
+        actionargs = (action, ("{} %s {}".format(self.parent.name, self.name), self._hero))
         afterlbl = " ".join(["%s"] * len(afterargs))
         cname, cargs = "%s: %s", ((actionlbl, actionargs), (afterlbl, afterargs))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
@@ -469,8 +473,9 @@ class InventoryPlugin(object):
             while components: inv2.remove(components.pop())
             inv2 = inv2.make_compact()
 
-        # "change HERONAME inventory: assemble|disassemble ARTIFACT"
-        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        # "change hero NAME inventory: assemble|disassemble ARTIFACT"
+        actionlbl = "%s %s"
+        actionargs = ("change", ("{} %s {}".format(self.parent.name, self.name), self._hero))
         cname, cargs = "%s: %s", ((actionlbl, actionargs), ("{} %s".format(action), combo_artifact))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),

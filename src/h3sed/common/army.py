@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  04.11.2026
+@modified  09.11.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -322,9 +322,10 @@ class ArmyPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # "upgrade|downgrade NAME army"
+        # "upgrade|downgrade KIND NAME army"
         action = "downgrade" if down else "upgrade"
-        cname, cargs = "%s %s", (action, ("%s {}".format(self.name), self._entity.name))
+        cname = "%s %s"
+        cargs = (action, ("{} %s {}".format(self.parent.name, self.name), self._entity))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)
@@ -362,11 +363,12 @@ class ArmyPlugin(object):
             h3sed.guibase.status("")
             return
 
-        # "set NAME army: count 1"
-        # "round NAME army: up|down NUMBER"
-        # "round NAME army: slot #%s up|down NUMBER"
+        # "set KIND NAME army: count 1"
+        # "round KIND NAME army: up|down NUMBER"
+        # "round KIND NAME army: slot #%s up|down NUMBER"
         action = "set" if number == 1 else "round"
-        actionlbl, actionargs = "%s %s", (action, ("%s {}".format(self.name), self._entity.name))
+        actionlbl = "%s %s"
+        actionargs = (action, ("{} %s {}".format(self.parent.name, self.name), self._entity))
         if "set" == action: afterlbl, afterargs = "%s %s", ("count", number)
         else:
             afterargs = ("down" if down else "up", number)
@@ -394,8 +396,9 @@ class ArmyPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # "set NAME army: slot SLOTNUMBER NAME"
-        actionlbl, actionargs = "%s %s", ("set", ("%s {}".format(self.name), self._entity.name))
+        # "set KIND NAME army: slot SLOTNUMBER NAME"
+        actionlbl = "%s %s"
+        actionargs = ("set", ("{} %s {}".format(self.parent.name, self.name), self._entity))
         cname = "%s: %s %s %s"
         cargs = ((actionlbl, actionargs), "slot", rowindex + 1, name)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
@@ -418,8 +421,9 @@ class ArmyPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # "swap NAME army: slot SLOTNUMBER and SLOTNUMBER"
-        actionlbl, actionargs = "%s %s", ("swap", ("%s {}".format(self.name), self._entity.name))
+        # "swap KIND NAME army: slot SLOTNUMBER and SLOTNUMBER"
+        actionlbl = "%s %s"
+        actionargs = ("swap", ("{} %s {}".format(self.parent.name, self.name), self._entity))
         cname = "%s: %s %s %s %s"
         cargs = ((actionlbl, actionargs), "slot", index1 + 1, "and", index2 + 1)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
@@ -442,8 +446,9 @@ class ArmyPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # "remove NAME army"
-        cname, cargs = "%s %s", ("remove", ("%s {}".format(self.name), self._entity.name))
+        # "remove KIND NAME army"
+        cname = "%s %s"
+        cargs = ("remove", ("{} %s {}".format(self.parent.name, self.name), self._entity))
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)

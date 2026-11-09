@@ -9,7 +9,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.03.2020
-@modified  04.11.2026
+@modified  09.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -271,9 +271,9 @@ class StatsPlugin(object):
             wx.PostEvent(self._panel, evt)
             return True
 
-        # "set HERONAME stats: exp|level NUMBER"
+        # "set hero NAME stats: exp|level NUMBER"
         cname = "%s %s: %s %s"
-        cargs = ("set", ("%s {}".format(self.name), self._hero.name), TARGET, value)
+        cargs = ("set", ("{} %s {}".format(self.parent.name, self.name), self._hero), TARGET, value)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)
@@ -294,9 +294,9 @@ class StatsPlugin(object):
         if self._state[TARGET] > VALUE:
             return
 
-        # "set HERONAME stats: movement_left NUMBER"
+        # "set hero NAME stats: movement_left NUMBER"
         cname = "%s %s: %s %s"
-        cargs = ("set", ("%s {}".format(self.name), self._hero.name), TARGET, VALUE)
+        cargs = ("set", ("{} %s {}".format(self.parent.name, self.name), self._hero), TARGET, VALUE)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)
@@ -322,8 +322,9 @@ class StatsPlugin(object):
         if self._state[TARGET] >= VALUE:
             return
 
+        # set hero NAME stats: mana_left VALUE
         cname = "%s %s: %s %s"
-        cargs = ("set", ("%s {}".format(self.name), self._hero.name), TARGET, VALUE)
+        cargs = ("set", ("{} %s {}".format(self.parent.name, self.name), self._hero), TARGET, VALUE)
         logger.info("Doing action: %s.", format_nested(cname, *cargs))
         h3sed.guibase.status(__("Doing %s", format_nested(cname, *cargs, do_translate=True)),
                              flash=conf.StatusShortFlashLength)

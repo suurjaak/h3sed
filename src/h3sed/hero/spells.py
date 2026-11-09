@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   20.03.2020
-@modified  04.11.2026
+@modified  09.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -157,10 +157,11 @@ class SpellsPlugin(object):
         if spells2 == self._state:
             return
 
-        # "change HERONAME spells: add|remove all"
-        # "change HERONAME spells: toggle all SCHOOLNAME"
+        # "change hero NAME spells: add|remove all"
+        # "change hero NAME spells: toggle all SCHOOLNAME"
         afterlbl = "toggle all %s" if school else ("remove %s" if clear else "add %s", ["all"])
-        actionlbl, actionargs = "%s %s", ("change", ("%s {}".format(self.name), self._hero.name))
+        actionlbl = "%s %s"
+        actionargs = ("change", ("{} %s {}".format(self.parent.name, self.name), self._hero))
         cname, cargs = "%s: %s", ((actionlbl, actionargs), )
         cargs += ((afterlbl, school), ) if school else (afterlbl, )
         logger.info("Doing action: %s.", format_nested(cname, *cargs))

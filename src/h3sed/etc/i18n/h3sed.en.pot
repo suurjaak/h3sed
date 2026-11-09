@@ -1823,12 +1823,6 @@ msgstr ""
 msgid "%s already matching %s %s"
 msgstr ""
 
-msgid "%s army"
-msgstr ""
-
-msgid "%s equipment"
-msgstr ""
-
 msgid "%s exported (%s total)"
 msgstr ""
 
@@ -1836,24 +1830,6 @@ msgid "%s factions"
 msgstr ""
 
 msgid "%s heroes"
-msgstr ""
-
-msgid "%s inventory"
-msgstr ""
-
-msgid "%s resources"
-msgstr ""
-
-msgid "%s skills"
-msgstr ""
-
-msgid "%s spells"
-msgstr ""
-
-msgid "%s stats"
-msgstr ""
-
-msgid "%s tavern"
 msgstr ""
 
 msgid "%s towns"
@@ -2027,13 +2003,25 @@ msgstr ""
 msgid "Faction"
 msgstr ""
 
-msgid "factions"
-msgstr ""
+msgid "faction %s heroes"
+msgstr "героев фракции %s"
+
+msgid "faction %s resources"
+msgstr "ресурсы фракции %s"
+
+msgid "faction %s tavern"
+msgstr "героев таверны фракции %s"
 
 msgid "Faction manifest"
 msgstr ""
 
+msgid "factions"
+msgstr ""
+
 msgid "Filter %s on any matching text"
+msgstr ""
+
+msgid "Filter heroes"
 msgstr ""
 
 msgid "from inventory"
@@ -2059,6 +2047,24 @@ msgstr ""
 
 msgid "Hero '%s' not found."
 msgstr ""
+
+msgid "hero %s army"
+msgstr "армии героя %s"
+
+msgid "hero %s equipment"
+msgstr "снаряжения героя %s"
+
+msgid "hero %s inventory"
+msgstr "рюкзака героя %s"
+
+msgid "hero %s skills"
+msgstr "навыков героя %s"
+
+msgid "hero %s spells"
+msgstr "заклинаний героя %s"
+
+msgid "hero %s stats"
+msgstr "основного героя %s"
 
 msgid "Hero character sheet"
 msgstr ""
@@ -2384,19 +2390,22 @@ msgstr ""
 msgid "town"
 msgstr "город"
 
-msgid "towns"
+msgid "town %s army"
+msgstr "армии города %s"
+
+msgid "Town '%s' not found."
 msgstr ""
 
 msgid "Town army is with garrisoned hero."
-msgstr ""
-
-msgid "Town '%s' not found."
 msgstr ""
 
 msgid "town index"
 msgstr ""
 
 msgid "Town manifest"
+msgstr ""
+
+msgid "towns"
 msgstr ""
 
 msgid "type"

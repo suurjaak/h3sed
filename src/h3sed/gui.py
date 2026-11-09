@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    08.11.2026
+@modified    09.11.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -2090,9 +2090,10 @@ def build(plugin, panel):
             if value == value0:
                 return  # Avoid double events like EVT_TEXT vs EVT_SPIN
 
-            # "set HERONAME CATEGORY: TARGET VALUE"
+            # "set KIND NAME CATEGORY: TARGET VALUE"
             # TARGET = "PROPNAME" or "SLOTNUMBER" or "SLOTNUMBER PROPNAME"
-            actionlbl, actionargs = "%s %s", ("set", ("%s {}".format(plugin.name), plugin.item()))
+            actionlbl = "%s %s"
+            actionargs = ("set", ("{} %s {}".format(plugin.parent.name, plugin.name), plugin.item()))
             targetargs = () if rowindex is None else ("slot", rowindex + 1)
             if name is not None: targetargs += (name, )
             targetlbl = " ".join(["%s"] * len(targetargs))
@@ -2124,8 +2125,9 @@ def build(plugin, panel):
             state = plugin.state() if callable(getattr(plugin, "state", None)) else {}
             if state[index] == state[index + direction]: return
 
-            # "swap HERONAME CATEGORY: slot SLOTNUMBER and SLOTNUMBER"
-            actionlbl, actionargs = "%s %s", ("swap", ("%s {}".format(plugin.name), plugin.item()))
+            # "swap KIND NAME CATEGORY: slot SLOTNUMBER and SLOTNUMBER"
+            actionlbl = "%s %s"
+            actionargs = ("swap", ("{} %s {}".format(plugin.parent.name, plugin.name), plugin.item()))
             cname = "%s: %s %s %s %s"
             cargs = ((actionlbl, actionargs), "slot", index + 1, "and", index + direction + 1)
             logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
@@ -2148,8 +2150,9 @@ def build(plugin, panel):
                 value = ctrl.GetClientData(ctrl.Selection) or value
             if not value: return
 
-            # "add HERONAME CATEGORY: VALUE"
-            actionlbl, actionargs = "%s %s", ("add", ("%s {}".format(plugin.name), plugin.item()))
+            # "add KIND NAME CATEGORY: VALUE"
+            actionlbl = "%s %s"
+            actionargs = ("add", ("{} %s {}".format(plugin.parent.name, plugin.name), plugin.item()))
             cname, cargs = "%s: %s", ((actionlbl, actionargs), value)
             logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
             plugin.parent.command(functools.partial(on_do, value), name=(cname, cargs))
@@ -2168,8 +2171,9 @@ def build(plugin, panel):
             value = state[index]
             if isinstance(value, dict): value = value.get("name", value)
 
-            # "remove HERONAME CATEGORY: VALUE"
-            actionlbl, actionargs = "%s %s", ("remove", ("%s {}".format(plugin.name), plugin.item()))
+            # "remove KIND NAME CATEGORY: VALUE"
+            actionlbl = "%s %s"
+            actionargs = ("remove", ("{} %s {}".format(plugin.parent.name, plugin.name), plugin.item()))
             cname, cargs = "%s: %s", ((actionlbl, actionargs), value)
             logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
             plugin.parent.command(on_do, name=(cname, cargs))
@@ -2193,9 +2197,10 @@ def build(plugin, panel):
             return True
 
         def handler(event):
-            # "set HERONAME CATEGORY: TARGET <blank>"
+            # "set KIND NAME CATEGORY: TARGET <blank>"
             # TARGET = "PROPNAME" or "SLOTNUMBER" or "SLOTNUMBER PROPNAME"
-            actionlbl, actionargs = "%s %s", ("set", ("%s {}".format(plugin.name), plugin.item()))
+            actionlbl = "%s %s"
+            actionargs = ("set", ("{} %s {}".format(plugin.parent.name, plugin.name), plugin.item()))
             targetargs = () if rowindex is None else ("slot", rowindex + 1)
             if name is not None: targetargs += (name, )
             targetlbl = " ".join(["%s"] * len(targetargs))
@@ -2220,9 +2225,10 @@ def build(plugin, panel):
             return True
 
         def handler(event):
-            # "add|remove HERONAME CATEGORY: VALUE"
+            # "add|remove KIND NAME CATEGORY: VALUE"
             action = "add" if ctrl.Value else "remove"
-            actionlbl, actionargs = "%s %s", (action, ("%s {}".format(plugin.name), plugin.item()))
+            actionlbl = "%s %s"
+            actionargs = (action, ("{} %s {}".format(plugin.parent.name, plugin.name), plugin.item()))
             cname, cargs = "%s: %s", ((actionlbl, actionargs), value)
             logger.info("Doing action: %s.", i18n.format_nested(cname, *cargs))
             plugin.parent.command(functools.partial(on_do, ctrl.Value), name=(cname, cargs))
