@@ -65,7 +65,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  08.11.2026
+@modified  11.11.2026
 ------------------------------------------------------------------------------
 """
 import ast
@@ -363,7 +363,8 @@ class EntityPlugin(object):
                 entity = self._entities[index]
                 page = wx.Window(self._ctrls["tabs"])
                 self._pages[page] = index
-                self._ctrls["tabs"].AddPage(page, entity.format(), select=entity is self._entity)
+                title = "%s%s" % (entity.format(), "*" if entity.is_changed() else "")
+                self._ctrls["tabs"].AddPage(page, title, select=entity is self._entity)
 
             index = None
             if entity0:  index = next(i for i, x in enumerate(self._entities) if x is entity0)
