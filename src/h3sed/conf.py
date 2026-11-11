@@ -26,7 +26,7 @@ import sys
 """Program title, version number and version date."""
 Name = "h3sed"
 Title = "Heroes3 Savegame Editor"
-Version = "4.2.dev17"
+Version = "4.2.dev18"
 VersionDate = "11.11.2026"
 
 Frozen = getattr(sys, "frozen", False)
@@ -88,6 +88,11 @@ Language = "en"
 
 """Various UI selection states."""
 Settings = {"savefile.filter_index": 1, "savepage.page_index": 0, "savepage.splitter_pos": 36,
+            "hero.toggle_army": False, "hero.toggle_biography": False, "hero.toggle_devices": False,
+            "hero.toggle_equipment": False, "hero.toggle_inventory": False,
+            "hero.toggle_skills": False, "hero.toggle_spells": False, "town.toggle_army": False,
+            "faction.toggle_heroes": False, "faction.toggle_tavern_heroes": False,
+            "faction.toggle_towns": False,
             "hero.manifest_view": "normal", "town.manifest_view": "normal",
             "faction.manifest_view": "normal",
             "hero.sort_col": "index", "hero.sort_asc": True, "hero.tab_index": 0,

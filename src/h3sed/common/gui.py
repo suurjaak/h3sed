@@ -181,7 +181,7 @@ class EntityPlugin(object):
         export.Bind(wx.EVT_BUTTON, self.on_export_entities)
 
         for i, category in enumerate(PROPERTY_CATEGORIES):
-            mytb = tb_index2 if tb_index2 and i > 7 else tb_index
+            mytb = tb_index2 if tb_index2 and i > 4 else tb_index
             togglename = "%s.toggle_%s" % (self.name, category)
             display = category.replace("_", " ")
             help = __("Show or hide %s column" + ("s" if "stats" == category else ""), __(display))

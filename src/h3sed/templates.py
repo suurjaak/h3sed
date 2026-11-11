@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  06.11.2026
+@modified  11.11.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -34,8 +34,8 @@ EXPORT_FORMATS = {"csv": "CSV spreadsheet", "html": "HTML document",
                   "json": "JSON document", "yaml": "YAML document"}
 
 ## Hero property categories for hero index and exports
-HERO_PROPERTY_CATEGORIES = ["faction", "stats", "devices", "skills", "army", "equipment",
-                            "inventory", "spells", "status", "location", "town", "biography"]
+HERO_PROPERTY_CATEGORIES = ["faction", "stats", "status", "location", "town", "devices",
+                            "skills", "army", "equipment", "inventory", "spells", "biography"]
 
 ## Town property categories for town index
 TOWN_PROPERTY_CATEGORIES = ["faction", "type", "location", "visiting_hero", "garrison_hero", "army"]
@@ -507,6 +507,15 @@ category = get("category")
 {{ hero.stats[name] }}
     %endfor
 %endif
+%if category is None or "status" == category:
+{{ __(hero.profile.format_status()) }}
+%endif
+%if category is None or "location" == category:
+{{ hero.profile.format_location() }}
+%endif
+%if category is None or "town" == category:
+{{ hero.profile.town.name if hero.profile.town else "" }}
+%endif
 %if category is None or "devices" == category:
     %for prop in deviceprops:
         %if hero.stats.get(prop["name"]):
@@ -538,15 +547,6 @@ category = get("category")
     %for spell in hero.spells:
 {{ __(spell) }}
     %endfor
-%endif
-%if category is None or "status" == category:
-{{ __(hero.profile.format_status()) }}
-%endif
-%if category is None or "location" == category:
-{{ hero.profile.format_location() }}
-%endif
-%if category is None or "town" == category:
-{{ hero.profile.town.name if hero.profile.town else "" }}
 %endif
 %if category is None or "biography" == category:
 {{ hero.profile.biography }}
@@ -683,6 +683,15 @@ if len(label_text) > 7: label_text = label_text[:5]
     <th align="left" valign="bottom" nowrap><a href="sort:{{ name }}"><font color="{{ conf.FgColour }}">{{ label_text }}{{! sortarrow(name) }}</font></a></th>
     %endfor
 %endif
+%if not categories or categories["status"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:status"><font color="{{ conf.FgColour }}">{{ __("Status") }}{{! sortarrow("status") }}</font></a></th>
+%endif
+%if not categories or categories["location"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:location"><font color="{{ conf.FgColour }}">{{ __("Location") }}{{! sortarrow("location") }}</font></a></th>
+%endif
+%if not categories or categories["town"]:
+    <th align="left" valign="bottom" nowrap><a href="sort:town"><font color="{{ conf.FgColour }}">{{ __("Town") }}{{! sortarrow("location") }}</font></a></th>
+%endif
 %if not categories or categories["devices"]:
     <th align="left" valign="bottom" nowrap><a href="sort:devices"><font color="{{ conf.FgColour }}">{{ __("Devices") }}{{! sortarrow("devices") }}</font></a></th>
 %endif
@@ -700,15 +709,6 @@ if len(label_text) > 7: label_text = label_text[:5]
 %endif
 %if not categories or categories["spells"]:
     <th align="left" valign="bottom" nowrap><a href="sort:spells"><font color="{{ conf.FgColour }}">{{ __("Spells") }}{{! sortarrow("spells") }}</font></a></th>
-%endif
-%if not categories or categories["status"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:status"><font color="{{ conf.FgColour }}">{{ __("Status") }}{{! sortarrow("status") }}</font></a></th>
-%endif
-%if not categories or categories["location"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:location"><font color="{{ conf.FgColour }}">{{ __("Location") }}{{! sortarrow("location") }}</font></a></th>
-%endif
-%if not categories or categories["town"]:
-    <th align="left" valign="bottom" nowrap><a href="sort:town"><font color="{{ conf.FgColour }}">{{ __("Town") }}{{! sortarrow("location") }}</font></a></th>
 %endif
 %if not categories or categories["biography"]:
     <th align="left" valign="bottom" nowrap><a href="sort:biography"><font color="{{ conf.FgColour }}">{{ __("Biography") }}{{! sortarrow("biography") }}</font></a></th>
@@ -738,6 +738,23 @@ if len(label_text) > 7: label_text = label_text[:5]
     %for name in metadata.PRIMARY_ATTRIBUTES:
     <td align="left" valign="top" nowrap>{{ hero.stats[name] }}</td>
     %endfor
+%endif
+%if not categories or categories["status"]:
+    <td align="left" valign="top" nowrap>{{ __(hero.profile.format_status()) }}</td>
+%endif
+%if not categories or categories["location"]:
+    <td align="left" valign="top" nowrap>{{ hero.profile.format_location() }}</td>
+%endif
+%if not categories or categories["town"]:
+    %if hero.profile.town:
+    <td align="left" valign="top" nowrap><a href="town:{{ repr(hero.profile.town.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ hero.profile.town.name }}</font></a>
+    %if hero.profile.town.name_counter > 1:
+ ({{ hero.profile.town.name_counter }})
+    %endif
+    </td>
+    %else:
+    <td></td>
+    %endif
 %endif
 %if not categories or categories["devices"]:
     <td align="left" valign="top" nowrap>
@@ -783,23 +800,6 @@ if len(label_text) > 7: label_text = label_text[:5]
     <br />{{ __(spell) }}
     %endfor
     </td>
-%endif
-%if not categories or categories["status"]:
-    <td align="left" valign="top" nowrap>{{ __(hero.profile.format_status()) }}</td>
-%endif
-%if not categories or categories["location"]:
-    <td align="left" valign="top" nowrap>{{ hero.profile.format_location() }}</td>
-%endif
-%if not categories or categories["town"]:
-    %if hero.profile.town:
-    <td align="left" valign="top" nowrap><a href="town:{{ repr(hero.profile.town.get_name_ident()) }}"><font color="{{ conf.LinkColour }}">{{ hero.profile.town.name }}</font></a>
-    %if hero.profile.town.name_counter > 1:
- ({{ hero.profile.town.name_counter }})
-    %endif
-    </td>
-    %else:
-    <td></td>
-    %endif
 %endif
 %if not categories or categories["biography"]:
     <td align="left" valign="top">{{! "<br />".join(map(escape, hero.profile.biography.splitlines())) }}</td>
@@ -1427,6 +1427,15 @@ colptr = max(col_indexes) + 1
     <th><a class="sort" title="{{ __("Sort by %s", __(label).lower()) }}" onclick="onSort(this)">{{ __(name.title() if " " in label else label) }}</a></th>
     %endfor
 %endif
+%if not categories or categories["status"]:
+    <th><a class="sort" title="{{ __("Sort by %s", __("status")) }}" onclick="onSort(this)">{{ __("Status") }}</a></th>
+%endif
+%if not categories or categories["location"]:
+    <th><a class="sort" title="{{ __("Sort by %s", __("location")) }}" onclick="onSort(this)">{{ __("Location") }}</a></th>
+%endif
+%if not categories or categories["town"]:
+    <th><a class="sort" title="{{ __("Sort by %s", __("town")) }}" onclick="onSort(this)">{{ __("Town") }}</a></th>
+%endif
 %if not categories or categories["devices"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("devices")) }}" onclick="onSort(this)">{{ __("Devices") }}</a></th>
 %endif
@@ -1444,15 +1453,6 @@ colptr = max(col_indexes) + 1
 %endif
 %if not categories or categories["spells"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("spells")) }}" onclick="onSort(this)">{{ __("Spells") }}</a></th>
-%endif
-%if not categories or categories["status"]:
-    <th><a class="sort" title="{{ __("Sort by %s", __("status")) }}" onclick="onSort(this)">{{ __("Status") }}</a></th>
-%endif
-%if not categories or categories["location"]:
-    <th><a class="sort" title="{{ __("Sort by %s", __("location")) }}" onclick="onSort(this)">{{ __("Location") }}</a></th>
-%endif
-%if not categories or categories["town"]:
-    <th><a class="sort" title="{{ __("Sort by %s", __("town")) }}" onclick="onSort(this)">{{ __("Town") }}</a></th>
 %endif
 %if not categories or categories["biography"]:
     <th><a class="sort" title="{{ __("Sort by %s", __("biography")) }}" onclick="onSort(this)">{{ __("Biography") }}</a></th>
@@ -1476,6 +1476,15 @@ colptr = max(col_indexes) + 1
     %for name in metadata.PRIMARY_ATTRIBUTES:
     <td>{{ hero.stats[name] }}</td>
     %endfor
+%endif
+%if not categories or categories["status"]:
+    <td data-sort_prefix="{{ 1 if "inactive" == hero.profile.format_status() else 0 }}">{{ __(hero.profile.format_status()) }}</td>
+%endif
+%if not categories or categories["location"]:
+    <td title="{{ hero.profile.format_location(long=True) }}">{{ hero.profile.format_location() }}</td>
+%endif
+%if not categories or categories["town"]:
+    <td>{{ hero.profile.town.name if hero.profile.town else "" }}</td>
 %endif
 %if not categories or categories["devices"]:
     <td>
@@ -1520,15 +1529,6 @@ colptr = max(col_indexes) + 1
     {{ __(spell) }}<br />
     %endfor
     </td>
-%endif
-%if not categories or categories["status"]:
-    <td data-sort_prefix="{{ 1 if "inactive" == hero.profile.format_status() else 0 }}">{{ __(hero.profile.format_status()) }}</td>
-%endif
-%if not categories or categories["location"]:
-    <td title="{{ hero.profile.format_location(long=True) }}">{{ hero.profile.format_location() }}</td>
-%endif
-%if not categories or categories["town"]:
-    <td>{{ hero.profile.town.name if hero.profile.town else "" }}</td>
 %endif
 %if not categories or categories["biography"]:
     <td class="text">{{ hero.profile.biography }}</td>

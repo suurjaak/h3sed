@@ -1,10 +1,11 @@
 CHANGELOG
 =========
 
-4.2, 2026-11-06
+4.2, 2026-11-11
 ---------------
 - add factions section, with resources, hero order, and tavern heroes management
 - improve hero loading speed
+- show only single-line columns by default in hero/town/faction index
 
 
 4.1, 2026-11-02
