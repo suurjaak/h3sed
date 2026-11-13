@@ -2330,7 +2330,7 @@ def build(plugin, panel):
                         label, handler = formatter(v) or "", None
                         if itemprop.get("handler"):
                             handler = functools.partial((lambda handler, index: handler(index)), itemprop["handler"], i)
-                        c = controls.make_hyperlink(panel, label, handler, conf.LinkColour, (80, -1))
+                        c = controls.make_hyperlink(panel, label, handler, conf.LinkColour, (100, -1))
                         if itemprop.get("tooltip"):
                             c.ToolTip = itemprop["tooltip"](i) if callable(itemprop["tooltip"]) else itemprop["tooltip"]
                         if not label: c.Enable(False)

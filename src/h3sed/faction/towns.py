@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   03.11.2026
-@modified  04.11.2026
+@modified  13.11.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -128,8 +128,8 @@ class FactionTownsPlugin(object):
         if not any(t.profile.visiting_hero or t.profile.garrison_hero for t in self._state):
             return False
 
-        t1 = wx.StaticText(self._panel, label="", size=(80, -1))
-        t2 = wx.StaticText(self._panel, label=__("Visiting hero"), size=(80, -1))
+        t1 = wx.StaticText(self._panel, label="", size=(100, -1))
+        t2 = wx.StaticText(self._panel, label=__("Visiting hero"), size=(100, -1))
         t3 = wx.StaticText(self._panel, label=__("Garrison hero"), size=(120, -1))
         controls.ColourManager.Manage(t2, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         controls.ColourManager.Manage(t3, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)

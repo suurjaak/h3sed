@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   02.11.2026
-@modified  04.11.2026
+@modified  13.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -137,7 +137,7 @@ class FactionHeroesPlugin(object):
         controls.ColourManager.Manage(header, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         gridsizer.Add(header, pos=(gridsizer.Rows, 0), span=(1, 2))
 
-        link_args = {"parent": self._panel, "size": (80, -1), "colour": conf.LinkColour}
+        link_args = {"parent": self._panel, "size": (100, -1), "colour": conf.LinkColour}
         garrisoned_heroes = [h for h in self._faction.heroes if h not in self._state]
         for i, hero in enumerate(garrisoned_heroes, len(self._state)):
             c0 = wx.StaticText(self._panel, label="%s." % (i + 1))
