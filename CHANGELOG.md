@@ -4,7 +4,7 @@ CHANGELOG
 
 4.3, 2026-11-13
 ---------------
-- fix empty placeholder links in faction heroes and towns pages being interactable (issue #34)
+- fix visual issues with links in hero/town/faction pages (issue #34)
 
 
 4.2, 2026-11-12
