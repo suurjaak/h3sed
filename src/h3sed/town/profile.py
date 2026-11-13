@@ -143,7 +143,6 @@ class ProfilePlugin(object):
             handler = lambda: self.on_click_entity(self._state.faction, "faction")
             result = h3sed.lib.controls.make_hyperlink(self._panel, __(label), colour=conf.LinkColour, handler=handler)
             result.ToolTip = self.make_entity_tooltip(label, "faction")
-            
         return result
 
 
