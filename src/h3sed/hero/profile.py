@@ -7,9 +7,11 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.01.2026
-@modified  16.11.2026
+@modified  13.11.2026
 ------------------------------------------------------------------------------
 """
+import functools
+
 try: import wx
 except ImportError: wx = None
 
@@ -23,34 +25,31 @@ from .. import metadata
 PROPS = {"name": "profile", "label": "Profile"}
 DATAPROPS = [{
     "name":      "faction",
-    "type":      None,  # Populated later
     "label":     "Faction",
+    "type":      None,  # Populated later
     "readonly":  True,
 }, {
     "name":      "status",
-    "type":      "text",
     "label":     "Status",
+    "type":      "text",
     "readonly":  True,
     "format":    None,  # Populated later
 }, {
     "name":      "location",
-    "type":      "text",
     "label":     "Location",
+    "type":      "text",
     "readonly":  True,
     "format":    None,  # Populated later
     "tooltip":   None,  # Populated later
 }, {
     "name":      "town",
-    "type":      "link",
     "label":     "Town",
+    "type":      None,  # Populated later
     "readonly":  True,
-    "format":    None,  # Populated later
-    "handler":   None,  # Populated later
-    "tooltip":   None,  # Populated later
 }, {
     "name":      "biography",
-    "type":      "text",
     "label":     "Biography",
+    "type":      "text",
     "multiline": True,
     "readonly":  True,
 }]
@@ -84,20 +83,14 @@ class ProfilePlugin(object):
         """Returns UI props for profile-tab, as [{type: "text", ..}]."""
         result = []
         for prop in DATAPROPS:
-            if "faction" == prop["name"] and "type" in prop and prop["type"] is None:
-                prop = dict(prop, type=self.make_faction_control)
             if "status" == prop["name"] and "format" in prop:
                 prop = dict(prop, format=lambda: __(self._state.format_status()))
             if "location" == prop["name"] and "format" in prop:
                 prop = dict(prop, format=self._state.format_location)
             if "location" == prop["name"] and "tooltip" in prop:
                 prop = dict(prop, tooltip=lambda: self._state.format_location(long=True))
-            if "town" == prop["name"] and "format" in prop:
-                prop = dict(prop, format=lambda: str(self._state.town or ""))
-            if "town" == prop["name"] and "handler" in prop:
-                prop = dict(prop, handler=lambda: self.on_click_entity(self._state.town, "town"))
-            if "town" == prop["name"] and "tooltip" in prop:
-                prop = dict(prop, tooltip=lambda: self.make_entity_tooltip(self._state.town, "town"))
+            if prop["name"] in ("faction", "town") and prop.get("type") is None:
+                prop = dict(prop, type=functools.partial(self.make_optional_link, prop))
             result.append(prop)
         return result
 
@@ -128,23 +121,21 @@ class ProfilePlugin(object):
         return state0 != self._state
 
 
-    def make_faction_control(self):
-        """Returns wx component for displaying hero faction: neutral text or clickable link."""
-        label = self._state.format_faction()
-        if "neutral" == label:
-            result = wx.TextCtrl(self._panel, style=wx.TE_READONLY | wx.BORDER_NONE, name="faction")
+    def make_optional_link(self, prop):
+        """Returns wx component for displaying a clickable link or text, depending on prop content."""
+        target = self._state[prop["name"]]
+        label = str(target or "")
+        if "faction" == prop["name"]: label = self._state.format_faction()
+
+        if not label or ("faction" == prop["name"] and "neutral" == label):
+            result = wx.TextCtrl(self._panel, style=wx.TE_READONLY | wx.BORDER_NONE, name=prop["name"])
             result.Value = __(label)
         else:
-            handler = lambda: self.on_click_entity(self._state.faction, "faction")
-            result = h3sed.lib.controls.make_hyperlink(self._panel, __(label), colour=conf.LinkColour, handler=handler)
-            result.ToolTip = self.make_entity_tooltip(label, "faction")
+            kind, label = ("faction", __(label)) if "faction" == prop["name"] else ("town", label)
+            handler = lambda: self.on_click_entity(target, kind)
+            result = h3sed.lib.controls.make_hyperlink(self._panel, label, colour=conf.LinkColour, handler=handler)
+            result.ToolTip = __("Open %s page for %%s" % kind, label.format())
         return result
-
-
-    def make_entity_tooltip(self, value, kind):
-        """Returns tooltip string for town or faction name link."""
-        if not value: return ""
-        return __("Open %s page for %%s" % kind, value.format())
 
 
     def on_click_entity(self, value, kind):

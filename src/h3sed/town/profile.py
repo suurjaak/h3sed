@@ -7,9 +7,11 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   16.09.2026
-@modified  16.11.2026
+@modified  13.11.2026
 ------------------------------------------------------------------------------
 """
+import functools
+
 try: import wx
 except ImportError: wx = None
 
@@ -21,38 +23,32 @@ from .. import conf
 PROPS = {"name": "profile", "label": "Profile"}
 DATAPROPS = [{
     "name":      "faction",
-    "type":      None,  # Populated later
     "label":     "Faction",
+    "type":      None,  # Populated later
     "readonly":  True,
 }, {
     "name":      "type",
-    "type":      "text",
     "label":     "Type",
+    "type":      "text",
     "readonly":  True,
     "format":    None,  # Populated later
 }, {
     "name":      "location",
-    "type":      "text",
     "label":     "Location",
+    "type":      "text",
     "readonly":  True,
     "format":    None,  # Populated later
     "tooltip":   None,  # Populated later
 }, {
-    "name":      "garrison",
-    "type":      "link",
+    "name":      "garrison_hero",
     "label":     "Garrisoned",
+    "type":      None,  # Populated later
     "readonly":  True,
-    "format":    None,  # Populated later
-    "handler":   None,  # Populated later
-    "tooltip":   None,  # Populated later
 }, {
-    "name":      "visiting",
-    "type":      "link",
+    "name":      "visiting_hero",
     "label":     "Visiting",
+    "type":      None,  # Populated later
     "readonly":  True,
-    "format":    None,  # Populated later
-    "handler":   None,  # Populated later
-    "tooltip":   None,  # Populated later
 }]
 
 
@@ -84,26 +80,15 @@ class ProfilePlugin(object):
         """Returns UI props for profile-tab, as [{type: "text", ..}]."""
         result = []
         for prop in DATAPROPS:
-            if "faction" == prop["name"] and "type" in prop:
-                prop = dict(prop, type=self.make_faction_control)
             if "type" == prop["name"] and "type" in prop:
                 prop = dict(prop, format=lambda: __(self._state.format_type()))
             if "location" == prop["name"] and "format" in prop:
                 prop = dict(prop, format=self._state.format_location)
             if "location" == prop["name"] and "tooltip" in prop:
                 prop = dict(prop, tooltip=lambda: self._state.format_location(long=True))
-            if "garrison" == prop["name"] and "format" in prop:
-                prop = dict(prop, format=lambda: str(self._state.garrison_hero or ""))
-            if "garrison" == prop["name"] and "handler" in prop:
-                prop = dict(prop, handler=lambda: self.on_click_entity(self._state.garrison_hero, "hero"))
-            if "garrison" == prop["name"] and "tooltip" in prop:
-                prop = dict(prop, tooltip=lambda: self.make_entity_tooltip(self._state.garrison_hero, "hero"))
-            if "visiting" == prop["name"] and "format" in prop:
-                prop = dict(prop, format=lambda: str(self._state.visiting_hero or ""))
-            if "visiting" == prop["name"] and "handler" in prop:
-                prop = dict(prop, handler=lambda: self.on_click_entity(self._state.visiting_hero, "hero"))
-            if "visiting" == prop["name"] and "tooltip" in prop:
-                prop = dict(prop, tooltip=lambda: self.make_entity_tooltip(self._state.visiting_hero, "hero"))
+            if prop["name"] in ("faction", "garrison_hero", "visiting_hero"):
+                if prop.get("type") is None:
+                    prop = dict(prop, type=functools.partial(self.make_optional_link, prop))
             result.append(prop)
         return result
 
@@ -134,23 +119,21 @@ class ProfilePlugin(object):
         return state0 != self._state
 
 
-    def make_faction_control(self):
-        """Returns wx component for displaying hero faction: neutral text or clickable link."""
-        label = self._state.format_faction()
-        if "neutral" == label:
-            result = wx.TextCtrl(self._panel, style=wx.TE_READONLY | wx.BORDER_NONE, name="faction")
+    def make_optional_link(self, prop):
+        """Returns wx component for displaying a clickable link or text, depending on prop content."""
+        target = self._state[prop["name"]]
+        label = str(target or "")
+        if "faction" == prop["name"]: label = self._state.format_faction()
+
+        if not label or ("faction" == prop["name"] and "neutral" == label):
+            result = wx.TextCtrl(self._panel, style=wx.TE_READONLY | wx.BORDER_NONE, name=prop["name"])
             result.Value = __(label)
         else:
-            handler = lambda: self.on_click_entity(self._state.faction, "faction")
-            result = h3sed.lib.controls.make_hyperlink(self._panel, __(label), colour=conf.LinkColour, handler=handler)
-            result.ToolTip = self.make_entity_tooltip(label, "faction")
+            kind, label = ("faction", __(label)) if "faction" == prop["name"] else ("hero", label)
+            handler = lambda: self.on_click_entity(target, kind)
+            result = h3sed.lib.controls.make_hyperlink(self._panel, label, colour=conf.LinkColour, handler=handler)
+            result.ToolTip = __("Open %s page for %%s" % kind, label.format())
         return result
-
-
-    def make_entity_tooltip(self, value, kind):
-        """Returns tooltip string for hero or faction name link."""
-        if not value: return ""
-        return __("Open %s page for %%s" % kind, value.format())
 
 
     def on_click_entity(self, value, kind):
