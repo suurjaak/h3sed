@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   22.01.2026
-@modified  06.11.2026
+@modified  16.11.2026
 ------------------------------------------------------------------------------
 """
 try: import wx
@@ -132,7 +132,8 @@ class ProfilePlugin(object):
         """Returns wx component for displaying hero faction: neutral text or clickable link."""
         label = self._state.format_faction()
         if "neutral" == label:
-            result = wx.StaticText(self._panel, label=__(label))
+            result = wx.TextCtrl(self._panel, style=wx.TE_READONLY | wx.BORDER_NONE, name="faction")
+            result.Value = __(label)
         else:
             handler = lambda: self.on_click_entity(self._state.faction, "faction")
             result = h3sed.lib.controls.make_hyperlink(self._panel, __(label), colour=conf.LinkColour, handler=handler)

@@ -2545,7 +2545,8 @@ def build(plugin, panel):
 
 
         elif callable(prop.get("type")):
-            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])))
+            c1 = wx.StaticText(panel, label=__(prop.get("label", prop["name"])),
+                               name="%s_label" % prop["name"])
             c2 = prop["type"]()
 
             sizer.Add(c1, pos=(count, 0))
