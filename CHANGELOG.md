@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+
+4.3, 2026-11-13
+---------------
+- fix empty placeholder links in faction heroes and towns pages being interactable (issue #34)
+
+
 4.2, 2026-11-12
 ---------------
 - add factions section, with resources, hero order, and tavern heroes management

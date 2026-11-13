@@ -2333,6 +2333,7 @@ def build(plugin, panel):
                         c = controls.make_hyperlink(panel, label, (80, -1), conf.LinkColour, handler)
                         if itemprop.get("tooltip"):
                             c.ToolTip = itemprop["tooltip"](i) if callable(itemprop["tooltip"]) else itemprop["tooltip"]
+                        if not label: c.Enable(False)
                         bsizer.Add(c, flag=wx.ALIGN_CENTER_VERTICAL)
 
                     if c:
@@ -2533,6 +2534,7 @@ def build(plugin, panel):
             c2 = controls.make_hyperlink(panel, label, (-1, -1), conf.LinkColour, prop.get("handler"))
             if prop.get("tooltip"):
                 c2.ToolTip = prop["tooltip"]() if callable(prop["tooltip"]) else prop["tooltip"]
+            if not label: c2.Enable(False)
 
             sizer.Add(c1, pos=(count, 0))
             sizer.Add(c2, pos=(count, 1), flag=wx.GROW)
