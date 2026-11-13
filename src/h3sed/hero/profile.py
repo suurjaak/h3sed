@@ -133,7 +133,7 @@ class ProfilePlugin(object):
         else:
             kind, label = ("faction", __(label)) if "faction" == prop["name"] else ("town", label)
             handler = lambda: self.on_click_entity(target, kind)
-            result = h3sed.lib.controls.make_hyperlink(self._panel, label, colour=conf.LinkColour, handler=handler)
+            result = h3sed.lib.controls.make_hyperlink(self._panel, label, handler, conf.LinkColour)
             result.ToolTip = __("Open %s page for %%s" % kind, label.format())
         return result
 

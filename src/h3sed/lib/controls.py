@@ -1564,7 +1564,7 @@ def get_dialog_path(dialog):
     return result
 
 
-def make_hyperlink(parent, label, size=wx.DefaultSize, colour=None, handler=None):
+def make_hyperlink(parent, label, handler=None, colour=None, size=wx.DefaultSize):
     """Creates and returns a HyperLinkCtrl."""
     link = wx.lib.agw.hyperlink.HyperLinkCtrl(parent, label=label, size=size)
     ColourManager.Manage(link, "BackgroundColour", wx.SYS_COLOUR_BTNFACE)
