@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created     14.03.2020
-@modified    13.11.2026
+@modified    14.11.2026
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -2277,24 +2277,34 @@ def build(plugin, panel):
     SPIN_WPLUS = 80 if "GTK" in wx.Port else 0
     for prop in props if isinstance(props, (list, tuple)) else [props]:
         if "itemlist" == prop.get("type"):
-            if callable(prop.get("header")) and prop["header"](sizer):
-                count += 1
+
+            lsizer = wx.GridBagSizer(vgap=10, hgap=prop.get("hgap", 0))
+            lcount = 0
+            if prop.get("header"):
+                for i, label in enumerate(prop["header"]):
+                    c = wx.StaticText(panel, label=__(label))
+                    ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
+                    lsizer.Add(c, pos=(lcount, i))
+                lcount += 1
+
             values_present = []
             resultitems = []
             for i, row in enumerate(state):
                 bsizer = wx.BoxSizer(wx.HORIZONTAL)
                 resultitem = {}
+                ccount = 0
                 for itemprop in prop["item"]:
                     c, v = None, row.get(itemprop.get("name")) if isinstance(row, dict) else row
                     formatter = itemprop["format"] if callable(itemprop.get("format")) else \
                                 lambda x: list(map(__, x)) if isinstance(x, list) else __(x)
                     if "label" == itemprop.get("type"):
                         values_present.append(v)
-                        v = __(itemprop["label"]) if itemprop.get("label") else formatter(v)
+                        v = __(itemprop["label"]) if "label" in itemprop else formatter(v)
                         if prop.get("orderable") or prop.get("numbered"):
                             v = "%s. %s" % (i + 1, v)
                         c0 = wx.StaticText(panel, label=v, name="%s_%s_label" % (plugin.name, i))
-                        sizer.Add(c0, pos=(count, 0), flag=wx.ALIGN_CENTER_VERTICAL)
+                        if lsizer.HGap: lsizer.Add(c0, pos=(lcount, ccount), flag=wx.ALIGN_CENTER_VERTICAL)
+                        else: lsizer.Add(c0, pos=(lcount, ccount), border=10, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT)
                     elif "combo" == itemprop.get("type"):
                         choices = itemprop["choices"]
                         if isinstance(choices, dict): choices = list(choices.values())
@@ -2310,7 +2320,7 @@ def build(plugin, panel):
                         value = formatter(v) if v is not None else "" if "" in choices else None
                         controls.set_combo_choices(c, labels, choices, value)
                         c.Bind(wx.EVT_COMBOBOX, make_value_handler(c, itemprop, rowindex=i))
-                        bsizer.Add(c, flag=wx.GROW)
+                        lsizer.Add(c, pos=(lcount, ccount), flag=wx.GROW)
                     elif "number" == itemprop.get("type"):
                         c = wx.SpinCtrlDouble(panel, name=itemprop["name"],
                                               size=(80 + SPIN_WPLUS, -1), style=wx.ALIGN_RIGHT)
@@ -2322,28 +2332,24 @@ def build(plugin, panel):
                         if itemprop["name"] in row: c.Value = row[itemprop["name"]]
                         c.Bind(wx.EVT_TEXT,           make_value_handler(c, itemprop, rowindex=i))
                         c.Bind(wx.EVT_SPINCTRLDOUBLE, make_value_handler(c, itemprop, rowindex=i))
-                        bsizer.Add(c, flag=wx.GROW)
-                    elif "window" == itemprop.get("type"):
-                        c = wx.StaticText(panel)
-                        bsizer.Add(c)
+                        lsizer.Add(c, pos=(lcount, ccount), flag=wx.GROW)
                     elif "link" == itemprop.get("type"):
                         label, handler = formatter(v) or "", None
                         if itemprop.get("handler"):
                             handler = functools.partial((lambda handler, index: handler(index)), itemprop["handler"], i)
-                        c = controls.make_hyperlink(panel, label, handler, conf.LinkColour, (100, -1))
+                        c = controls.make_hyperlink(panel, label, handler, conf.LinkColour)
                         if itemprop.get("tooltip"):
                             c.ToolTip = itemprop["tooltip"](i) if callable(itemprop["tooltip"]) else itemprop["tooltip"]
                         if not label: c.Enable(False)
-                        bsizer.Add(c, flag=wx.ALIGN_CENTER_VERTICAL)
+                        lsizer.Add(c, pos=(lcount, ccount), flag=wx.ALIGN_CENTER_VERTICAL)
 
                     if c:
                         if isinstance(row, dict) and "name" in itemprop:
                             resultitem[itemprop["name"]] = c
                         else: resultitem = c
+                    ccount += 1
                 if resultitem: resultitems.append(resultitem)
 
-                if any(prop.get(k) for k in ("menu", "orderable", "removable", "nullable", "extra", "info")):
-                    bsizer.AddSpacer(10)
                 if prop.get("menu"):
                     c = wx.Button(panel, label="..", size=(20 + BTN_WPLUS, -1), name="options")
                     c.ToolTip = __("Open options menu")
@@ -2371,9 +2377,11 @@ def build(plugin, panel):
                     make_extra(prop, bsizer, rowindex=i)
                 if prop.get("info"):
                     make_info(prop, bsizer, rowindex=i)
-                if bsizer.Children: sizer.Add(bsizer, pos=(count, 1))
-                else: sizer.AddSpacer(10)
-                count += 1
+                if bsizer.Children:
+                    if lsizer.HGap: lsizer.Add(bsizer, pos=(lcount, ccount))
+                    else: lsizer.Add(bsizer, pos=(lcount, ccount), border=10, flag=wx.LEFT)
+                    ccount += 1
+                lcount += 1
 
             if prop.get("addable") and ("max" not in prop or len(state) < prop["max"]):
                 choices = prop.get("choices") or []
@@ -2388,11 +2396,14 @@ def build(plugin, panel):
                 controls.set_combo_choices(c1, labels, choices)
                 c2.Bind(wx.EVT_BUTTON, make_add_handler(c1, prop))
 
-                sizer.Add(c1, pos=(count, 0))
-                sizer.Add(c2, pos=(count, 1), border=5, flag=wx.LEFT)
-                count += 1
+                lsizer.Add(c1, pos=(lcount, 0))
+                lsizer.Add(c2, pos=(lcount, 1), border=5, flag=wx.LEFT)
+                lcount += 1
             if resultitems and isinstance(build_result, list):
                 build_result.append(resultitems)
+            if lsizer.Children:
+                sizer.Add(lsizer, pos=(count, 0))
+                count += 1
 
 
         elif "checklist" == prop.get("type"):

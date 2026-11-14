@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   21.03.2020
-@modified  09.11.2026
+@modified  14.11.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -46,9 +46,6 @@ DATAPROPS = [{
         "type":    "number",
         "min":     None,  # Populated later
         "max":     None,  # Populated later
-      }, {
-        "name":    "placeholder",
-        "type":    "window",
     }]
 }]
 
@@ -150,28 +147,30 @@ class ArmyPlugin(object):
                         h3sed.lib.controls.set_combo_choices(ctrl, labels, choices, __(value))
                         creature = value
                     else:
-                        ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
-                        if value is not None and hasattr(ctrl, "Value"): ctrl.Value = value
+                        ctrl.Show(bool(creature))
+                        if value is not None: ctrl.Value = value
         else:
             self._ctrls, result = h3sed.gui.build(self, self._panel)[0], True
             # Hide count controls where no creature type selected
+            countctrl = None
             for i in range(len(self._state)):
-                creature, size = None, None
-                for prop in MYPROPS[0]["item"]:
+                creature = None
+                for j, prop in enumerate(MYPROPS[0]["item"]):
                     if "name" not in prop: continue # for prop
 
                     name = prop["name"]
                     ctrl, value = self._ctrls[i][name], self._state[i].get(name)
                     if "choices" in prop: creature = value
-                    else:  # Show blank placeholder instead of count-control
-                        if "window" == prop.get("type"): ctrl.Size = ctrl.MinSize = size
-                        ctrl.Show(not creature if "window" == prop.get("type") else bool(creature))
-                    size = ctrl.Size
+                    else:
+                        countctrl = ctrl
+                        ctrl.Show(bool(creature))
+            if countctrl is not None:
+                countctrl.ContainingSizer.SetEmptyCellSize(countctrl.Size)
             label = wx.StaticText(self._panel, label=__("Town army is with garrisoned hero."))
             h3sed.lib.controls.ColourManager.Manage(label, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
             self._panel.Sizer.Add(label, border=10, flag=wx.TOP | wx.LEFT, proportion=1)
             self._ctrls.append({"hint": label})
-        
+
         self._panel.Enable(not self.is_readonly())
         self._ctrls[-1]["hint"].Show(self.is_readonly())
         self._panel.Layout()
@@ -457,14 +456,9 @@ class ArmyPlugin(object):
 
 
     def on_change(self, prop, value, ctrl, rowindex):
-        """
-        Handler for army change, enables or disables creature count.
-        Returns True.
-        """
-        ctrls = [x.Window for x in ctrl.ContainingSizer.Children]
-        namectrl  = next(x for x in ctrls if isinstance(x, wx.ComboBox))
-        countctrl = namectrl.GetNextSibling()
-        placectrl = countctrl.GetNextSibling()
+        """Handler for army change, updates state, shows or hides creature count, returns True."""
+        namectrl  = self._ctrls[rowindex]["name"]
+        countctrl = self._ctrls[rowindex]["count"]
 
         if value:
             if not self._state[rowindex]: countctrl.Value = 1
@@ -473,7 +467,7 @@ class ArmyPlugin(object):
             namectrl.Value = ""
             self._state[rowindex].clear()
         countctrl.Show(bool(value))
-        placectrl.Show(not value)
+        self._panel.Layout()
         return True
 
 

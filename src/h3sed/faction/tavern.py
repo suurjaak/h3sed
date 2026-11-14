@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   06.11.2026
-@modified  13.11.2026
+@modified  14.11.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -127,7 +127,7 @@ class TavernHeroesPlugin(object):
 
 
     def render(self):
-        """Builds plugin controls into panel. Returns True."""
+        """Builds plugin controls into panel, returns whether new controls created."""
         result = False
         if self._ctrls and all(self._ctrls): # All built and still valid
             for slot in range(len(self._state)):
@@ -145,15 +145,14 @@ class TavernHeroesPlugin(object):
             ctrl = self._ctrls[0][slot]
             ctrl.Enable(bool(hero))
             sibling = ctrl.GetNextSibling()
-            while sibling and sibling.ContainingSizer is ctrl.ContainingSizer:
-                if isinstance(sibling, wx.Button): # Enable-disable buttons for blank slots
-                    if not hero: sibling.Enable(False)
-                    else:
-                        if sibling.Name not in ("down", "up"): do_enable = True
-                        elif not all(self._state): do_enable = False
-                        elif "down" == sibling.Name: do_enable = (slot < len(self._state) - 1)
-                        else: do_enable = (slot > 0)
-                        sibling.Enable(do_enable)
+            while sibling and isinstance(sibling, wx.Button): # Enable-disable buttons for blanks
+                if not hero: sibling.Enable(False)
+                else:
+                    if sibling.Name not in ("down", "up"): do_enable = True
+                    elif not all(self._state): do_enable = False
+                    elif "down" == sibling.Name: do_enable = (slot < len(self._state) - 1)
+                    else: do_enable = (slot > 0)
+                    sibling.Enable(do_enable)
                 sibling = sibling.GetNextSibling()
         return result
 

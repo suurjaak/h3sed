@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  09.11.2026
+@modified  14.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -37,6 +37,7 @@ DATAPROPS = [{
     "max":          None, # Populated later
     "choices":      None, # Populated later
     "menu":         None, # Populated later
+    "hgap":         10,
     "item":         [{
         "name":     "name",
         "type":     "label",

@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   03.11.2026
-@modified  13.11.2026
+@modified  14.11.2026
 ------------------------------------------------------------------------------
 """
 import logging
@@ -27,11 +27,12 @@ logger = logging.getLogger(__package__)
 PROPS = {"name": "towns", "label": "Towns"}
 DATAPROPS = [{
     "type":          "itemlist",
-    "header":        None, # Populated later
+    "header":        ["", "", "Visiting hero", "Garrison hero"],
     "numbered":      True,
+    "hgap":          10,
     "item":          [{
         "type":      "label",
-        "label":     " ",
+        "label":     "",
     }, {
         "name":      "town",
         "type":      "link",
@@ -85,8 +86,8 @@ class FactionTownsPlugin(object):
         for prop in DATAPROPS:
             myprop = dict(prop)
             if "itemlist" == prop["type"]:
-                if "header" in prop:
-                    myprop = dict(myprop, header=self.make_header)
+                if not any(t.profile.visiting_hero or t.profile.garrison_hero for t in self._state):
+                    myprop.pop("header", None)
                 myprop.update(item=[])
                 for item in prop["item"]:
                     if "handler" in item:
@@ -121,24 +122,6 @@ class FactionTownsPlugin(object):
         for town in state:
             self._state.append(town)
         return state0 != self._state
-
-
-    def make_header(self, sizer):
-        """Adds header row to sizer, if any towns with a hero, returns whether header added."""
-        if not any(t.profile.visiting_hero or t.profile.garrison_hero for t in self._state):
-            return False
-
-        t1 = wx.StaticText(self._panel, label="", size=(100, -1))
-        t2 = wx.StaticText(self._panel, label=__("Visiting hero"), size=(100, -1))
-        t3 = wx.StaticText(self._panel, label=__("Garrison hero"), size=(120, -1))
-        controls.ColourManager.Manage(t2, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
-        controls.ColourManager.Manage(t3, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
-        bsizer = wx.BoxSizer(wx.HORIZONTAL)
-        bsizer.Add(t1, flag=wx.ALIGN_CENTER_VERTICAL)
-        bsizer.Add(t2, flag=wx.ALIGN_CENTER_VERTICAL)
-        bsizer.Add(t3, flag=wx.ALIGN_CENTER_VERTICAL)
-        sizer.Add(bsizer, pos=(sizer.Rows, 1), span=(1, 2))
-        return True
 
 
     def is_readonly(self):

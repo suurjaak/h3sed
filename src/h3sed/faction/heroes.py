@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   02.11.2026
-@modified  13.11.2026
+@modified  14.11.2026
 ------------------------------------------------------------------------------
 """
 import functools
@@ -35,9 +35,10 @@ DATAPROPS = [{
 }, {
     "type":          "itemlist",
     "orderable":     True,
+    "hgap":          10,
     "item":          [{
         "type":      "label",
-        "label":     " ",
+        "label":     "",
     }, {
         "name":      "hero",
         "type":      "link",
@@ -132,13 +133,15 @@ class FactionHeroesPlugin(object):
         """Builds plugin controls into panel. Returns True."""
         h3sed.gui.build(self, self._panel)
 
-        gridsizer = self._panel.Sizer.Children[0].Sizer
+        topsizer = self._panel.Sizer.Children[0].Sizer
+        gridsizer = next(x.Sizer for x in topsizer.Children if isinstance(x.Sizer, wx.GridBagSizer))
         header = wx.StaticText(self._panel, label=__("Garrisoned"))
         controls.ColourManager.Manage(header, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         gridsizer.Add(header, pos=(gridsizer.Rows, 0), span=(1, 2))
 
-        link_args = {"parent": self._panel, "size": (100, -1), "colour": conf.LinkColour}
+        link_args = {"parent": self._panel, "colour": conf.LinkColour}
         garrisoned_heroes = [h for h in self._faction.heroes if h not in self._state]
+        lcount = gridsizer.Rows
         for i, hero in enumerate(garrisoned_heroes, len(self._state)):
             c0 = wx.StaticText(self._panel, label="%s." % (i + 1))
 
@@ -150,11 +153,10 @@ class FactionHeroesPlugin(object):
             c2 = controls.make_hyperlink(label=str(hero.profile.town), handler=handler, **link_args)
             c2.ToolTip = self.make_entity_tooltip(hero, "town")
 
-            bsizer = wx.BoxSizer(wx.HORIZONTAL)
-            bsizer.Add(c1, flag=wx.ALIGN_CENTER_VERTICAL)
-            bsizer.Add(c2, flag=wx.ALIGN_CENTER_VERTICAL)
-            gridsizer.Add(c0, pos=(gridsizer.Rows, 0), flag=wx.ALIGN_CENTER_VERTICAL)
-            gridsizer.Add(bsizer, pos=(gridsizer.Rows - 1, 1))
+            gridsizer.Add(c0, pos=(lcount, 0), flag=wx.ALIGN_CENTER_VERTICAL)
+            gridsizer.Add(c1, pos=(lcount, 1), flag=wx.ALIGN_CENTER_VERTICAL)
+            gridsizer.Add(c2, pos=(lcount, 2), flag=wx.ALIGN_CENTER_VERTICAL)
+            lcount += 1
         self._panel.Layout()
         return True
 
