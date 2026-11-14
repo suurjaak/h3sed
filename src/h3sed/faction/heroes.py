@@ -48,7 +48,7 @@ DATAPROPS = [{
     }, {
         "name":      "town",
         "type":      "link",
-        "format":    lambda hero: str(hero.profile.town) if hero.profile.town else "",
+        "format":    lambda hero: (hero.profile.town or "").format(),
         "handler":   None,  # Populated later
         "tooltip":   None,  # Populated later
     }],

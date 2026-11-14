@@ -7,7 +7,7 @@ This file is part of h3sed - Heroes3 Savegame Editor.
 Released under the MIT License.
 
 @created   14.03.2020
-@modified  11.11.2026
+@modified  14.11.2026
 ------------------------------------------------------------------------------
 """
 import difflib
@@ -83,7 +83,7 @@ def export_heroes(filename, format, heroes, savefile=None, categories=None):
     if "json" == format:
         data["heroes"] = []
         for hero in heroes:
-            hero_data = dict(name=hero.name)
+            hero_data = dict(name=str(hero))
             for category in filter(categories.get, HERO_PROPERTY_CATEGORIES):
                 if category in ("faction", "status", "location", "town", "biography"):
                     if "faction" == category: value = hero.profile.format_faction()
@@ -213,7 +213,7 @@ def make_entity_yamls(entity, categories=None, as_list=False):
         result["originals" if original else "full" if original is None else "currents"] = formatteds
     if "currents" not in result: result["currents"] = result["originals"]
 
-    header = "- name:".ljust(maxlen) + INDENT + encode_yaml_scalar(entity.name) + LF if as_list else ""
+    header = "- name:".ljust(maxlen) + INDENT + encode_yaml_scalar(entity) + LF if as_list else ""
     result["full"] = header + "".join(result["full"])
     return result
 
@@ -277,8 +277,8 @@ def serialize_property_yaml(state, indent="  "):
 
 def encode_yaml_scalar(value):
     """Returns scalar value encoded as YAML, unquoted if possible."""
-    # Dummy dict for properly quoted YAML, indent=6 for correct multiline start in hero structs.
     if not isinstance(value, (str, float, int, bool, list, dict)): value = str(value)
+    # Dummy dict for properly quoted YAML, indent=6 for correct multiline start in hero structs.
     xblock = yaml.safe_dump({"x": value}, allow_unicode=True, default_flow_style=False, indent=6)
     return xblock[3:].rstrip() # Strip leading "x: " and trailing linefeed from "x: MyValue\n"
 
@@ -496,7 +496,7 @@ deviceprops = [x for x in stats_props if x["label"] in metadata.SPECIAL_ARTIFACT
 category = get("category")
 %>
 %if category is None or "name" == category:
-{{ hero.name }}
+{{ str(hero) }}
 %endif
 %if category is None or "faction" == category:
 {{ __(hero.profile.format_faction()) }}
@@ -514,7 +514,7 @@ category = get("category")
 {{ hero.profile.format_location() }}
 %endif
 %if category is None or "town" == category:
-{{ hero.profile.town.name if hero.profile.town else "" }}
+{{ (hero.profile.town or "").format() }}
 %endif
 %if category is None or "devices" == category:
     %for prop in deviceprops:
@@ -567,7 +567,7 @@ from h3sed.lib.i18n import translate as __
 category = get("category")
 %>
 %if category is None or "name" == category:
-{{ town.name }}
+{{ str(town) }}
 %endif
 %if category is None or "faction" == category:
 {{ __(town.profile.format_faction()) }}
@@ -579,10 +579,10 @@ category = get("category")
 {{ town.profile.format_location() }}
 %endif
 %if category is None or "visiting_hero" == category:
-{{ town.profile.visiting_hero.name if town.profile.visiting_hero else "" }}
+{{ (town.profile.visiting_hero or "").format() }}
 %endif
 %if category is None or "garrison_hero" == category:
-{{ town.profile.garrison_hero.name if town.profile.garrison_hero else "" }}
+{{ (town.profile.garrison_hero or "").format() }}
 %endif
 %if category is None or "army" == category:
     %for army in filter(bool, town.army):
@@ -605,7 +605,7 @@ from h3sed.lib.i18n import translate as __
 category = get("category")
 %>
 %if category is None or "name" == category:
-{{ faction.name }}
+{{ str(faction) }}
 %endif
 %if category is None or "resources" == category:
     %for resource in metadata.RESOURCES:
@@ -613,13 +613,13 @@ category = get("category")
     %endfor
 %endif
 %if category is None or "heroes" == category:
-{{ " ".join(x.name for x in faction.heroes) }}
+{{ " ".join(map(str, faction.heroes)) }}
 %endif
 %if category is None or "towns" == category:
-{{ " ".join(x.name for x in faction.towns) }}
+{{ " ".join(map(str, faction.towns)) }}
 %endif
 %if category is None or "tavern_heroes" == category:
-{{ " ".join(x.name for x in faction.tavern_heroes if x) }}
+{{ " ".join(map(str, filter(bool, faction.tavern_heroes))) }}
 %endif
 """
 
@@ -1059,7 +1059,7 @@ stats_props = h3sed.version.adapt("hero.stats.DATAPROPS", h3sed.hero.stats.DATAP
 deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_ARTIFACTS]
 %>
 %if "name" == column:
-{{ hero.name }}
+{{ str(hero) }}
 %elif "faction" == column:
 {{ hero.profile.format_faction() }}
 %elif column in hero.stats:
@@ -1095,7 +1095,7 @@ deviceprops = [x for x in stats_props if x["label"] in h3sed.metadata.SPECIAL_AR
 %elif "location" == column:
 {{ hero.profile.format_location() }}
 %elif "town" == column:
-{{ hero.profile.town.name if hero.profile.town else "" }}
+{{ (hero.profile.town or "").format() }}
 %elif "biography" == column:
 {{ hero.profile.biography }}
 %endif
@@ -1463,7 +1463,7 @@ colptr = max(col_indexes) + 1
   <tr>
     <td class="index">{{ i + 1 }}</td>
     <td>
-      <a href="#{{ hero.name }}" title="{{ __("Show %s character sheet", hero.name) }}" onclick="showHero({{ i }})">{{ hero.name }}</a>
+      <a href="#{{ str(hero) }}" title="{{ __("Show %s character sheet", hero) }}" onclick="showHero({{ i }})">{{ hero.name }}</a>
 %if hero.name_counter > 1:
  ({{ hero.name_counter }})
 %endif
@@ -1484,7 +1484,7 @@ colptr = max(col_indexes) + 1
     <td title="{{ hero.profile.format_location(long=True) }}">{{ hero.profile.format_location() }}</td>
 %endif
 %if not categories or categories["town"]:
-    <td>{{ hero.profile.town.name if hero.profile.town else "" }}</td>
+    <td>{{ (hero.profile.town or "").format() }}</td>
 %endif
 %if not categories or categories["devices"]:
     <td>
