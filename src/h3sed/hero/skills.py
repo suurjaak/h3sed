@@ -135,6 +135,7 @@ class SkillsPlugin(object):
 
         h3sed.gui.build(self, self._panel)
         label = wx.StaticText(self._panel, label=__(HINT))
+        label.ToolTip = label.Label
         controls.ColourManager.Manage(label, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
         self._panel.Sizer.Add(label, border=10, flag=wx.TOP, proportion=1)
         self._panel.Layout()

@@ -2303,6 +2303,7 @@ def build(plugin, panel):
                         if prop.get("orderable") or prop.get("numbered"):
                             v = "%s. %s" % (i + 1, v)
                         c0 = wx.StaticText(panel, label=v, name="%s_%s_label" % (plugin.name, i))
+                        c0.ToolTip = c0.Label
                         if lsizer.HGap: lsizer.Add(c0, pos=(lcount, ccount), flag=wx.ALIGN_CENTER_VERTICAL)
                         else: lsizer.Add(c0, pos=(lcount, ccount), border=10, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT)
                     elif "combo" == itemprop.get("type"):
@@ -2570,6 +2571,7 @@ def build(plugin, panel):
 
         elif "label" == prop.get("type"):
             c = wx.StaticText(panel, label=__(prop.get("label", "")))
+            c.ToolTip = c.Label
             ColourManager.Manage(c, "ForegroundColour", wx.SYS_COLOUR_GRAYTEXT)
             sizer.Add(c, pos=(count, 0), span=(1, 2))
             count += 1
