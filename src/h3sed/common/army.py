@@ -219,7 +219,7 @@ class ArmyPlugin(object):
         for creature in CREATURES:
             if creature not in CREATURE_TOWNS:
                 NEUTRALS.append([creature]) # Keep same structure as CREATURE_LEVEL values
-        NEUTRALS.sort(key=__)
+        NEUTRALS.sort(key=lambda x: __(x[0]))
 
         menu = wx.Menu()
         menu_grade = wx.Menu()
