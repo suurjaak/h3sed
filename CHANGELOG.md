@@ -2,9 +2,10 @@ CHANGELOG
 =========
 
 
-4.3, 2026-11-13
+4.3, 2026-11-16
 ---------------
 - fix visual issues with links in hero/town/faction pages (issue #34)
+- minor fixes and tweaks
 
 
 4.2, 2026-11-12
